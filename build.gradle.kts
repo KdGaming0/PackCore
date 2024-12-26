@@ -3,7 +3,7 @@ import org.apache.commons.lang3.SystemUtils
 plugins {
     idea
     java
-    kotlin("jvm") version "1.6.21"
+    kotlin("jvm") version "2.1.0"
     // Loom for Forge mods
     id("gg.essential.loom") version "0.10.0.+"
     // Pack200 for Forge dependencies
