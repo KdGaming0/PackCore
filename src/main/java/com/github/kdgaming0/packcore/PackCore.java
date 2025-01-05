@@ -1,6 +1,7 @@
 package com.github.kdgaming0.packcore;
 
 import com.github.kdgaming0.packcore.screen.JavaTestGui;
+import com.github.kdgaming0.packcore.screen.MainMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.settings.KeyBinding;
@@ -30,7 +31,7 @@ public class PackCore {
     @SubscribeEvent
     public void onKeyInput(InputEvent.KeyInputEvent event) {
         if (OPEN_GUI_KEY.isPressed()) {
-            Minecraft.getMinecraft().displayGuiScreen(new JavaTestGui());
+            Minecraft.getMinecraft().displayGuiScreen(new MainMenu());
         }
     }
 }
