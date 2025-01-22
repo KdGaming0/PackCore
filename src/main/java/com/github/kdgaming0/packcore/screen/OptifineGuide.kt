@@ -12,7 +12,6 @@ import java.awt.Color
 class OptifineGuide : UIContainer() {
     private var closeCallback: () -> Unit = {}
 
-    // Add this function to set the close callback
     fun onWindowClose(callback: () -> Unit): OptifineGuide {
         closeCallback = callback
         return this
@@ -48,6 +47,43 @@ class OptifineGuide : UIContainer() {
             x = CenterConstraint()
             y = 2.pixels(true)
         } childOf infoPanel
+
+        // Create checkbox container
+        val checkboxContainer = UIContainer().constrain {
+            x = 5.pixels()
+            y = 5.pixels(true)  // Position above the Close button
+            width = ChildBasedSizeConstraint()
+            height = 20.pixels()
+        } childOf infoPanel
+
+        val checkmark = UIText("✓").constrain {
+            x = CenterConstraint()
+            y = CenterConstraint()
+            color = Color.BLACK.toConstraint()
+        }
+
+        val checkbox = UIBlock().constrain {
+            x = 0.pixels()
+            y = CenterConstraint()
+            width = 15.pixels()
+            height = 15.pixels()
+            color = Color.LIGHT_GRAY.toConstraint()
+        }.onMouseClick {
+
+        }.effect (
+            OutlineEffect(
+                Color(0, 0, 0, 100),
+                1f,
+                drawInsideChildren = true
+            )
+        ) childOf checkboxContainer
+
+        CreateMenuButton("Don't show this again") {
+        }.constrain {
+            x = SiblingConstraint(padding = 2f)
+            y = CenterConstraint()
+        } childOf checkboxContainer
+
 
         val guideInstructionsText = MarkdownComponent(
             """

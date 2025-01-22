@@ -95,7 +95,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
                 } childOf buttonContainer3
 
                 CreateMenuButton("Mod Options") {
-                    UMinecraft.getMinecraft().displayGuiScreen(GuiOptions(this, UMinecraft.getMinecraft().gameSettings))
+                    // Set menu later
                 } childOf buttonContainer3
 
             val buttonContainer4 = UIContainer().constrain {

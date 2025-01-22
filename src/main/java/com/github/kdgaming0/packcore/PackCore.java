@@ -24,7 +24,6 @@ public class PackCore {
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         MinecraftForge.EVENT_BUS.register(this);
-        // Create and register the key binding
         OPEN_GUI_KEY = new KeyBinding("Open Pack Menu", Keyboard.KEY_K, "Pack Core");
         ClientRegistry.registerKeyBinding(OPEN_GUI_KEY);
         ModpackInfo.loadModpackInfo();

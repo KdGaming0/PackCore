@@ -43,6 +43,7 @@ loom {
         "client" {
             property("mixin.debug", "true")
             arg("--tweakClass", "org.spongepowered.asm.launch.MixinTweaker")
+            arg("--tweakClass", "com.github.kdgaming0.packcore.tweaker.TestTweaker")
         }
     }
     runConfigs {

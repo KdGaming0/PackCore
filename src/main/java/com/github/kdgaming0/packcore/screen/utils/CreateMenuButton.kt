@@ -34,16 +34,10 @@ fun CreateMenuButton(text: String, action: () -> Unit) = UIContainer().constrain
     button.onMouseClick {
         action()
 }.onMouseEnter {
-        buttonText.animate {
-            setTextScaleAnimation(Animations.OUT_EXP, 0.3f, 1.pixels())
-        }
         underline.animate {
             setColorAnimation(Animations.OUT_EXP, 0.5f, Color(252, 189, 56, 255).toConstraint())
         }
 }.onMouseLeave {
-        buttonText.animate {
-            setTextScaleAnimation(Animations.OUT_EXP, 0.3f, 1.pixels())
-        }
         underline.animate {
             setColorAnimation(Animations.OUT_EXP, 0.5f, Color(252, 189, 56, 0).toConstraint())
         }
