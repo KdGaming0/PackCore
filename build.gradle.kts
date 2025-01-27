@@ -114,7 +114,7 @@ dependencies {
     // Elementa + UniversalCraft for 1.8.9 Forge
     // ---------------------------------------------------------------------------------------------
     // The core Elementa library
-    implementation("gg.essential:elementa:676")
+    shadowImpl("gg.essential:elementa:676")
 
     // UniversalCraft for 1.8.9 Forge
     // Use 'modImplementation' if you need Loom integration; otherwise 'implementation' is typically fine.
