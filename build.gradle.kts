@@ -20,13 +20,6 @@ val mcVersion: String by project
 val version: String by project
 val modid: String by project
 
-// You can adjust these to the proper versions you want to use.
-val elementaVersion = "2.0.0"            // Replace with latest Elementa version if desired
-val ucVersion = "1.0.3"                 // Replace with latest UniversalCraft version if desired
-
-val mixinGroup = "$baseGroup.mixin"
-val transformerFile = file("src/main/resources/accesstransformer.cfg")
-
 // -------------------------------------------------------------------------------------------------
 // Toolchains
 // -------------------------------------------------------------------------------------------------
@@ -41,9 +34,7 @@ loom {
     log4jConfigs.from(file("log4j2.xml"))
     launchConfigs {
         "client" {
-            property("mixin.debug", "true")
-            arg("--tweakClass", "org.spongepowered.asm.launch.MixinTweaker")
-            arg("--tweakClass", "com.github.kdgaming0.packcore.tweaker.TestTweaker")
+            arg("--tweakClass", "com.github.kdgaming0.packcore.tweaker.PackConfigTweaker")
         }
     }
     runConfigs {
@@ -57,14 +48,6 @@ loom {
     }
     forge {
         pack200Provider.set(dev.architectury.pack200.java.Pack200Adapter())
-        mixinConfig("mixins.$modid.json")
-        if (transformerFile.exists()) {
-            println("Installing access transformer")
-            accessTransformer(transformerFile)
-        }
-    }
-    mixin {
-        defaultRefmapName.set("mixins.$modid.refmap.json")
     }
 }
 
@@ -101,12 +84,6 @@ dependencies {
     mappings("de.oceanlabs.mcp:mcp_stable:22-1.8.9")
     forge("net.minecraftforge:forge:1.8.9-11.15.1.2318-1.8.9")
 
-    // Sponge Mixin library (if you're using mixins)
-    shadowImpl("org.spongepowered:mixin:0.7.11-SNAPSHOT") {
-        isTransitive = false
-    }
-    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT")
-
     // Add DevAuth for debugging if desired
     runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.2.1")
 
@@ -134,12 +111,7 @@ tasks.withType<org.gradle.jvm.tasks.Jar> {
     manifest.attributes.run {
         this["FMLCorePluginContainsFMLMod"] = "true"
         this["ForceLoadAsMod"] = "true"
-        // If you don't want mixins, remove these lines:
-        this["TweakClass"] = "org.spongepowered.asm.launch.MixinTweaker"
-        this["MixinConfigs"] = "mixins.$modid.json"
-        if (transformerFile.exists()) {
-            this["FMLAT"] = "${modid}_at.cfg"
-        }
+        this["TweakClass"] = "com.github.kdgaming0.packcore.tweaker.PackConfigTweaker"
     }
 }
 
