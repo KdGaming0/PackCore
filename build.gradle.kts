@@ -82,7 +82,7 @@ repositories {
     // DevAuth repository (if you need it for debugging/logging in with alt)
     maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
     // Essential's public Maven for Elementa
-    maven("https://repo.essential.gg/repository/maven-public")
+    maven(url = "https://repo.essential.gg/repository/maven-public")
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ dependencies {
     // UniversalCraft for 1.8.9 Forge
     // Use 'modImplementation' if you need Loom integration; otherwise 'implementation' is typically fine.
     // With Forge, you'll need to relocate both Elementa and UniversalCraft inside your final jar.
-    implementation("gg.essential:universalcraft-1.8.9-forge:369")
+    shadowImpl("gg.essential:universalcraft-1.8.9-forge:369")
 }
 
 // -------------------------------------------------------------------------------------------------
