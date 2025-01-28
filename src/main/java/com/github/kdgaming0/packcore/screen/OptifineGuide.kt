@@ -1,5 +1,6 @@
 package com.github.kdgaming0.packcore.screen
 
+import com.github.kdgaming0.packcore.config.ModConfig
 import com.github.kdgaming0.packcore.screen.utils.CreateMenuButton
 import gg.essential.elementa.components.*
 import gg.essential.elementa.constraints.*
@@ -11,6 +12,21 @@ import java.awt.Color
 
 class OptifineGuide : UIContainer() {
     private var closeCallback: () -> Unit = {}
+    private var isChecked = false
+
+    private fun toggleCheckbox(checkbox: UIBlock, checkmark: UIText) {
+        isChecked = !isChecked
+        if (isChecked) {
+            checkbox.addChild(checkmark)
+            ModConfig.setShowOptifineGuide(false)
+            ModConfig.saveConfig() // Make sure config is saved
+        } else {
+            checkbox.removeChild(checkmark)
+            ModConfig.setShowOptifineGuide(true)
+            ModConfig.saveConfig() // Make sure config is saved
+        }
+    }
+
 
     fun onWindowClose(callback: () -> Unit): OptifineGuide {
         closeCallback = callback
@@ -51,7 +67,7 @@ class OptifineGuide : UIContainer() {
         // Create checkbox container
         val checkboxContainer = UIContainer().constrain {
             x = 5.pixels()
-            y = 5.pixels(true)  // Position above the Close button
+            y = 5.pixels(true)
             width = ChildBasedSizeConstraint()
             height = 20.pixels()
         } childOf infoPanel
@@ -59,7 +75,7 @@ class OptifineGuide : UIContainer() {
         val checkmark = UIText("✓").constrain {
             x = CenterConstraint()
             y = CenterConstraint()
-            color = Color.BLACK.toConstraint()
+            color = Color.WHITE.toConstraint()
         }
 
         val checkbox = UIBlock().constrain {
@@ -67,10 +83,8 @@ class OptifineGuide : UIContainer() {
             y = CenterConstraint()
             width = 15.pixels()
             height = 15.pixels()
-            color = Color.LIGHT_GRAY.toConstraint()
-        }.onMouseClick {
-
-        }.effect (
+            color = Color.DARK_GRAY.toConstraint()
+        }.effect(
             OutlineEffect(
                 Color(0, 0, 0, 100),
                 1f,
@@ -78,7 +92,18 @@ class OptifineGuide : UIContainer() {
             )
         ) childOf checkboxContainer
 
+        // Set initial state based on config
+        isChecked = !ModConfig.getShowOptifineGuide()
+        if (isChecked) {
+            checkbox.addChild(checkmark)
+        }
+
+        checkbox.onMouseClick {
+            toggleCheckbox(checkbox, checkmark)
+        }
+
         CreateMenuButton("Don't show this again") {
+            toggleCheckbox(checkbox, checkmark)
         }.constrain {
             x = SiblingConstraint(padding = 2f)
             y = CenterConstraint()

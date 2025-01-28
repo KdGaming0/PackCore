@@ -1,5 +1,7 @@
 package com.github.kdgaming0.packcore.copysystem;
 
+import com.github.kdgaming0.packcore.copysystem.utils.ExtractionProgressListener;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,7 +78,7 @@ public class ZipExtractor {
             return true;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("An error occurred during extraction: " + e.getMessage());
             return false;
         }
     }

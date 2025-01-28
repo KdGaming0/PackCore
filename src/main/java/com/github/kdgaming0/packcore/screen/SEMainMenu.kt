@@ -1,15 +1,15 @@
 package com.github.kdgaming0.packcore.screen
 
 import com.github.kdgaming0.packcore.screen.components.UIPanorama
-import gg.essential.elementa.ElementaVersion
-import gg.essential.elementa.WindowScreen
-
+import com.github.kdgaming0.packcore.config.ModConfig
 import com.github.kdgaming0.packcore.screen.utils.CreateMenuButton
 import com.github.kdgaming0.packcore.screen.utils.CreateMenuButtonInfo
 import com.github.kdgaming0.packcore.screen.utils.CreateMenuButtonJoinServer
 import com.github.kdgaming0.packcore.screen.utils.CreateWebsiteButton
 import com.github.kdgaming0.packcore.utils.CheckForUpdates
 import com.github.kdgaming0.packcore.utils.ModpackInfo
+import gg.essential.elementa.ElementaVersion
+import gg.essential.elementa.WindowScreen
 import gg.essential.elementa.components.*
 import gg.essential.elementa.constraints.*
 import gg.essential.elementa.constraints.animation.Animations
@@ -17,6 +17,7 @@ import gg.essential.elementa.dsl.*
 import gg.essential.elementa.effects.OutlineEffect
 import gg.essential.elementa.markdown.MarkdownComponent
 import gg.essential.universal.UMinecraft
+import gg.essential.universal.UScreen
 import net.minecraftforge.fml.common.Loader;
 import net.minecraft.client.gui.GuiMultiplayer
 import net.minecraft.client.gui.GuiOptions
@@ -95,7 +96,11 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
                 } childOf buttonContainer3
 
                 CreateMenuButton("Mod Options") {
-                    // Set menu later
+                    UScreen.displayScreen(ConfigGui())
+                } childOf buttonContainer3
+
+                CreateMenuButton("Options Selector") {
+                    UMinecraft.getMinecraft().displayGuiScreen(ConfigManagementScreen())
                 } childOf buttonContainer3
 
             val buttonContainer4 = UIContainer().constrain {
@@ -159,7 +164,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             } childOf infoBox
 
             if (!Loader.isModLoaded("optifine")) {
-                val optifineGuide = CreateMenuButtonInfo("Optifine Guide") {
+                CreateMenuButtonInfo("Optifine Guide") {
                     if (!optifineWindowOpen) {
                         optifineWindowOpen = true
                         OptifineGuide().apply {
@@ -346,7 +351,12 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
         }
 
     override fun afterInitialization() {
-        if (!Loader.isModLoaded("optifine") && !optifineWindowOpen && optifineGuide == null) {
+        // Only show if Optifine is not loaded AND the guide is enabled in config
+        if (!Loader.isModLoaded("optifine") &&
+            ModConfig.getShowOptifineGuide() &&
+            !optifineWindowOpen &&
+            optifineGuide == null) {
+
             optifineGuide = OptifineGuide().apply {
                 constrain {
                     width = RelativeConstraint(1f)

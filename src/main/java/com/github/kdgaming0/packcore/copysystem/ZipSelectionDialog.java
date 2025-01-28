@@ -1,5 +1,7 @@
 package com.github.kdgaming0.packcore.copysystem;
 
+import com.github.kdgaming0.packcore.copysystem.utils.ExtractionProgressListener;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -16,11 +18,6 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
@@ -103,7 +100,7 @@ public class ZipSelectionDialog extends JFrame {
 
         // Column for Official Zips
         JPanel officialPanel = new JPanel(new BorderLayout());
-        JLabel officialLabel = new JLabel("Official Configs (SE-*)", JLabel.CENTER);
+        JLabel officialLabel = new JLabel("Official Configs", JLabel.CENTER);
         officialPanel.add(officialLabel, BorderLayout.NORTH);
 
         officialZipFileList = new JList<>(officialZips.toArray(new String[0]));
@@ -151,7 +148,7 @@ public class ZipSelectionDialog extends JFrame {
         buttonPanel.add(extractButton);
 
         // Close button
-        JButton closeButton = new JButton("Close");
+        JButton closeButton = new JButton("Skip");
         closeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

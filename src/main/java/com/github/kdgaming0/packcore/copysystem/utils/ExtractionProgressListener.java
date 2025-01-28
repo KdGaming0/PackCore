@@ -1,4 +1,4 @@
-package com.github.kdgaming0.packcore.copysystem;
+package com.github.kdgaming0.packcore.copysystem.utils;
 /**
  * Interface to listen for extraction progress updates.
  */

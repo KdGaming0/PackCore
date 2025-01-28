@@ -1,5 +1,6 @@
 package com.github.kdgaming0.packcore;
 
+import com.github.kdgaming0.packcore.config.ModConfig;
 import com.github.kdgaming0.packcore.screen.SEMainMenu;
 import com.github.kdgaming0.packcore.utils.ModpackInfo;
 
@@ -27,6 +28,7 @@ public class PackCore {
         OPEN_GUI_KEY = new KeyBinding("Open Pack Menu", Keyboard.KEY_K, "Pack Core");
         ClientRegistry.registerKeyBinding(OPEN_GUI_KEY);
         ModpackInfo.loadModpackInfo();
+        ModConfig.loadConfig();
     }
 
     @SubscribeEvent

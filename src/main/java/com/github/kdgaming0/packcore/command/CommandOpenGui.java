@@ -1,6 +1,6 @@
 package com.github.kdgaming0.packcore.command;
 
-import com.github.kdgaming0.packcore.screen.JavaTestGui;
+import com.github.kdgaming0.packcore.screen.ConfigGui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;// Create a command class
@@ -20,7 +20,7 @@ public class CommandOpenGui extends CommandBase {
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
         if (sender instanceof EntityPlayer) {
-            Minecraft.getMinecraft().displayGuiScreen(new JavaTestGui());
+            Minecraft.getMinecraft().displayGuiScreen(new ConfigGui());
         }
     }
 
