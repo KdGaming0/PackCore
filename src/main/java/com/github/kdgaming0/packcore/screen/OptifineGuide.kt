@@ -112,21 +112,16 @@ class OptifineGuide : UIContainer() {
 
         val guideInstructionsText = MarkdownComponent(
             """
-            ## Optifine install guide
-            1. Download Optifine from [here](https://optifine.net/downloads)
-            2. Open the downloaded file
-            3. Click install
-            4. Open the Minecraft launcher
-            5. Click the installations tab
-            6. Click the new installation button
-            7. Name the installation
-            8. Select the version you installed Optifine for
-            9. Click create
-            10. Select the new installation
-            11. Click play
-            12. Enjoy Optifine!
-            13. If you have any issues, please contact support
-            """.trimIndent()
+    ## Optifine install guide
+    1. Go to the Optfine website and download Optifine for 1.8.9. [Direct link to The download.](https://optifine.net/adloadx?f=preview_OptiFine_1.8.9_HD_U_M6_pre2.jar)
+    2. When you have downloaded find it in the Download folder in the File Explorer.
+    3. Open the Modrinth app and locate the SkyBlock Enhanced installation.
+        - It should be 3 dots on the right side of the installation.
+        - Click on the 3 dots and then click on Open Folder.
+    5. Then locate the mods folder and open it.
+    6. When opened copy the Optifine file over from the Download folder and into the mods folder that you just opened.
+    7. Click play and have fun.
+    """.trimIndent()
         ).constrain {
             x = CenterConstraint()
             width = 100.percent() - 10.pixels()

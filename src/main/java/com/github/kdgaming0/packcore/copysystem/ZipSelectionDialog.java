@@ -79,9 +79,10 @@ public class ZipSelectionDialog extends JFrame {
                 + "<h2>Welcome to Skyblock Enhanced!</h2>"
                 + "Before playing, please select the ready-to-use zip file that best matches your needs for the best experience:<br><br>"
                 + "<b><i>Normal (1080p / 1440p):</i></b> Recommended for most players. This option has more features enabled by default, offering a rich and complex experience. However, new players may find it overwhelming at first due to the amount of on-screen information when joining Skyblock for the first time with mods.<br>"
-                + "<b><i>Lite (1080p / 1440p):</i></b> Designed for complete beginners, with fewer features enabled to simplify the experience. This is a great starting point to get familiar with the mod features. As you gain experience, you can enable additional features to create your perfect setup.<br><br>"
-                + "Custom configurations you’ve added will also appear here. (You can create them in-game via <i>/packcore</i> or the <i>packcore</i> button in the ESC menu.)<br><br>"
+                + "<b><i>Lite (3-5 Business Days) (1080p / 1440p):</i></b> Designed for complete beginners, with fewer features enabled to simplify the experience. This is a great starting point to get familiar with the mod features. As you gain experience, you can enable additional features to create your perfect setup.<br><br>"
+                + "Custom configurations you’ve added will also appear here. (You can create them in-game via <i>/packcore</i> or the <i>Config Management</i> button on the main menu.)<br><br>"
                 + "If you skip this step, mods will use their default settings, as if downloaded individually and clicked play. This will cause many features to be disabled and have overlapping GUI elements. (I can't promise there won't be any overlapping with the ready-to-use configs but there will be less.)<br><br>"
+                + "<b>If you are updating from a <i>pre-2.0</i> version of <b>Skyblock Enhanced</b> and don't want to reset the configs, click <b><i>Skip</i></b>.</b><br><br>"
                 + "Click <b><i>Extract</i></b> to apply your chosen configuration or <b><i>Skip</i></b> to launch Minecraft with default mod settings."
                 + "</body></html>"
         );
