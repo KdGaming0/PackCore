@@ -171,6 +171,15 @@ class ConfigGui : WindowScreen(ElementaVersion.V7) {
             ModConfig.setShowOptifineGuide(newValue)
         }
 
+        createToggleSetting(
+            innerContainer,
+            "Enable Custom Main Menu",
+            "Use a custom main menu with a skyblock-themed background. This provides a fuller Skyblock Enhanced experience. Recommended",
+            ModConfig.getEnableCustomMenu()
+        ) { newValue ->
+            ModConfig.setEnableCustomMenu(newValue)
+        }
+
         // Save & Close button
         UIRoundedRectangle(4f).constrain {
             x = CenterConstraint()

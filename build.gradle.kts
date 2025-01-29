@@ -41,7 +41,8 @@ loom {
     log4jConfigs.from(file("log4j2.xml"))
     launchConfigs {
         "client" {
-            arg("--tweakClass", "com.github.kdgaming0.packcore.tweaker.PackConfigTweaker")
+            property("mixin.debug", "true")
+            arg("--tweakClass", "org.spongepowered.asm.launch.MixinTweaker")
         }
     }
     runConfigs {
@@ -132,10 +133,12 @@ tasks.withType<org.gradle.jvm.tasks.Jar> {
     manifest.attributes.run {
         this["FMLCorePluginContainsFMLMod"] = "true"
         this["ForceLoadAsMod"] = "true"
-        this["TweakClass"] = "com.github.kdgaming0.packcore.tweaker.PackConfigTweaker"
-        if (transformerFile.exists()) {
-            this["FMLAT"] = "${modid}_at.cfg"
-        }
+        // If you don't want mixins, remove these lines:
+        this["TweakClass"] = "org.spongepowered.asm.launch.MixinTweaker"
+        this["MixinConfigs"] = "mixins.$modid.json"
+            if (transformerFile.exists())
+                this["FMLAT"] = "${modid}_at.cfg"
+
     }
 }
 

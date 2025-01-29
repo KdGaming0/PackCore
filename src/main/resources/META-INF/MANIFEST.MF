@@ -1,3 +1,2 @@
 Manifest-Version: 1.0
-TweakClass: com.github.kdgaming0.packcore.tweaker.PackConfigTweaker
 FMLCorePluginContainsFMLMod: true

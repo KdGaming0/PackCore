@@ -76,7 +76,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
 
         val buttonContainer2 = UIContainer().constrain {
             x = CenterConstraint()
-            y = 65.pixels()
+            y = 70.pixels()
             width = ChildBasedMaxSizeConstraint()
             height = 100.percent()
         } childOf buttonBackgroundEffect

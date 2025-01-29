@@ -1,5 +1,6 @@
 package com.github.kdgaming0.packcore.copysystem;
 
+import com.github.kdgaming0.packcore.config.ModConfig;
 import com.github.kdgaming0.packcore.copysystem.utils.ExtractionProgressListener;
 
 import javax.swing.JButton;
@@ -154,6 +155,7 @@ public class ZipSelectionDialog extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 userFinished = true;
+                ModConfig.setPromptSetDefaultConfig(false); // Disable prompt for next time
                 dispose();
                 System.exit(0); // Exits the game
             }
@@ -274,7 +276,7 @@ public class ZipSelectionDialog extends JFrame {
                     } else {
                         JOptionPane.showMessageDialog(
                                 ZipSelectionDialog.this,
-                                "Extraction of \"" + finalSelectedZip + "\" encountered an error.",
+                                "Extraction of \"" + finalSelectedZip + "\" encountered an error. Report this to the mod author.",
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE
                         );
@@ -285,6 +287,7 @@ public class ZipSelectionDialog extends JFrame {
                     progressBar.setValue(0);
 
                     userFinished = true;
+                    ModConfig.setPromptSetDefaultConfig(false); // Disable prompt for next time
                     dispose(); // Close dialog to continue Minecraft startup
                 }
             };

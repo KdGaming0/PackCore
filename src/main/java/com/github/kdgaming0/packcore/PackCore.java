@@ -4,6 +4,7 @@ import com.github.kdgaming0.packcore.config.ModConfig;
 import com.github.kdgaming0.packcore.screen.SEMainMenu;
 import com.github.kdgaming0.packcore.utils.ModpackInfo;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.common.MinecraftForge;
@@ -12,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
@@ -33,10 +35,19 @@ public class PackCore {
 
     @SubscribeEvent
     public void onGuiOpen(GuiOpenEvent event) {
-        // Check if the GUI being opened is the main menu
+        // Check config setting first
+        if (!ModConfig.getEnableCustomMenu()) {
+            return;
+        }
+
         if (event.gui instanceof GuiMainMenu) {
-            // Replace it with your custom menu
-            event.gui = new SEMainMenu();
+            if (!event.isCanceled()) {
+                event.setCanceled(true);
+                Minecraft.getMinecraft().displayGuiScreen(new SEMainMenu());
+                LOGGER.info("PackCore: Loading custom main menu");
+            } else {
+                LOGGER.info("PackCore: Another mod has already modified the main menu");
+            }
         }
     }
 }
