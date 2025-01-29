@@ -112,15 +112,20 @@ class OptifineGuide : UIContainer() {
 
         val guideInstructionsText = MarkdownComponent(
             """
-    ## Optifine install guide
+    ### Optifine install guide
+    PackCore have detected that you don't have Optifine installed. (If this is wrong please ignore this message)
+    Optifine is a mod that can help you get better performance in Minecraft. It is recommended to install it. (Because of licensing issues can I not include it in the modpack)
+    
     1. Go to the Optfine website and download Optifine for 1.8.9. [Direct link to The download.](https://optifine.net/adloadx?f=preview_OptiFine_1.8.9_HD_U_M6_pre2.jar)
     2. When you have downloaded find it in the Download folder in the File Explorer.
     3. Open the Modrinth app and locate the SkyBlock Enhanced installation.
-        - It should be 3 dots on the right side of the installation.
+    4. Open the installation folder.
+        - It should be 3 dots on the right side of the installation close to the play button.
         - Click on the 3 dots and then click on Open Folder.
     5. Then locate the mods folder and open it.
     6. When opened copy the Optifine file over from the Download folder and into the mods folder that you just opened.
-    7. Click play and have fun.
+    7. Close the game and reopen it.
+    8. Have fun with better performance.
     """.trimIndent()
         ).constrain {
             x = CenterConstraint()

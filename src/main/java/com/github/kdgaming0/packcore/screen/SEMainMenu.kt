@@ -34,6 +34,15 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
     private var optifineWindowOpen = false
     private var optifineGuide: OptifineGuide? = null
 
+    private fun isOptiFineInstalled(): Boolean {
+        return try {
+            Class.forName("optifine.OptiFineClassTransformer")
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
+    }
+
     init {
         // Set the background image
         val background = UIPanorama().constrain {
@@ -67,7 +76,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
 
         val buttonContainer2 = UIContainer().constrain {
             x = CenterConstraint()
-            y = 60.pixels()
+            y = 65.pixels()
             width = ChildBasedMaxSizeConstraint()
             height = 100.percent()
         } childOf buttonBackgroundEffect
@@ -95,7 +104,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             UMinecraft.getMinecraft().displayGuiScreen(GuiOptions(this, UMinecraft.getMinecraft().gameSettings))
         } childOf buttonContainer3
 
-        CreateMenuButton("Mod Options") {
+        CreateMenuButton("PackCore Options") {
             UScreen.displayScreen(ConfigGui())
         } childOf buttonContainer3
 
@@ -195,7 +204,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             y = CenterConstraint()
         } childOf labeBox
 
-        if (!Loader.isModLoaded("optifine")) {
+        if (!isOptiFineInstalled()) {
             CreateMenuButtonInfo("Optifine Guide") {
                 if (!optifineWindowOpen) {
                     optifineWindowOpen = true
@@ -361,7 +370,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
 
     override fun afterInitialization() {
         // Only show if Optifine is not loaded AND the guide is enabled in config
-        if (!Loader.isModLoaded("optifine") &&
+        if (!isOptiFineInstalled() &&
             ModConfig.getShowOptifineGuide() &&
             !optifineWindowOpen &&
             optifineGuide == null) {
