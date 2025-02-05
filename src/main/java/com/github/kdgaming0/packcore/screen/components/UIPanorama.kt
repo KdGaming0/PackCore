@@ -9,13 +9,13 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import net.minecraft.util.ResourceLocation
 import org.lwjgl.opengl.GL11
 import org.lwjgl.util.glu.Project
-import kotlin.math.cos
 
 class UIPanorama : UIContainer() {
-    private val mc = Minecraft.getMinecraft()
-    private var panoramaRotation = 0f
-    private var lastUpdateTime = System.currentTimeMillis()
 
+    private val mc = Minecraft.getMinecraft()
+    var panoramaTimer = 0  // Drives rotation
+
+    // Your custom panorama textures (ensure these exist)
     private val panoramaTextures = arrayOf(
         ResourceLocation("packcore", "textures/gui/panorama_skyblock_hub/panorama_0.png"),
         ResourceLocation("packcore", "textures/gui/panorama_skyblock_hub/panorama_1.png"),
@@ -26,82 +26,90 @@ class UIPanorama : UIContainer() {
     )
 
     override fun draw(matrixStack: UMatrixStack) {
-        // Calculate delta time for smooth rotation without using timer field
-        val currentTime = System.currentTimeMillis()
-        val deltaTime = (currentTime - lastUpdateTime) / 1000f
-        lastUpdateTime = currentTime
+        // Update timer for animation
+        panoramaTimer++
 
-        // Update rotation based on time
-        panoramaRotation += deltaTime * 20f // Adjust the multiplier to control rotation speed
+        // Using a default partialTicks value since UIContainer doesn't provide one
+        val partialTicks = 0.0f
 
-        GlStateManager.disableAlpha()
-        GlStateManager.enableBlend()
-        GlStateManager.depthMask(false)
-        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
+        val tessellator = Tessellator.getInstance()
+        val worldRenderer = tessellator.worldRenderer
 
-        // Rest of the code remains the same...
-        GlStateManager.enableTexture2D()
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
-
-        GlStateManager.pushMatrix()
+        // Use a fixed aspect ratio (as before) to reproduce the vanilla perspective:
         GL11.glMatrixMode(GL11.GL_PROJECTION)
-        GlStateManager.pushMatrix()
-        GlStateManager.loadIdentity()
-        Project.gluPerspective(
-            90.0f,
-            mc.displayWidth.toFloat() / mc.displayHeight.toFloat(),
-            0.05f,
-            10.0f
-        )
+        GL11.glPushMatrix()
+        GL11.glLoadIdentity()
+        Project.gluPerspective(90.0f, mc.displayWidth.toFloat() / mc.displayHeight.toFloat(), 0.05f, 10.0f)
 
+        // Now set up the modelview matrix
         GL11.glMatrixMode(GL11.GL_MODELVIEW)
-        GlStateManager.loadIdentity()
-        GlStateManager.rotate(180.0f, 1.0f, 0.0f, 0.0f)
-        GlStateManager.rotate(cos(panoramaRotation * 0.001f) * 5.0f + 5.0f, 1.0f, 0.0f, 0.0f)
-        GlStateManager.rotate(-panoramaRotation * 0.1f, 0.0f, 1.0f, 0.0f)
+        GL11.glPushMatrix()
+        GL11.glLoadIdentity()
+        // Apply the initial rotations:
+        GL11.glRotatef(180.0f, 1.0f, 0.0f, 0.0f)
 
-        // Draw all six faces of the panorama
-        for (index in panoramaTextures.indices) {
-            GlStateManager.pushMatrix()
+        // Apply additional rotation for the animation
+        GL11.glRotatef(-((panoramaTimer.toFloat() + partialTicks) * 0.05f), 0.0f, 1.0f, 0.0f)
 
-            when (index) {
-                1 -> GlStateManager.rotate(90.0f, 0.0f, 1.0f, 0.0f)
-                2 -> GlStateManager.rotate(180.0f, 0.0f, 1.0f, 0.0f)
-                3 -> GlStateManager.rotate(-90.0f, 0.0f, 1.0f, 0.0f)
-                4 -> GlStateManager.rotate(90.0f, 1.0f, 0.0f, 0.0f)
-                5 -> GlStateManager.rotate(-90.0f, 1.0f, 0.0f, 0.0f)
+        // Configure GL state for smooth rendering.
+        GlStateManager.enableBlend()
+        GlStateManager.disableAlpha()
+        GlStateManager.disableCull()
+        GlStateManager.depthMask(false)
+        GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0)
+
+        // Draw each of the six cube faces in a single pass (no blur iterations)
+        for (k in 0 until 6) {
+            GL11.glPushMatrix()
+            when (k) {
+                1 -> GL11.glRotatef(90.0f, 0.0f, 1.0f, 0.0f)
+                2 -> GL11.glRotatef(180.0f, 0.0f, 1.0f, 0.0f)
+                3 -> GL11.glRotatef(-90.0f, 0.0f, 1.0f, 0.0f)
+                4 -> GL11.glRotatef(90.0f, 1.0f, 0.0f, 0.0f)
+                5 -> GL11.glRotatef(-90.0f, 1.0f, 0.0f, 0.0f)
             }
 
-            mc.textureManager.bindTexture(panoramaTextures[index])
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR)
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
+            // Bind the texture for this face, cycling through the provided textures if needed
+            val texture = panoramaTextures[k % panoramaTextures.size]
+            mc.textureManager.bindTexture(texture)
 
-            val tessellator = Tessellator.getInstance()
-            val buffer = tessellator.worldRenderer.apply {
-                begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX)
-                pos(-1.0, -1.0, 1.0).tex(0.0, 0.0).endVertex()
-                pos(1.0, -1.0, 1.0).tex(1.0, 0.0).endVertex()
-                pos(1.0, 1.0, 1.0).tex(1.0, 1.0).endVertex()
-                pos(-1.0, 1.0, 1.0).tex(0.0, 1.0).endVertex()
-            }
+            // Begin drawing the face quad
+            worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR)
+            // Use full opacity since we're not using iterative blending for blur
+            val alpha = 255
+            worldRenderer.pos(-1.0, -1.0, 1.0)
+                .tex(0.0, 0.0)
+                .color(255, 255, 255, alpha)
+                .endVertex()
+            worldRenderer.pos(1.0, -1.0, 1.0)
+                .tex(1.0, 0.0)
+                .color(255, 255, 255, alpha)
+                .endVertex()
+            worldRenderer.pos(1.0, 1.0, 1.0)
+                .tex(1.0, 1.0)
+                .color(255, 255, 255, alpha)
+                .endVertex()
+            worldRenderer.pos(-1.0, 1.0, 1.0)
+                .tex(0.0, 1.0)
+                .color(255, 255, 255, alpha)
+                .endVertex()
             tessellator.draw()
 
-            GlStateManager.popMatrix()
+            GL11.glPopMatrix()
         }
 
+        // Restore GL state
         GL11.glMatrixMode(GL11.GL_PROJECTION)
-        GlStateManager.popMatrix()
+        GL11.glPopMatrix()
         GL11.glMatrixMode(GL11.GL_MODELVIEW)
-        GlStateManager.popMatrix()
-
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST)
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
+        GL11.glPopMatrix()
 
         GlStateManager.depthMask(true)
+        GlStateManager.enableCull()
+        GlStateManager.enableDepth()
         GlStateManager.enableAlpha()
-        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f)
 
+        // Render child UI elements on top (if any)
         super.draw(matrixStack)
     }
 }
