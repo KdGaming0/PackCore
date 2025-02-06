@@ -14,6 +14,8 @@ class UIPanorama : UIContainer() {
 
     private val mc = Minecraft.getMinecraft()
     var panoramaTimer = 0  // Drives rotation
+    private var panoramaRotation = 0.0f
+    private var lastUpdateTime = System.currentTimeMillis()
 
     // Your custom panorama textures (ensure these exist)
     private val panoramaTextures = arrayOf(
@@ -26,11 +28,13 @@ class UIPanorama : UIContainer() {
     )
 
     override fun draw(matrixStack: UMatrixStack) {
-        // Update timer for animation
-        panoramaTimer++
+        // Calculate delta time
+        val currentTime = System.currentTimeMillis()
+        val deltaTime = (currentTime - lastUpdateTime) / 1000f
+        lastUpdateTime = currentTime
 
-        // Using a default partialTicks value since UIContainer doesn't provide one
-        val partialTicks = 0.0f
+        // Update rotation based on time
+        panoramaRotation += deltaTime * 20f // Adjust the multiplier to control rotation speed
 
         val tessellator = Tessellator.getInstance()
         val worldRenderer = tessellator.worldRenderer
@@ -49,7 +53,7 @@ class UIPanorama : UIContainer() {
         GL11.glRotatef(180.0f, 1.0f, 0.0f, 0.0f)
 
         // Apply additional rotation for the animation
-        GL11.glRotatef(-((panoramaTimer.toFloat() + partialTicks) * 0.05f), 0.0f, 1.0f, 0.0f)
+        GL11.glRotatef(-panoramaRotation * 0.1f, 0.0f, 1.0f, 0.0f)
 
         // Configure GL state for smooth rendering.
         GlStateManager.enableBlend()
