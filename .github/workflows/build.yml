@@ -1,29 +1,30 @@
-name: Run Gradle Build
-on:
-  - push
-  - pull_request
+# Automatically build the project and run any configured tests for every push
+# and submitted pull request. This can help catch issues that only occur on
+# certain platforms or Java versions, and provides a first line of defence
+# against bad commits.
+
+name: build
+on: [pull_request, push]
 
 jobs:
-  gradle:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4.1.1
-
-      - name: Setup Java
-        uses: actions/setup-java@v4.0.0
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+      - name: setup jdk
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Execute Gradle build
+          java-version: '21'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build
         run: ./gradlew build
-
-      - name: Upload built mod JAR
-        uses: actions/upload-artifact@v4.3.0
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: mod-jar
-          path: build/libs/*.jar
+          name: Artifacts
+          path: build/libs/
