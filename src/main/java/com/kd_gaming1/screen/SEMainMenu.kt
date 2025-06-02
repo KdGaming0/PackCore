@@ -102,7 +102,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
 
         CreateMenuButton("Quit Game") {
             // Updated for Minecraft 1.21.5 - use close instead of shutdown
-            UMinecraft.getMinecraft().close()
+            UMinecraft.getMinecraft().scheduleStop()
         } childOf buttonContainer4
 
         // Container for the social/websites buttons
