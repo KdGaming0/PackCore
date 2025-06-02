@@ -22,6 +22,16 @@
 	"mixins": [
 		"packcore.mixins.json"
 	],
+	"resource_packs": [
+		{
+			"type": "data",
+			"path": "data"
+		},
+		{
+			"type": "assets",
+			"path": "assets"
+		}
+	],
 	"depends": {
 		"fabricloader": ">=0.16.14",
 		"minecraft": "~1.21.5",

@@ -3,7 +3,7 @@
 	"package": "com.kd_gaming1.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"SEMainMenuBlurMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -1,6 +1,5 @@
 package com.kd_gaming1.screen
 
-import com.kd_gaming1.screen.components.UIPanorama
 import com.kd_gaming1.config.ModConfig
 import com.kd_gaming1.screen.utils.CreateMenuButton
 import com.kd_gaming1.screen.utils.CreateMenuButtonInfo
@@ -22,7 +21,6 @@ import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen
 import net.minecraft.client.gui.screen.option.OptionsScreen
 import net.minecraft.client.gui.screen.world.SelectWorldScreen
-import net.minecraft.util.Identifier
 import java.awt.Color
 
 class SEMainMenu : WindowScreen(ElementaVersion.V7) {
@@ -46,13 +44,6 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
     }
 
     init {
-        // Set the background image
-        val background = UIPanorama(
-            Identifier.of("packcore", "textures/gui/panorama_skyblock_hub")
-        ).constrain {
-            width = RelativeConstraint(1f)
-            height = RelativeConstraint(1f)
-        } childOf window
 
         // Button Container with Buttons
         val buttonContainer = UIContainer().constrain {
