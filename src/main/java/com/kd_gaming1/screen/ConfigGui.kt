@@ -156,7 +156,7 @@ class ConfigGui : WindowScreen(ElementaVersion.V7) {
         createToggleSetting(
             innerContainer,
             "Prompt Set Default Config",
-            "Show a prompt when launching the game to set the default configuration settings. This helps ensure your settings are properly configured.",
+            "!!! THIS FUNCTION IS CURRENTLY DISABLED !!! Clicking button will do nothing!",
             ModConfig.getPromptSetDefaultConfig()
         ) { newValue ->
             ModConfig.setPromptSetDefaultConfig(newValue)
@@ -164,17 +164,8 @@ class ConfigGui : WindowScreen(ElementaVersion.V7) {
 
         createToggleSetting(
             innerContainer,
-            "Show Optifine Guide",
-            "Display a helpful guide for installing and configuring Optifine when it's not detected. This ensures optimal performance and compatibility.",
-            ModConfig.getShowOptifineGuide()
-        ) { newValue ->
-            ModConfig.setShowOptifineGuide(newValue)
-        }
-
-        createToggleSetting(
-            innerContainer,
             "Enable Custom Main Menu",
-            "Use a custom main menu with a skyblock-themed background. This provides a fuller Skyblock Enhanced experience. Recommended",
+            "Use a custom main menu with a skyblock-themed background. This provides a better Skyblock Enhanced experience. Recommended",
             ModConfig.getEnableCustomMenu()
         ) { newValue ->
             ModConfig.setEnableCustomMenu(newValue)

@@ -13,8 +13,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 
-// Assuming MOD_ID is correctly defined in your Fabric mod's main class,
-// for example, in com.github.kdgaming0.packcore.PackCore
 import static com.kd_gaming1.PackCore.MOD_ID;
 
 public class ModConfig {
@@ -55,10 +53,6 @@ public class ModConfig {
             configData.addProperty("PromptSetDefaultConfig", true);
             updated = true;
         }
-        if (!configData.has("ShowOptifineGuide")) {
-            configData.addProperty("ShowOptifineGuide", true);
-            updated = true;
-        }
         if (!configData.has("EnableCustomMenu")) {
             configData.addProperty("EnableCustomMenu", true);
             updated = true;
@@ -75,7 +69,6 @@ public class ModConfig {
 
         // Add your config values here
         defaultConfig.addProperty("PromptSetDefaultConfig", true);
-        defaultConfig.addProperty("ShowOptifineGuide", true);
         defaultConfig.addProperty("EnableCustomMenu", true);
 
         configData = defaultConfig; // Set the default config as current
@@ -88,11 +81,6 @@ public class ModConfig {
         return configData.get("PromptSetDefaultConfig").getAsBoolean();
     }
 
-    public static boolean getShowOptifineGuide() {
-        if (configData == null) loadConfig();
-        return configData.get("ShowOptifineGuide").getAsBoolean();
-    }
-
     public static boolean getEnableCustomMenu() {
         if (configData == null) loadConfig();
         return configData.get("EnableCustomMenu").getAsBoolean();
@@ -102,12 +90,6 @@ public class ModConfig {
     public static void setPromptSetDefaultConfig(boolean value) {
         if (configData == null) loadConfig();
         configData.addProperty("PromptSetDefaultConfig", value);
-        saveConfig();
-    }
-
-    public static void setShowOptifineGuide(boolean value) {
-        if (configData == null) loadConfig();
-        configData.addProperty("ShowOptifineGuide", value);
         saveConfig();
     }
 

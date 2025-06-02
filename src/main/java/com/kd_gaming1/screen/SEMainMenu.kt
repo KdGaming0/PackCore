@@ -1,6 +1,5 @@
 package com.kd_gaming1.screen
 
-import com.kd_gaming1.config.ModConfig
 import com.kd_gaming1.screen.utils.CreateMenuButton
 import com.kd_gaming1.screen.utils.CreateMenuButtonInfo
 import com.kd_gaming1.screen.utils.CreateMenuButtonJoinServer
@@ -30,18 +29,6 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
     val changeLog = versions[2] ?: "No change log available."
 
     private var isInfoPanelVisible = false
-    private var optifineWindowOpen = false
-    private var optifineGuide: OptifineGuide? = null
-
-    private fun isOptiFineInstalled(): Boolean {
-        return try {
-            // Updated OptiFine detection for Fabric
-            FabricLoader.getInstance().isModLoaded("optifabric") ||
-                    FabricLoader.getInstance().isModLoaded("iris")
-        } catch (e: Exception) {
-            false
-        }
-    }
 
     init {
 
@@ -62,7 +49,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
         } childOf buttonContainer
 
         // Main Title
-        val title = UIImage.ofResource("/assets/packcore/textures/gui/SkyBlock-Enhanced-v5.png").constrain {
+        val title = UIImage.ofResource("/assets/packcore/textures/gui/SkyBlock-Enhanced-v6.png").constrain {
             x = CenterConstraint()
             y = 15.pixels()
             width = 180.pixels()
@@ -127,7 +114,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
         } childOf buttonContainer
         // Add buttons
         CreateWebsiteButton("GitHub", "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack") childOf websiteContainer
-        CreateWebsiteButton("Modrinth", "https://modrinth.com/modpack/skyblock-enhanced") childOf websiteContainer
+        CreateWebsiteButton("Modrinth", "https://modrinth.com/project/skyblock-enhanced-modern-edition") childOf websiteContainer
         CreateWebsiteButton("Help", "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack/discussions") childOf websiteContainer
 
         val infobox = UIContainer().constrain {
@@ -196,36 +183,6 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
                 setXAnimation(Animations.OUT_EXP, 0.45f, 0.pixels(true))
             }
             isInfoPanelVisible = true
-        }
-
-        CreateMenuButton("Config Management") {
-            // Updated for Minecraft 1.21.5 - use setScreen instead of displayGuiScreen
-            UMinecraft.getMinecraft().setScreen(ConfigManagementScreen())
-        }.constrain {
-            x = SiblingConstraint(padding = 0f, true)
-            y = CenterConstraint()
-        } childOf labeBox
-
-        if (!isOptiFineInstalled()) {
-            CreateMenuButtonInfo("Optifine Guide") {
-                if (!optifineWindowOpen) {
-                    optifineWindowOpen = true
-                    OptifineGuide().apply {
-                        constrain {
-                            width = RelativeConstraint(1f)
-                            height = RelativeConstraint(1f)
-                        }
-
-                        onWindowClose {
-                            optifineWindowOpen = false
-                            window.removeChild(this)
-                        }
-                    } childOf window
-                }
-            }.constrain {
-                x = SiblingConstraint(padding = 0f, true)
-                y = CenterConstraint()
-            } childOf labeBox
         }
 
         val versionText = UIWrappedText("Current Version: $currentVersion - Latest Version: $latestVersion").constrain {
@@ -367,27 +324,5 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             isHorizontal = false, // false for vertical scrolling
             hideWhenUseless = true // hide when content doesn't need scrolling
         )
-    }
-
-    override fun afterInitialization() {
-        // Only show if Optifine is not loaded AND the guide is enabled in config
-        if (!isOptiFineInstalled() &&
-            ModConfig.getShowOptifineGuide() &&
-            !optifineWindowOpen &&
-            optifineGuide == null) {
-
-            optifineGuide = OptifineGuide().apply {
-                constrain {
-                    width = RelativeConstraint(1f)
-                    height = RelativeConstraint(1f)
-                }
-
-                onWindowClose {
-                    optifineWindowOpen = false
-                    window.removeChild(optifineGuide!!)
-                    optifineGuide = null
-                }
-            } childOf window
-        }
     }
 }

@@ -46,11 +46,11 @@ public class ModpackInfo {
         JsonObject modpack = new JsonObject();
         modpack.addProperty("name", "SkyBlock Enhanced");
         modpack.addProperty("version", "1.0.0");
-        modpack.addProperty("minecraft_version", "1.8.9");
+        modpack.addProperty("minecraft_version", "1.21+");
         modpack.addProperty("author", "KdGaming0");
         modpack.addProperty("created_at", currentTime);
         modpack.addProperty("last_updated", currentTime);
-        modpack.addProperty("description", "A enhanced SkyBlock experience for Minecraft 1.8.9");
+        modpack.addProperty("description", "A enhanced SkyBlock experience for Minecraft 1.21+");
 
         // Update section
         JsonObject update = new JsonObject();
@@ -65,15 +65,10 @@ public class ModpackInfo {
         social.addProperty("issue_tracker", "");
         social.addProperty("wiki", "");
 
-        // How to install Optifine
-        JsonObject optifine = new JsonObject();
-        optifine.addProperty("Guide", "1.8.9_HD_U_L5");
-
         // Add all sections
         defaultConfig.add("modpack", modpack);
         defaultConfig.add("update", update);
         defaultConfig.add("social", social);
-        defaultConfig.add("optifine", optifine);
 
         try (FileWriter writer = new FileWriter(file)) {
             gson.toJson(defaultConfig, writer);
