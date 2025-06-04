@@ -15,6 +15,9 @@
 	"icon": "assets/packcore/icon.png",
 	"environment": "*",
 	"entrypoints": {
+		"preLaunch": [
+			"com.kd_gaming1.copysystem.PreLaunchInitializer"
+		],
 		"main": [
 			"com.kd_gaming1.PackCore",
 			{

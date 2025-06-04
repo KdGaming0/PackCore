@@ -1,5 +1,6 @@
 package com.kd_gaming1;
 
+import com.kd_gaming1.commands.PackCoreCommands;
 import com.kd_gaming1.screen.SEMainMenu;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -13,7 +14,7 @@ public class PackCore implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Hello Fabric world!");
+		PackCoreCommands.registerCommands();
 
 		// Register screen event to replace the main menu after initialization
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {

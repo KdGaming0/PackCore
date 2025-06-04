@@ -155,8 +155,8 @@ class ConfigGui : WindowScreen(ElementaVersion.V7) {
         // Create settings with improved styling
         createToggleSetting(
             innerContainer,
-            "Prompt Set Default Config",
-            "!!! THIS FUNCTION IS CURRENTLY DISABLED !!! Clicking button will do nothing!",
+            "Ask To Set Default Config",
+            "When enabled, you will promoted to copy configs from the archiver folder to the Minecraft instance folder. This allows you to easily enable configs you have saved with the help of /packcore archive - if you have not archived any configs, this will apply the default configs that comes with the modpack.",
             ModConfig.getPromptSetDefaultConfig()
         ) { newValue ->
             ModConfig.setPromptSetDefaultConfig(newValue)
