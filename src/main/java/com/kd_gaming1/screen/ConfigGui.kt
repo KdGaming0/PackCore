@@ -10,6 +10,18 @@ import gg.essential.elementa.dsl.*
 import gg.essential.elementa.effects.OutlineEffect
 import java.awt.Color
 
+private data class ToggleSetting(
+    val label: String,
+    val description: String,
+    val getValue: () -> Boolean,
+    val setValue: (Boolean) -> Unit
+)
+
+private object Theme {
+    val primary = Color(229, 160, 0, 180)
+    val highlight = Color(252, 189, 56)
+}
+
 class ConfigGui : WindowScreen(ElementaVersion.V7) {
     init {
 
@@ -152,23 +164,25 @@ class ConfigGui : WindowScreen(ElementaVersion.V7) {
             hideWhenUseless = true
         )
 
-        // Create settings with improved styling
-        createToggleSetting(
-            innerContainer,
-            "Ask To Set Default Config",
-            "When enabled, you will promoted to copy configs from the archiver folder to the Minecraft instance folder. This allows you to easily enable configs you have saved with the help of /packcore archive - if you have not archived any configs, this will apply the default configs that comes with the modpack.",
-            ModConfig.getPromptSetDefaultConfig()
-        ) { newValue ->
-            ModConfig.setPromptSetDefaultConfig(newValue)
-        }
-
-        createToggleSetting(
-            innerContainer,
-            "Enable Custom Main Menu",
-            "Use a custom main menu with a skyblock-themed background. This provides a better Skyblock Enhanced experience. Recommended",
-            ModConfig.getEnableCustomMenu()
-        ) { newValue ->
-            ModConfig.setEnableCustomMenu(newValue)
+        // Create settings with improved styling via configuration list
+        val toggleSettings = listOf(
+            ToggleSetting(
+                "Ask To Set Default Config",
+                "When enabled, you will promoted to copy configs from the archiver folder to the Minecraft instance folder. This allows you to easily enable configs you have saved with the help of /packcore archive - if you have not archived any configs, this will apply the default configs that comes with the modpack.",
+                ModConfig::getPromptSetDefaultConfig,
+                ModConfig::setPromptSetDefaultConfig
+            ),
+            ToggleSetting(
+                "Enable Custom Main Menu",
+                "Use a custom main menu with a skyblock-themed background. This provides a better Skyblock Enhanced experience. Recommended",
+                ModConfig::getEnableCustomMenu,
+                ModConfig::setEnableCustomMenu
+            )
+        )
+        toggleSettings.forEach { (label, desc, getValue, setValue) ->
+            createToggleSetting(innerContainer, label, desc, getValue()) { newValue ->
+                setValue(newValue)
+            }
         }
 
         // Save & Close button
@@ -177,7 +191,7 @@ class ConfigGui : WindowScreen(ElementaVersion.V7) {
             y = RelativeConstraint(1f) - 35.pixels()
             width = 120.pixels()
             height = 25.pixels()
-            color = Color(229, 160, 0, 180).toConstraint()
+            color = Theme.primary.toConstraint()
         }.also { button ->
             UIText("Save & Close").constrain {
                 x = CenterConstraint()
@@ -190,10 +204,10 @@ class ConfigGui : WindowScreen(ElementaVersion.V7) {
                 displayScreen(null)
             }
             button.onMouseEnter {
-                button.setColor(Color(252, 189, 56))
+                button.setColor(Theme.highlight)
             }
             button.onMouseLeave {
-                button.setColor(Color(229, 160, 0, 180))
+                button.setColor(Theme.primary)
             }
         } childOf settingsContainer
     }

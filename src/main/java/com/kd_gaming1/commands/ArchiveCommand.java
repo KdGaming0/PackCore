@@ -4,7 +4,6 @@ import com.kd_gaming1.copysystem.ZipArchiver;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -46,8 +45,7 @@ public class ArchiveCommand {
                                                 StringArgumentType.getString(context, "filename")))))));
     }
 
-    private static int executeArchive(CommandContext<ServerCommandSource> context, String customFilename)
-            throws CommandSyntaxException {
+    private static int executeArchive(CommandContext<ServerCommandSource> context, String customFilename) {
 
         String target = StringArgumentType.getString(context, "target");
         ServerCommandSource source = context.getSource();
@@ -115,9 +113,11 @@ public class ArchiveCommand {
         );
 
         if (success) {
-            String finalFilename = filename;
-            source.sendFeedback(() -> Text.literal("§aArchive created successfully: §f" + finalFilename), false);
-            source.sendFeedback(() -> Text.literal("§aLocation: §f" + customConfigFolder.getAbsolutePath()), false);
+            List<Text> lines = List.of(
+                Text.literal("§aArchive created successfully: §f" + filename),
+                Text.literal("§aLocation: §f" + customConfigFolder.getAbsolutePath())
+            );
+            CommandUtils.sendFeedbackLines(source, lines);
         } else {
             source.sendFeedback(() -> Text.literal("§cFailed to create archive. Check console for errors."), false);
         }
@@ -175,3 +175,4 @@ public class ArchiveCommand {
         return target.replace("-", "_") + "_backup_" + timestamp;
     }
 }
+
