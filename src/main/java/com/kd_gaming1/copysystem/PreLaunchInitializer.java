@@ -11,7 +11,7 @@ public class PreLaunchInitializer implements PreLaunchEntrypoint {
         // Get Minecraft root directory
         File minecraftRoot = FabricLoader.getInstance().getGameDir().toFile();
 
-        // Show the dialog and wait for user selection
+        // Show the dialog and wait for user selection (properly blocks without busy-wait)
         ZipSelectionDialog.showDialog(minecraftRoot);
 
         System.out.println("Configuration selection completed, continuing with Minecraft startup...");

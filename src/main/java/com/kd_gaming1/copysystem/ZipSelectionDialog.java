@@ -21,6 +21,8 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.swing.*;
 import java.awt.*;
 
@@ -48,6 +50,9 @@ public class ZipSelectionDialog extends JFrame {
     // Progress bar to show extraction progress
     private JProgressBar progressBar;
 
+    // Proper synchronization primitive instead of busy-wait
+    private final CountDownLatch completionLatch = new CountDownLatch(1);
+
     public ZipSelectionDialog(File minecraftRoot) {
         super("Skyblock Enhanced - ZIP File Selection");
 
@@ -58,6 +63,17 @@ public class ZipSelectionDialog extends JFrame {
         // Initialize lists
         this.officialZips = new ArrayList<>();
         this.customZips = new ArrayList<>();
+    }
+
+    /**
+     * Marks the dialog as finished and releases the waiting thread
+     */
+    private void markFinished() {
+        userFinished = true;
+        ModConfig.setPromptSetDefaultConfig(false);
+        dispose();
+        // Release the waiting thread
+        completionLatch.countDown();
     }
 
     /**
@@ -101,7 +117,7 @@ public class ZipSelectionDialog extends JFrame {
         // Check if dialog is disabled in config
         if (!ModConfig.getPromptSetDefaultConfig()) {
             System.out.println("Dialog is disabled in config. Skipping zip selection.");
-            userFinished = true;
+            markFinished();
             return;
         }
 
@@ -116,8 +132,7 @@ public class ZipSelectionDialog extends JFrame {
         } else if (officialCount == 0) {
             // No zip files at all, proceed with default settings
             System.out.println("No zip files found in Skyblock Enhanced folder. Using default settings.");
-            userFinished = true;
-            ModConfig.setPromptSetDefaultConfig(false); // Auto-disable after first run
+            markFinished();
         } else if (officialCount == 1) {
             // Exactly one official zip and no custom zips, auto-extract
             String zipToExtract = officialZips.get(0);
@@ -133,22 +148,40 @@ public class ZipSelectionDialog extends JFrame {
      * Performs automatic extraction when only one zip file is available.
      */
     private void performAutoExtraction(String zipFileName, String subfolderName) {
-        boolean success = ZipExtractor.extractZipContents(zipFileName, subfolderName, minecraftRoot,
-                new ExtractionProgressListener() {
-                    @Override
-                    public void onProgress(int progress) {
-                        System.out.println("Extraction progress: " + progress + "%");
-                    }
-                });
+        // Use SwingWorker to avoid blocking EDT but still block main thread via latch
+        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+            @Override
+            protected Boolean doInBackground() {
+                return ZipExtractor.extractZipContents(zipFileName, subfolderName, minecraftRoot,
+                        new ExtractionProgressListener() {
+                            @Override
+                            public void onProgress(int progress) {
+                                System.out.println("Extraction progress: " + progress + "%");
+                            }
+                        });
+            }
 
-        if (success) {
-            System.out.println("Auto-extraction of \"" + zipFileName + "\" completed successfully!");
-        } else {
-            System.err.println("Auto-extraction of \"" + zipFileName + "\" failed!");
-        }
+            @Override
+            protected void done() {
+                boolean success;
+                try {
+                    success = get();
+                } catch (Exception e) {
+                    success = false;
+                    e.printStackTrace();
+                }
 
-        userFinished = true;
-        ModConfig.setPromptSetDefaultConfig(false);
+                if (success) {
+                    System.out.println("Auto-extraction of \"" + zipFileName + "\" completed successfully!");
+                } else {
+                    System.err.println("Auto-extraction of \"" + zipFileName + "\" failed!");
+                }
+
+                markFinished(); // This will release the latch
+            }
+        };
+
+        worker.execute();
     }
 
     /**
@@ -242,14 +275,12 @@ public class ZipSelectionDialog extends JFrame {
         });
         buttonPanel.add(extractButton);
 
-// Skip button - make it clearer what happens
+        // Skip button - make it clearer what happens
         JButton closeButton = new JButton("Skip & Launch without Configs");
         closeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                userFinished = true;
-                ModConfig.setPromptSetDefaultConfig(false); // Disable prompt for next time
-                dispose(); // Just close the dialog - let Minecraft continue loading
+                markFinished(); // This will release the latch and continue Minecraft startup
             }
         });
         buttonPanel.add(closeButton);
@@ -345,9 +376,7 @@ public class ZipSelectionDialog extends JFrame {
                     progressBar.setVisible(false);
                     progressBar.setValue(0);
 
-                    userFinished = true;
-                    ModConfig.setPromptSetDefaultConfig(false); // Disable prompt for next time
-                    dispose(); // Close dialog to continue Minecraft startup
+                    markFinished(); // This will release the latch and continue Minecraft startup
                 }
             };
 
@@ -356,16 +385,22 @@ public class ZipSelectionDialog extends JFrame {
     }
 
     /**
-     * Blocks until the user finishes (selecting a ZIP or closing the window).
+     * Properly blocks until the user finishes using CountDownLatch instead of busy-wait.
+     * This prevents macOS freezing while still blocking Minecraft startup.
      */
     public void waitForUserSelection() {
-        while (!userFinished) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
+        try {
+            // Wait for the latch to be released (when user completes dialog)
+            // Timeout after 10 minutes as safety measure
+            boolean completed = completionLatch.await(10, TimeUnit.MINUTES);
+            if (!completed) {
+                System.err.println("WARNING: Dialog timed out after 10 minutes. Continuing with default settings.");
+                markFinished();
             }
+        } catch (InterruptedException e) {
+            System.err.println("Dialog wait was interrupted: " + e.getMessage());
+            Thread.currentThread().interrupt(); // Restore interrupted status
+            markFinished();
         }
     }
 
