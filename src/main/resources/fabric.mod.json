@@ -3,13 +3,13 @@
 	"id": "packcore",
 	"version": "${version}",
 	"name": "PackCore",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "PackCore is a companion mod for SkyBlock Enhanced modpacks, featuring a Hypixel SkyBlock-themed start menu, plus more!",
 	"authors": [
-		"Me!"
+		"Kd_Gaming1"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/project/V3FnL7QV",
+		"sources": "https://github.com/KdGaming0/PackCore"
 	},
 	"license": "PolyForm Perimeter License 1.0.1",
 	"icon": "assets/packcore/icon.png",
@@ -28,16 +28,6 @@
 	},
 	"mixins": [
 		"packcore.mixins.json"
-	],
-	"resource_packs": [
-		{
-			"type": "data",
-			"path": "data"
-		},
-		{
-			"type": "assets",
-			"path": "assets"
-		}
 	],
 	"depends": {
 		"fabricloader": ">=0.16.14",
