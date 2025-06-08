@@ -1,6 +1,7 @@
 package com.kd_gaming1;
 
 import com.kd_gaming1.commands.PackCoreCommands;
+import com.kd_gaming1.config.ModConfig;
 import com.kd_gaming1.screen.SEMainMenu;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -16,13 +17,16 @@ public class PackCore implements ModInitializer {
 	public void onInitialize() {
 		PackCoreCommands.registerCommands();
 
-		// Register screen event to replace the main menu after initialization
-		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-			// Check if the screen being opened is the vanilla main menu
-			if (screen instanceof TitleScreen) {
-				// Replace it with your custom menu on the next tick
-				client.execute(() -> client.setScreen(new SEMainMenu()));
-			}
-		});
+		// Check if the Custom Menu is enabled
+		if (ModConfig.getEnableCustomMenu()) {
+			// Register screen event to replace the main menu after initialization
+			ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+				// Check if the screen being opened is the vanilla main menu
+				if (screen instanceof TitleScreen) {
+					// Replace it with your custom menu on the next tick
+					client.execute(() -> client.setScreen(new SEMainMenu()));
+				}
+			});
+		}
 	}
 }

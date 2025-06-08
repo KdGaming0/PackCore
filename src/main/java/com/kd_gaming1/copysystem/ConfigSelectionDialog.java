@@ -66,9 +66,14 @@ public class ConfigSelectionDialog extends JFrame {
         progressBar.setString("Ready");
         progressBar.setVisible(false);
 
-        // Create buttons
-        extractButton = new JButton("Extract Selected Config");
-        skipButton = new JButton("Skip & Use Current Settings");
+        // Create buttons with more descriptive text
+        extractButton = new JButton("📦 Extract & Apply Selected Configuration");
+        skipButton = new JButton("⏭️ Skip & Continue with Current Settings");
+
+        // Make buttons a bit larger to accommodate the longer text
+        Dimension buttonSize = new Dimension(280, 35);
+        extractButton.setPreferredSize(buttonSize);
+        skipButton.setPreferredSize(buttonSize);
     }
 
     private void layoutComponents() {
@@ -88,30 +93,61 @@ public class ConfigSelectionDialog extends JFrame {
 
         pack();
         setLocationRelativeTo(null);
-        setResizable(false);
+        setResizable(true); // Allow resizing since we have more content now
+        setMinimumSize(new Dimension(700, 600)); // Set minimum size
     }
 
     private JPanel createHeaderPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        JLabel titleLabel = new JLabel("<html><h2>PackCore Configuration Setup</h2></html>");
+        JLabel titleLabel = new JLabel("<html><h2>PackCore Configuration Management</h2></html>");
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         JTextArea instructionsArea = new JTextArea(
-                "Choose a configuration to apply to Minecraft, or skip to use current settings.\n" +
-                        "Official configs are pre-made configurations, while custom configs are user-created.\n" +
-                        "After making your selection, please be patient as Minecraft loads."
+                "Welcome to PackCore! This dialog helps you manage your Minecraft mod configurations before the game starts.\n\n" +
+
+                        "📦 CONFIGURATION TYPES:\n" +
+                        "• Official Configs: Pre-made configurations that come with your modpack. These are tested setups " +
+                        "created by the modpack authors to provide specific gameplay experiences or performance optimizations.\n" +
+                        "• Custom Configs: Your personal configurations or ones shared by other players. These contain " +
+                        "customized mod settings that you or others have fine-tuned for specific preferences.\n\n" +
+
+                        "🎯 WHAT HAPPENS WHEN YOU:\n" +
+                        "• Extract: The selected configuration will overwrite your current mod settings. All config files " +
+                        "from the chosen archive will be applied to your Minecraft installation, giving you that specific setup.\n" +
+                        "• Skip: Minecraft will start with whatever settings are currently in place (either default settings " +
+                        "or previously applied configurations). No changes will be made.\n\n" +
+
+                        "⚠️ IMPORTANT NOTES:\n" +
+                        "• Extracting will REPLACE your current mod configurations - make a backup first if you want to keep them!\n" +
+                        "• After clicking Extract or Skip, please be patient! Minecraft may take 10-60 seconds to appear.\n" +
+                        "• The game is loading in the background even if nothing appears to happen immediately.\n\n" +
+
+                        "🔧 MANAGING CONFIGURATIONS:\n" +
+                        "• Create your own backup: Use '/packcore archive' in-game to save your current settings\n" +
+                        "• Share with friends: Custom config archives can be shared and imported by other players\n" +
+                        "• Disable this dialog: Use '/packcore dialog false' if you don't want to see this anymore\n" +
+                        "• Re-enable later: Use '/packcore dialog true' to bring this dialog back\n" +
+                        "• Get help: Use '/packcore help' to see all available commands and options"
         );
+
         instructionsArea.setEditable(false);
         instructionsArea.setOpaque(false);
         instructionsArea.setWrapStyleWord(true);
         instructionsArea.setLineWrap(true);
-        instructionsArea.setFont(instructionsArea.getFont().deriveFont(12f));
+        instructionsArea.setFont(instructionsArea.getFont().deriveFont(11f));
+        instructionsArea.setBackground(panel.getBackground());
+
+        // Create a scrollable text area for the instructions since they're longer now
+        JScrollPane instructionsScroll = new JScrollPane(instructionsArea);
+        instructionsScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        instructionsScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        instructionsScroll.setPreferredSize(new Dimension(600, 200));
 
         panel.add(titleLabel, BorderLayout.NORTH);
         panel.add(Box.createVerticalStrut(10), BorderLayout.CENTER);
-        panel.add(instructionsArea, BorderLayout.SOUTH);
+        panel.add(instructionsScroll, BorderLayout.SOUTH);
 
         return panel;
     }
@@ -123,12 +159,16 @@ public class ConfigSelectionDialog extends JFrame {
         // Official configs panel
         JPanel officialPanel = new JPanel(new BorderLayout());
         officialPanel.setBorder(BorderFactory.createTitledBorder("Official Configurations"));
-        officialPanel.add(new JScrollPane(officialConfigList), BorderLayout.CENTER);
+        JScrollPane officialScroll = new JScrollPane(officialConfigList);
+        officialScroll.setPreferredSize(new Dimension(250, 150));
+        officialPanel.add(officialScroll, BorderLayout.CENTER);
 
         // Custom configs panel
         JPanel customPanel = new JPanel(new BorderLayout());
         customPanel.setBorder(BorderFactory.createTitledBorder("Custom Configurations"));
-        customPanel.add(new JScrollPane(customConfigList), BorderLayout.CENTER);
+        JScrollPane customScroll = new JScrollPane(customConfigList);
+        customScroll.setPreferredSize(new Dimension(250, 150));
+        customPanel.add(customScroll, BorderLayout.CENTER);
 
         panel.add(officialPanel);
         panel.add(customPanel);
@@ -179,9 +219,25 @@ public class ConfigSelectionDialog extends JFrame {
 
         if (selectedConfig == null) {
             JOptionPane.showMessageDialog(this,
-                    "Please select a configuration to extract.",
-                    "No Selection",
+                    "Please select a configuration from either the Official or Custom list to extract.\n\n" +
+                            "Tip: Official configs are pre-made setups, while Custom configs are personalized configurations.",
+                    "No Configuration Selected",
                     JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Show confirmation dialog with more details
+        String configTypeText = configType == ConfigType.OFFICIAL ? "Official" : "Custom";
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to extract the " + configTypeText.toLowerCase() + " configuration:\n" +
+                        "\"" + selectedConfig.getDisplayName() + "\"?\n\n" +
+                        "This will replace your current mod settings with the settings from this configuration.\n" +
+                        "Make sure you've backed up any important configurations before proceeding!",
+                "Confirm Configuration Extraction",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
 
@@ -189,7 +245,7 @@ public class ConfigSelectionDialog extends JFrame {
         setControlsEnabled(false);
         progressBar.setVisible(true);
         progressBar.setIndeterminate(true);
-        progressBar.setString("Extracting configuration...");
+        progressBar.setString("Preparing to extract configuration files...");
 
         // Perform extraction in background thread
         SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
@@ -199,7 +255,7 @@ public class ConfigSelectionDialog extends JFrame {
                     SwingUtilities.invokeLater(() -> {
                         progressBar.setIndeterminate(false);
                         progressBar.setValue(progress);
-                        progressBar.setString("Extracting... " + progress + "%");
+                        progressBar.setString("Extracting configuration files... " + progress + "%");
                     });
                 });
             }
@@ -224,13 +280,21 @@ public class ConfigSelectionDialog extends JFrame {
 
         if (success) {
             JOptionPane.showMessageDialog(this,
-                    "Configuration '" + configName + "' extracted successfully!\nMinecraft will now continue loading.",
-                    "Extraction Complete",
+                    "✅ Configuration Successfully Applied!\n\n" +
+                            "The configuration '" + configName + "' has been extracted and applied to your Minecraft installation.\n" +
+                            "All mod settings from this configuration are now active.\n\n" +
+                            "Minecraft will continue loading shortly. Please be patient as this may take a moment.\n\n" +
+                            "Tip: You can create your own configuration backups using '/packcore archive' in-game.",
+                    "Configuration Extraction Complete",
                     JOptionPane.INFORMATION_MESSAGE);
             dialogResult.set(true);
         } else {
             JOptionPane.showMessageDialog(this,
-                    "Failed to extract configuration '" + configName + "'.\nPlease check the logs for details.",
+                    "❌ Configuration Extraction Failed\n\n" +
+                            "Failed to extract and apply the configuration '" + configName + "'.\n" +
+                            "Your current settings remain unchanged.\n\n" +
+                            "Please check the game logs for detailed error information, or try selecting a different configuration.\n" +
+                            "If the problem persists, contact the modpack author or check the PackCore documentation.",
                     "Extraction Failed",
                     JOptionPane.ERROR_MESSAGE);
             setControlsEnabled(true);
@@ -242,7 +306,13 @@ public class ConfigSelectionDialog extends JFrame {
 
     private void handleSkip() {
         int result = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to skip configuration extraction?\nMinecraft will use the current settings.",
+                "Skip Configuration Extraction?\n\n" +
+                        "Minecraft will start with your current mod settings. No configurations will be applied or changed.\n\n" +
+                        "You can always apply configurations later using:\n" +
+                        "• The main menu PackCore options\n" +
+                        "• The '/packcore' commands in-game\n" +
+                        "• Re-enabling this dialog with '/packcore dialog enabled/disabled'\n\n" +
+                        "Continue without applying any configurations?",
                 "Confirm Skip",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
