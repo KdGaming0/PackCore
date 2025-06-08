@@ -16,7 +16,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"preLaunch": [
-			"com.kd_gaming1.copysystem.PreLaunchInitializer"
+			"com.kd_gaming1.copysystem.PreLaunchConfigExtractor"
 		],
 		"main": [
 			"com.kd_gaming1.PackCore",
