@@ -43,6 +43,21 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
             } else if (result.hasAutoExtractConfig()) {
                 LOGGER.info("Auto-extracting single config: {}", result.getConfigName());
                 extractionService.extractConfig(result.getConfigName(), result.getConfigType());
+                boolean success = extractionService.extractConfig(result.getConfigName(), result.getConfigType());
+
+                if (success) {
+                    // Disable the prompt for next time, just like in the dialog flow
+                    LOGGER.info("Auto-extraction successful, disabling config prompt for next launch");
+                    ModConfig.setPromptSetDefaultConfig(false);
+                    ModConfig.saveConfig(); // Explicitly save the config
+
+                    try {
+                        // Short delay to ensure file write completes
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    }
             } else {
                 LOGGER.info("No configs found, using default settings");
             }
