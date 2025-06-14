@@ -3,5 +3,8 @@
   "plugin": "com.github.kdgaming0.packcore.init.AutoDiscoveryMixinPlugin",
   "refmap": "mixins.${modid}.refmap.json",
   "minVersion": "0.7",
-  "compatibilityLevel": "JAVA_8"
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "PackCoreShowConfigMixin"
+  ]
 }

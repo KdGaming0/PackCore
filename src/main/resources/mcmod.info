@@ -2,10 +2,10 @@
   {
     "modid": "${modid}",
     "name": "PackCore",
-    "description": "A mod that is used as an example.",
+    "description": "PackCore is a companion mod for SkyBlock Enhanced modpacks, featuring a Hypixel SkyBlock-themed start menu, plus more!",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "url": "https://github.com/romangraef/Forge1.8.9Template/",
+    "url": "https://modrinth.com/project/V3FnL7QV",
     "updateUrl": "",
     "authorList": [
       "Kd_Gaming1"
