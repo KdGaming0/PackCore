@@ -176,7 +176,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
         } childOf container
 
         CreateMenuButton("PackCore Options") {
-            UScreen.displayScreen(ConfigGui())
+            displayScreen(ConfigGui())
         } childOf container
     }
 
@@ -350,6 +350,9 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
      * Creates custom scroll bar for the info panel
      */
     private fun createScrollBar(panel: UIRoundedRectangle) {
+        // Find the scroll component that was created in createChangelogSection
+        val scrollComponent = panel.children.filterIsInstance<ScrollComponent>().firstOrNull() ?: return
+
         val scrollContainer = UIContainer().constrain {
             x = 0.pixels(true)
             y = 0.pixels()
@@ -357,47 +360,27 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             height = 100.percent()
         } childOf panel
 
-        createScrollTrack(scrollContainer)
         val scrollBar = createScrollBarComponent(scrollContainer)
-        setupScrollBarInteractions(scrollBar)
-    }
 
-    /**
-     * Creates visual track indicators for the scroll area
-     */
-    private fun createScrollTrack(container: UIContainer) {
-        repeat(20) { index ->
-            UIBlock(Color(255, 255, 255, 20)).constrain {
-                x = 2.pixels()
-                y = (index * 8).pixels()
-                width = 4.pixels()
-                height = 1.pixels()
-            } childOf container
-        }
+        // Connect the scroll bar to the actual scroll component
+        scrollComponent.setScrollBarComponent(
+            scrollBar, hideWhenUseless = true, isHorizontal = false
+        )
     }
 
     /**
      * Creates the actual scrollbar component
      */
     private fun createScrollBarComponent(container: UIContainer): UIContainer {
-        val scrollOutline = UIRoundedRectangle(4f).constrain {
-            x = 0.pixels()
-            y = 0.pixels()
-            width = 8.pixels()
-            height = 100.percent()
-            color = SCROLL_TRACK_COLOR.toConstraint()
-        } childOf container
-
-        scrollOutline effect OutlineEffect(Color(0, 0, 0, 40), 1f, drawInsideChildren = true)
-
         val scrollBar = UIContainer().constrain {
             x = 1.pixels()
             y = 0.pixels()
             width = 6.pixels()
             height = 30.percent()
-        } childOf scrollOutline
+        } childOf container
 
-        UIRoundedRectangle(4f).constrain {
+        // Create the draggable scroll bar background
+        UIRoundedRectangle(3f).constrain {
             x = 0.pixels()
             y = 0.pixels()
             width = 100.percent()
@@ -405,7 +388,6 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             color = SCROLL_BAR_COLOR.toConstraint()
         } childOf scrollBar
 
-        // Add grip indicators
         repeat(3) { index ->
             UIBlock(SCROLL_INDICATOR_COLOR).constrain {
                 x = 1.5.pixels()
@@ -415,29 +397,21 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             } childOf scrollBar
         }
 
-        return scrollBar
-    }
-
-    /**
-     * Sets up hover interactions for the scroll bar
-     */
-    private fun setupScrollBarInteractions(scrollBar: UIContainer) {
         scrollBar.onMouseEnter {
-            animateScrollBarColor(scrollBar, SCROLL_HOVER_COLOR)
+            children.filterIsInstance<UIBlock>().forEach { child ->
+                child.animate {
+                    setColorAnimation(Animations.OUT_EXP, 0.3f, SCROLL_HOVER_COLOR.toConstraint())
+                }
+            }
         }.onMouseLeave {
-            animateScrollBarColor(scrollBar, SCROLL_INDICATOR_COLOR)
-        }
-    }
-
-    /**
-     * Animates scroll bar color changes
-     */
-    private fun animateScrollBarColor(scrollBar: UIContainer, targetColor: Color) {
-        scrollBar.children.filterIsInstance<UIBlock>().forEach { child ->
-            child.animate {
-                setColorAnimation(Animations.OUT_EXP, 0.3f, targetColor.toConstraint())
+            children.filterIsInstance<UIBlock>().forEach { child ->
+                child.animate {
+                    setColorAnimation(Animations.OUT_EXP, 0.3f, SCROLL_INDICATOR_COLOR.toConstraint())
+                }
             }
         }
+
+        return scrollBar
     }
 
     /**
