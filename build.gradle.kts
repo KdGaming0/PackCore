@@ -91,8 +91,8 @@ dependencies {
     // If you don't want to log in with your real minecraft account, remove this line
     runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.2.1")
 
-    implementation("gg.essential:elementa:${elementaVersion}")
-    modImplementation("gg.essential:universalcraft-1.8.9-forge:$ucVersion")
+    shadowImpl("gg.essential:elementa:${elementaVersion}")
+    shadowImpl("gg.essential:universalcraft-1.8.9-forge:$ucVersion")
 
 }
 
@@ -145,16 +145,15 @@ tasks.shadowJar {
     destinationDirectory.set(layout.buildDirectory.dir("intermediates"))
     archiveClassifier.set("non-obfuscated-with-deps")
     configurations = listOf(shadowImpl)
+
+    relocate("gg.essential.elementa", "${baseGroup}.deps.elementa")
+    relocate("gg.essential.universalcraft", "${baseGroup}.deps.universalcraft")
+
     doLast {
         configurations.forEach {
             println("Copying dependencies into mod: ${it.files}")
         }
     }
-    // If you want to include other dependencies and shadow them, you can relocate them in here
-    fun relocate(name: String) = relocate(name, "$baseGroup.deps.$name")
-
-    relocate("gg.essential.elementa")
-    relocate("gg.essential.universalcraft")
 }
 
 tasks.assemble.get().dependsOn(tasks.remapJar)
