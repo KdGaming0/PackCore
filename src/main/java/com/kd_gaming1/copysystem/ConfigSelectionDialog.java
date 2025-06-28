@@ -109,7 +109,7 @@ public class ConfigSelectionDialog extends JFrame {
 
                         "📦 CONFIGURATION TYPES:\n" +
                         "• Official Configs: Pre-made configurations that come with your modpack. These are tested setups " +
-                        "created by the modpack authors to provide specific gameplay experiences or performance optimizations.\n" +
+                        "created by the modpack authors to provide specific gameplay experiences or performance optimizations. Please use when existing.\n" +
                         "• Custom Configs: Your personal configurations or ones shared by other players. These contain " +
                         "customized mod settings that you or others have fine-tuned for specific preferences.\n\n" +
 
@@ -231,7 +231,8 @@ public class ConfigSelectionDialog extends JFrame {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to extract the " + configTypeText.toLowerCase() + " configuration:\n" +
                         "\"" + selectedConfig.getDisplayName() + "\"?\n\n" +
-                        "This will replace your current mod settings with the settings from this configuration.\n" +
+                        "If it is the first time you open the game YOU want to EXTRACT as with out it you don't have any default configs set." +
+                        "If not this will replace your current mod settings with the settings from this configuration.\n" +
                         "Make sure you've backed up any important configurations before proceeding!",
                 "Confirm Configuration Extraction",
                 JOptionPane.YES_NO_OPTION,
@@ -307,7 +308,8 @@ public class ConfigSelectionDialog extends JFrame {
     private void handleSkip() {
         int result = JOptionPane.showConfirmDialog(this,
                 "Skip Configuration Extraction?\n\n" +
-                        "Minecraft will start with your current mod settings. No configurations will be applied or changed.\n\n" +
+                        "Minecraft will start with your current mod settings or default settings if first start up. No configurations will be applied or changed.\n" +
+                        "If you have downloaded a modpack with official settings, please select one of the options and extract! Not doing so can make your experience using the pack worse!\n\n" +
                         "You can always apply configurations later using:\n" +
                         "• The main menu PackCore options\n" +
                         "• The '/packcore' commands in-game\n" +
