@@ -31,10 +31,6 @@ public class ConfigSelectionDialog extends JFrame {
     // macOS-specific timeout mechanism
     private Timer macOSVisibilityTimer;
 
-    private final ConfigExtractionService extractionService;
-    private final CountDownLatch completionLatch = new CountDownLatch(1);
-    private final AtomicBoolean dialogResult = new AtomicBoolean(false);
-
     private JList<ConfigInfo> officialConfigList;
     private JList<ConfigInfo> customConfigList;
     private JProgressBar progressBar;
