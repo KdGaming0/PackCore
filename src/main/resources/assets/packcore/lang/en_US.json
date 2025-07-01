@@ -1,0 +1,18 @@
+{
+  "packcore.midnightconfig.title": "PackCore Configuration",
+
+  "packcore.midnightconfig.dialog_header": "📋 Dialog Settings",
+  "packcore.midnightconfig.prompt_default_config": "Show Config Selection Dialog",
+  "packcore.midnightconfig.promptSetDefaultConfig.tooltip": "Enable or disable the configuration selection dialog\nthat appears during game startup when multiple\nconfig files are detected.",
+  "packcore.midnightconfig.dialog_timeout": "Dialog Timeout (Minutes)",
+  "packcore.midnightconfig.dialogTimeoutMinutes.tooltip": "How long the config selection dialog will wait\nbefore timing out (1-60 minutes).",
+
+  "packcore.midnightconfig.ui_header": "🎨 User Interface Settings",
+  "packcore.midnightconfig.enable_custom_menu": "Enable Custom Main Menu",
+  "packcore.midnightconfig.enableCustomMenu.tooltip": "Replace the vanilla main menu with PackCore's\ncustom main menu design.\n\n⚠ Requires game restart to take effect.",
+  "packcore.midnightconfig.enable_custom_panorama": "Enable Custom Panorama",
+  "packcore.midnightconfig.enableCustomPanorama.tooltip": "Use PackCore's custom panorama background\ninstead of the default Minecraft panorama.\n\n⚠ Requires game restart to take effect.",
+
+  "packcore.midnightconfig.category.dialog": "Dialog",
+  "packcore.midnightconfig.category.ui": "User Interface"
+}

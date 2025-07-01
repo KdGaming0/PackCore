@@ -2,7 +2,8 @@ package com.kd_gaming1.copysystem;
 
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.fabricmc.loader.api.FabricLoader;
-import com.kd_gaming1.config.ModConfig;
+import com.kd_gaming1.config.PackCoreConfig;
+import eu.midnightdust.lib.config.MidnightConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,21 +17,20 @@ import java.util.concurrent.TimeUnit;
  */
 public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore-PreLaunch");
-    private static final int DIALOG_TIMEOUT_MINUTES = 10;
 
     @Override
     public void onPreLaunch() {
         LOGGER.info("Starting PackCore pre-launch configuration extraction...");
 
         try {
-            // Load configuration first
-            ModConfig.loadConfig();
+            // Initialize MidnightLib config early - this works in pre-launch!
+            MidnightConfig.init("packcore", PackCoreConfig.class);
 
             File minecraftRoot = FabricLoader.getInstance().getGameDir().toFile();
             ConfigExtractionService extractionService = new ConfigExtractionService(minecraftRoot);
 
-            // Check if we need to show the dialog
-            if (!ModConfig.getPromptSetDefaultConfig()) {
+            // Check if we need to show the dialog using MidnightLib
+            if (!PackCoreConfig.promptSetDefaultConfig) {
                 LOGGER.info("Config dialog disabled, skipping user prompt");
                 return;
             }
@@ -42,14 +42,14 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                 showConfigSelectionDialog(extractionService);
             } else if (result.hasAutoExtractConfig()) {
                 LOGGER.info("Auto-extracting single config: {}", result.getConfigName());
-                extractionService.extractConfig(result.getConfigName(), result.getConfigType());
                 boolean success = extractionService.extractConfig(result.getConfigName(), result.getConfigType());
 
                 if (success) {
-                    // Disable the prompt for next time, just like in the dialog flow
+                    // Disable the prompt for next time using MidnightLib
                     LOGGER.info("Auto-extraction successful, disabling config prompt for next launch");
-                    ModConfig.setPromptSetDefaultConfig(false);
-                    ModConfig.saveConfig(); // Explicitly save the config
+                    PackCoreConfig.promptSetDefaultConfig = false;
+                    PackCoreConfig.lastConfigApplied = result.getConfigName(); // Store last applied config
+                    MidnightConfig.write("packcore"); // Save using MidnightLib
 
                     try {
                         // Short delay to ensure file write completes
@@ -57,7 +57,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
-                    }
+                }
             } else {
                 LOGGER.info("No configs found, using default settings");
             }
@@ -79,7 +79,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
             });
 
             // Block until dialog completes or times out
-            Boolean success = dialogResult.get(DIALOG_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+            Boolean success = dialogResult.get(PackCoreConfig.dialogTimeoutMinutes, TimeUnit.MINUTES);
 
             if (success) {
                 LOGGER.info("Config selection completed successfully");

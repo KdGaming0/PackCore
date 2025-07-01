@@ -1,6 +1,7 @@
 package com.kd_gaming1.copysystem;
 
-import com.kd_gaming1.config.ModConfig;
+import com.kd_gaming1.config.PackCoreConfig;
+import eu.midnightdust.lib.config.MidnightConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Simplified dialog for config selection that focuses on user experience.
  * Uses proper threading and synchronization to avoid blocking issues.
+ * Now uses MidnightLib for configuration management.
  */
 public class ConfigSelectionDialog extends JFrame {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigSelectionDialog.class);
@@ -93,8 +95,8 @@ public class ConfigSelectionDialog extends JFrame {
 
         pack();
         setLocationRelativeTo(null);
-        setResizable(true); // Allow resizing since we have more content now
-        setMinimumSize(new Dimension(700, 600)); // Set minimum size
+        setResizable(true);
+        setMinimumSize(new Dimension(700, 600));
     }
 
     private JPanel createHeaderPanel() {
@@ -129,6 +131,7 @@ public class ConfigSelectionDialog extends JFrame {
                         "• Share with friends: Custom config archives can be shared and imported by other players\n" +
                         "• Disable this dialog: Use '/packcore dialog false' if you don't want to see this anymore\n" +
                         "• Re-enable later: Use '/packcore dialog true' to bring this dialog back\n" +
+                        "• Access config GUI: Use ModMenu or the main menu PackCore options\n" +
                         "• Get help: Use '/packcore help' to see all available commands and options"
         );
 
@@ -139,7 +142,6 @@ public class ConfigSelectionDialog extends JFrame {
         instructionsArea.setFont(instructionsArea.getFont().deriveFont(11f));
         instructionsArea.setBackground(panel.getBackground());
 
-        // Create a scrollable text area for the instructions since they're longer now
         JScrollPane instructionsScroll = new JScrollPane(instructionsArea);
         instructionsScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         instructionsScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -311,7 +313,8 @@ public class ConfigSelectionDialog extends JFrame {
                         "You can always apply configurations later using:\n" +
                         "• The main menu PackCore options\n" +
                         "• The '/packcore' commands in-game\n" +
-                        "• Re-enabling this dialog with '/packcore dialog enabled/disabled'\n\n" +
+                        "• Re-enabling this dialog with '/packcore dialog true'\n" +
+                        "• The ModMenu configuration screen\n\n" +
                         "Continue without applying any configurations?",
                 "Confirm Skip",
                 JOptionPane.YES_NO_OPTION,
@@ -324,8 +327,9 @@ public class ConfigSelectionDialog extends JFrame {
     }
 
     private void finishDialog() {
-        // Disable the prompt for next time
-        ModConfig.setPromptSetDefaultConfig(false);
+        // Disable the prompt for next time using MidnightLib
+        PackCoreConfig.promptSetDefaultConfig = false;
+        MidnightConfig.write("packcore");
 
         // Close dialog and release waiting thread
         setVisible(false);

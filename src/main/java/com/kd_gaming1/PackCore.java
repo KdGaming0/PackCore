@@ -1,11 +1,9 @@
 package com.kd_gaming1;
 
 import com.kd_gaming1.commands.PackCoreCommands;
-import com.kd_gaming1.config.ModConfig;
-import com.kd_gaming1.screen.SEMainMenu;
+import com.kd_gaming1.config.PackCoreConfig;
+import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.gui.screen.TitleScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,18 +13,12 @@ public class PackCore implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		// MidnightLib config is already initialized in PreLaunch, but we can safely call it again
+		MidnightConfig.init(MOD_ID, PackCoreConfig.class);
+
+		// Register commands
 		PackCoreCommands.registerCommands();
 
-		// Check if the Custom Menu is enabled
-		if (ModConfig.getEnableCustomMenu()) {
-			// Register screen event to replace the main menu after initialization
-			ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-				// Check if the screen being opened is the vanilla main menu
-				if (screen instanceof TitleScreen) {
-					// Replace it with your custom menu on the next tick
-					client.execute(() -> client.setScreen(new SEMainMenu()));
-				}
-			});
-		}
+		LOGGER.info("PackCore initialized!");
 	}
 }

@@ -21,6 +21,16 @@ repositories {
 		url "https://repo.essential.gg/repository/maven-public"
 	}
 	mavenCentral()
+	maven {
+		url = 'https://maven.terraformersmc.com/'
+	}
+	maven {
+		url = "https://api.modrinth.com/maven"
+	}
+	maven {
+		name = "Terraformers"
+		url = "https://maven.terraformersmc.com/"
+	}
 }
 
 dependencies {
@@ -35,6 +45,10 @@ dependencies {
 	implementation include ("gg.essential:elementa:${project.elementa_version}")
 	modImplementation include ("gg.essential:universalcraft-1.21.5-fabric:${project.universalcraft_version}")
 	modImplementation("net.fabricmc:fabric-language-kotlin:1.13.3+kotlin.2.1.21")
+
+	modImplementation "com.terraformersmc:Vistas:${project.vistas_version}"
+	modImplementation include ("maven.modrinth:midnightlib:${project.midnightlib_version}")
+	modRuntimeOnly ("com.terraformersmc:modmenu:${project.modmenu_version}")
 }
 
 processResources {

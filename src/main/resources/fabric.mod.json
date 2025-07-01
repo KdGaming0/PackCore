@@ -24,6 +24,16 @@
 				"adapter": "kotlin",
 				"value": "com.kd_gaming1.PackCore"
 			}
+		],
+		"client": [
+			"com.kd_gaming1.PackCoreClient",
+			{
+				"adapter": "kotlin",
+				"value": "com.kd_gaming1.PackCoreClient"
+			}
+		],
+		"vistas": [
+			"com.kd_gaming1.integration.VistasIntegration"
 		]
 	},
 	"mixins": [

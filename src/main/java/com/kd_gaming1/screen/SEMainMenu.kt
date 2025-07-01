@@ -15,7 +15,6 @@ import gg.essential.elementa.dsl.*
 import gg.essential.elementa.effects.OutlineEffect
 import gg.essential.elementa.markdown.MarkdownComponent
 import gg.essential.universal.UMinecraft
-import gg.essential.universal.UScreen
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen
 import net.minecraft.client.gui.screen.option.OptionsScreen
@@ -29,6 +28,9 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
     val changeLog = versions[2] ?: "No change log available."
 
     private var isInfoPanelVisible = false
+
+    // Check if ModMenu is installed
+    private val isModMenuInstalled = FabricLoader.getInstance().isModLoaded("modmenu")
 
     init {
 
@@ -89,9 +91,21 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             UMinecraft.getMinecraft().setScreen(OptionsScreen(this, UMinecraft.getMinecraft().options))
         } childOf buttonContainer3
 
-        CreateMenuButton("PackCore Options") {
-            UScreen.displayScreen(ConfigGui())
-        } childOf buttonContainer3
+        // Only show Mods button if ModMenu is installed
+        if (isModMenuInstalled) {
+            CreateMenuButton("Mods") {
+                try {
+                    // Dynamically load ModMenu screen to avoid compile-time dependency
+                    val modMenuScreenClass = Class.forName("com.terraformersmc.modmenu.gui.ModsScreen")
+                    val constructor = modMenuScreenClass.getConstructor(net.minecraft.client.gui.screen.Screen::class.java)
+                    val modsScreen = constructor.newInstance(this) as net.minecraft.client.gui.screen.Screen
+                    UMinecraft.getMinecraft().setScreen(modsScreen)
+                } catch (e: Exception) {
+                    // This should not happen if ModMenu is properly installed, but just in case
+                    println("Failed to open ModMenu screen: ${e.message}")
+                }
+            } childOf buttonContainer3
+        }
 
         val buttonContainer4 = UIContainer().constrain {
             x = CenterConstraint()
