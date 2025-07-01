@@ -1,6 +1,8 @@
 package com.kd_gaming1.copysystem;
 
 import com.kd_gaming1.config.PackCoreConfig;
+import com.kd_gaming1.utils.MacOSWindowUtils;
+import com.kd_gaming1.utils.PlatformUtils;
 import eu.midnightdust.lib.config.MidnightConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +18,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Simplified dialog for config selection that focuses on user experience.
  * Uses proper threading and synchronization to avoid blocking issues.
+ * Now includes macOS-specific improvements for better window visibility and focus.
  * Now uses MidnightLib for configuration management.
  */
 public class ConfigSelectionDialog extends JFrame {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigSelectionDialog.class);
+
+    private final ConfigExtractionService extractionService;
+    private final CountDownLatch completionLatch = new CountDownLatch(1);
+    private final AtomicBoolean dialogResult = new AtomicBoolean(false);
+    
+    // macOS-specific timeout mechanism
+    private Timer macOSVisibilityTimer;
 
     private final ConfigExtractionService extractionService;
     private final CountDownLatch completionLatch = new CountDownLatch(1);
@@ -35,6 +45,9 @@ public class ConfigSelectionDialog extends JFrame {
         super("PackCore - Configuration Selection");
         this.extractionService = extractionService;
 
+        // Log platform information for debugging
+        PlatformUtils.logPlatformInfo();
+
         // Set up the dialog to be modal-like behavior
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -47,6 +60,9 @@ public class ConfigSelectionDialog extends JFrame {
         initializeComponents();
         layoutComponents();
         setupEventHandlers();
+        
+        // Apply macOS-specific window configuration
+        configureMacOSWindow();
     }
 
     private void initializeComponents() {
@@ -106,6 +122,18 @@ public class ConfigSelectionDialog extends JFrame {
         JLabel titleLabel = new JLabel("<html><h2>PackCore Configuration Management</h2></html>");
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
+        // Create platform-specific keyboard shortcut text
+        String keyboardShortcuts = "";
+        if (PlatformUtils.isMacOS()) {
+            keyboardShortcuts = "\n\n🖥️ macOS KEYBOARD SHORTCUTS:\n" +
+                "• Cmd+Enter: Extract selected configuration\n" +
+                "• Cmd+S or Escape: Skip and continue\n" +
+                "• This dialog will show system notifications to help you find it if hidden\n";
+        } else if (PlatformUtils.isWindows() || PlatformUtils.isLinux()) {
+            keyboardShortcuts = "\n\n⌨️ KEYBOARD SHORTCUTS:\n" +
+                "• Escape: Skip and continue\n";
+        }
+
         JTextArea instructionsArea = new JTextArea(
                 "Welcome to PackCore! This dialog helps you manage your Minecraft mod configurations before the game starts.\n\n" +
 
@@ -132,7 +160,8 @@ public class ConfigSelectionDialog extends JFrame {
                         "• Disable this dialog: Use '/packcore dialog false' if you don't want to see this anymore\n" +
                         "• Re-enable later: Use '/packcore dialog true' to bring this dialog back\n" +
                         "• Access config GUI: Use ModMenu or the main menu PackCore options\n" +
-                        "• Get help: Use '/packcore help' to see all available commands and options"
+                        "• Get help: Use '/packcore help' to see all available commands and options" +
+                        keyboardShortcuts
         );
 
         instructionsArea.setEditable(false);
@@ -214,12 +243,44 @@ public class ConfigSelectionDialog extends JFrame {
         extractButton.addActionListener(e -> handleExtraction());
         skipButton.addActionListener(e -> handleSkip());
     }
+    
+    /**
+     * Configure macOS-specific window properties and behavior
+     */
+    private void configureMacOSWindow() {
+        if (!PlatformUtils.isMacOS()) {
+            LOGGER.debug("Not running on macOS, skipping macOS-specific configuration");
+            return;
+        }
+        
+        LOGGER.info("Configuring dialog for macOS compatibility");
+        
+        // Apply macOS window configuration
+        MacOSWindowUtils.configureMacOSWindow(this);
+        
+        // Add macOS keyboard shortcuts
+        MacOSWindowUtils.addMacOSKeyboardShortcuts(this, 
+            this::handleExtraction, 
+            this::handleSkip);
+        
+        // Show system notification when dialog opens
+        SwingUtilities.invokeLater(() -> {
+            MacOSWindowUtils.showSystemNotification(
+                "PackCore Configuration", 
+                "Configuration selection dialog is open. Please check your screen.");
+            MacOSWindowUtils.requestDockAttention();
+        });
+    }
 
     private void handleExtraction() {
         ConfigInfo selectedConfig = getSelectedConfig();
         ConfigType configType = getSelectedConfigType();
+        
+        LOGGER.info("User initiated extraction process. Platform: {}, Selected config: {}", 
+                   PlatformUtils.getOSName(), selectedConfig != null ? selectedConfig.getName() : "none");
 
         if (selectedConfig == null) {
+            LOGGER.warn("No configuration selected for extraction");
             JOptionPane.showMessageDialog(this,
                     "Please select a configuration from either the Official or Custom list to extract.\n\n" +
                             "Tip: Official configs are pre-made setups, while Custom configs are personalized configurations.",
@@ -308,6 +369,8 @@ public class ConfigSelectionDialog extends JFrame {
     }
 
     private void handleSkip() {
+        LOGGER.info("User initiated skip process. Platform: {}", PlatformUtils.getOSName());
+        
         int result = JOptionPane.showConfirmDialog(this,
                 "Skip Configuration Extraction?\n\n" +
                         "Minecraft will start with your current mod settings or default settings if first start up. No configurations will be applied or changed.\n" +
@@ -323,20 +386,35 @@ public class ConfigSelectionDialog extends JFrame {
                 JOptionPane.QUESTION_MESSAGE);
 
         if (result == JOptionPane.YES_OPTION) {
+            LOGGER.info("User confirmed skip action");
             dialogResult.set(true);
             finishDialog();
+        } else {
+            LOGGER.debug("User cancelled skip action");
         }
     }
 
     private void finishDialog() {
+        LOGGER.info("Finishing dialog on platform: {}", PlatformUtils.getOSName());
+        
+        // Clean up macOS-specific timers
+        if (macOSVisibilityTimer != null && macOSVisibilityTimer.isRunning()) {
+            macOSVisibilityTimer.stop();
+            LOGGER.debug("Stopped macOS visibility timer");
+        }
+        
         // Disable the prompt for next time using MidnightLib
         PackCoreConfig.promptSetDefaultConfig = false;
         MidnightConfig.write("packcore");
+        
+        LOGGER.debug("Disabled configuration prompt for future launches");
 
         // Close dialog and release waiting thread
         setVisible(false);
         dispose();
         completionLatch.countDown();
+        
+        LOGGER.info("Dialog closed successfully");
     }
 
     private ConfigInfo getSelectedConfig() {
@@ -362,9 +440,23 @@ public class ConfigSelectionDialog extends JFrame {
     }
 
     /**
-     * Shows the dialog and blocks until user completes the selection
+     * Shows the dialog and blocks until user completes the selection.
+     * Includes macOS-specific enhancements for better window visibility.
      */
     public boolean showAndWait() {
+        LOGGER.info("Showing configuration selection dialog on platform: {}", PlatformUtils.getOSName());
+        
+        if (PlatformUtils.isMacOS()) {
+            return showAndWaitMacOS();
+        } else {
+            return showAndWaitStandard();
+        }
+    }
+    
+    /**
+     * Standard showAndWait implementation for Windows and Linux
+     */
+    private boolean showAndWaitStandard() {
         SwingUtilities.invokeLater(() -> setVisible(true));
 
         try {
@@ -374,6 +466,53 @@ public class ConfigSelectionDialog extends JFrame {
             Thread.currentThread().interrupt();
             LOGGER.error("Dialog was interrupted", e);
             return false;
+        }
+    }
+    
+    /**
+     * macOS-specific showAndWait implementation with enhanced window management
+     */
+    private boolean showAndWaitMacOS() {
+        LOGGER.info("Using macOS-specific window management");
+        
+        // Set up visibility timeout for macOS
+        macOSVisibilityTimer = MacOSWindowUtils.createVisibilityTimeout(this, () -> {
+            LOGGER.warn("Dialog may be hidden on macOS, attempting to bring to front");
+            SwingUtilities.invokeLater(() -> {
+                MacOSWindowUtils.configureMacOSWindow(this);
+                MacOSWindowUtils.showSystemNotification(
+                    "PackCore Dialog Hidden", 
+                    "The configuration dialog might be hidden. Please check all windows or press Cmd+Tab to find it.");
+            });
+        });
+        
+        SwingUtilities.invokeLater(() -> {
+            setVisible(true);
+            
+            // Additional macOS window focusing
+            toFront();
+            requestFocus();
+            
+            // Start the visibility timer
+            if (macOSVisibilityTimer != null) {
+                macOSVisibilityTimer.start();
+            }
+            
+            LOGGER.debug("Dialog made visible with macOS enhancements");
+        });
+
+        try {
+            completionLatch.await();
+            return dialogResult.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Dialog was interrupted", e);
+            return false;
+        } finally {
+            // Clean up timer
+            if (macOSVisibilityTimer != null && macOSVisibilityTimer.isRunning()) {
+                macOSVisibilityTimer.stop();
+            }
         }
     }
 
