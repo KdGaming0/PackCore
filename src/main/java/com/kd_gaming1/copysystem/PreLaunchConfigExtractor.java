@@ -7,13 +7,18 @@ import eu.midnightdust.lib.config.MidnightConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Pre-launch entrypoint that handles configuration extraction before Minecraft starts.
  * This ensures all necessary configs are in place before the game initializes.
+ * Enhanced with platform-specific behavior for better user experience.
  */
 public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore-PreLaunch");
@@ -35,11 +40,21 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                 return;
             }
 
+            String osName = System.getProperty("os.name").toLowerCase();
+            LOGGER.info("Detected operating system: {}", osName);
+
             ConfigSelectionResult result = extractionService.selectAndExtractConfig();
 
             if (result.shouldShowDialog()) {
-                LOGGER.info("Multiple configs found, showing selection dialog");
-                showConfigSelectionDialog(extractionService);
+                LOGGER.info("Multiple configs found");
+
+                if (osName.contains("mac")) {
+                    // macOS: Auto-apply 1080p config
+                    handleMacOSAutoConfig(extractionService);
+                } else {
+                    // Other platforms: Show dialog with notification
+                    showConfigSelectionDialog(extractionService);
+                }
             } else if (result.hasAutoExtractConfig()) {
                 LOGGER.info("Auto-extracting single config: {}", result.getConfigName());
                 boolean success = extractionService.extractConfig(result.getConfigName(), result.getConfigType());
@@ -70,8 +85,113 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
         LOGGER.info("Pre-launch configuration extraction completed");
     }
 
+    private void handleMacOSAutoConfig(ConfigExtractionService extractionService) {
+        LOGGER.info("Handling macOS auto-configuration");
+
+        try {
+            List<ConfigInfo> officialConfigs = extractionService.getOfficialConfigs();
+
+            // Look for the 1080p config specifically
+            ConfigInfo targetConfig = null;
+            for (ConfigInfo config : officialConfigs) {
+                if (config.getName().contains("1080p") || config.getName().contains("SE-1080p_screen_size-Default_Configs")) {
+                    targetConfig = config;
+                    break;
+                }
+            }
+
+            if (targetConfig != null) {
+                LOGGER.info("Auto-applying 1080p configuration on macOS: {}", targetConfig.getName());
+
+                boolean success = extractionService.extractConfig(targetConfig.getName(), ConfigType.OFFICIAL);
+
+                if (success) {
+                    LOGGER.info("Successfully auto-applied 1080p configuration on macOS");
+
+                    // Disable the prompt for next time
+                    PackCoreConfig.promptSetDefaultConfig = false;
+                    PackCoreConfig.lastConfigApplied = targetConfig.getName();
+                    MidnightConfig.write("packcore");
+
+                    // Show a system notification on macOS
+                    showMacOSNotification(targetConfig.getDisplayName());
+
+                } else {
+                    LOGGER.error("Failed to auto-apply 1080p configuration on macOS");
+                }
+            } else {
+                LOGGER.warn("1080p configuration not found, falling back to first available config");
+
+                // Fallback to first official config
+                if (!officialConfigs.isEmpty()) {
+                    ConfigInfo firstConfig = officialConfigs.get(0);
+                    LOGGER.info("Auto-applying first available config on macOS: {}", firstConfig.getName());
+
+                    boolean success = extractionService.extractConfig(firstConfig.getName(), ConfigType.OFFICIAL);
+                    if (success) {
+                        PackCoreConfig.promptSetDefaultConfig = false;
+                        PackCoreConfig.lastConfigApplied = firstConfig.getName();
+                        MidnightConfig.write("packcore");
+                        showMacOSNotification(firstConfig.getDisplayName());
+                    }
+                } else {
+                    LOGGER.warn("No official configurations found on macOS");
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error during macOS auto-configuration", e);
+        }
+    }
+
+    private void showMacOSNotification(String configName) {
+        try {
+            if (SystemTray.isSupported()) {
+                SystemTray tray = SystemTray.getSystemTray();
+
+                // Create tray icon
+                TrayIcon trayIcon = new TrayIcon(createPackCoreIcon().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+                trayIcon.setImageAutoSize(true);
+                trayIcon.setToolTip("PackCore Configuration Applied");
+
+                try {
+                    tray.add(trayIcon);
+                } catch (AWTException ex) {
+                    LOGGER.debug("Could not add tray icon: {}", ex.getMessage());
+                }
+
+                trayIcon.displayMessage(
+                        "PackCore Configuration Applied",
+                        "Applied configuration: " + configName + "\nMinecraft will continue loading.",
+                        TrayIcon.MessageType.INFO
+                );
+
+                LOGGER.info("macOS system notification displayed");
+
+                // Remove tray icon after a delay
+                Timer removeTimer = new Timer(5000, e -> {
+                    try {
+                        tray.remove(trayIcon);
+                    } catch (Exception ex) {
+                        // Ignore
+                    }
+                });
+                removeTimer.setRepeats(false);
+                removeTimer.start();
+
+            } else {
+                LOGGER.debug("System tray not supported on macOS");
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Could not show macOS notification: {}", e.getMessage());
+        }
+    }
+
     private void showConfigSelectionDialog(ConfigExtractionService extractionService) {
         try {
+            // Show system notification first
+            showSystemNotification();
+
             // Use CompletableFuture to handle the dialog asynchronously but block the main thread
             CompletableFuture<Boolean> dialogResult = CompletableFuture.supplyAsync(() -> {
                 ConfigSelectionDialog dialog = new ConfigSelectionDialog(extractionService);
@@ -90,5 +210,87 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
         } catch (Exception e) {
             LOGGER.error("Error showing config selection dialog", e);
         }
+    }
+
+    private void showSystemNotification() {
+        try {
+            if (SystemTray.isSupported()) {
+                SystemTray tray = SystemTray.getSystemTray();
+
+                // Create tray icon
+                TrayIcon trayIcon = new TrayIcon(createPackCoreIcon().getScaledInstance(16, 16, Image.SCALE_SMOOTH));
+                trayIcon.setImageAutoSize(true);
+                trayIcon.setToolTip("PackCore Configuration Required");
+
+                // Add click listener to bring dialog to front
+                trayIcon.addActionListener(e -> {
+                    // Try to find and focus any PackCore windows
+                    SwingUtilities.invokeLater(() -> {
+                        Window[] windows = Window.getWindows();
+                        for (Window window : windows) {
+                            if (window instanceof JFrame) {
+                                JFrame frame = (JFrame) window;
+                                if (frame.getTitle().contains("PackCore")) {
+                                    frame.setExtendedState(JFrame.NORMAL);
+                                    frame.toFront();
+                                    frame.requestFocus();
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                });
+
+                try {
+                    tray.add(trayIcon);
+                } catch (AWTException ex) {
+                    LOGGER.debug("Could not add tray icon: {}", ex.getMessage());
+                }
+
+                trayIcon.displayMessage(
+                        "PackCore Configuration Required",
+                        "Minecraft is waiting for your configuration choice. Check for the PackCore dialog window.",
+                        TrayIcon.MessageType.WARNING
+                );
+
+                LOGGER.info("System notification displayed");
+
+                // Remove tray icon after a delay
+                Timer removeTimer = new Timer(10000, e -> {
+                    try {
+                        tray.remove(trayIcon);
+                    } catch (Exception ex) {
+                        // Ignore
+                    }
+                });
+                removeTimer.setRepeats(false);
+                removeTimer.start();
+
+            } else {
+                LOGGER.debug("System tray not supported");
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Could not show system notification: {}", e.getMessage());
+        }
+    }
+
+    private Image createPackCoreIcon() {
+        BufferedImage icon = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = icon.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Create a distinctive PackCore icon
+        g2.setColor(new Color(0, 123, 255));
+        g2.fillOval(2, 2, 28, 28);
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        FontMetrics fm = g2.getFontMetrics();
+        String text = "PC";
+        int x = (32 - fm.stringWidth(text)) / 2;
+        int y = (32 + fm.getAscent()) / 2;
+        g2.drawString(text, x, y);
+        g2.dispose();
+
+        return icon;
     }
 }

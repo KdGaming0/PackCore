@@ -233,7 +233,7 @@ public class ConfigSelectionDialog extends JFrame {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to extract the " + configTypeText.toLowerCase() + " configuration:\n" +
                         "\"" + selectedConfig.getDisplayName() + "\"?\n\n" +
-                        "If it is the first time you open the game YOU want to EXTRACT as with out it you don't have any default configs set." +
+                        "If it is the first time you open the game YOU want to EXTRACT as without it you don't have any default configs set.\n" +
                         "If not this will replace your current mod settings with the settings from this configuration.\n" +
                         "Make sure you've backed up any important configurations before proceeding!",
                 "Confirm Configuration Extraction",
