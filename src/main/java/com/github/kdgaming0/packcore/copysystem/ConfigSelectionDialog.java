@@ -34,6 +34,10 @@ public class ConfigSelectionDialog extends JFrame {
         super("PackCore - Configuration Selection");
         this.extractionService = extractionService;
 
+        // Detect operating system for macOS-specific initialization
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        boolean isMacOS = osName.contains("mac") || osName.contains("darwin");
+        
         // Set up the dialog to be modal-like behavior
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -42,6 +46,14 @@ public class ConfigSelectionDialog extends JFrame {
                 handleSkip();
             }
         });
+
+        // macOS-specific initialization
+        if (isMacOS) {
+            LOGGER.info("Initializing ConfigSelectionDialog with macOS-specific settings");
+            // Ensure the dialog can receive focus properly on macOS
+            setFocusableWindowState(true);
+            setAutoRequestFocus(true);
+        }
 
         initializeComponents();
         layoutComponents();
@@ -333,10 +345,19 @@ public class ConfigSelectionDialog extends JFrame {
         // Disable the prompt for next time
         ModConfig.setPromptSetDefaultConfig(false);
 
+        // macOS cleanup - ensure always on top is disabled before closing
+        try {
+            setAlwaysOnTop(false);
+        } catch (Exception e) {
+            LOGGER.debug("Error disabling always on top during dialog cleanup", e);
+        }
+
         // Close dialog and release waiting thread
         setVisible(false);
         dispose();
         completionLatch.countDown();
+        
+        LOGGER.info("ConfigSelectionDialog closed successfully");
     }
 
     private ConfigInfo getSelectedConfig() {
@@ -365,7 +386,74 @@ public class ConfigSelectionDialog extends JFrame {
      * Shows the dialog and blocks until user completes the selection
      */
     public boolean showAndWait() {
-        SwingUtilities.invokeLater(() -> setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // Detect operating system for macOS-specific behavior
+                String osName = System.getProperty("os.name", "").toLowerCase();
+                boolean isMacOS = osName.contains("mac") || osName.contains("darwin");
+                
+                LOGGER.info("Showing ConfigSelectionDialog (OS: {}, isMacOS: {})", osName, isMacOS);
+                
+                if (isMacOS) {
+                    // macOS-specific window behavior to ensure dialog is visible and focused
+                    LOGGER.info("Applying macOS-specific window behavior for dialog visibility");
+                    
+                    // Set always on top to prevent dialog from hiding behind other windows
+                    setAlwaysOnTop(true);
+                    
+                    // Make sure dialog is visible first
+                    setVisible(true);
+                    
+                    // Bring window to front and request focus
+                    toFront();
+                    requestFocus();
+                    
+                    // Additional macOS workaround: slight delay then repeat focus calls
+                    Timer focusTimer = new Timer(100, e -> {
+                        toFront();
+                        requestFocus();
+                        // After ensuring focus, disable always on top to allow normal window behavior
+                        setAlwaysOnTop(false);
+                        ((Timer) e.getSource()).stop();
+                    });
+                    focusTimer.setRepeats(false);
+                    focusTimer.start();
+                    
+                    LOGGER.info("macOS dialog focus behavior applied successfully");
+                } else {
+                    // Standard behavior for other operating systems
+                    setVisible(true);
+                    LOGGER.info("Standard dialog visibility applied for non-macOS system");
+                }
+                
+                // Add timeout mechanism - warn user if dialog has been open too long
+                Timer timeoutWarningTimer = new Timer(30000, e -> { // 30 seconds
+                    LOGGER.warn("ConfigSelectionDialog has been open for 30 seconds - user may not see the dialog");
+                    if (isMacOS) {
+                        // For macOS, try to bring dialog to front again
+                        setAlwaysOnTop(true);
+                        toFront();
+                        requestFocus();
+                        
+                        // Reset after a brief moment
+                        Timer resetTimer = new Timer(1000, resetEvent -> {
+                            setAlwaysOnTop(false);
+                            ((Timer) resetEvent.getSource()).stop();
+                        });
+                        resetTimer.setRepeats(false);
+                        resetTimer.start();
+                    }
+                    ((Timer) e.getSource()).stop();
+                });
+                timeoutWarningTimer.setRepeats(false);
+                timeoutWarningTimer.start();
+                
+            } catch (Exception e) {
+                LOGGER.error("Error occurred while showing ConfigSelectionDialog", e);
+                // Fallback: just make dialog visible
+                setVisible(true);
+            }
+        });
 
         try {
             completionLatch.await();
