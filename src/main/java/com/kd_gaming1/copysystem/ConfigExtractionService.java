@@ -1,12 +1,9 @@
 package com.kd_gaming1.copysystem;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -14,18 +11,21 @@ import java.util.function.Consumer;
 /**
  * Service class that handles the business logic for config detection and extraction.
  * Separates the UI concerns from the actual extraction logic.
+ * Enhanced with markdown content support.
  */
 public class ConfigExtractionService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigExtractionService.class);
+    private static final Logger LOGGER = LogManager.getLogger(ConfigExtractionService.class);
 
     private final File minecraftRoot;
     private final File skyblockFolder;
     private final ConfigExtractor extractor;
+    private final MarkdownDialogContentService markdownService;
 
     public ConfigExtractionService(File minecraftRoot) {
         this.minecraftRoot = minecraftRoot;
-        this.skyblockFolder = new File(minecraftRoot, "Skyblock Enhanced");
+        this.skyblockFolder = new File(minecraftRoot, "SkyBlock Enhanced");
         this.extractor = new ConfigExtractor();
+        this.markdownService = new MarkdownDialogContentService(skyblockFolder);
     }
 
     /**
@@ -110,4 +110,39 @@ public class ConfigExtractionService {
     public List<ConfigInfo> getCustomConfigs() {
         return scanForConfigs("CustomConfigs");
     }
+
+    /**
+     * Gets the dialog content from markdown file or default content
+     */
+    public String getDialogContent() {
+        return markdownService.getDialogContent();
+    }
+
+    /**
+     * Creates a sample markdown file for modpack creators
+     */
+    public boolean createSampleMarkdownFile() {
+        return markdownService.createSampleMarkdownFile();
+    }
+
+    /**
+     * Gets the markdown file location
+     */
+    public File getMarkdownFile() {
+        return markdownService.getMarkdownFile();
+    }
+    /**
+     * Gets help links from the markdown content
+     */
+    public java.util.Map<String, String> getHelpLinks() {
+        return markdownService.getHelpLinks();
+    }
+
+    /**
+     * Checks if custom markdown content exists
+     */
+    public boolean hasCustomContent() {
+        return markdownService.hasCustomContent();
+    }
+
 }

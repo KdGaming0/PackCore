@@ -2,8 +2,8 @@
   "packcore.midnightconfig.title": "PackCore Configuration",
 
   "packcore.midnightconfig.dialog_header": "📋 Dialog Settings",
-  "packcore.midnightconfig.prompt_default_config": "Show Config Selection Dialog",
-  "packcore.midnightconfig.promptSetDefaultConfig.tooltip": "Enable or disable the configuration selection dialog\nthat appears during game startup when multiple\nconfig files are detected.",
+  "packcore.midnightconfig.prompt_default_config": "Show Config Selection Dialog On Start Up",
+  "packcore.midnightconfig.promptSetDefaultConfig.tooltip": "Enable or disable the configuration selection dialog\nthat appears during game startup when multiple\nconfig files are detected. \n\n⚠ Requires game restart to take effect.",
   "packcore.midnightconfig.dialog_timeout": "Dialog Timeout (Minutes)",
   "packcore.midnightconfig.dialogTimeoutMinutes.tooltip": "How long the config selection dialog will wait\nbefore timing out (1-60 minutes).",
 

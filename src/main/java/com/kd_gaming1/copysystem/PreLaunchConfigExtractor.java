@@ -64,6 +64,13 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                     LOGGER.info("Auto-extraction successful, disabling config prompt for next launch");
                     PackCoreConfig.promptSetDefaultConfig = false;
                     PackCoreConfig.lastConfigApplied = result.getConfigName(); // Store last applied config
+
+                    // Mark that we're no longer on first startup
+                    if (PackCoreConfig.isFirstStartup) {
+                        PackCoreConfig.isFirstStartup = false;
+                        LOGGER.info("Marked first startup as complete");
+                    }
+
                     MidnightConfig.write("packcore"); // Save using MidnightLib
 
                     try {
@@ -111,6 +118,13 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                     // Disable the prompt for next time
                     PackCoreConfig.promptSetDefaultConfig = false;
                     PackCoreConfig.lastConfigApplied = targetConfig.getName();
+
+                    // Mark that we're no longer on first startup
+                    if (PackCoreConfig.isFirstStartup) {
+                        PackCoreConfig.isFirstStartup = false;
+                        LOGGER.info("Marked first startup as complete");
+                    }
+
                     MidnightConfig.write("packcore");
 
                     // Show a system notification on macOS
@@ -131,6 +145,13 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                     if (success) {
                         PackCoreConfig.promptSetDefaultConfig = false;
                         PackCoreConfig.lastConfigApplied = firstConfig.getName();
+
+                        // Mark that we're no longer on first startup
+                        if (PackCoreConfig.isFirstStartup) {
+                            PackCoreConfig.isFirstStartup = false;
+                            LOGGER.info("Marked first startup as complete");
+                        }
+
                         MidnightConfig.write("packcore");
                         showMacOSNotification(firstConfig.getDisplayName());
                     }

@@ -129,6 +129,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
         // Add buttons
         CreateWebsiteButton("GitHub", "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack") childOf websiteContainer
         CreateWebsiteButton("Modrinth", "https://modrinth.com/project/skyblock-enhanced-modern-edition") childOf websiteContainer
+        CreateWebsiteButton("Discord", "https://discord.gg/Dz85mPN9Cy") childOf websiteContainer
         CreateWebsiteButton("Help", "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack/discussions") childOf websiteContainer
 
         val infobox = UIContainer().constrain {

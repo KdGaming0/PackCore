@@ -33,10 +33,19 @@ public class PackCoreConfig extends MidnightConfig {
     @Comment(category = UI)
     public static Comment spacer1;
 
-    // Debug options (completely hidden)
-    @Hidden
-    public static boolean debugMode = false;
+    /**
+     * Hidden config value to track if this is the first time the game has started.
+     * Used to show different extraction confirmation messages.
+     * This is automatically set to false after the first startup.
+     */
+    @Hidden()
+    @Entry(category = ADVANCED, name = "packcore.midnightconfig.first_startup")
+    public static boolean isFirstStartup = true;
 
+    /**
+     * Tracks the last applied configuration name for reference
+     */
     @Hidden
+    @Entry(category = ADVANCED, name = "packcore.midnightconfig.last_config_applied")
     public static String lastConfigApplied = "";
 }

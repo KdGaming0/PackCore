@@ -1,14 +1,13 @@
 {
-	"required": true,
-	"package": "com.kd_gaming1.mixin",
-	"compatibilityLevel": "JAVA_21",
-	"mixins": [
-		"SEMainMenuBlurMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"client": [
-		"SEMainMenuBlurMixin"
-	]
+  "required": true,
+  "package": "com.kd_gaming1.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "SEMainMenuBlurMixin"
+    ]
 }
