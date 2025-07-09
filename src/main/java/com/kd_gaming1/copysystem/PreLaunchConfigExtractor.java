@@ -98,14 +98,8 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
         try {
             List<ConfigInfo> officialConfigs = extractionService.getOfficialConfigs();
 
-            // Look for the 1080p config specifically
-            ConfigInfo targetConfig = null;
-            for (ConfigInfo config : officialConfigs) {
-                if (config.getName().contains("1080p") || config.getName().contains("SE-1080p_screen_size-Default_Configs")) {
-                    targetConfig = config;
-                    break;
-                }
-            }
+            // Since the file will always contain "1080p", just look for that
+            ConfigInfo targetConfig = findConfigContaining1080p(officialConfigs);
 
             if (targetConfig != null) {
                 LOGGER.info("Auto-applying 1080p configuration on macOS: {}", targetConfig.getName());
@@ -131,7 +125,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                     showMacOSNotification(targetConfig.getDisplayName());
 
                 } else {
-                    LOGGER.error("Failed to auto-apply 1080p configuration on macOS");
+                    LOGGER.error("Failed to auto-apply 1080p configuration on macOS: {}", targetConfig.getName());
                 }
             } else {
                 LOGGER.warn("1080p configuration not found, falling back to first available config");
@@ -154,6 +148,8 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
 
                         MidnightConfig.write("packcore");
                         showMacOSNotification(firstConfig.getDisplayName());
+                    } else {
+                        LOGGER.error("Failed to auto-apply fallback config on macOS: {}", firstConfig.getName());
                     }
                 } else {
                     LOGGER.warn("No official configurations found on macOS");
@@ -163,6 +159,17 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
         } catch (Exception e) {
             LOGGER.error("Error during macOS auto-configuration", e);
         }
+    }
+
+    private ConfigInfo findConfigContaining1080p(List<ConfigInfo> configs) {
+        // Look for any config containing "1080p" (case-insensitive)
+        for (ConfigInfo config : configs) {
+            if (config.getName().toLowerCase().contains("1080p")) {
+                LOGGER.debug("Found 1080p config: {}", config.getName());
+                return config;
+            }
+        }
+        return null;
     }
 
     private void showMacOSNotification(String configName) {
