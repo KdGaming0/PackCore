@@ -9,8 +9,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -22,6 +20,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Modern, redesigned configuration selection dialog with improved UX.
  * Features customizable markdown content, modern styling, and better user guidance.
+ *
+ * Cross-platform fixes:
+ * - Forces Metal (cross-platform) Look & Feel on Linux to avoid GTK rendering bugs.
+ * - Explicitly sets button colors.
+ * - Resize/repaint workaround for Linux after dialog is shown.
+ * - All UI setup runs on the EDT.
  */
 public class ConfigSelectionDialog extends JFrame {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigSelectionDialog.class);
@@ -53,11 +57,20 @@ public class ConfigSelectionDialog extends JFrame {
         super("PackCore - Configuration Manager");
         this.extractionService = extractionService;
 
-        // Set modern look and feel
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            LOGGER.debug("Could not set system look and feel", e);
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.contains("linux")) {
+            try {
+                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+                LOGGER.info("Applied cross-platform (Metal) LookAndFeel for Linux");
+            } catch (Exception e) {
+                LOGGER.warn("Failed to set cross-platform LookAndFeel on Linux", e);
+            }
+        } else {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                LOGGER.debug("Could not set system look and feel", e);
+            }
         }
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -68,11 +81,22 @@ public class ConfigSelectionDialog extends JFrame {
             }
         });
 
+        // All UI must be constructed on the EDT
+        if (!SwingUtilities.isEventDispatchThread()) {
+            try {
+                SwingUtilities.invokeAndWait(this::initAndShowUI);
+            } catch (Exception e) {
+                LOGGER.error("Error initializing dialog on EDT", e);
+            }
+        } else {
+            initAndShowUI();
+        }
+    }
+
+    private void initAndShowUI() {
         initializeComponents();
         layoutComponents();
         setupEventHandlers();
-
-        // Apply modern styling
         applyModernStyling();
     }
 
@@ -112,7 +136,7 @@ public class ConfigSelectionDialog extends JFrame {
         progressBar.setBackground(BACKGROUND_COLOR);
         progressBar.setForeground(PRIMARY_COLOR);
 
-        // Create modern buttons
+        // --- BUTTON COLOR FIX: Explicit background/foreground set ---
         extractButton = createStyledButton("🚀 Extract & Apply Configuration", SUCCESS_COLOR);
         skipButton = createStyledButton("⏭️ Skip & Continue", WARNING_COLOR);
         helpButton = createStyledButton("❓ Help", PRIMARY_COLOR);
@@ -124,11 +148,8 @@ public class ConfigSelectionDialog extends JFrame {
         list.setCellRenderer(new ModernConfigRenderer());
         list.setBackground(CARD_BACKGROUND);
         list.setBorder(new EmptyBorder(5, 5, 5, 5));
-
-        // Add selection styling
         list.setSelectionBackground(PRIMARY_COLOR);
         list.setSelectionForeground(Color.WHITE);
-
         return list;
     }
 
@@ -136,8 +157,8 @@ public class ConfigSelectionDialog extends JFrame {
         JButton button = new JButton(text);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
-        button.setBackground(color);
-        button.setForeground(Color.WHITE);
+        button.setBackground(color); // Explicit background
+        button.setForeground(Color.WHITE); // Explicit foreground
         button.setFont(button.getFont().deriveFont(Font.BOLD, 14f));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setBorder(new EmptyBorder(12, 20, 12, 20));
@@ -355,7 +376,6 @@ public class ConfigSelectionDialog extends JFrame {
         String configTypeText = configType == ConfigType.OFFICIAL ? "Official" : "Custom";
         String confirmationMessage;
 
-        // Check if this is the first startup using PackCoreConfig
         if (PackCoreConfig.isFirstStartup) {
             confirmationMessage = String.format(
                     "Extract the %s configuration '%s'?\n\n" +
@@ -376,7 +396,6 @@ public class ConfigSelectionDialog extends JFrame {
             return;
         }
 
-        // Start extraction
         setControlsEnabled(false);
         progressBar.setVisible(true);
         progressBar.setIndeterminate(true);
@@ -485,16 +504,12 @@ public class ConfigSelectionDialog extends JFrame {
         helpHtml.append("</style></head><body>");
 
         if (hasCustomContent) {
-            // Custom content exists - make it feel native to the modpack
             helpHtml.append("<h2>🎮 Help & Resources</h2>");
         } else {
-            // Generic content
             helpHtml.append("<h2>🎮 PackCore Help & Resources</h2>");
         }
 
-        // PUT DISCORD SECTION FIRST - Most important for users to see immediately
         if (!helpLinks.isEmpty()) {
-            // Check if there's a Discord link
             String discordLink = findDiscordLink(helpLinks);
 
             if (discordLink != null) {
@@ -517,7 +532,6 @@ public class ConfigSelectionDialog extends JFrame {
         helpHtml.append("</ul>");
 
         if (!hasCustomContent) {
-            // Only show file locations for generic content
             helpHtml.append("<h3>📁 File Locations</h3>");
             helpHtml.append("<p><strong>Configuration Folder:</strong><br>");
             helpHtml.append("<code>").append(extractionService.getMarkdownFile().getParent()).append("</code></p>");
@@ -526,7 +540,6 @@ public class ConfigSelectionDialog extends JFrame {
             helpHtml.append("<code>").append(extractionService.getMarkdownFile().getAbsolutePath()).append("</code></p>");
         }
 
-        // Show other links at the bottom
         if (!helpLinks.isEmpty()) {
             String discordLink = findDiscordLink(helpLinks);
             java.util.Map<String, String> otherLinks = getOtherLinks(helpLinks, discordLink);
@@ -540,7 +553,6 @@ public class ConfigSelectionDialog extends JFrame {
                 }
                 helpHtml.append("</ul>");
             } else if (discordLink == null) {
-                // No Discord link found and no other links, show all links normally
                 helpHtml.append("<h3>🔗 Useful Links</h3>");
                 helpHtml.append("<ul>");
                 for (java.util.Map.Entry<String, String> link : helpLinks.entrySet()) {
@@ -552,7 +564,6 @@ public class ConfigSelectionDialog extends JFrame {
         }
 
         if (!hasCustomContent) {
-            // Only show customization info for generic content
             helpHtml.append("<h3>⚙️ Customization</h3>");
             helpHtml.append("<p>Want to customize this dialog? Click the button below to create a sample markdown file that you can edit:</p>");
         }
@@ -560,20 +571,17 @@ public class ConfigSelectionDialog extends JFrame {
         helpHtml.append("</body></html>");
         helpContent.setText(helpHtml.toString());
 
-        // IMPORTANT: Reset scroll position to top after setting content
         SwingUtilities.invokeLater(() -> {
             helpContent.setCaretPosition(0);
             helpContent.scrollRectToVisible(new Rectangle(0, 0, 1, 1));
         });
 
-        // Add hyperlink support
         helpContent.addHyperlinkListener(e -> {
             if (e.getEventType() == javax.swing.event.HyperlinkEvent.EventType.ACTIVATED) {
                 try {
                     Desktop.getDesktop().browse(new URI(e.getURL().toString()));
                 } catch (Exception ex) {
                     LOGGER.debug("Could not open link: {}", e.getURL(), ex);
-                    // Show a message with the URL so user can copy it
                     JOptionPane.showMessageDialog(helpDialog,
                             "Could not open link automatically. Please copy this URL:\n" + e.getURL().toString(),
                             "Open Link", JOptionPane.INFORMATION_MESSAGE);
@@ -585,15 +593,12 @@ public class ConfigSelectionDialog extends JFrame {
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        // Ensure scroll pane starts at the top
         scrollPane.getViewport().setViewPosition(new Point(0, 0));
 
-        // Bottom panel with buttons
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.setBackground(BACKGROUND_COLOR);
         bottomPanel.setBorder(new EmptyBorder(10, 20, 15, 20));
 
-        // Only show "Create Sample File" button if no custom content exists
         if (!hasCustomContent) {
             JButton createSampleButton = createStyledButton("📝 Create Sample File", PRIMARY_COLOR);
             createSampleButton.addActionListener(e -> {
@@ -617,18 +622,13 @@ public class ConfigSelectionDialog extends JFrame {
         helpDialog.add(scrollPane, BorderLayout.CENTER);
         helpDialog.add(bottomPanel, BorderLayout.SOUTH);
 
-        // Show dialog and ensure it starts at top
         helpDialog.setVisible(true);
 
-        // Additional scroll reset after dialog is visible (extra safety)
         SwingUtilities.invokeLater(() -> {
             scrollPane.getVerticalScrollBar().setValue(0);
         });
     }
 
-    /**
-     * Finds Discord link in the help links map
-     */
     private String findDiscordLink(java.util.Map<String, String> helpLinks) {
         for (java.util.Map.Entry<String, String> entry : helpLinks.entrySet()) {
             String linkName = entry.getKey().toLowerCase();
@@ -641,9 +641,6 @@ public class ConfigSelectionDialog extends JFrame {
         return null;
     }
 
-    /**
-     * Gets the display name for the Discord link
-     */
     private String getDiscordLinkName(java.util.Map<String, String> helpLinks, String discordUrl) {
         for (java.util.Map.Entry<String, String> entry : helpLinks.entrySet()) {
             if (entry.getValue().equals(discordUrl)) {
@@ -653,9 +650,6 @@ public class ConfigSelectionDialog extends JFrame {
         return "Discord Server";
     }
 
-    /**
-     * Gets all links except the Discord link
-     */
     private java.util.Map<String, String> getOtherLinks(java.util.Map<String, String> helpLinks, String discordUrl) {
         java.util.Map<String, String> otherLinks = new java.util.LinkedHashMap<>();
 
@@ -678,7 +672,6 @@ public class ConfigSelectionDialog extends JFrame {
     }
 
     private void finishDialog() {
-        // Mark that we're no longer on first startup
         if (PackCoreConfig.isFirstStartup) {
             PackCoreConfig.isFirstStartup = false;
         }
@@ -726,6 +719,22 @@ public class ConfigSelectionDialog extends JFrame {
         }
     }
 
+    // Linux repaint/resize workaround
+    @Override
+    public void setVisible(boolean b) {
+        super.setVisible(b);
+
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (b && osName.contains("linux")) {
+            SwingUtilities.invokeLater(() -> {
+                Dimension sz = getSize();
+                setSize(sz.width + 1, sz.height + 1);
+                setSize(sz);
+                repaint();
+            });
+        }
+    }
+
     /**
      * Modern renderer for config items with better visual design
      */
@@ -738,14 +747,11 @@ public class ConfigSelectionDialog extends JFrame {
             if (value instanceof ConfigInfo) {
                 ConfigInfo config = (ConfigInfo) value;
 
-                // Create display text with size info
                 String displayText = String.format("<html><b>%s</b><br><small>Size: %s</small></html>",
                         config.getDisplayName(), formatFileSize(config.getSize()));
                 setText(displayText);
 
-                // Modern styling
                 setBorder(new EmptyBorder(8, 12, 8, 12));
-
                 if (!isSelected) {
                     setBackground(CARD_BACKGROUND);
                     setForeground(TEXT_COLOR);
