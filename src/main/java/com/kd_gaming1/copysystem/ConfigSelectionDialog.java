@@ -304,7 +304,7 @@ public class ConfigSelectionDialog extends JFrame {
 
         panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(Box.createVerticalStrut(10), BorderLayout.CENTER);
-        panel.add(scrollPane, BorderLayout.SOUTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
 
         return panel;
     }
