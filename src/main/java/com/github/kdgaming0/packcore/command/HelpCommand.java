@@ -32,11 +32,6 @@ public class HelpCommand extends CommandBase {
     }
 
     @Override
-    public List<String> getCommandAliases() {
-        return Arrays.asList("pc");
-    }
-
-    @Override
     public void processCommand(ICommandSender sender, String[] args) throws CommandException {
         if (args.length == 0 || (args.length == 1 && args[0].equalsIgnoreCase("help"))) {
             executeHelp(sender);
