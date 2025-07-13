@@ -11,7 +11,6 @@ import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -20,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Modern, redesigned configuration selection dialog with improved UX.
  * Features customizable markdown content, modern styling, and better user guidance.
- *
  * Cross-platform fixes:
  * - Forces Metal (cross-platform) Look & Feel on Linux to avoid GTK rendering bugs.
  * - Explicitly sets button colors.
