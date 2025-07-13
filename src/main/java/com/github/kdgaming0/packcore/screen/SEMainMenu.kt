@@ -202,7 +202,8 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
 
         val websiteButtons = listOf(
             "GitHub" to "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack",
-            "Modrinth" to "https://modrinth.com/modpack/skyblock-enhanced",
+            "Modrinth" to "https://modrinth.com/project/9JTbeXjU",
+            "Discord" to "https://discord.gg/pdwxyjTta7",
             "Help" to "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack/discussions"
         )
 

@@ -10,15 +10,15 @@ import gg.essential.elementa.dsl.*
 import java.awt.Color
 
 fun CreateWebsiteButton(text: String, url: String) = UIContainer().constrain {
-    x = SiblingConstraint(padding = 1f)
-    width = 40.pixels()
+    x = SiblingConstraint()
+    width = 38.pixels()
     height = 12.pixels()
 }.also { button ->
     // Create reference to underline component that we can animate
     val underline = UIRoundedRectangle(6f).constrain {
         x = CenterConstraint()
         y = CenterConstraint() + 5.pixels()
-        width = 38.pixels()
+        width = 36.pixels()
         height = 1.pixels()
         color = Color(252, 189, 56, 0).toConstraint()
     } childOf button
