@@ -13,9 +13,6 @@ public class PackCore implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		// MidnightLib config is already initialized in PreLaunch, but we can safely call it again
-		MidnightConfig.init(MOD_ID, PackCoreConfig.class);
-
 		// Register commands
 		PackCoreCommands.registerCommands();
 

@@ -127,9 +127,9 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             height = ChildBasedSizeConstraint()
         } childOf buttonContainer
         // Add buttons
-        CreateWebsiteButton("GitHub", "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack") childOf websiteContainer
-        CreateWebsiteButton("Modrinth", "https://modrinth.com/project/skyblock-enhanced-modern-edition") childOf websiteContainer
-        CreateWebsiteButton("Discord", "https://discord.gg/Dz85mPN9Cy") childOf websiteContainer
+        CreateWebsiteButton("GitHub", "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack/tree/SkyBlock-Enhanced-1.21%2B") childOf websiteContainer
+        CreateWebsiteButton("Modrinth", "https://modrinth.com/project/e0oMrxjp") childOf websiteContainer
+        CreateWebsiteButton("Discord", "https://discord.gg/pdwxyjTta7") childOf websiteContainer
         CreateWebsiteButton("Help", "https://github.com/KdGaming0/SkyBlock-Enhanced-Modpack/discussions") childOf websiteContainer
 
         val infobox = UIContainer().constrain {

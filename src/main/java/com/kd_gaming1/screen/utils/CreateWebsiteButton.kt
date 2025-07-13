@@ -8,13 +8,13 @@ import gg.essential.elementa.constraints.SiblingConstraint
 import gg.essential.elementa.constraints.animation.Animations
 import gg.essential.elementa.dsl.*
 import java.awt.Color
+import net.minecraft.util.Util
 
 fun CreateWebsiteButton(text: String, url: String) = UIContainer().constrain {
     x = SiblingConstraint()
     width = 38.pixels()
     height = 12.pixels()
 }.also { button ->
-    // Create reference to underline component that we can animate
     val underline = UIRoundedRectangle(6f).constrain {
         x = CenterConstraint()
         y = CenterConstraint() + 5.pixels()
@@ -23,7 +23,6 @@ fun CreateWebsiteButton(text: String, url: String) = UIContainer().constrain {
         color = Color(252, 189, 56, 0).toConstraint()
     } childOf button
 
-    // Add text to button
     UIText(text).constrain {
         x = CenterConstraint()
         y = CenterConstraint()
@@ -31,21 +30,17 @@ fun CreateWebsiteButton(text: String, url: String) = UIContainer().constrain {
         color = Color.WHITE.toConstraint()
     } childOf button
 
-    // Move hover animations to the button
     button.onMouseEnter {
-        // Animate the underline from the button's hover
         underline.animate {
             setColorAnimation(Animations.OUT_EXP, 0.5f, Color(252, 189, 56, 255).toConstraint())
         }
     }.onMouseLeave {
-        // Reset underline animation when mouse leaves button
         underline.animate {
             setColorAnimation(Animations.OUT_EXP, 0.5f, Color(252, 189, 56, 0).toConstraint())
         }
     }.onMouseClick {
         try {
-            val desktop = java.awt.Desktop.getDesktop()
-            desktop.browse(java.net.URI(url))
+            Util.getOperatingSystem().open(url)
         } catch (e: Exception) {
             e.printStackTrace()
         }
