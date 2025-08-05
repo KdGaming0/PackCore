@@ -243,14 +243,30 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             height = 100.percent() - 60.pixels()
         } childOf infoPanel
 
-        val changeLogText = MarkdownComponent(changeLog.trimIndent()).constrain {
-            x = 0.pixels()
-            y = 0.pixels()
-            width = 100.percent()
-            height = ChildBasedSizeConstraint()
-            textScale = 0.1.pixels()
-            color = Color.WHITE.toConstraint()
-        } childOf changeLogComponent
+        val safeChangeLog = changeLog
+            .lines()
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
+
+        val changeLogText = try {
+            MarkdownComponent(safeChangeLog).constrain {
+                x = 0.pixels()
+                y = 0.pixels()
+                width = 100.percent()
+                height = ChildBasedSizeConstraint()
+                textScale = 0.1.pixels()
+                color = Color.WHITE.toConstraint()
+            } childOf changeLogComponent
+        } catch (e: Exception) {
+            UIWrappedText("Failed to load changelog.").constrain {
+                x = 0.pixels()
+                y = 0.pixels()
+                width = 100.percent()
+                height = ChildBasedSizeConstraint()
+                textScale = 0.1.pixels()
+                color = Color.RED.toConstraint()
+            } childOf changeLogComponent
+        }
 
         // Create a container for the scroll bar system
         val scrollContainer = UIContainer().constrain {
