@@ -1,8 +1,8 @@
-package com.kd_gaming1.copysystem;
+package com.github.kd_gaming1.packcore.copysystem;
 
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.fabricmc.loader.api.FabricLoader;
-import com.kd_gaming1.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import eu.midnightdust.lib.config.MidnightConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
         LOGGER.info("Starting PackCore pre-launch configuration extraction...");
 
         try {
-            // Initialize MidnightLib config early - this works in pre-launch!
+            // Initialize MidnightLib data early - this works in pre-launch!
             MidnightConfig.init("packcore", PackCoreConfig.class);
 
             File minecraftRoot = FabricLoader.getInstance().getGameDir().toFile();
@@ -49,21 +49,21 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                 LOGGER.info("Multiple configs found");
 
                 if (osName.contains("mac")) {
-                    // macOS: Auto-apply 1080p config
+                    // macOS: Auto-apply 1080p data
                     handleMacOSAutoConfig(extractionService);
                 } else {
                     // Other platforms: Show dialog with notification
                     showConfigSelectionDialog(extractionService);
                 }
             } else if (result.hasAutoExtractConfig()) {
-                LOGGER.info("Auto-extracting single config: {}", result.getConfigName());
+                LOGGER.info("Auto-extracting single data: {}", result.getConfigName());
                 boolean success = extractionService.extractConfig(result.getConfigName(), result.getConfigType());
 
                 if (success) {
                     // Disable the prompt for next time using MidnightLib
-                    LOGGER.info("Auto-extraction successful, disabling config prompt for next launch");
+                    LOGGER.info("Auto-extraction successful, disabling data prompt for next launch");
                     PackCoreConfig.promptSetDefaultConfig = false;
-                    PackCoreConfig.lastConfigApplied = result.getConfigName(); // Store last applied config
+                    PackCoreConfig.lastConfigApplied = result.getConfigName(); // Store last applied data
 
                     // Mark that we're no longer on first startup
                     if (PackCoreConfig.isFirstStartup) {
@@ -85,8 +85,8 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
             }
 
         } catch (Exception e) {
-            LOGGER.error("Error during pre-launch config extraction", e);
-            // Continue startup even if config extraction fails
+            LOGGER.error("Error during pre-launch data extraction", e);
+            // Continue startup even if data extraction fails
         }
 
         LOGGER.info("Pre-launch configuration extraction completed");
@@ -128,12 +128,12 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                     LOGGER.error("Failed to auto-apply 1080p configuration on macOS: {}", targetConfig.getName());
                 }
             } else {
-                LOGGER.warn("1080p configuration not found, falling back to first available config");
+                LOGGER.warn("1080p configuration not found, falling back to first available data");
 
-                // Fallback to first official config
+                // Fallback to first official data
                 if (!officialConfigs.isEmpty()) {
                     ConfigInfo firstConfig = officialConfigs.get(0);
-                    LOGGER.info("Auto-applying first available config on macOS: {}", firstConfig.getName());
+                    LOGGER.info("Auto-applying first available data on macOS: {}", firstConfig.getName());
 
                     boolean success = extractionService.extractConfig(firstConfig.getName(), ConfigType.OFFICIAL);
                     if (success) {
@@ -149,7 +149,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                         MidnightConfig.write("packcore");
                         showMacOSNotification(firstConfig.getDisplayName());
                     } else {
-                        LOGGER.error("Failed to auto-apply fallback config on macOS: {}", firstConfig.getName());
+                        LOGGER.error("Failed to auto-apply fallback data on macOS: {}", firstConfig.getName());
                     }
                 } else {
                     LOGGER.warn("No official configurations found on macOS");
@@ -162,10 +162,10 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
     }
 
     private ConfigInfo findConfigContaining1080p(List<ConfigInfo> configs) {
-        // Look for any config containing "1080p" (case-insensitive)
+        // Look for any data containing "1080p" (case-insensitive)
         for (ConfigInfo config : configs) {
             if (config.getName().toLowerCase().contains("1080p")) {
-                LOGGER.debug("Found 1080p config: {}", config.getName());
+                LOGGER.debug("Found 1080p data: {}", config.getName());
                 return config;
             }
         }
@@ -236,7 +236,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
             }
 
         } catch (Exception e) {
-            LOGGER.error("Error showing config selection dialog", e);
+            LOGGER.error("Error showing data selection dialog", e);
         }
     }
 

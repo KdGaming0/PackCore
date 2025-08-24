@@ -1,4 +1,4 @@
-package com.kd_gaming1.copysystem;
+package com.github.kd_gaming1.packcore.copysystem;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +43,7 @@ public class MarkdownDialogContentService {
             ## Managing Configurations
             
             - Create your own backup: Use `/packcore archive` in-game to save your current settings
-            - Share with friends: Custom config archives can be shared and imported by other players
+            - Share with friends: Custom data archives can be shared and imported by other players
             - Disable this dialog: Use `/packcore dialog false` if you don't want to see this anymore
             - Get help: Use `/packcore help` to see all available commands
             """;
@@ -193,9 +193,9 @@ public class MarkdownDialogContentService {
                 
                 ## ⚡ Quick Start Guide
                 
-                1. **First Time Players**: Choose the **Balanced** official config for the best experience
-                2. **Performance Issues**: Select the **Performance** config to improve FPS
-                3. **High-End PC**: Try the **Features** or **Ultra** config for maximum visual quality
+                1. **First Time Players**: Choose the **Balanced** official data for the best experience
+                2. **Performance Issues**: Select the **Performance** data to improve FPS
+                3. **High-End PC**: Try the **Features** or **Ultra** data for maximum visual quality
                 4. **Returning Players**: You can skip if you're happy with current settings
                 
                 ## 🔧 What Each Button Does
@@ -208,7 +208,7 @@ public class MarkdownDialogContentService {
                 
                 ## 🚨 Important Notes
                 
-                - Extracting a config will **overwrite** your current mod settings
+                - Extracting a data will **overwrite** your current mod settings
                 - Create a backup first using `/packcore archive` if you want to keep current settings
                 - After selection, be patient - Minecraft takes time to load (10-60 seconds)
                 - This dialog can be disabled with `/packcore dialog false`
@@ -228,7 +228,7 @@ public class MarkdownDialogContentService {
                 - **New Players**: Start with **Balanced** configuration
                 - **Performance Issues**: Use **Performance** configuration  
                 - **Content Creators**: Try **Features** configuration for best visuals
-                - **Competitive Players**: **Performance** config for maximum FPS
+                - **Competitive Players**: **Performance** data for maximum FPS
                 """;
 
         try {
