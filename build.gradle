@@ -1,101 +1,102 @@
 plugins {
-	id 'fabric-loom' version "${loom_version}"
-	id 'maven-publish'
-	id 'org.jetbrains.kotlin.jvm'
+    id 'fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 version = project.mod_version
 group = project.maven_group
 
 base {
-	archivesName = project.archives_base_name
+    archivesName = project.archives_base_name
 }
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
-	maven {
-		url "https://repo.essential.gg/repository/maven-public"
-	}
-	mavenCentral()
-	maven {
-		url = 'https://maven.terraformersmc.com/'
-	}
-	maven {
-		url = "https://api.modrinth.com/maven"
-	}
-	maven {
-		name = "Terraformers"
-		url = "https://maven.terraformersmc.com/"
-	}
+    // Essential Maven repositories for dependencies
+    maven { url "https://repo.essential.gg/repository/maven-public" }
+    mavenCentral()
+    maven { url 'https://maven.wispforest.io/releases/' }
+    maven { url = 'https://maven.terraformersmc.com/' }
+    maven { url = "https://api.modrinth.com/maven" }
+    maven { name = "Terraformers"; url = "https://maven.terraformersmc.com/" }
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // Minecraft + Mappings
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings "net.fabricmc:yarn:${yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // Core Fabric API
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
 
-	implementation include ("gg.essential:elementa:${project.elementa_version}")
-	modImplementation include ("gg.essential:universalcraft-1.21.5-fabric:${project.universalcraft_version}")
-	modImplementation("net.fabricmc:fabric-language-kotlin:1.13.3+kotlin.2.1.21")
+    // Kotlin support
+    modImplementation "net.fabricmc:fabric-language-kotlin:${fabric_kotlin_version}"
 
-	modImplementation "com.terraformersmc:Vistas:${project.vistas_version}"
-	modImplementation include ("maven.modrinth:midnightlib:${project.midnightlib_version}")
-	modRuntimeOnly ("com.terraformersmc:modmenu:${project.modmenu_version}")
+    // Essential libraries
+    implementation include("gg.essential:elementa:${elementa_version}")
+    modImplementation include("gg.essential:universalcraft-${minecraft_version}-fabric:${universalcraft_version}")
+
+    // Mod integrations
+    modImplementation "com.terraformersmc:Vistas:${vistas_version}"
+    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    modImplementation include("maven.modrinth:midnightlib:${midnightlib_version}")
+    modRuntimeOnly("com.terraformersmc:modmenu:${modmenu_version}")
+
+    // Additional libraries
+    implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
 }
 
 processResources {
-	inputs.property "version", project.version
+    // Replace placeholders in fabric.mod.json with gradle.properties values
+    inputs.properties([
+            version: version,
+            minecraft_version: minecraft_version,
+            loader_version: loader_version,
+            fabric_kotlin_version: fabric_kotlin_version,
+            vistas_version: vistas_version,
+            owo_version: owo_version,
+            java_version: java_version
+    ])
 
-	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
-	}
+    filesMatching("fabric.mod.json") {
+        expand([
+                version: version,
+                minecraft_version: minecraft_version,
+                loader_version: loader_version,
+                fabric_kotlin_version: fabric_kotlin_version,
+                vistas_version: vistas_version,
+                owo_version: owo_version,
+                java_version: java_version
+        ])
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+    it.options.release = java_version.toInteger()
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
-
+    // Generate sources JAR alongside the compiled mod JAR
+    withSourcesJar()
 }
 
 jar {
-	inputs.property "archivesName", project.base.archivesName
-
-	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}"}
-	}
+    // Include LICENSE in the JAR, renamed to match mod name
+    inputs.property "archivesName", project.base.archivesName
+    from("LICENSE") { rename { "${it}_${inputs.properties.archivesName}" } }
 }
 
-// configure the maven publication
 publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = archives_base_name
+            from components.java
+        }
+    }
 }
+
 kotlin {
-	jvmToolchain(21)
+    // Ensure Kotlin uses the correct Java version
+    jvmToolchain(java_version.toInteger())
 }
