@@ -1,19 +1,19 @@
-package com.kd_gaming1.utils;
+package com.github.kd_gaming1.packcore.utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static com.kd_gaming1.PackCore.MOD_ID;
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
-public class CheckForUpdates {
+public class CheckForUpdatesold {
     private static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     public static String[] checkForUpdates() {
         String[] versions = new String[3];
-        if (ModpackInfo.shouldCheckForUpdates()) {
-            String currentVersion = ModpackInfo.getCurrentVersion();
-            String projectId = ModpackInfo.getModrinthProjectId();
-            ModrinthAPICaller.VersionResponse latest = ModrinthAPICaller.getLatestVersion(projectId);
+        if (ModpackInfoOld.shouldCheckForUpdates()) {
+            String currentVersion = ModpackInfoOld.getCurrentVersion();
+            String projectId = ModpackInfoOld.getModrinthProjectId();
+            ModrinthAPICallerOld.VersionResponse latest = ModrinthAPICallerOld.getLatestVersion(projectId);
 
             if (!latest.success) {
                 // Handle error case

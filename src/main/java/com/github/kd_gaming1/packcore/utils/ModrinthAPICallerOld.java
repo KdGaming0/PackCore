@@ -1,4 +1,4 @@
-package com.kd_gaming1.utils;
+package com.github.kd_gaming1.packcore.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -13,9 +13,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
-import static com.kd_gaming1.PackCore.MOD_ID;
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
-public class ModrinthAPICaller {
+public class ModrinthAPICallerOld {
     private static final Logger LOGGER = LogManager.getLogger(MOD_ID);
     private static final String MODRINTH_API_BASE = "https://api.modrinth.com/v2/project/%s/version";
     private static final Gson gson = new Gson();

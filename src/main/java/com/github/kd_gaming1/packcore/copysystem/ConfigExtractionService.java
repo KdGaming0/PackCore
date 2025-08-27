@@ -1,4 +1,4 @@
-package com.kd_gaming1.copysystem;
+package com.github.kd_gaming1.packcore.copysystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Service class that handles the business logic for config detection and extraction.
+ * Service class that handles the business logic for data detection and extraction.
  * Separates the UI concerns from the actual extraction logic.
  * Enhanced with markdown content support.
  */
@@ -52,7 +52,7 @@ public class ConfigExtractionService {
     }
 
     /**
-     * Scans a specific folder for config files
+     * Scans a specific folder for data files
      */
     private List<ConfigInfo> scanForConfigs(String folderName) {
         List<ConfigInfo> configs = new ArrayList<>();
@@ -75,7 +75,7 @@ public class ConfigExtractionService {
     }
 
     /**
-     * Extracts a specific config file
+     * Extracts a specific data file
      */
     public boolean extractConfig(String configName, ConfigType configType) {
         return extractConfig(configName, configType, progress -> {
@@ -84,7 +84,7 @@ public class ConfigExtractionService {
     }
 
     /**
-     * Extracts a specific config file with progress callback
+     * Extracts a specific data file with progress callback
      */
     public boolean extractConfig(String configName, ConfigType configType, Consumer<Integer> progressCallback) {
         String subfolderName = configType == ConfigType.OFFICIAL ? "OfficialConfigs" : "CustomConfigs";
@@ -98,7 +98,7 @@ public class ConfigExtractionService {
         try {
             return extractor.extractZipToDirectory(configFile, minecraftRoot, progressCallback);
         } catch (IOException e) {
-            LOGGER.error("Failed to extract config: {}", configName, e);
+            LOGGER.error("Failed to extract data: {}", configName, e);
             return false;
         }
     }

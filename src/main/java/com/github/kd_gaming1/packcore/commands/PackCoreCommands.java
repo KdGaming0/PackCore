@@ -1,7 +1,7 @@
-package com.kd_gaming1.commands;
+package com.github.kd_gaming1.packcore.commands;
 
-import com.kd_gaming1.config.PackCoreConfig;
-import com.kd_gaming1.copysystem.ZipArchiver;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.copysystem.ZipArchiver;
 import eu.midnightdust.lib.config.MidnightConfig;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -64,7 +64,7 @@ public class PackCoreCommands {
                                         builder.suggest(preset);
                                     }
                                     // Common folder suggestions
-                                    String[] commonFolders = {"config", "resourcepacks", "shaderpacks", "screenshots"};
+                                    String[] commonFolders = {"data", "resourcepacks", "shaderpacks", "screenshots"};
                                     for (String folder : commonFolders) {
                                         builder.suggest(folder);
                                     }
@@ -76,7 +76,7 @@ public class PackCoreCommands {
                                                 StringArgumentType.getString(context, "filename"))))))
 
                 // Config commands
-                .then(CommandManager.literal("config")
+                .then(CommandManager.literal("data")
                         .executes(PackCoreCommands::showConfigStatus)
                         .then(CommandManager.literal("timeout")
                                 .then(CommandManager.argument("minutes", IntegerArgumentType.integer(1, 60))
@@ -99,18 +99,18 @@ public class PackCoreCommands {
         source.sendFeedback(() -> Text.literal("§e§lConfiguration:"), false);
         source.sendFeedback(() -> Text.literal("§f/packcore dialog [true|false] §7- Config selection dialog"), false);
         source.sendFeedback(() -> Text.literal("§f/packcore menu [true|false] §7- Custom main menu"), false);
-        source.sendFeedback(() -> Text.literal("§f/packcore config §7- Show all config status"), false);
-        source.sendFeedback(() -> Text.literal("§f/packcore config timeout <minutes> §7- Set dialog timeout"), false);
-        source.sendFeedback(() -> Text.literal("§f/packcore config reload §7- Reload config from file"), false);
+        source.sendFeedback(() -> Text.literal("§f/packcore data §7- Show all data status"), false);
+        source.sendFeedback(() -> Text.literal("§f/packcore data timeout <minutes> §7- Set dialog timeout"), false);
+        source.sendFeedback(() -> Text.literal("§f/packcore data reload §7- Reload data from file"), false);
         source.sendFeedback(() -> Text.literal(""), false);
 
         source.sendFeedback(() -> Text.literal("§e§lArchiving:"), false);
         source.sendFeedback(() -> Text.literal("§f/packcore archive <target> [filename]"), false);
         source.sendFeedback(() -> Text.literal("§7  Archive presets:"), false);
         source.sendFeedback(() -> Text.literal("§7  • §fvanilla-configs §7- options.txt, servers.dat"), false);
-        source.sendFeedback(() -> Text.literal("§7  • §fmod-configs §7- config folder only"), false);
+        source.sendFeedback(() -> Text.literal("§7  • §fmod-configs §7- data folder only"), false);
         source.sendFeedback(() -> Text.literal("§7  • §fall-configs §7- vanilla + mod configs"), false);
-        source.sendFeedback(() -> Text.literal("§7  Or specify any folder name (config, resourcepacks, etc.)"), false);
+        source.sendFeedback(() -> Text.literal("§7  Or specify any folder name (data, resourcepacks, etc.)"), false);
         source.sendFeedback(() -> Text.literal(""), false);
 
         source.sendFeedback(() -> Text.literal("§7Archives saved to: §fSkyblock Enhanced/CustomConfigs/"), false);
@@ -125,7 +125,7 @@ public class PackCoreCommands {
         boolean enabled = BoolArgumentType.getBool(context, "enabled");
         ServerCommandSource source = context.getSource();
 
-        // Update the config using MidnightLib
+        // Update the data using MidnightLib
         PackCoreConfig.promptSetDefaultConfig = enabled;
         MidnightConfig.write("packcore");
 
@@ -134,7 +134,7 @@ public class PackCoreCommands {
         source.sendFeedback(() -> Text.literal("§6Dialog window has been " + status + "§6."), false);
 
         if (enabled) {
-            source.sendFeedback(() -> Text.literal("§7The selection dialog will now appear on next startup if multiple config files are found."), false);
+            source.sendFeedback(() -> Text.literal("§7The selection dialog will now appear on next startup if multiple data files are found."), false);
         } else {
             source.sendFeedback(() -> Text.literal("§7The selection dialog will be skipped and auto-extract single configs."), false);
         }
@@ -159,7 +159,7 @@ public class PackCoreCommands {
         boolean enabled = BoolArgumentType.getBool(context, "enabled");
         ServerCommandSource source = context.getSource();
 
-        // Update the config using MidnightLib
+        // Update the data using MidnightLib
         PackCoreConfig.enableCustomMenu = enabled;
         MidnightConfig.write("packcore");
 
@@ -271,15 +271,15 @@ public class PackCoreCommands {
                 break;
 
             case "mod-configs":
-                // Only the config folder (mod configurations)
-                addIfExists(paths, rootPath.resolve("config"), source);
+                // Only the data folder (mod configurations)
+                addIfExists(paths, rootPath.resolve("data"), source);
                 break;
 
             case "all-configs":
                 // Both vanilla and mod configs
                 addIfExists(paths, rootPath.resolve("options.txt"), source);
                 addIfExists(paths, rootPath.resolve("servers.dat"), source);
-                addIfExists(paths, rootPath.resolve("config"), source);
+                addIfExists(paths, rootPath.resolve("data"), source);
                 break;
 
             default:
@@ -341,7 +341,7 @@ public class PackCoreCommands {
     private static int reloadConfig(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
 
-        // Reload the config from file
+        // Reload the data from file
         MidnightConfig.loadValuesFromJson("packcore");
 
         source.sendFeedback(() -> Text.literal("§6PackCore configuration reloaded from file."), false);

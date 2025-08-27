@@ -1,4 +1,4 @@
-package com.kd_gaming1.utils;
+package com.github.kd_gaming1.packcore.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -13,9 +13,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static com.kd_gaming1.PackCore.MOD_ID;
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
-public class ModpackInfo {
+public class ModpackInfoOld {
     private static final Logger LOGGER = LogManager.getLogger(MOD_ID);
     private static final String MODPACK_INFO_PATH = "SkyBlock Enhanced/modpack_info.json";
     private static JsonObject modpackData;
@@ -73,7 +73,7 @@ public class ModpackInfo {
         try (FileWriter writer = new FileWriter(file)) {
             gson.toJson(defaultConfig, writer);
         } catch (IOException e) {
-            LOGGER.error("Failed to create default config", e);
+            LOGGER.error("Failed to create default data", e);
         }
     }
 

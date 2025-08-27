@@ -1,4 +1,4 @@
-package com.kd_gaming1.copysystem;
+package com.github.kd_gaming1.packcore.copysystem;
 
 import java.io.*;
 import java.nio.file.*;

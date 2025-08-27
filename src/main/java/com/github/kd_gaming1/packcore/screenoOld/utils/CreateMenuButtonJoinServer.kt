@@ -1,4 +1,4 @@
-package com.kd_gaming1.screen.utils
+package com.github.kd_gaming1.packcore.screenoOld.utils
 
 import gg.essential.elementa.components.UIContainer
 import gg.essential.elementa.components.UIRoundedRectangle
@@ -73,7 +73,7 @@ private fun joinServer(address: String, port: Int) {
         // Parse the server address
         val serverAddress = ServerAddress.parse("$address:$port")
 
-        // Create parent screen - use TitleScreen as fallback
+        // Create parent screenoOld - use TitleScreen as fallback
         val parentScreen = minecraft.currentScreen ?: TitleScreen()
 
         // Initiate connection to the server using the new ConnectScreen.connect method

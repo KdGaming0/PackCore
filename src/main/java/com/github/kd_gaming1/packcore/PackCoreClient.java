@@ -1,31 +1,33 @@
-package com.kd_gaming1;
+package com.github.kd_gaming1.packcore;
 
-import com.kd_gaming1.config.PackCoreConfig;
-import com.kd_gaming1.integration.VistasIntegration;
-import com.kd_gaming1.screen.SEMainMenu;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.gui.basic.BasicTitleScreen;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.gui.screen.TitleScreen;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class PackCoreClient implements ClientModInitializer {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
     @Override
     public void onInitializeClient() {
-        // Initialize MidnightLib config for client-side access
+        // Initialize MidnightLib data for client-side access
         MidnightConfig.init(PackCore.MOD_ID, PackCoreConfig.class);
 
         // Check if the Custom Menu is enabled using MidnightLib
         if (PackCoreConfig.enableCustomMenu) {
-            // Register screen event to replace the main menu after initialization
+            // Register screenoOld event to replace the main menu after initialization
             ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-                // Check if the screen being opened is the vanilla main menu
+                // Check if the screenoOld being opened is the vanilla main menu
                 if (screen instanceof TitleScreen) {
-                    // Apply Vistas configuration before showing the screen
-                    VistasIntegration.applyConfiguration();
-
                     // Replace it with your custom menu on the next tick
-                    client.execute(() -> client.setScreen(new SEMainMenu()));
+                    client.execute(() -> client.setScreen(new BasicTitleScreen()));
                 }
             });
         }

@@ -1,6 +1,6 @@
-package com.kd_gaming1.copysystem;
+package com.github.kd_gaming1.packcore.copysystem;
 
-import com.kd_gaming1.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import eu.midnightdust.lib.config.MidnightConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * - Forces Metal (cross-platform) Look & Feel on Linux to avoid GTK rendering bugs.
  * - Explicitly sets button colors.
  * - Resize/repaint workaround for Linux after dialog is shown.
- * - All UI setup runs on the EDT.
+ * - All UI wizard runs on the EDT.
  */
 public class ConfigSelectionDialog extends JFrame {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigSelectionDialog.class);
@@ -118,7 +118,7 @@ public class ConfigSelectionDialog extends JFrame {
             }
         });
 
-        // Create config lists with improved data
+        // Create data lists with improved data
         List<ConfigInfo> officialConfigs = extractionService.getOfficialConfigs();
         List<ConfigInfo> customConfigs = extractionService.getCustomConfigs();
 
@@ -434,7 +434,7 @@ public class ConfigSelectionDialog extends JFrame {
             if (PackCoreConfig.isFirstStartup) {
                 successMessage = String.format(
                         "✅ Initial Configuration Set Successfully!\n\n" +
-                                "The configuration '%s' has been applied as your starting setup.\n" +
+                                "The configuration '%s' has been applied as your starting wizard.\n" +
                                 "Minecraft will continue loading shortly.\n\n" +
                                 "Tip: You can create backups of your settings using '/packcore archive' in-game.",
                         configName);
@@ -525,7 +525,7 @@ public class ConfigSelectionDialog extends JFrame {
         helpHtml.append("<li><code>/packcore help</code> - Show all available commands</li>");
         helpHtml.append("<li><code>/packcore archive</code> - Create a backup of your current configuration</li>");
         helpHtml.append("<li><code>/packcore dialog true/false</code> - Enable or disable this startup dialog</li>");
-        helpHtml.append("<li><code>/packcore extract [config]</code> - Extract a specific configuration</li>");
+        helpHtml.append("<li><code>/packcore extract [data]</code> - Extract a specific configuration</li>");
         helpHtml.append("<li><code>/packcore list</code> - List all available configurations</li>");
         helpHtml.append("</ul>");
 
@@ -734,7 +734,7 @@ public class ConfigSelectionDialog extends JFrame {
     }
 
     /**
-     * Modern renderer for config items with better visual design
+     * Modern renderer for data items with better visual design
      */
     private static class ModernConfigRenderer extends DefaultListCellRenderer {
         @Override

@@ -1,11 +1,11 @@
-package com.kd_gaming1.screen
+package com.github.kd_gaming1.packcore.screenoOld
 
-import com.kd_gaming1.screen.utils.CreateMenuButton
-import com.kd_gaming1.screen.utils.CreateMenuButtonInfo
-import com.kd_gaming1.screen.utils.CreateMenuButtonJoinServer
-import com.kd_gaming1.screen.utils.CreateWebsiteButton
-import com.kd_gaming1.utils.CheckForUpdates
-import com.kd_gaming1.utils.ModpackInfo
+import com.github.kd_gaming1.packcore.screenoOld.utils.CreateMenuButton
+import com.github.kd_gaming1.packcore.screenoOld.utils.CreateMenuButtonInfo
+import com.github.kd_gaming1.packcore.screenoOld.utils.CreateMenuButtonJoinServer
+import com.github.kd_gaming1.packcore.screenoOld.utils.CreateWebsiteButton
+import com.github.kd_gaming1.packcore.utils.CheckForUpdatesold
+import com.github.kd_gaming1.packcore.utils.ModpackInfoOld
 import gg.essential.elementa.ElementaVersion
 import gg.essential.elementa.WindowScreen
 import gg.essential.elementa.components.*
@@ -22,7 +22,7 @@ import net.minecraft.client.gui.screen.world.SelectWorldScreen
 import java.awt.Color
 
 class SEMainMenu : WindowScreen(ElementaVersion.V7) {
-    val versions = CheckForUpdates.checkForUpdates()
+    val versions = CheckForUpdatesold.checkForUpdates()
     val currentVersion = versions[0] ?: "Unknown"
     val latestVersion = versions[1] ?: "Unknown"
     val changeLog = versions[2] ?: "No change log available."
@@ -95,14 +95,14 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
         if (isModMenuInstalled) {
             CreateMenuButton("Mods") {
                 try {
-                    // Dynamically load ModMenu screen to avoid compile-time dependency
+                    // Dynamically load ModMenu screenoOld to avoid compile-time dependency
                     val modMenuScreenClass = Class.forName("com.terraformersmc.modmenu.gui.ModsScreen")
                     val constructor = modMenuScreenClass.getConstructor(net.minecraft.client.gui.screen.Screen::class.java)
                     val modsScreen = constructor.newInstance(this) as net.minecraft.client.gui.screen.Screen
                     UMinecraft.getMinecraft().setScreen(modsScreen)
                 } catch (e: Exception) {
                     // This should not happen if ModMenu is properly installed, but just in case
-                    println("Failed to open ModMenu screen: ${e.message}")
+                    println("Failed to open ModMenu screenoOld: ${e.message}")
                 }
             } childOf buttonContainer3
         }
@@ -139,7 +139,7 @@ class SEMainMenu : WindowScreen(ElementaVersion.V7) {
             height = ChildBasedSizeConstraint()
         } childOf buttonContainer4
 
-        UIText("SkyBlock Enhanced Version: ${ModpackInfo.getCurrentVersion()}").constrain {
+        UIText("SkyBlock Enhanced Version: ${ModpackInfoOld.getCurrentVersion()}").constrain {
             x = CenterConstraint()
             y = SiblingConstraint(padding = 3f)
             textScale = 0.6.pixels()

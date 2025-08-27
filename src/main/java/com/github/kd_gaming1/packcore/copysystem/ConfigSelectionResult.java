@@ -1,9 +1,9 @@
-package com.kd_gaming1.copysystem;
+package com.github.kd_gaming1.packcore.copysystem;
 
 import java.util.List;
 
 /**
- * Result object that encapsulates the decision logic for config selection
+ * Result object that encapsulates the decision logic for data selection
  */
 public class ConfigSelectionResult {
     private final boolean showDialog;

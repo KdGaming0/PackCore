@@ -1,6 +1,6 @@
 {
   "required": true,
-  "package": "com.kd_gaming1.mixin",
+  "package": "com.github.kd_gaming1.packcore.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
   ],
@@ -8,6 +8,6 @@
     "defaultRequire": 1
   },
   "client": [
-    "SEMainMenuBlurMixin"
-    ]
+    "ScreenMixin"
+  ]
 }
