@@ -1,0 +1,464 @@
+package com.github.kd_gaming1.packcore.gui.help;
+
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import io.wispforest.owo.ops.TextOps;
+import io.wispforest.owo.ui.base.BaseOwoScreen;
+import io.wispforest.owo.ui.component.ButtonComponent;
+import io.wispforest.owo.ui.component.Components;
+import io.wispforest.owo.ui.component.LabelComponent;
+import io.wispforest.owo.ui.container.Containers;
+import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.StackLayout;
+import io.wispforest.owo.ui.core.*;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
+/**
+ * Base class for wizard pages with consistent styling and layout.
+ * Designed with island background in mind - content favors left side.
+ */
+public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
+
+    // Theme constants
+    protected static final int OVERLAY_DARK = 0x80_000000;
+    protected static final int PANEL_BACKGROUND = 0xC0_1A1A1A;
+    protected static final int ACCENT_GOLD = 0xFF_FFD700;
+    protected static final int TEXT_WHITE = 0xFFFFFF;
+    protected static final int TEXT_SECONDARY = 0xB9BBBE;
+
+    // Status panel colors
+    protected static final int STATUS_SUCCESS_BG = 0xC0_2D5016;
+    protected static final int STATUS_SUCCESS_BORDER = 0xFF_52C41A;
+    protected static final int STATUS_WARNING_BG = 0xC0_5C3317;
+    protected static final int STATUS_WARNING_BORDER = 0xFF_FAAD14;
+    protected static final int STATUS_ERROR_BG = 0xC0_5C1717;
+    protected static final int STATUS_ERROR_BORDER = 0xFF_FF4D4F;
+
+    // Layout constants
+    protected static final int HEADER_HEIGHT = 35;
+    protected static final int CONTENT_PADDING = getScaledPadding();
+    protected static final int PROGRESS_BAR_WIDTH = 125;
+
+    private boolean wizardFailed;
+    private StackLayout confirmOverlay;
+
+    private final Identifier backgroundTexture;
+    private final WizardPageInfo pageInfo;
+
+    protected BaseWizardPage(@NotNull WizardPageInfo pageInfo, @Nullable Identifier backgroundTexture) {
+        super(pageInfo.title());
+        this.pageInfo = pageInfo;
+        this.backgroundTexture = backgroundTexture != null ? backgroundTexture :
+                Identifier.of(MOD_ID, "textures/gui/wizard/test_temp.png");
+    }
+
+    @Override
+    protected @NotNull OwoUIAdapter<StackLayout> createAdapter() {
+        return OwoUIAdapter.create(this, Containers::stack);
+    }
+
+    @Override
+    protected final void build(StackLayout rootComponent) {
+        int backgroundWidth = MinecraftClient.getInstance().getWindow().getScaledWidth();
+        int backgroundHeight = MinecraftClient.getInstance().getWindow().getScaledHeight();
+
+        // Set background
+        rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
+
+        // Create main layout structure
+        FlowLayout mainLayout = createMainLayout();
+
+        // Add header
+        mainLayout.child(createHeader().margins(Insets.bottom(10)));
+
+        // Add status panel if needed
+        if (shouldShowStatusInfo()) {
+            mainLayout.child(createStatusPanel());
+        }
+
+        // Add main content area (left-aligned for island background)
+        FlowLayout contentContainer = createContentContainer();
+        buildContent(contentContainer);
+        mainLayout.child(contentContainer);
+
+        // Add footer with navigation
+        mainLayout.child(createFooter());
+
+        // Add the main layout to root with overlay for better text visibility
+        rootComponent.child(
+                Containers.stack(Sizing.fill(100), Sizing.fill(100))
+                        .child(Components.box(Sizing.fill(100), Sizing.fill(100)).color(Color.ofArgb(OVERLAY_DARK)))
+                        .child(mainLayout)
+        );
+
+        // Store reference for overlay management
+        this.confirmOverlay = rootComponent;
+    }
+
+    @Override
+    public void resize(MinecraftClient client, int width, int height) {
+        super.resize(client, width, height);
+
+        int backgroundWidth = client.getWindow().getScaledWidth();
+        int backgroundHeight = client.getWindow().getScaledHeight();
+
+        // Update the background surface directly
+        this.uiAdapter.rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
+    }
+
+    private FlowLayout createMainLayout() {
+        return (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100))
+                .gap(0)
+                .padding(Insets.of(CONTENT_PADDING));
+    }
+
+    private FlowLayout createHeader() {
+        FlowLayout header = (FlowLayout) Containers.horizontalFlow(Sizing.fill(60), Sizing.fixed(HEADER_HEIGHT))
+                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)))
+                .padding(Insets.of(CONTENT_PADDING - 4))
+                .verticalAlignment(VerticalAlignment.CENTER);
+
+        // Left side - progress indicator
+        FlowLayout leftSection = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.fill(100))
+                .gap(8)
+                .verticalAlignment(VerticalAlignment.CENTER);
+
+        leftSection.child(Components.label(
+                TextOps.withColor("Step " + pageInfo.currentStep() + " of " + pageInfo.totalSteps(), ACCENT_GOLD)
+        ));
+
+        // Progress bar
+        leftSection.child(createProgressBar());
+
+        header.child(leftSection);
+
+        // Right side - page title
+        Text titleText = Text.literal(pageInfo.title().getString()).setStyle(Style.EMPTY.withBold(Boolean.TRUE));
+        LabelComponent titleLabel = Components.label(titleText).color(Color.ofRgb(TEXT_WHITE));
+
+        header.child(titleLabel.positioning(Positioning.relative(100, 50)));
+
+        return header;
+    }
+
+    private Component createProgressBar() {
+        FlowLayout progressContainer = (FlowLayout) Containers.horizontalFlow(Sizing.fixed(PROGRESS_BAR_WIDTH), Sizing.fixed(4))
+                .surface(Surface.flat(0x40_FFFFFF));
+
+        int progressWidth = (int) (PROGRESS_BAR_WIDTH * ((double) pageInfo.currentStep() / pageInfo.totalSteps()));
+
+        Component progressFill = Components.box(Sizing.fixed(progressWidth), Sizing.fill(100))
+                .color(Color.ofRgb(ACCENT_GOLD));
+
+        return Containers.stack(Sizing.fixed(PROGRESS_BAR_WIDTH), Sizing.fixed(4))
+                .child(progressContainer)
+                .child(progressFill);
+    }
+
+    private FlowLayout createStatusPanel() {
+        StatusInfo status = getStatusInfo();
+
+        FlowLayout statusPanel = (FlowLayout) Containers.verticalFlow(Sizing.fill(38), Sizing.content())
+                .gap(12)
+                .surface(Surface.flat(status.backgroundColor).and(Surface.outline(status.borderColor)))
+                .padding(Insets.of(12))
+                .verticalAlignment(VerticalAlignment.CENTER)
+                .positioning(Positioning.relative(100, 0));
+
+        // Left side - icon and message
+        FlowLayout messageSection = (FlowLayout) Containers.verticalFlow(Sizing.expand(), Sizing.content())
+                .gap(4);
+
+        // Status header with icon
+        FlowLayout headerRow = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.content())
+                .gap(6)
+                .verticalAlignment(VerticalAlignment.CENTER);
+
+        headerRow.child(Components.label(
+                Text.literal(status.icon + " " + status.title)
+                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+        ).color(Color.ofRgb(TEXT_WHITE)));
+
+        messageSection.child(headerRow);
+
+        // Detailed message
+        LabelComponent detailLabel = Components.label(
+                Text.literal(status.message).setStyle(Style.EMPTY)
+        ).color(Color.ofRgb(TEXT_SECONDARY));
+        detailLabel.maxWidth(250);
+        messageSection.child(detailLabel);
+
+        // Additional info if needed
+        if (status.additionalInfo != null) {
+            LabelComponent infoLabel = (LabelComponent) Components.label(
+                    Text.literal(status.additionalInfo)
+                            .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
+            ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 2, 2, 2));
+            infoLabel.maxWidth(250);
+            messageSection.child(infoLabel.margins(Insets.top(4)));
+        }
+
+        statusPanel.child(messageSection);
+
+        // Right side - action button if needed
+        if (status.showResetButton) {
+            ButtonComponent resetButton = (ButtonComponent) Components.button(
+                    Text.literal("Reset Setup"),
+                    button -> showResetConfirmation()
+            ).sizing(Sizing.fixed(100), Sizing.fixed(22));
+
+            resetButton.tooltip(Text.literal("Reset the setup wizard and restart the game"));
+            statusPanel.child(resetButton);
+        }
+
+        return statusPanel;
+    }
+
+    private void showResetConfirmation() {
+        // Create overlay with the dialog as the required child
+        io.wispforest.owo.ui.container.OverlayContainer<FlowLayout> overlay =
+                Containers.overlay(createConfirmDialog());
+
+        // Configure behavior and appearance
+        overlay.closeOnClick(true);
+        overlay.surface(Surface.flat(0x80_000000));
+        overlay.zIndex(10);
+
+        // Add to root overlay stack
+        confirmOverlay.child(overlay);
+    }
+
+    private FlowLayout createConfirmDialog() {
+        FlowLayout dialog = (FlowLayout) Containers.verticalFlow(Sizing.fixed(350), Sizing.content())
+                .gap(15)
+                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(STATUS_WARNING_BORDER)))
+                .padding(Insets.of(20))
+                .positioning(Positioning.relative(50, 50));
+
+        // Title
+        dialog.child(Components.label(
+                Text.literal("⚠ Reset Setup Wizard?")
+                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+        ).color(Color.ofRgb(STATUS_WARNING_BORDER)).margins(Insets.of(2, 2, 2, 2)));
+
+        // Message
+        LabelComponent message = (LabelComponent) Components.label(
+                Text.literal("This will reset all configuration values to their defaults and close the game. " +
+                        "When you restart, the pre-launch setup wizard will appear again, " +
+                        "allowing you to select your preferred configuration.")
+        ).color(Color.ofRgb(TEXT_WHITE)).margins(Insets.of(2, 2, 2, 2));
+        message.maxWidth(310);
+        dialog.child(message);
+
+        // Warning
+        LabelComponent warning = (LabelComponent) Components.label(
+                Text.literal("Note: Any manual changes you've made will be lost.")
+                        .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
+        ).color(Color.ofRgb(STATUS_WARNING_BORDER)).margins(Insets.of(2, 2, 2, 2));
+        warning.maxWidth(310);
+        dialog.child(warning);
+
+        // Buttons
+        FlowLayout buttons = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(10)
+                .horizontalAlignment(HorizontalAlignment.CENTER);
+
+        ButtonComponent cancelButton = (ButtonComponent) Components.button(
+                Text.literal("Cancel"),
+                button -> {
+                    // Remove the overlay
+                    confirmOverlay.removeChild(confirmOverlay.children().get(confirmOverlay.children().size() - 1));
+                }
+        ).sizing(Sizing.fixed(100), Sizing.fixed(22));
+
+        ButtonComponent confirmButton = (ButtonComponent) Components.button(
+                Text.literal("Reset & Exit"),
+                button -> onResetPressed()
+        ).sizing(Sizing.fixed(100), Sizing.fixed(22));
+
+        buttons.child(cancelButton);
+        buttons.child(confirmButton);
+        dialog.child(buttons);
+
+        return dialog;
+    }
+
+    private StatusInfo getStatusInfo() {
+        if (PackCoreConfig.haveSetupWizardShown && PackCoreConfig.haveSetupWizardCompletedSuccessfully) {
+            wizardFailed = false;
+            return new StatusInfo(
+                    "✓",
+                    "Configuration Successful",
+                    "The pre-launch setup wizard completed successfully. You can see your applied config below, if this was not the config you want please click the  button below to restart setup and try again.",
+                    "Applied configuration: " + PackCoreConfig.appliedConfigName,
+                    STATUS_SUCCESS_BG,
+                    STATUS_SUCCESS_BORDER,
+                    true
+            );
+        } else if (PackCoreConfig.haveSetupWizardShown) {
+            wizardFailed = true;
+            return new StatusInfo(
+                    "⚠",
+                    "Setup Incomplete",
+                    "The pre-launch setup wizard was shown but didn't complete successfully. " +
+                            "Your mods may not be properly configured.",
+                    "Click 'Reset Setup' to restart and try the configuration again.",
+                    STATUS_WARNING_BG,
+                    STATUS_WARNING_BORDER,
+                    true
+            );
+        } else {
+            wizardFailed = true;
+            return new StatusInfo(
+                    "⚠",
+                    "Setup Failed",
+                    "The pre-launch setup wizard failed to run. This means your mod configurations " +
+                            "haven't been applied, which may cause conflicts or missing features.",
+                    "Click 'Reset Setup' to close the game and restart the setup process.",
+                    STATUS_ERROR_BG,
+                    STATUS_ERROR_BORDER,
+                    true
+            );
+        }
+    }
+
+    private FlowLayout createContentContainer() {
+        // Content area positioned on the left side
+        return (FlowLayout) Containers.verticalFlow(Sizing.fill(60), Sizing.expand())
+                .gap(12)
+                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(0x40_FFFFFF)))
+                .padding(Insets.of(CONTENT_PADDING))
+                .horizontalAlignment(HorizontalAlignment.CENTER);
+    }
+
+    private FlowLayout createFooter() {
+        FlowLayout footer = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.fill(10))
+                .padding(Insets.of(CONTENT_PADDING - 4, CONTENT_PADDING - 4, CONTENT_PADDING, CONTENT_PADDING))
+                .verticalAlignment(VerticalAlignment.CENTER)
+                .positioning(Positioning.relative(0, 100));
+
+        // Right side - navigation buttons
+        FlowLayout buttonContainer = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.content())
+                .gap(12)
+                .positioning(Positioning.relative(100, 50));
+
+        if (hasPreviousPage()) {
+            ButtonComponent backButton = (ButtonComponent) Components.button(
+                    Text.literal("← Back"),
+                    button -> onBackPressed()
+            ).sizing(Sizing.fixed(80), Sizing.fixed(24));
+            buttonContainer.child(backButton);
+        }
+
+        ButtonComponent primaryButton = createPrimaryButton();
+        buttonContainer.child(primaryButton);
+
+        // Skip button for optional steps
+        if (isSkippable()) {
+            ButtonComponent skipButton = (ButtonComponent) Components.button(
+                    Text.literal("Skip"),
+                    button -> onSkipPressed()
+            ).sizing(Sizing.fixed(60), Sizing.fixed(20));
+            buttonContainer.child(skipButton);
+        }
+
+        footer.child(buttonContainer);
+
+        return footer;
+    }
+
+    private ButtonComponent createPrimaryButton() {
+        String buttonText = isLastPage() ? "Finish" : "Continue →";
+        return (ButtonComponent) Components.button(
+                Text.literal(buttonText),
+                button -> onContinuePressed()
+        ).sizing(Sizing.fixed(100), Sizing.fixed(24));
+    }
+
+    private static int getScaledPadding() {
+        int screenWidth = MinecraftClient.getInstance().getWindow().getScaledWidth();
+        return screenWidth < 900 ? 8 : (screenWidth > 1400 ? 20 : 15);
+    }
+
+    // Abstract methods for subclasses to implement
+
+    /**
+     * Build the main content for this wizard page.
+     */
+    protected abstract void buildContent(FlowLayout contentContainer);
+
+    /**
+     * Called when the continue/next button is pressed.
+     */
+    protected abstract void onContinuePressed();
+
+    // Optional override methods
+
+    protected void onBackPressed() {
+        this.close();
+    }
+
+    protected void onSkipPressed() {
+        onContinuePressed();
+    }
+
+    protected void onResetPressed() {
+        // Reset values and close the game
+        PackCoreConfig.haveSetupWizardShown = false;
+        PackCoreConfig.haveSetupWizardCompletedSuccessfully = false;
+        PackCoreConfig.appliedConfigName = "";
+        MinecraftClient.getInstance().scheduleStop();
+    }
+
+    protected boolean hasPreviousPage() {
+        return pageInfo.currentStep() > 1;
+    }
+
+    protected boolean isLastPage() {
+        return pageInfo.currentStep() >= pageInfo.totalSteps();
+    }
+
+    protected boolean isSkippable() {
+        return false;
+    }
+
+    protected boolean shouldShowStatusInfo() {
+        return true;
+    }
+
+    // Helper classes
+
+    private static class StatusInfo {
+        final String icon;
+        final String title;
+        final String message;
+        final String additionalInfo;
+        final int backgroundColor;
+        final int borderColor;
+        final boolean showResetButton;
+
+        StatusInfo(String icon, String title, String message, String additionalInfo,
+                   int backgroundColor, int borderColor, boolean showResetButton) {
+            this.icon = icon;
+            this.title = title;
+            this.message = message;
+            this.additionalInfo = additionalInfo;
+            this.backgroundColor = backgroundColor;
+            this.borderColor = borderColor;
+            this.showResetButton = showResetButton;
+        }
+    }
+
+    public record WizardPageInfo(
+            Text title,
+            int currentStep,
+            int totalSteps
+    ) {}
+}

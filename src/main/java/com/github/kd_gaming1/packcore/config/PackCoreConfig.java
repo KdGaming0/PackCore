@@ -70,4 +70,16 @@ public class PackCoreConfig extends MidnightConfig {
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.last_config_applied")
     public static String lastConfigApplied = "";
+
+    @Hidden
+    @Entry(category = ADVANCED, name = "Have Setup Wizard shown")
+    public static boolean haveSetupWizardShown = true;
+
+    @Hidden
+    @Entry(category = ADVANCED, name = "Have Setup Wizard completed successfully")
+    public static boolean haveSetupWizardCompletedSuccessfully = true;
+
+    @Hidden
+    @Entry(category = ADVANCED, name = "What config was applied?")
+    public static String appliedConfigName = "";
 }

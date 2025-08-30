@@ -30,7 +30,7 @@ public class UpdateAvailablePopup {
     private static final int TEXT_WHITE = 0xFFFFFF;
     private static final int TEXT_GRAY = 0xAAAAAA;
 
-    // Cached Markdown processor - created once, reused many times
+    // Cached Markdown processor
     private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
             new MarkdownProcessor<>(
                     OwoUICompiler::new,
