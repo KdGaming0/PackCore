@@ -1,6 +1,6 @@
 package com.github.kd_gaming1.packcore.gui.help;
 
-import com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPageOne;
+import com.github.kd_gaming1.packcore.gui.help.introduction.*;
 import net.minecraft.client.gui.screen.Screen;
 
 /**
@@ -11,15 +11,15 @@ public class WizardNavigator {
     public static Screen createWizardPage(int pageNumber) {
         return switch (pageNumber) {
             case 1 -> new IntroductionScreenPageOne();
-            // case 2 -> new IntroductionScreenPageTwo();
-            // case 3 -> new ConfigurationPage();
-            // case 4 -> new FeatureOverviewPage();
-            // case 5 -> new CompletionPage();
-            default -> new IntroductionScreenPageOne();
+            case 2 -> new IntroductionScreenPageTwo();
+            case 3 -> new IntroductionScreenPageThree();
+            case 4 -> new IntroductionScreenPageFour();
+            case 5 -> new IntroductionScreenPageFive();
+            default -> new IntroductionScreenPage();
         };
     }
 
     public static void startWizard(net.minecraft.client.MinecraftClient client) {
-        client.setScreen(createWizardPage(1));
+        client.setScreen(createWizardPage(0));
     }
 }

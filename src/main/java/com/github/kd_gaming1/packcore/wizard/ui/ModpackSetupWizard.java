@@ -5,6 +5,7 @@ import com.github.kd_gaming1.packcore.wizard.ui.theme.WizardTheme;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowEvent;
 import java.nio.file.Path;
 
 public class ModpackSetupWizard extends JFrame {
@@ -48,13 +49,50 @@ public class ModpackSetupWizard extends JFrame {
 
     private void setupFrame() {
         setTitle("Modpack Setup Wizard");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); // Changed to handle closing properly
         setSize(new Dimension(900, 700));
         setLocationRelativeTo(null);
         setResizable(false);
 
         // Set dark background
         getContentPane().setBackground(WizardTheme.BACKGROUND_DARK);
+
+        // Add window listener to handle close attempts
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                handleWindowClosing();
+            }
+        });
+    }
+
+    private void handleWindowClosing() {
+        // Check if wizard is complete
+        if (reviewAndApplyPage != null && reviewAndApplyPage.isExtractionCompleted()) {
+            // Wizard completed successfully, allow close
+            dispose();
+        } else {
+            // Wizard not complete, confirm with user
+            int choice = JOptionPane.showConfirmDialog(
+                    this,
+                    "The setup wizard is not yet complete.\n\n" +
+                            "If you close now, you'll need to run it again next time.\n" +
+                            "Are you sure you want to close?",
+                    "Setup Not Complete",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (choice == JOptionPane.YES_OPTION) {
+                dispose();
+            }
+            // If NO, do nothing - keep wizard open
+        }
+    }
+
+    // Method to properly close wizard after completion
+    public void completeWizard() {
+        dispose(); // This will trigger the windowClosed event
     }
 
     private void setupPanels() {
@@ -112,6 +150,7 @@ public class ModpackSetupWizard extends JFrame {
         return reviewAndApplyPage;
     }
 
+    // Temp for debugging
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new ModpackSetupWizard(Path.of("C:\\Users\\karld\\IdeaProjects\\PackCore\\run"));

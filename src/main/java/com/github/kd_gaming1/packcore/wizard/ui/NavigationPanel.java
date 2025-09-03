@@ -184,7 +184,34 @@ public class NavigationPanel extends JPanel implements ActionListener {
         );
 
         if (result == JOptionPane.YES_OPTION) {
-            System.exit(0);
+            // Mark wizard as completed before closing
+            markWizardCompleted();
+            wizard.completeWizard();
+        }
+    }
+
+    private void markWizardCompleted() {
+        try {
+            // Import your config class
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardShown = true;
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.isFirstStartup = false;
+
+            // Reset the manual trigger since wizard is now complete
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.showInstallWizard = false;
+
+            // Save the selected configuration
+            String selectedConfig = ConfigSelectionPage.selectedResolution;
+            if (selectedConfig != null) {
+                com.github.kd_gaming1.packcore.config.PackCoreConfig.appliedConfigName = selectedConfig;
+                com.github.kd_gaming1.packcore.config.PackCoreConfig.lastConfigApplied = selectedConfig;
+            }
+
+            // Write config to disk
+            eu.midnightdust.lib.config.MidnightConfig.write("packcore");
+            LOGGER.info("Wizard completion state saved successfully, showInstallWizard reset to false");
+        } catch (Exception e) {
+            LOGGER.error("Failed to save wizard completion state", e);
         }
     }
 
