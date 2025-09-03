@@ -674,7 +674,7 @@ public class ConfigSelectionDialog extends JFrame {
             PackCoreConfig.isFirstStartup = false;
         }
 
-        PackCoreConfig.promptSetDefaultConfig = false;
+        PackCoreConfig.showInstallWizard = false;
         MidnightConfig.write("packcore");
         setVisible(false);
         dispose();

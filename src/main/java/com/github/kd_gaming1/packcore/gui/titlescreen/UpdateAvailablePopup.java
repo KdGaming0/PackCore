@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.gui;
+package com.github.kd_gaming1.packcore.gui.titlescreen;
 
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;

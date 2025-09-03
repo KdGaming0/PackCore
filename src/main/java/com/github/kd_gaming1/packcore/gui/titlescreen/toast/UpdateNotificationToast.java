@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.gui.toast;
+package com.github.kd_gaming1.packcore.gui.titlescreen.toast;
 
 import io.wispforest.owo.ui.base.BaseOwoToast;
 import io.wispforest.owo.ui.component.Components;

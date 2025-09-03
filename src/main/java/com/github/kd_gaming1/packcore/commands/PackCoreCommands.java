@@ -126,7 +126,7 @@ public class PackCoreCommands {
         ServerCommandSource source = context.getSource();
 
         // Update the data using MidnightLib
-        PackCoreConfig.promptSetDefaultConfig = enabled;
+        PackCoreConfig.showInstallWizard = enabled;
         MidnightConfig.write("packcore");
 
         // Send feedback
@@ -144,7 +144,7 @@ public class PackCoreCommands {
 
     private static int showDialogStatus(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        boolean currentStatus = PackCoreConfig.promptSetDefaultConfig;
+        boolean currentStatus = PackCoreConfig.showInstallWizard;
 
         String status = currentStatus ? "§aenabled" : "§cdisabled";
         source.sendFeedback(() -> Text.literal("§6Dialog window is currently " + status + "§6."), false);
@@ -317,7 +317,7 @@ public class PackCoreCommands {
         ServerCommandSource source = context.getSource();
 
         source.sendFeedback(() -> Text.literal("§6=== PackCore Configuration Status ==="), false);
-        source.sendFeedback(() -> Text.literal("§7Dialog Window: " + (PackCoreConfig.promptSetDefaultConfig ? "§aEnabled" : "§cDisabled")), false);
+        source.sendFeedback(() -> Text.literal("§7Dialog Window: " + (PackCoreConfig.showInstallWizard ? "§aEnabled" : "§cDisabled")), false);
         source.sendFeedback(() -> Text.literal("§7Custom Menu: " + (PackCoreConfig.enableCustomMenu ? "§aEnabled" : "§cDisabled")), false);
         source.sendFeedback(() -> Text.literal("§7Custom Panorama: " + (PackCoreConfig.enableCustomPanorama ? "§aEnabled" : "§cDisabled")), false);
         source.sendFeedback(() -> Text.literal("§7Dialog Timeout: §e" + PackCoreConfig.dialogTimeoutMinutes + " minutes"), false);

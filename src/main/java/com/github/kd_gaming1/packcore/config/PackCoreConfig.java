@@ -14,8 +14,8 @@ public class PackCoreConfig extends MidnightConfig {
     @Comment(category = DIALOG, name = "packcore.midnightconfig.dialog_header")
     public static Comment dialogHeader;
 
-    @Entry(category = DIALOG, name = "packcore.midnightconfig.prompt_default_config")
-    public static boolean promptSetDefaultConfig = true;
+    @Entry(category = DIALOG, name = "Show Pre-Launch Install Wizard")
+    public static boolean showInstallWizard = false;
 
     @Entry(category = DIALOG, name = "packcore.midnightconfig.dialog_timeout", min = 1, max = 60)
     public static int dialogTimeoutMinutes = 10;
@@ -73,11 +73,11 @@ public class PackCoreConfig extends MidnightConfig {
 
     @Hidden
     @Entry(category = ADVANCED, name = "Have Setup Wizard shown")
-    public static boolean haveSetupWizardShown = true;
+    public static boolean haveSetupWizardShown = false;
 
     @Hidden
     @Entry(category = ADVANCED, name = "Have Setup Wizard completed successfully")
-    public static boolean haveSetupWizardCompletedSuccessfully = true;
+    public static boolean haveSetupWizardCompletedSuccessfully = false;
 
     @Hidden
     @Entry(category = ADVANCED, name = "What config was applied?")

@@ -4,8 +4,8 @@ import com.github.kd_gaming1.packcore.screenoOld.utils.CreateMenuButton
 import com.github.kd_gaming1.packcore.screenoOld.utils.CreateMenuButtonInfo
 import com.github.kd_gaming1.packcore.screenoOld.utils.CreateMenuButtonJoinServer
 import com.github.kd_gaming1.packcore.screenoOld.utils.CreateWebsiteButton
-import com.github.kd_gaming1.packcore.utils.CheckForUpdatesold
-import com.github.kd_gaming1.packcore.utils.ModpackInfoOld
+import com.github.kd_gaming1.packcore.util.CheckForUpdatesold
+import com.github.kd_gaming1.packcore.util.ModpackInfoOld
 import gg.essential.elementa.ElementaVersion
 import gg.essential.elementa.WindowScreen
 import gg.essential.elementa.components.*

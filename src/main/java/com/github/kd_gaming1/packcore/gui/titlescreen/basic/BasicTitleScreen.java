@@ -1,12 +1,12 @@
-package com.github.kd_gaming1.packcore.gui.basic;
+package com.github.kd_gaming1.packcore.gui.titlescreen.basic;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.gui.UpdateAvailablePopup;
-import com.github.kd_gaming1.packcore.gui.toast.UpdateNotificationToast;
-import com.github.kd_gaming1.packcore.utils.ModpackInfo;
-import com.github.kd_gaming1.packcore.utils.UpdateCacheManager;
-import com.github.kd_gaming1.packcore.utils.UpdateCheckResult;
+import com.github.kd_gaming1.packcore.gui.titlescreen.UpdateAvailablePopup;
+import com.github.kd_gaming1.packcore.gui.titlescreen.toast.UpdateNotificationToast;
+import com.github.kd_gaming1.packcore.util.ModpackInfo;
+import com.github.kd_gaming1.packcore.util.UpdateCacheManager;
+import com.github.kd_gaming1.packcore.util.UpdateCheckResult;
 
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
@@ -354,10 +354,6 @@ public class BasicTitleScreen extends BaseOwoScreen<FlowLayout> {
         this.changelog = result.getChangelog();
         this.modrinthUrl = result.getModrinthUrl();
         this.modrinthName = info.getName();
-
-        // Debug logging
-        // LOGGER.info("Update check completed - Available: {}, Current: {}, Latest: {}", updateAvailable, currentVersion, newVersion);
-        // LOGGER.info("Modrinth URL: {}", modrinthUrl);
     }
 
     @FunctionalInterface

@@ -35,7 +35,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
             ConfigExtractionService extractionService = new ConfigExtractionService(minecraftRoot);
 
             // Check if we need to show the dialog using MidnightLib
-            if (!PackCoreConfig.promptSetDefaultConfig) {
+            if (!PackCoreConfig.showInstallWizard) {
                 LOGGER.info("Config dialog disabled, skipping user prompt");
                 return;
             }
@@ -62,7 +62,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                 if (success) {
                     // Disable the prompt for next time using MidnightLib
                     LOGGER.info("Auto-extraction successful, disabling data prompt for next launch");
-                    PackCoreConfig.promptSetDefaultConfig = false;
+                    PackCoreConfig.showInstallWizard = false;
                     PackCoreConfig.lastConfigApplied = result.getConfigName(); // Store last applied data
 
                     // Mark that we're no longer on first startup
@@ -110,7 +110,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
                     LOGGER.info("Successfully auto-applied 1080p configuration on macOS");
 
                     // Disable the prompt for next time
-                    PackCoreConfig.promptSetDefaultConfig = false;
+                    PackCoreConfig.showInstallWizard = false;
                     PackCoreConfig.lastConfigApplied = targetConfig.getName();
 
                     // Mark that we're no longer on first startup
@@ -137,7 +137,7 @@ public class PreLaunchConfigExtractor implements PreLaunchEntrypoint {
 
                     boolean success = extractionService.extractConfig(firstConfig.getName(), ConfigType.OFFICIAL);
                     if (success) {
-                        PackCoreConfig.promptSetDefaultConfig = false;
+                        PackCoreConfig.showInstallWizard = false;
                         PackCoreConfig.lastConfigApplied = firstConfig.getName();
 
                         // Mark that we're no longer on first startup

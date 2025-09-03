@@ -13,7 +13,6 @@ import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -88,6 +87,13 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         buildContent(contentContainer);
         mainLayout.child(contentContainer);
 
+        // Add right-aligned content area if needed
+        if (shouldShowRightPanel()) {
+            FlowLayout contentContainerRight = createContentContainerRight();
+            buildContentRight(contentContainerRight);
+            mainLayout.child(contentContainerRight);
+        }
+
         // Add footer with navigation
         mainLayout.child(createFooter());
 
@@ -120,7 +126,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     }
 
     private FlowLayout createHeader() {
-        FlowLayout header = (FlowLayout) Containers.horizontalFlow(Sizing.fill(60), Sizing.fixed(HEADER_HEIGHT))
+        FlowLayout header = (FlowLayout) Containers.horizontalFlow(Sizing.fill(getContentColumnWidthPercent()), Sizing.fixed(HEADER_HEIGHT))
                 .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)))
                 .padding(Insets.of(CONTENT_PADDING - 4))
                 .verticalAlignment(VerticalAlignment.CENTER);
@@ -330,17 +336,26 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     }
 
     private FlowLayout createContentContainer() {
-        // Content area positioned on the left side
-        return (FlowLayout) Containers.verticalFlow(Sizing.fill(60), Sizing.expand())
+        return (FlowLayout) Containers.verticalFlow(Sizing.fill(getContentColumnWidthPercent()), Sizing.expand())
                 .gap(12)
                 .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(0x40_FFFFFF)))
                 .padding(Insets.of(CONTENT_PADDING))
                 .horizontalAlignment(HorizontalAlignment.CENTER);
     }
 
+    private FlowLayout createContentContainerRight() {
+        // Alternative content container on the right side
+        return (FlowLayout) Containers.verticalFlow(Sizing.fill(getContentColumnWidthRightPercent()), Sizing.expand())
+                .gap(12)
+                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(0x40_FFFFFF)))
+                .padding(Insets.of(CONTENT_PADDING))
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .positioning(Positioning.relative(100, 0));
+    }
+
     private FlowLayout createFooter() {
         FlowLayout footer = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.fill(10))
-                .padding(Insets.of(CONTENT_PADDING - 4, CONTENT_PADDING - 4, CONTENT_PADDING, CONTENT_PADDING))
+                .padding(Insets.of(CONTENT_PADDING - 8, CONTENT_PADDING - 8, CONTENT_PADDING, CONTENT_PADDING))
                 .verticalAlignment(VerticalAlignment.CENTER)
                 .positioning(Positioning.relative(0, 100));
 
@@ -393,6 +408,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
      * Build the main content for this wizard page.
      */
     protected abstract void buildContent(FlowLayout contentContainer);
+    protected abstract void buildContentRight(FlowLayout contentContainerRight);
 
     /**
      * Called when the continue/next button is pressed.
@@ -402,7 +418,11 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     // Optional override methods
 
     protected void onBackPressed() {
-        this.close();
+        if (hasPreviousPage()) {
+            MinecraftClient.getInstance().setScreen(
+                    WizardNavigator.createWizardPage(pageInfo.currentStep() - 1)
+            );
+        }
     }
 
     protected void onSkipPressed() {
@@ -418,7 +438,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     }
 
     protected boolean hasPreviousPage() {
-        return pageInfo.currentStep() > 1;
+        return pageInfo.currentStep() >= 1;
     }
 
     protected boolean isLastPage() {
@@ -431,6 +451,18 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     protected boolean shouldShowStatusInfo() {
         return true;
+    }
+
+    protected boolean shouldShowRightPanel() {
+        return false;
+    }
+
+    protected int getContentColumnWidthPercent() {
+        return 60;
+    }
+
+    protected int getContentColumnWidthRightPercent() {
+        return 35;
     }
 
     // Helper classes

@@ -1,8 +1,8 @@
 package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.commands.PackCoreCommands;
-import com.github.kd_gaming1.packcore.utils.ModpackInfo;
-import com.github.kd_gaming1.packcore.utils.UpdateCacheManager;
+import com.github.kd_gaming1.packcore.util.ModpackInfo;
+import com.github.kd_gaming1.packcore.util.UpdateCacheManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;

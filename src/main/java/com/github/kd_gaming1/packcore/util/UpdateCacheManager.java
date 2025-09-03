@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.utils;
+package com.github.kd_gaming1.packcore.util;
 
 import com.github.kd_gaming1.packcore.PackCore;
 
