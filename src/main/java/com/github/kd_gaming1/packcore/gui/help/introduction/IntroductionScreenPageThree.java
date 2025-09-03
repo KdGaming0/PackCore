@@ -20,7 +20,8 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 
-public class IntroductionScreenPageOne extends BaseWizardPage {
+public class IntroductionScreenPageThree extends BaseWizardPage {
+
     private final ModpackInfo modpackInfo;
 
     // UI state fields
@@ -31,11 +32,11 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
     private FlowLayout classicImageContainer;
     private FlowLayout modernImageContainer;
 
-    public IntroductionScreenPageOne() {
+    public IntroductionScreenPageThree() {
         super(
                 new BaseWizardPage.WizardPageInfo(
-                        Text.literal("Main menu design"),
-                        1,
+                        Text.literal("Tab design"),
+                        3,
                         5 // Total wizard steps
                 ),
                 Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/test_temp.png")
@@ -72,14 +73,14 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
 
         // Create welcome text
         Text welcomeText = TextOps.concat(
-                TextOps.withColor("Choose your preferred main menu design for ", TEXT_WHITE),
+                TextOps.withColor("Choose your preferred tab design to use in-game when playing with", TEXT_WHITE),
                 Text.literal(modpackInfo.getName()).setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
         );
 
         LabelComponent welcomeTitle = Components.label(welcomeText);
 
         LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("The pack comes with two options for a main menu: one that keeps the vanilla style and one fancy option that I personally think is much better. Choose the one you like best!")
+                Text.literal("The pack has two mods that change the tab list: SkyHanni and Skyblocker. You can use both at the same time, so decide which one you like best—and select it.")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
 
@@ -90,7 +91,7 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
 
     private LabelComponent createSelectionLabel() {
         this.selectionLabel = Components.label(
-                TextOps.withColor("Selected menu: " + this.selectedDesign, ACCENT_GOLD)
+                TextOps.withColor("Selected TabList: " + this.selectedDesign, ACCENT_GOLD)
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         );
 
@@ -113,7 +114,7 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
                 .margins(Insets.of(4));
 
         classicWrapper.child(Components.label(
-                TextOps.withColor("Classic Menu", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+                TextOps.withColor("SkyHanni Compact Tab", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).margins(Insets.of(4)));
 
         classicImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
@@ -130,18 +131,18 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
         System.out.println(classicTexture.width());
 
         classicTexture.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
-            selectDesign("Classic");
+            selectDesign("SkyHanni");
             return true;
         });
 
         classicImageContainer.child(classicTexture);
         classicWrapper.child(classicImageContainer);
 
-        ButtonComponent classicUseBtn = (ButtonComponent) Components.button(Text.literal("Use Classic"), btn -> selectDesign("Classic"))
+        ButtonComponent classicUseBtn = (ButtonComponent) Components.button(Text.literal("Use SkyHanni tab list"), btn -> selectDesign("SkyHanni"))
                 .textShadow(false)
                 .renderer(ButtonComponent.Renderer.flat(0xFF_FFC107, 0xFF_FFD54F, 0xFF_A0A0A0))
                 .margins(Insets.of(4, 2, 2, 2))
-                .sizing(Sizing.fixed(110), Sizing.fixed(20));
+                .sizing(Sizing.content(3), Sizing.fixed(20));
 
         classicWrapper.child(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
                 .child(classicUseBtn)
@@ -155,7 +156,7 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
                 .margins(Insets.of(4));
 
         modernWrapper.child(Components.label(
-                TextOps.withColor("Fancy Menu", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+                TextOps.withColor("Skyblocker Fancy TabList", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).margins(Insets.of(4)));
 
         modernImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
@@ -169,18 +170,18 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
         ).sizing(Sizing.fill(), Sizing.content());
 
         modernTexture.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
-            selectDesign("Modern");
+            selectDesign("Skyblocker");
             return true;
         });
 
         modernImageContainer.child(modernTexture);
         modernWrapper.child(modernImageContainer);
 
-        ButtonComponent modernUseBtn = (ButtonComponent) Components.button(Text.literal("Use Modern"), btn -> selectDesign("Modern"))
+        ButtonComponent modernUseBtn = (ButtonComponent) Components.button(Text.literal("Use Skyblocker Fancy TabList"), btn -> selectDesign("Skyblocker"))
                 .textShadow(false)
                 .renderer(ButtonComponent.Renderer.flat(0xFF_8BC34A, 0xFFA5D6A7, 0xFF_A0A0A0))
                 .margins(Insets.of(4, 2, 2, 2))
-                .sizing(Sizing.fixed(110), Sizing.fixed(20));
+                .sizing(Sizing.content(3), Sizing.fixed(20));
 
         modernWrapper.child(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
                 .child(modernUseBtn)
@@ -265,10 +266,10 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
 
         final int outlineColor = 0xFF_FFD700; // gold outline
 
-        if ("Classic".equals(design)) {
+        if ("SkyHanni".equals(design)) {
             if (classicImageContainer != null) classicImageContainer.surface(Surface.outline(outlineColor));
             if (modernImageContainer != null) modernImageContainer.surface(Surface.flat(0x00_000000));
-        } else if ("Modern".equals(design)) {
+        } else if ("Skyblocker".equals(design)) {
             if (modernImageContainer != null) modernImageContainer.surface(Surface.outline(outlineColor));
             if (classicImageContainer != null) classicImageContainer.surface(Surface.flat(0x00_000000));
         } else {
@@ -281,7 +282,7 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
 
     @Override
     protected void onContinuePressed() {
-        this.client.setScreen(WizardNavigator.createWizardPage(2));
+        this.client.setScreen(WizardNavigator.createWizardPage(4));
     }
 
     @Override
