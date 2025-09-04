@@ -2,7 +2,8 @@ package com.github.kd_gaming1.packcore.wizard.ui.content;
 
 import com.github.kd_gaming1.packcore.wizard.ui.ModpackSetupWizard;
 import com.github.kd_gaming1.packcore.wizard.ui.theme.WizardTheme;
-import com.github.kd_gaming1.packcore.wizard.util.MarkdownToHtmlConverter;
+import com.github.kd_gaming1.packcore.wizard.util.ConfigMetadataReader;
+import com.github.kd_gaming1.packcore.wizard.util.ConfigMetadataReader.ConfigMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +48,8 @@ public class ConfigSelectionPage extends MainContentInfo {
     }
 
     private void detectCurrentResolution() {
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Dimension screenSize = toolkit.getScreenSize();
+        var toolkit = Toolkit.getDefaultToolkit();
+        var screenSize = toolkit.getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
 
@@ -69,31 +70,114 @@ public class ConfigSelectionPage extends MainContentInfo {
 
         availableConfigs = new ArrayList<>();
         for (String name : configNames) {
-            String description = loadConfigDescription(name);
-            availableConfigs.add(new ConfigItem(name, description,
-                    name.toLowerCase().contains(detectedResolution)));
+            Path configZipPath = officialConfigDir.resolve(name + ".zip");
+
+            // Try to read metadata, fallback to basic info if not available
+            var metadataOpt = ConfigMetadataReader.readMetadata(configZipPath);
+            ConfigMetadata metadata = metadataOpt.orElse(
+                    new ConfigMetadata(name, "No metadata available", null, null, null, null, List.of(), List.of())
+            );
+
+            String htmlDescription = convertMetadataToHtml(metadata);
+            boolean isRecommended = isConfigRecommended(metadata);
+
+            availableConfigs.add(new ConfigItem(name, htmlDescription, isRecommended, metadata));
         }
 
-        LOGGER.info("Available configs: {}", configNames);
+        LOGGER.info("Loaded {} configs with metadata", availableConfigs.size());
     }
 
-    private String loadConfigDescription(String configName) {
-        // Try to load custom markdown description from config_descriptions folder
-        Path descriptionFile = runDir.resolve("packcore/config_descriptions").resolve(configName + ".md");
+    /**
+     * Determines if a config is recommended based on metadata
+     */
+    private boolean isConfigRecommended(ConfigMetadata metadata) {
+        return metadata.targetResolution() != null &&
+                metadata.targetResolution().equalsIgnoreCase(detectedResolution);
+    }
 
-        try {
-            if (Files.exists(descriptionFile)) {
-                MarkdownToHtmlConverter converter = new MarkdownToHtmlConverter();
-                String htmlContent = converter.convertMarkdownFileToHtml(descriptionFile.toString());
-                LOGGER.info("Loaded custom markdown description for config: {}", configName);
-                return styleConfigHTML(htmlContent);
-            }
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load custom description for {}: {}", configName, e.getMessage());
+    /**
+     * Converts metadata to styled HTML for display
+     */
+    private String convertMetadataToHtml(ConfigMetadata metadata) {
+        var html = new StringBuilder();
+
+        // Title
+        String configName = metadata.name() != null ? metadata.name() : "Unknown Configuration";
+        html.append("<h2>").append(configName).append("</h2>");
+
+        // Description
+        if (metadata.description() != null && !metadata.description().trim().isEmpty()) {
+            html.append("<p>").append(metadata.description()).append("</p>");
+        } else {
+            html.append("<p><em>No description available</em></p>");
         }
 
-        // Fall back to generated description
-        return generateDefaultDescription(configName);
+        // Basic details
+        html.append("<h3>Configuration Details:</h3>");
+        html.append("<ul>");
+
+        if (metadata.targetResolution() != null) {
+            html.append("<li><strong>Target Resolution:</strong> ").append(metadata.targetResolution().toUpperCase()).append("</li>");
+        }
+
+        if (metadata.version() != null) {
+            html.append("<li><strong>Version:</strong> ").append(metadata.version()).append("</li>");
+        }
+
+        if (metadata.author() != null) {
+            html.append("<li><strong>Author:</strong> ").append(metadata.author()).append("</li>");
+        }
+
+        if (metadata.createdDate() != null) {
+            html.append("<li><strong>Created:</strong> ").append(formatDate(metadata.createdDate())).append("</li>");
+        }
+
+        html.append("</ul>");
+
+        // Features section
+        if (metadata.features() != null && !metadata.features().isEmpty()) {
+            html.append("<h3>Features:</h3>");
+            html.append("<ul>");
+            for (String feature : metadata.features()) {
+                html.append("<li>").append(feature).append("</li>");
+            }
+            html.append("</ul>");
+        }
+
+        // Requirements section
+        if (metadata.requirements() != null && !metadata.requirements().isEmpty()) {
+            html.append("<h3>Requirements:</h3>");
+            html.append("<ul>");
+            for (String requirement : metadata.requirements()) {
+                html.append("<li>").append(requirement).append("</li>");
+            }
+            html.append("</ul>");
+        }
+
+        // Recommendation note
+        if (isConfigRecommended(metadata)) {
+            html.append("<blockquote>");
+            html.append("<strong>💡 Recommended for your system</strong><br>");
+            html.append("This configuration matches your detected screen resolution and should provide optimal performance.");
+            html.append("</blockquote>");
+        }
+
+        return styleConfigHTML(html.toString());
+    }
+
+    /**
+     * Formats a date string for display
+     */
+    private String formatDate(String dateString) {
+        try {
+            // If it's an ISO date, format it nicely
+            if (dateString.contains("T")) {
+                return dateString.substring(0, 10); // Just the date part
+            }
+            return dateString;
+        } catch (Exception e) {
+            return dateString; // Return as-is if parsing fails
+        }
     }
 
     private String styleConfigHTML(String htmlContent) {
@@ -125,94 +209,39 @@ public class ConfigSelectionPage extends MainContentInfo {
                 "  border-left: 3px solid " + String.format("#%06X", WizardTheme.ACCENT_GOLD.getRGB() & 0xFFFFFF) + "; " +
                 "  padding-left: 10px; " +
                 "  margin-left: 5px; " +
-                "  font-style: italic; " +
+                "  background-color: " + String.format("#%06X", WizardTheme.BACKGROUND_MEDIUM.getRGB() & 0xFFFFFF) + "; " +
+                "  padding: 8px; " +
+                "  border-radius: 4px; " +
                 "} " +
                 "</style></head><body>" + htmlContent + "</body></html>";
 
         return styledContent;
     }
 
-    private String generateDefaultDescription(String configName) {
-        String markdownContent = generateDefaultMarkdown(configName);
-        return styleConfigHTML(markdownContent);
-    }
-
-    private String generateDefaultMarkdown(String configName) {
-        String displayName = configName.replace("_", " ");
-
-        if (configName.toLowerCase().contains("4k")) {
-            return "<h2>" + displayName + "</h2>" +
-                    "<p>Configuration optimized for 4K displays and high-end systems.</p>" +
-                    "<h3>Features:</h3>" +
-                    "<ul>" +
-                    "<li><strong>Display:</strong> 4K (3840x2160) and higher resolutions</li>" +
-                    "<li><strong>Graphics:</strong> Ultra-high quality textures and settings</li>" +
-                    "<li><strong>Render Distance:</strong> 20+ chunks recommended</li>" +
-                    "<li><strong>UI Scaling:</strong> Large scaling for 4K clarity</li>" +
-                    "<li><strong>Performance:</strong> Requires powerful graphics card</li>" +
-                    "</ul>" +
-                    "<blockquote><strong>Best for:</strong> High-end gaming systems with 4K monitors</blockquote>";
-        } else if (configName.toLowerCase().contains("1440p")) {
-            return "<h2>" + displayName + "</h2>" +
-                    "<p>High-quality configuration designed for 1440p displays.</p>" +
-                    "<h3>Features:</h3>" +
-                    "<ul>" +
-                    "<li><strong>Display:</strong> QHD (2560x1440) monitors</li>" +
-                    "<li><strong>Graphics:</strong> High settings with enhanced textures</li>" +
-                    "<li><strong>Render Distance:</strong> 16 chunks recommended</li>" +
-                    "<li><strong>UI Scaling:</strong> Medium scaling for readability</li>" +
-                    "<li><strong>Performance:</strong> Balanced quality and performance</li>" +
-                    "</ul>" +
-                    "<blockquote><strong>Best for:</strong> Mid-to-high-end gaming PCs with QHD displays</blockquote>";
-        } else if (configName.toLowerCase().contains("1080p")) {
-            return "<h2>" + displayName + "</h2>" +
-                    "<p>Balanced configuration optimized for Full HD displays.</p>" +
-                    "<h3>Features:</h3>" +
-                    "<ul>" +
-                    "<li><strong>Display:</strong> Full HD (1920x1080) monitors</li>" +
-                    "<li><strong>Graphics:</strong> Medium-high settings for best balance</li>" +
-                    "<li><strong>Render Distance:</strong> 12 chunks recommended</li>" +
-                    "<li><strong>UI Scaling:</strong> Standard scaling</li>" +
-                    "<li><strong>Performance:</strong> Excellent performance-to-quality ratio</li>" +
-                    "</ul>" +
-                    "<blockquote><strong>Best for:</strong> Most gaming PCs and laptops</blockquote>";
-        } else {
-            return "<h2>" + displayName + "</h2>" +
-                    "<p>Performance-focused configuration for maximum framerate.</p>" +
-                    "<h3>Features:</h3>" +
-                    "<ul>" +
-                    "<li><strong>Display:</strong> Lower resolution or performance-focused</li>" +
-                    "<li><strong>Graphics:</strong> Performance-optimized settings</li>" +
-                    "<li><strong>Render Distance:</strong> 8-10 chunks for smooth gameplay</li>" +
-                    "<li><strong>UI Scaling:</strong> Compact for maximum view area</li>" +
-                    "<li><strong>Performance:</strong> Maximum framerate priority</li>" +
-                    "</ul>" +
-                    "<blockquote><strong>Best for:</strong> Budget systems or competitive players</blockquote>";
-        }
-    }
-
     private void findRecommendedConfig() {
         recommendedConfig = availableConfigs.stream()
-                .filter(config -> config.name.toLowerCase().contains(detectedResolution))
+                .filter(config -> config.isRecommended)
                 .findFirst()
                 .orElse(availableConfigs.isEmpty() ? null : availableConfigs.get(0));
+
+        LOGGER.info("Recommended config: {}", recommendedConfig != null ? recommendedConfig.name : "None");
     }
 
     private void createUI() {
         setLayout(new BorderLayout());
 
         // Main content split: info on left, list on right
-        JPanel mainContent = new JPanel(new BorderLayout());
+        var mainContent = new JPanel(new BorderLayout());
         mainContent.setBackground(WizardTheme.BACKGROUND_DARK);
 
         // Left side - Current selection and info
         infoPanel = createInfoPanel();
 
         // Right side - Available configurations
-        JPanel listPanel = createConfigListPanel();
+        var listPanel = createConfigListPanel();
 
         // Use a split layout
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, infoPanel, listPanel);
+        var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, infoPanel, listPanel);
         splitPane.setDividerLocation(400);
         splitPane.setBackground(WizardTheme.BACKGROUND_DARK);
         splitPane.setBorder(null);
@@ -220,25 +249,25 @@ public class ConfigSelectionPage extends MainContentInfo {
         mainContent.add(splitPane, BorderLayout.CENTER);
 
         // Top explanation
-        JPanel explanationPanel = createExplanationPanel();
+        var explanationPanel = createExplanationPanel();
         mainContent.add(explanationPanel, BorderLayout.NORTH);
 
         add(mainContent, BorderLayout.CENTER);
     }
 
     private JPanel createExplanationPanel() {
-        JPanel panel = createTitledPanel("🎯 Choose Your Configuration",
+        var panel = createTitledPanel("🎯 Choose Your Configuration",
                 "Select the configuration that matches your setup and preferences");
 
-        JPanel contentPanel = new JPanel(new BorderLayout());
+        var contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         // Main explanation
-        JTextArea explanationText = new JTextArea(
+        var explanationText = new JTextArea(
                 "Each configuration contains pre-optimized settings for different screen resolutions and system capabilities. " +
-                        "Choosing the right configuration ensures the best balance of performance and visual quality for your setup. " +
-                        "If you're unsure, the recommended option will work well for most users."
+                        "The configurations include metadata with detailed information about their purpose, features, and requirements. " +
+                        "Select a configuration from the list to view its details and apply it to your modpack."
         );
         explanationText.setEditable(false);
         explanationText.setBackground(WizardTheme.BACKGROUND_MEDIUM);
@@ -249,15 +278,15 @@ public class ConfigSelectionPage extends MainContentInfo {
         explanationText.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
         // Detection info
-        JPanel detectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        var detectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         detectionPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
 
-        JLabel detectedLabel = new JLabel("🖥️ Detected Resolution: " + detectedResolution);
+        var detectedLabel = new JLabel("🖥️ Detected Resolution: " + detectedResolution);
         detectedLabel.setFont(WizardTheme.getBodyFont());
         detectedLabel.setForeground(WizardTheme.TEXT_PRIMARY);
 
-        JLabel recommendedLabel = new JLabel("💡 Recommended: " +
-                (recommendedConfig != null ? recommendedConfig.name : "None available"));
+        var recommendedLabel = new JLabel("💡 Recommended: " +
+                (recommendedConfig != null ? recommendedConfig.metadata.name() : "None available"));
         recommendedLabel.setFont(WizardTheme.getBodyFont());
         recommendedLabel.setForeground(WizardTheme.ACCENT_GOLD);
 
@@ -273,11 +302,11 @@ public class ConfigSelectionPage extends MainContentInfo {
     }
 
     private JPanel createInfoPanel() {
-        JPanel panel = createTitledPanel("📦 Selected Configuration",
+        var panel = createTitledPanel("📦 Selected Configuration",
                 "Details about your chosen configuration");
         panel.setPreferredSize(new Dimension(380, 400));
 
-        JPanel contentPanel = new JPanel(new BorderLayout());
+        var contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
@@ -295,20 +324,23 @@ public class ConfigSelectionPage extends MainContentInfo {
         configDescriptionPane.setForeground(WizardTheme.TEXT_PRIMARY);
         configDescriptionPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // Show placeholder content when no config is selected
         String defaultHtml = styleConfigHTML(
-                "<h3>Select a Configuration</h3>" +
-                        "<p>Choose a configuration from the list to see detailed information here.</p>" +
-                        "<h3>What's Included:</h3>" +
+                "<h3>🎮 Select a Configuration</h3>" +
+                        "<p>Choose a configuration from the list on the right to see detailed information here.</p>" +
+                        "<h3>What configurations include:</h3>" +
                         "<ul>" +
-                        "<li><strong>Video Settings:</strong> Optimized graphics options</li>" +
-                        "<li><strong>UI Layout:</strong> Positioned mod interfaces</li>" +
-                        "<li><strong>Performance Tweaks:</strong> System optimizations</li>" +
-                        "<li><strong>Resource Packs:</strong> Visual enhancements</li>" +
-                        "</ul>"
+                        "<li><strong>Video Settings:</strong> Optimized graphics options for your resolution</li>" +
+                        "<li><strong>UI Layouts:</strong> Properly positioned mod interfaces</li>" +
+                        "<li><strong>Performance Tweaks:</strong> System-specific optimizations</li>" +
+                        "<li><strong>Resource Packs:</strong> Visual enhancements and texture improvements</li>" +
+                        "<li><strong>Mod Configurations:</strong> Pre-configured mod settings</li>" +
+                        "</ul>" +
+                        "<p><em>All configurations are created with metadata that provides detailed information about their purpose and requirements.</em></p>"
         );
         configDescriptionPane.setText(defaultHtml);
 
-        JScrollPane descScrollPane = new JScrollPane(configDescriptionPane);
+        var descScrollPane = new JScrollPane(configDescriptionPane);
         descScrollPane.setBorder(BorderFactory.createLineBorder(WizardTheme.BORDER));
         descScrollPane.setPreferredSize(new Dimension(360, 280));
         descScrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -321,11 +353,11 @@ public class ConfigSelectionPage extends MainContentInfo {
     }
 
     private JPanel createConfigListPanel() {
-        JPanel panel = createTitledPanel("📋 Available Configurations",
+        var panel = createTitledPanel("📋 Available Configurations",
                 "Choose the configuration that best matches your needs");
         panel.setPreferredSize(new Dimension(400, 400));
 
-        JPanel contentPanel = new JPanel(new BorderLayout());
+        var contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
@@ -336,7 +368,7 @@ public class ConfigSelectionPage extends MainContentInfo {
         configList.setFont(WizardTheme.getBodyFont());
         configList.setCellRenderer(new ConfigListCellRenderer());
 
-        // Pre-select recommended config
+        // Pre-select recommended config if available
         if (recommendedConfig != null) {
             configList.setSelectedValue(recommendedConfig, true);
             selectedResolution = recommendedConfig.name;
@@ -346,17 +378,17 @@ public class ConfigSelectionPage extends MainContentInfo {
         // Selection listener
         configList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                ConfigItem selected = configList.getSelectedValue();
+                var selected = configList.getSelectedValue();
                 if (selected != null) {
                     selectedResolution = selected.name;
                     updateInfoPanel(selected);
                     wizard.getNavigationPanel().setConfigSelected(true);
-                    LOGGER.info("Selected config: {}", selectedResolution);
+                    LOGGER.info("Selected config: {} ({})", selectedResolution, selected.metadata.name());
                 }
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(configList);
+        var scrollPane = new JScrollPane(configList);
         scrollPane.setBorder(BorderFactory.createLineBorder(WizardTheme.BORDER));
         scrollPane.setPreferredSize(new Dimension(380, 300));
 
@@ -367,18 +399,19 @@ public class ConfigSelectionPage extends MainContentInfo {
     }
 
     private void updateInfoPanel(ConfigItem config) {
-        selectedConfigLabel.setText(config.name);
+        String displayName = config.metadata.name() != null ? config.metadata.name() : config.name;
+        selectedConfigLabel.setText(displayName);
         selectedConfigLabel.setForeground(WizardTheme.ACCENT_GOLD);
 
         configDescriptionPane.setText(config.description);
 
         if (config.isRecommended) {
-            selectedConfigLabel.setText(config.name + " ⭐ (Recommended)");
+            selectedConfigLabel.setText(displayName + " ⭐ (Recommended)");
         }
     }
 
     private static List<String> getConfigNames(Path dirPath) {
-        List<String> configNames = new ArrayList<>();
+        var configNames = new ArrayList<String>();
         try (Stream<Path> paths = Files.list(dirPath)) {
             paths.filter(path -> path.toString().endsWith(".zip"))
                     .map(path -> path.getFileName().toString())
@@ -395,16 +428,19 @@ public class ConfigSelectionPage extends MainContentInfo {
         final String name;
         final String description;
         final boolean isRecommended;
+        final ConfigMetadata metadata;
 
-        ConfigItem(String name, String description, boolean isRecommended) {
+        ConfigItem(String name, String description, boolean isRecommended, ConfigMetadata metadata) {
             this.name = name;
             this.description = description;
             this.isRecommended = isRecommended;
+            this.metadata = metadata;
         }
 
         @Override
         public String toString() {
-            return name + (isRecommended ? " ⭐" : "");
+            String displayName = metadata.name() != null ? metadata.name() : name;
+            return displayName + (isRecommended ? " ⭐" : "");
         }
     }
 
@@ -414,7 +450,7 @@ public class ConfigSelectionPage extends MainContentInfo {
                                                       boolean isSelected, boolean cellHasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-            ConfigItem item = (ConfigItem) value;
+            var item = (ConfigItem) value;
             setText(item.toString());
 
             if (isSelected) {
