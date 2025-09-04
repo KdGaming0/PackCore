@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -22,41 +21,10 @@ public class ConfigFileUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileUtils.class);
     private static final Gson GSON = new Gson();
 
+    // Standardized metadata filename used inside zips and in the game directory
     public static final String OFFICIAL_CONFIGS_PATH = "packcore/modpack_config/official_configs";
     public static final String CUSTOM_CONFIGS_PATH = "packcore/modpack_config/custom_configs";
-    public static final String METADATA_FILE = "config_info.json";
-
-    public static class ConfigMetadata {
-        private String name;
-        private String description;
-        private String version;
-        private String author;
-        private String recommendedResolution;
-        private String difficulty;
-        private String category;
-        private List<String> features;
-        private String source;
-
-        // Default constructor for Gson
-        public ConfigMetadata() {
-            this.features = new ArrayList<>();
-        }
-
-        // Getters
-        public String getName() { return name != null ? name : "Unknown"; }
-        public String getDescription() { return description != null ? description : "No description available"; }
-        public String getVersion() { return version != null ? version : "1.0"; }
-        public String getAuthor() { return author != null ? author : "Unknown"; }
-        public String getRecommendedResolution() { return recommendedResolution != null ? recommendedResolution : "Any"; }
-        public String getDifficulty() { return difficulty != null ? difficulty : "Normal"; }
-        public String getCategory() { return category != null ? category : "General"; }
-        public List<String> getFeatures() { return features != null ? features : new ArrayList<>(); }
-        public String getSource() { return source != null ? source : "Unknown"; }
-
-        // Setters for fallback data
-        public void setName(String name) { this.name = name; }
-        public void setSource(String source) { this.source = source; }
-    }
+    public static final String METADATA_FILE = "packcore_metadata.json";
 
     public static class ConfigFile {
         private final String name;
@@ -68,7 +36,7 @@ public class ConfigFileUtils {
             this.name = name;
             this.path = path;
             this.isOfficial = isOfficial;
-            this.metadata = metadata;
+            this.metadata = metadata != null ? metadata : new ConfigMetadata();
         }
 
         public String getName() {
@@ -98,7 +66,7 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Gets the currently applied config by reading config_info.json from rundir
+     * Gets the currently applied config by reading packcore_metadata.json from rundir
      */
     public static ConfigMetadata getCurrentConfig() {
         Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
@@ -131,9 +99,10 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Reads metadata from a zip file without extracting it
+     * Reads metadata from a zip file without extracting it.
+     * Made public so other managers can use it (e.g. application manager).
      */
-    private static ConfigMetadata readMetadataFromZip(Path zipPath, String fileName, boolean isOfficial) {
+    public static ConfigMetadata readMetadataFromZip(Path zipPath, boolean isOfficial) {
         ConfigMetadata metadata = new ConfigMetadata();
 
         try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
@@ -155,6 +124,7 @@ public class ConfigFileUtils {
 
         // Set fallback values
         if ("Unknown".equals(metadata.getName())) {
+            String fileName = zipPath.getFileName().toString();
             String displayName = fileName.endsWith(".zip") ? fileName.substring(0, fileName.length() - 4) : fileName;
             metadata.setName(displayName);
         }
@@ -214,7 +184,7 @@ public class ConfigFileUtils {
                         .filter(path -> path.toString().toLowerCase().endsWith(".zip"))
                         .forEach(path -> {
                             String fileName = path.getFileName().toString();
-                            ConfigMetadata metadata = readMetadataFromZip(path, fileName, isOfficial);
+                            ConfigMetadata metadata = readMetadataFromZip(path, isOfficial);
                             configs.add(new ConfigFile(fileName, path, isOfficial, metadata));
                         });
             }

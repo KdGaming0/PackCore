@@ -3,10 +3,7 @@ package com.github.kd_gaming1.packcore.wizard.copysystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -23,30 +20,26 @@ public class UnzipFiles {
         long processedBytes = 0;
 
         File dir = new File(destDir);
-        if(!dir.exists()) dir.mkdirs();
+        if (!dir.exists()) dir.mkdirs();
 
-        byte[] buffer = new byte[4096];
+        byte[] buffer = new byte[8192];
 
         try (FileInputStream fis = new FileInputStream(zipFilePath);
-             ZipInputStream zis = new ZipInputStream(fis)) {
+             ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis))) {
 
             ZipEntry ze;
-            while((ze = zis.getNextEntry()) != null){
+            while ((ze = zis.getNextEntry()) != null) {
                 String fileName = ze.getName();
                 File newFile = new File(destDir + File.separator + fileName);
 
-                // Check if the entry is a directory
                 if (ze.isDirectory()) {
                     LOGGER.info("Creating directory {}", newFile.getAbsolutePath());
                     newFile.mkdirs();
                 } else {
                     LOGGER.info("Unzipping to {}", newFile.getAbsolutePath());
 
-                    // Ensure parent directories exist
-                    File parentDir = newFile.getParentFile();
-                    if (parentDir != null && !parentDir.exists()) {
-                        parentDir.mkdirs();
-                    }
+                    File parent = newFile.getParentFile();
+                    if (parent != null && !parent.exists()) parent.mkdirs();
 
                     try (FileOutputStream fos = new FileOutputStream(newFile)) {
                         int len;
@@ -72,13 +65,11 @@ public class UnzipFiles {
     private long calculateTotalSize(String zipFilePath) {
         long totalSize = 0;
         try (FileInputStream fis = new FileInputStream(zipFilePath);
-             ZipInputStream zis = new ZipInputStream(fis)) {
+             ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis))) {
 
             ZipEntry ze;
             while ((ze = zis.getNextEntry()) != null) {
-                if (ze.getSize() > 0) {
-                    totalSize += ze.getSize();
-                }
+                if (ze.getSize() > 0) totalSize += ze.getSize();
                 zis.closeEntry();
             }
         } catch (IOException e) {

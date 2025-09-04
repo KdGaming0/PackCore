@@ -68,8 +68,16 @@ public class ConfigApplicationManager {
             boolean success = extractConfigToGameDir(Path.of(configPath), gameDir);
 
             if (success) {
-                // Update the current config metadata
-                updateCurrentConfigMetadata(configPath, configName, gameDir);
+                // Read metadata from the applied config and write it to the game's metadata file
+                try {
+                    ConfigMetadata appliedMetadata = ConfigFileUtils.readMetadataFromZip(Path.of(configPath), false);
+                    Path configInfoPath = gameDir.resolve(ConfigFileUtils.METADATA_FILE);
+                    String metadataJson = new com.google.gson.Gson().toJson(appliedMetadata);
+                    Files.writeString(configInfoPath, metadataJson, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                } catch (IOException e) {
+                    LOGGER.error("Failed to update current config metadata", e);
+                }
+
                 LOGGER.info("Successfully applied config: {}", configName);
             }
 
@@ -131,22 +139,6 @@ public class ConfigApplicationManager {
 
         } catch (IOException e) {
             LOGGER.warn("Failed to prepare config backup", e);
-        }
-    }
-
-    private static void updateCurrentConfigMetadata(String configPath, String configName, Path gameDir) {
-        try {
-            // Read metadata from the applied config if available
-            ConfigFileUtils.ConfigFile appliedConfig = new ConfigFileUtils.ConfigFile(
-                    configName, Path.of(configPath), true, new ConfigFileUtils.ConfigMetadata());
-
-            // Create/update the current config info file
-            Path configInfoPath = gameDir.resolve(ConfigFileUtils.METADATA_FILE);
-            String metadataJson = new com.google.gson.Gson().toJson(appliedConfig.getMetadata());
-            Files.writeString(configInfoPath, metadataJson, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-
-        } catch (IOException e) {
-            LOGGER.error("Failed to update current config metadata", e);
         }
     }
 }
