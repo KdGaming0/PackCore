@@ -50,7 +50,7 @@ public class IntroductionScreenPage extends BaseWizardPage {
                         0,
                         5 // Total wizard steps
                 ),
-                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/test_temp.png")
+                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
         this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("Welcome.md");
@@ -64,9 +64,6 @@ public class IntroductionScreenPage extends BaseWizardPage {
 
         // Markdown content in scrollable area
         contentContainer.child(createMarkdownSection());
-
-        // Quick info section
-        contentContainer.child(createQuickInfoSection().positioning(Positioning.relative(0, 100)));
     }
 
     @Override
@@ -99,7 +96,7 @@ public class IntroductionScreenPage extends BaseWizardPage {
 
     private ScrollContainer<FlowLayout> createMarkdownSection() {
         // Create a FlowLayout to wrap the markdown content
-        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(98), Sizing.content())
                 .gap(4);
 
         // Get the processed markdown component
@@ -123,58 +120,8 @@ public class IntroductionScreenPage extends BaseWizardPage {
         scrollContainer.scrollbarThiccness(6);
         scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
         scrollContainer.padding(Insets.of(8));
-        scrollContainer.margins(Insets.bottom(45));
 
         return scrollContainer;
-    }
-
-    private FlowLayout createQuickInfoSection() {
-        FlowLayout infoSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .surface(Surface.flat(0x20_FFD700).and(Surface.outline(ACCENT_GOLD)))
-                .padding(Insets.of(6));
-
-        LabelComponent infoTitle = Components.label(
-                TextOps.withColor("Quick Links", ACCENT_GOLD)
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        );
-
-        infoSection.child(infoTitle);
-
-        // Discord link as a transparent button
-        if (modpackInfo.getDiscord() != null && !modpackInfo.getDiscord().isEmpty()) {
-            Text discordText = TextOps.concat(
-                    TextOps.withColor("💬 Discord: ", TEXT_WHITE),
-                    TextOps.withColor(modpackInfo.getDiscord(), TextOps.color(Formatting.AQUA))
-            );
-
-            ButtonComponent discordButton = (ButtonComponent) Components.button(discordText, btn -> {
-                        Util.getOperatingSystem().open(modpackInfo.getDiscord());
-                    })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000)) // fully transparent background
-                    .textShadow(false)
-                    .sizing(Sizing.content(), Sizing.fixed(16));
-
-            infoSection.child(discordButton);
-        }
-
-        // Issue tracker link as a transparent button
-        if (modpackInfo.getIssueTracker() != null && !modpackInfo.getIssueTracker().isEmpty()) {
-            Text issueText = TextOps.concat(
-                    TextOps.withColor("🐛 Issues: ", TEXT_WHITE),
-                    TextOps.withColor(modpackInfo.getIssueTracker(), TextOps.color(Formatting.AQUA))
-            );
-
-            ButtonComponent issueButton = (ButtonComponent) Components.button(issueText, btn -> {
-                        Util.getOperatingSystem().open(modpackInfo.getIssueTracker());
-                    })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000)) // fully transparent background
-                    .textShadow(false)
-                    .sizing(Sizing.content(), Sizing.fixed(16));
-
-            infoSection.child(issueButton);
-        }
-
-        return infoSection;
     }
 
     @Override

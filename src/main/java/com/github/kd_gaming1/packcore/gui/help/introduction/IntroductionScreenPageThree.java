@@ -3,84 +3,114 @@ package com.github.kd_gaming1.packcore.gui.help.introduction;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
+import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
 import com.github.kd_gaming1.packcore.util.ModpackInfo;
+import io.wispforest.lavendermd.MarkdownProcessor;
+import io.wispforest.lavendermd.compiler.OwoUICompiler;
+import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
-import io.wispforest.owo.ui.component.TextureComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
-import io.wispforest.owo.ui.event.MouseDown;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 
-public class IntroductionScreenPageThree extends BaseWizardPage {
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
+public class IntroductionScreenPageThree extends BaseWizardPage {
+    private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
+            new MarkdownProcessor<>(
+                    OwoUICompiler::new,
+                    new BasicFormattingFeature(),
+                    new ColorFeature(),
+                    new LinkFeature(),
+                    new ListFeature(),
+                    new BlockQuoteFeature(),
+                    new ImageFeature()
+            );
+
+    private static final Map<String, ParentComponent> COMPONENT_CACHE = new ConcurrentHashMap<>();
+
+    private final String welcomeMarkdown;
     private final ModpackInfo modpackInfo;
 
-    // UI state fields
-    private String selectedDesign = "None";
-    private LabelComponent selectionLabel; // placed in main content (above images)
+    private final Set<String> selectedOptimisationProfiles = new HashSet<>();
+    LabelComponent headerTitle;
+    private FlowLayout rightPanel;
 
-    // image containers (outline will be put on these, so only the image gets bordered)
-    private FlowLayout classicImageContainer;
-    private FlowLayout modernImageContainer;
+    private static final int SELECTED_OUTLINE_COLOR = 0xFF00FF00;
+    private static final int UNSELECTED_OUTLINE_COLOR = ACCENT_GOLD;
+
+    // Helper POJO for options
+    public static class OptionProfile {
+        public final String key;
+        public final String title;
+        public final String description;
+
+        public OptionProfile(String key, String title, String description) {
+            this.key = key;
+            this.title = title;
+            this.description = description;
+        }
+    }
+
+    // Easily extend this list!
+    private final List<OptionProfile> allProfiles = List.of(
+            new OptionProfile("Max FPS", "FPS Profile: Max FPS", "This profile optimises for FPS, prioritising frames over visuals. Recommended for low-end laptops."),
+            new OptionProfile("Balanced", "Normal Profile: Balanced", "This profile optimises for FPS and visuals, prioritising balance. Recommended for everyone."),
+            new OptionProfile("Shaders", "Shaders Profile: Quality", "This profile optimises for visuals, prioritising quality over frames. Recommended for mid-end PCs and those who want shaders.")
+            // Add more OptionProfiles here!
+    );
 
     public IntroductionScreenPageThree() {
         super(
-                new BaseWizardPage.WizardPageInfo(
-                        Text.literal("Tab design"),
+                new WizardPageInfo(
+                        Text.literal("Miscellaneous"),
                         3,
                         5 // Total wizard steps
                 ),
-                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/test_temp.png")
+                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
+        this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("Optimisation.md");
         this.modpackInfo = PackCore.getModpackInfo();
     }
 
     @Override
     protected void buildContent(FlowLayout contentContainer) {
-
-        contentContainer.margins(Insets.bottom(42));
-        // Welcome header
         contentContainer.child(createWelcomeHeader());
-
-        // Selection label in the main box (just below header, above the choices)
-        contentContainer.child(createSelectionLabel());
-
-        // Images choices inside a scroll container (side-by-side by default, stacks/scrolls on small windows)
-        contentContainer.child(createImagesChoiceSection());
-
-        // Quick info section anchored below (unchanged; selection label is not inside this box)
+        contentContainer.child(createMarkdownSection());
         contentContainer.child(createQuickInfoSection().positioning(Positioning.relative(0, 100)));
     }
 
     @Override
     protected void buildContentRight(FlowLayout contentContainerRight) {
-
+        this.rightPanel = contentContainerRight;
+        rightPanel.child(createHeader());
+        rightPanel.child(createProfilesScrollContainer());
     }
 
     private FlowLayout createWelcomeHeader() {
         FlowLayout header = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(6);
 
-        // Create welcome text
         Text welcomeText = TextOps.concat(
-                TextOps.withColor("Choose your preferred tab design to use in-game when playing with", TEXT_WHITE),
+                TextOps.withColor("Edit a few miscellaneous settings", TEXT_WHITE),
                 Text.literal(modpackInfo.getName()).setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
         );
 
         LabelComponent welcomeTitle = Components.label(welcomeText);
 
         LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("The pack has two mods that change the tab list: SkyHanni and Skyblocker. You can use both at the same time, so decide which one you like best—and select it.")
+                Text.literal("The pack have many mods and some settings are very personal, here you can edit some of them.")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
 
@@ -89,121 +119,30 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
         return header;
     }
 
-    private LabelComponent createSelectionLabel() {
-        this.selectionLabel = Components.label(
-                TextOps.withColor("Selected TabList: " + this.selectedDesign, ACCENT_GOLD)
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+    private ScrollContainer<FlowLayout> createMarkdownSection() {
+        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(4);
+
+        var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
+                welcomeMarkdown,
+                MARKDOWN_PROCESSOR::process
         );
 
-        // some spacing/margins so it's visually separated
-        this.selectionLabel.margins(Insets.of(0, 0, 6, 0));
-        return this.selectionLabel;
-    }
+        markdownWrapper.child(markdownComponent);
 
-    private ScrollContainer<FlowLayout> createImagesChoiceSection() {
-        FlowLayout choicesRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .gap(8);
-
-        final int textureWidth = 256;
-        final int textureHeight = 203;
-
-        // CLASSIC card
-        FlowLayout classicWrapper = (FlowLayout) Containers.verticalFlow(Sizing.fill(45), Sizing.content())
-                .verticalAlignment(VerticalAlignment.CENTER)
-                .surface(Surface.flat(0x00_000000))
-                .margins(Insets.of(4));
-
-        classicWrapper.child(Components.label(
-                TextOps.withColor("SkyHanni Compact Tab", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        ).margins(Insets.of(4)));
-
-        classicImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .surface(Surface.flat(0x00_000000))
-                .verticalAlignment(VerticalAlignment.CENTER);
-
-        TextureComponent classicTexture = (TextureComponent) Components.texture(
-                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/classic_menu.png"),
-                0, 0,
-                textureWidth, textureHeight,
-                textureWidth, textureHeight
-        ).sizing(Sizing.fill(), Sizing.content());
-
-        System.out.println(classicTexture.width());
-
-        classicTexture.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
-            selectDesign("SkyHanni");
-            return true;
-        });
-
-        classicImageContainer.child(classicTexture);
-        classicWrapper.child(classicImageContainer);
-
-        ButtonComponent classicUseBtn = (ButtonComponent) Components.button(Text.literal("Use SkyHanni tab list"), btn -> selectDesign("SkyHanni"))
-                .textShadow(false)
-                .renderer(ButtonComponent.Renderer.flat(0xFF_FFC107, 0xFF_FFD54F, 0xFF_A0A0A0))
-                .margins(Insets.of(4, 2, 2, 2))
-                .sizing(Sizing.content(3), Sizing.fixed(20));
-
-        classicWrapper.child(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .child(classicUseBtn)
-                .horizontalAlignment(HorizontalAlignment.CENTER)
-        );
-
-        // MODERN card
-        FlowLayout modernWrapper = (FlowLayout) Containers.verticalFlow(Sizing.fill(45), Sizing.content())
-                .verticalAlignment(VerticalAlignment.CENTER)
-                .surface(Surface.flat(0x00_000000))
-                .margins(Insets.of(4));
-
-        modernWrapper.child(Components.label(
-                TextOps.withColor("Skyblocker Fancy TabList", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        ).margins(Insets.of(4)));
-
-        modernImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .surface(Surface.flat(0x00_000000))
-                .verticalAlignment(VerticalAlignment.CENTER);
-
-        TextureComponent modernTexture = (TextureComponent) Components.texture(
-                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/fancy_menu.png"),
-                0, 0,
-                textureWidth, textureHeight
-        ).sizing(Sizing.fill(), Sizing.content());
-
-        modernTexture.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
-            selectDesign("Skyblocker");
-            return true;
-        });
-
-        modernImageContainer.child(modernTexture);
-        modernWrapper.child(modernImageContainer);
-
-        ButtonComponent modernUseBtn = (ButtonComponent) Components.button(Text.literal("Use Skyblocker Fancy TabList"), btn -> selectDesign("Skyblocker"))
-                .textShadow(false)
-                .renderer(ButtonComponent.Renderer.flat(0xFF_8BC34A, 0xFFA5D6A7, 0xFF_A0A0A0))
-                .margins(Insets.of(4, 2, 2, 2))
-                .sizing(Sizing.content(3), Sizing.fixed(20));
-
-        modernWrapper.child(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .child(modernUseBtn)
-                .horizontalAlignment(HorizontalAlignment.CENTER)
-        );
-
-        choicesRow.child(classicWrapper);
-        choicesRow.child(modernWrapper);
-
-        ScrollContainer<FlowLayout> scroll = Containers.verticalScroll(
+        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
                 Sizing.fill(100),
                 Sizing.expand(),
-                choicesRow
+                markdownWrapper
         );
 
-        scroll.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        scroll.scrollbarThiccness(6);
-        scroll.surface(Surface.flat(0x00_000000));
-        scroll.padding(Insets.of(6));
-        scroll.margins(Insets.bottom(45));
+        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
+        scrollContainer.scrollbarThiccness(6);
+        scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
+        scrollContainer.padding(Insets.of(8));
+        scrollContainer.margins(Insets.bottom(45));
 
-        return scroll;
+        return scrollContainer;
     }
 
     private FlowLayout createQuickInfoSection() {
@@ -218,7 +157,6 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
 
         infoSection.child(infoTitle);
 
-        // Discord link as a transparent button
         if (modpackInfo.getDiscord() != null && !modpackInfo.getDiscord().isEmpty()) {
             Text discordText = TextOps.concat(
                     TextOps.withColor("💬 Discord: ", TEXT_WHITE),
@@ -228,14 +166,13 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
             ButtonComponent discordButton = (ButtonComponent) Components.button(discordText, btn -> {
                         Util.getOperatingSystem().open(modpackInfo.getDiscord());
                     })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000)) // fully transparent background
+                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000))
                     .textShadow(false)
                     .sizing(Sizing.content(), Sizing.fixed(16));
 
             infoSection.child(discordButton);
         }
 
-        // Issue tracker link as a transparent button
         if (modpackInfo.getIssueTracker() != null && !modpackInfo.getIssueTracker().isEmpty()) {
             Text issueText = TextOps.concat(
                     TextOps.withColor("🐛 Issues: ", TEXT_WHITE),
@@ -245,7 +182,7 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
             ButtonComponent issueButton = (ButtonComponent) Components.button(issueText, btn -> {
                         Util.getOperatingSystem().open(modpackInfo.getIssueTracker());
                     })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000)) // fully transparent background
+                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000))
                     .textShadow(false)
                     .sizing(Sizing.content(), Sizing.fixed(16));
 
@@ -255,29 +192,80 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
         return infoSection;
     }
 
-    // Central selection handler updates label and the image-containers' surfaces to show outline on selected design (outline only on image container)
-    private void selectDesign(String design) {
-        this.selectedDesign = design;
+    private FlowLayout createHeader() {
+        FlowLayout header = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(6);
 
-        if (this.selectionLabel != null) {
-            this.selectionLabel.text(TextOps.withColor("Selected menu: " + this.selectedDesign, ACCENT_GOLD)
-                    .setStyle(Style.EMPTY.withBold(Boolean.TRUE)));
+        String selected = selectedOptimisationProfiles.isEmpty() ? "None" : String.join(", ", selectedOptimisationProfiles);
+        headerTitle = Components.label(TextOps.withColor("Selected profiles: " + selected, ACCENT_GOLD)).maxWidth(250);
+
+        header.child(headerTitle);
+
+        return header;
+    }
+
+    // Helper method for creating profile boxes
+    private FlowLayout createProfileBox(OptionProfile profile) {
+        boolean isSelected = selectedOptimisationProfiles.contains(profile.key);
+        FlowLayout box = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        box.surface(Surface.flat(0x20_FFD700).and(Surface.outline(isSelected ? SELECTED_OUTLINE_COLOR : UNSELECTED_OUTLINE_COLOR)));
+        box.padding(Insets.of(6));
+
+        LabelComponent infoTitle = Components.label(
+                TextOps.withColor(profile.title, ACCENT_GOLD).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+        );
+        LabelComponent infoText = Components.label(
+                TextOps.withColor(profile.description, TEXT_WHITE).setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
+        ).maxWidth(220);
+
+        box.child(infoTitle).child(infoText);
+
+        box.mouseDown().subscribe((mouseX, mouseY, button) -> {
+            toggleOptimisationProfile(profile.key);
+            return true;
+        });
+
+        return box;
+    }
+
+    // Scrollable container for all profile boxes
+    private ScrollContainer<FlowLayout> createProfilesScrollContainer() {
+        FlowLayout profilesLayout = Containers.verticalFlow(Sizing.fill(95), Sizing.content()).gap(8);
+
+        for (OptionProfile profile : allProfiles) {
+            profilesLayout.child(createProfileBox(profile));
         }
 
-        final int outlineColor = 0xFF_FFD700; // gold outline
+        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
+                Sizing.fill(100),
+                Sizing.expand(),
+                profilesLayout
+        );
+        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
+        scrollContainer.scrollbarThiccness(6);
+        scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
+        scrollContainer.padding(Insets.of(8));
+        scrollContainer.margins(Insets.bottom(45));
+        return scrollContainer;
+    }
 
-        if ("SkyHanni".equals(design)) {
-            if (classicImageContainer != null) classicImageContainer.surface(Surface.outline(outlineColor));
-            if (modernImageContainer != null) modernImageContainer.surface(Surface.flat(0x00_000000));
-        } else if ("Skyblocker".equals(design)) {
-            if (modernImageContainer != null) modernImageContainer.surface(Surface.outline(outlineColor));
-            if (classicImageContainer != null) classicImageContainer.surface(Surface.flat(0x00_000000));
+    private void toggleOptimisationProfile(String profileKey) {
+        if (selectedOptimisationProfiles.contains(profileKey)) {
+            selectedOptimisationProfiles.remove(profileKey);
         } else {
-            if (classicImageContainer != null) classicImageContainer.surface(Surface.flat(0x00_000000));
-            if (modernImageContainer != null) modernImageContainer.surface(Surface.flat(0x00_000000));
+            selectedOptimisationProfiles.add(profileKey);
         }
+        redrawRightPanel();
+    }
 
-        // TODO: persist selection or navigate next
+    private void redrawRightPanel() {
+        if (headerTitle != null) {
+            String selected = selectedOptimisationProfiles.isEmpty() ? "None" : String.join(", ", selectedOptimisationProfiles);
+            headerTitle.text(TextOps.withColor("Selected profiles: " + selected, ACCENT_GOLD));
+        }
+        rightPanel.clearChildren();
+        rightPanel.child(createHeader());
+        rightPanel.child(createProfilesScrollContainer());
     }
 
     @Override
@@ -287,11 +275,16 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
 
     @Override
     protected int getContentColumnWidthPercent() {
-        return 100;
+        return 55;
     }
 
     @Override
     protected boolean shouldShowStatusInfo() {
         return false;
+    }
+
+    @Override
+    protected boolean shouldShowRightPanel() {
+        return true;
     }
 }

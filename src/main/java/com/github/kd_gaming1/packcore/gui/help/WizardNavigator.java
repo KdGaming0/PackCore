@@ -13,8 +13,8 @@ public class WizardNavigator {
             case 1 -> new IntroductionScreenPageOne();
             case 2 -> new IntroductionScreenPageTwo();
             case 3 -> new IntroductionScreenPageThree();
-            case 4 -> new IntroductionScreenPageFour();
-            case 5 -> new IntroductionScreenPageFive();
+            case 4 -> new IntroductionScreenPageThree();
+            case 5 -> new IntroductionScreenPageFour();
             default -> new IntroductionScreenPage();
         };
     }

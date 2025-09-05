@@ -1,6 +1,9 @@
 package com.github.kd_gaming1.packcore.gui.help;
 
+import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.gui.UiSurfaces;
+import com.github.kd_gaming1.packcore.util.ModpackInfo;
 import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
@@ -14,6 +17,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,11 +55,13 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     private final Identifier backgroundTexture;
     private final WizardPageInfo pageInfo;
 
+    private static ModpackInfo info = PackCore.getModpackInfo();
+
     protected BaseWizardPage(@NotNull WizardPageInfo pageInfo, @Nullable Identifier backgroundTexture) {
         super(pageInfo.title());
         this.pageInfo = pageInfo;
         this.backgroundTexture = backgroundTexture != null ? backgroundTexture :
-                Identifier.of(MOD_ID, "textures/gui/wizard/test_temp.png");
+                Identifier.of(MOD_ID, "textures/gui/wizard/welcome_bg.png");
     }
 
     @Override
@@ -75,7 +81,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         FlowLayout mainLayout = createMainLayout();
 
         // Add header
-        mainLayout.child(createHeader().margins(Insets.bottom(10)));
+        mainLayout.child(createHeader());
 
         // Add status panel if needed
         if (shouldShowStatusInfo()) {
@@ -127,29 +133,30 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     private FlowLayout createHeader() {
         FlowLayout header = (FlowLayout) Containers.horizontalFlow(Sizing.fill(getContentColumnWidthPercent()), Sizing.fixed(HEADER_HEIGHT))
-                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)))
-                .padding(Insets.of(CONTENT_PADDING - 4))
+                .padding(Insets.of(CONTENT_PADDING - 6))
                 .verticalAlignment(VerticalAlignment.CENTER);
 
-        // Left side - progress indicator
-        FlowLayout leftSection = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.fill(100))
+        // Title
+        LabelComponent titleLabel = (LabelComponent) Components.label(pageInfo.title.copy().styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                .color(Color.ofRgb(ACCENT_GOLD))
+                .shadow(true)
+                .margins(Insets.of(0, 0, 4, 4));
+
+        header.child(titleLabel);
+
+        // Progress indicator
+        FlowLayout progressIndicator = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.fill(100))
                 .gap(8)
                 .verticalAlignment(VerticalAlignment.CENTER);
 
-        leftSection.child(Components.label(
+        progressIndicator.child(Components.label(
                 TextOps.withColor("Step " + pageInfo.currentStep() + " of " + pageInfo.totalSteps(), ACCENT_GOLD)
         ));
 
         // Progress bar
-        leftSection.child(createProgressBar());
+        progressIndicator.child(createProgressBar());
 
-        header.child(leftSection);
-
-        // Right side - page title
-        Text titleText = Text.literal(pageInfo.title().getString()).setStyle(Style.EMPTY.withBold(Boolean.TRUE));
-        LabelComponent titleLabel = Components.label(titleText).color(Color.ofRgb(TEXT_WHITE));
-
-        header.child(titleLabel.positioning(Positioning.relative(100, 50)));
+        header.child(progressIndicator);
 
         return header;
     }
@@ -172,13 +179,13 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         StatusInfo status = getStatusInfo();
 
         FlowLayout statusPanel = (FlowLayout) Containers.verticalFlow(Sizing.fill(38), Sizing.content())
-                .gap(12)
-                .surface(Surface.flat(status.backgroundColor).and(Surface.outline(status.borderColor)))
-                .padding(Insets.of(12))
+                .gap(8)
+                .surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/small_info_box.png"), 722, 338))
+                .padding(Insets.of(8))
                 .verticalAlignment(VerticalAlignment.CENTER)
                 .positioning(Positioning.relative(100, 0));
 
-        // Left side - icon and message
+        // Main message section
         FlowLayout messageSection = (FlowLayout) Containers.verticalFlow(Sizing.expand(), Sizing.content())
                 .gap(4);
 
@@ -198,7 +205,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         LabelComponent detailLabel = Components.label(
                 Text.literal(status.message).setStyle(Style.EMPTY)
         ).color(Color.ofRgb(TEXT_SECONDARY));
-        detailLabel.maxWidth(250);
+        detailLabel.horizontalSizing(Sizing.fill(100));
         messageSection.child(detailLabel);
 
         // Additional info if needed
@@ -207,22 +214,21 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                     Text.literal(status.additionalInfo)
                             .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
             ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 2, 2, 2));
-            infoLabel.maxWidth(250);
-            messageSection.child(infoLabel.margins(Insets.top(4)));
+            infoLabel.horizontalSizing(Sizing.fill(100));
+            messageSection.child(infoLabel.margins(Insets.top(2)));
         }
 
         statusPanel.child(messageSection);
 
-        // Right side - action button if needed
-        if (status.showResetButton) {
-            ButtonComponent resetButton = (ButtonComponent) Components.button(
-                    Text.literal("Reset Setup"),
+        // Reset button
+        ButtonComponent resetButton = (ButtonComponent) Components.button(Text.literal("Reset Setup"),
                     button -> showResetConfirmation()
-            ).sizing(Sizing.fixed(100), Sizing.fixed(22));
+            ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                .horizontalSizing(Sizing.fixed(100))
+                .verticalSizing(Sizing.fixed(20));
 
             resetButton.tooltip(Text.literal("Reset the setup wizard and restart the game"));
             statusPanel.child(resetButton);
-        }
 
         return statusPanel;
     }
@@ -282,12 +288,16 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                     // Remove the overlay
                     confirmOverlay.removeChild(confirmOverlay.children().get(confirmOverlay.children().size() - 1));
                 }
-        ).sizing(Sizing.fixed(100), Sizing.fixed(22));
+        ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                .horizontalSizing(Sizing.fixed(100))
+                .verticalSizing(Sizing.fixed(20));;
 
         ButtonComponent confirmButton = (ButtonComponent) Components.button(
                 Text.literal("Reset & Exit"),
                 button -> onResetPressed()
-        ).sizing(Sizing.fixed(100), Sizing.fixed(22));
+        ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                .horizontalSizing(Sizing.fixed(100))
+                .verticalSizing(Sizing.fixed(20));
 
         buttons.child(cancelButton);
         buttons.child(confirmButton);
@@ -338,23 +348,25 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     private FlowLayout createContentContainer() {
         return (FlowLayout) Containers.verticalFlow(Sizing.fill(getContentColumnWidthPercent()), Sizing.expand())
                 .gap(12)
-                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(0x40_FFFFFF)))
-                .padding(Insets.of(CONTENT_PADDING))
-                .horizontalAlignment(HorizontalAlignment.CENTER);
+                .surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/info_box.png"), 1142, 934))
+                .padding(Insets.of(CONTENT_PADDING + 4))
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .margins(Insets.of(0, 28, 0, 0));
     }
 
     private FlowLayout createContentContainerRight() {
         // Alternative content container on the right side
-        return (FlowLayout) Containers.verticalFlow(Sizing.fill(getContentColumnWidthRightPercent()), Sizing.expand())
+        return (FlowLayout) Containers.verticalFlow(Sizing.fill(getContentColumnWidthRightPercent()), Sizing.fill(100))
                 .gap(12)
-                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(0x40_FFFFFF)))
-                .padding(Insets.of(CONTENT_PADDING))
+                .surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/box.png"), 607, 755))
+                .padding(Insets.of(CONTENT_PADDING + 4))
                 .horizontalAlignment(HorizontalAlignment.CENTER)
-                .positioning(Positioning.relative(100, 0));
+                .positioning(Positioning.relative(100, 0))
+                .margins(Insets.of(0, 28, 0, 0));
     }
 
     private FlowLayout createFooter() {
-        FlowLayout footer = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.fill(10))
+        FlowLayout footer = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
                 .padding(Insets.of(CONTENT_PADDING - 8, CONTENT_PADDING - 8, CONTENT_PADDING, CONTENT_PADDING))
                 .verticalAlignment(VerticalAlignment.CENTER)
                 .positioning(Positioning.relative(0, 100));
@@ -366,9 +378,11 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
         if (hasPreviousPage()) {
             ButtonComponent backButton = (ButtonComponent) Components.button(
-                    Text.literal("← Back"),
+                    Text.literal("Back"),
                     button -> onBackPressed()
-            ).sizing(Sizing.fixed(80), Sizing.fixed(24));
+            ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 100, 60))
+                    .horizontalSizing(Sizing.fixed(100))
+                    .verticalSizing(Sizing.fixed(20));
             buttonContainer.child(backButton);
         }
 
@@ -380,21 +394,64 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
             ButtonComponent skipButton = (ButtonComponent) Components.button(
                     Text.literal("Skip"),
                     button -> onSkipPressed()
-            ).sizing(Sizing.fixed(60), Sizing.fixed(20));
+            ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/continue.png"), 0, 0, 100, 60))
+                    .horizontalSizing(Sizing.fixed(100))
+                    .verticalSizing(Sizing.fixed(20));
             buttonContainer.child(skipButton);
         }
 
+        // Left side - link buttons
+        FlowLayout linkButtonContainer = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.content())
+                .gap(8)
+                .margins(Insets.of(0, 0, 4, 0));
+
+        ButtonComponent discord = (ButtonComponent) Components.button(
+                Text.empty(),
+                button -> {
+                    Util.getOperatingSystem().open(info.getDiscord());
+                }
+        )
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/discord_icon.png"), 0, 0, 22, 22))
+                .horizontalSizing(Sizing.fixed(22))
+                .verticalSizing(Sizing.fixed(22));
+
+        ButtonComponent modrinth = (ButtonComponent) Components.button(
+                        Text.empty(),
+                        button -> {
+                            Util.getOperatingSystem().open(info.getWebsite());
+                        }
+                )
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/modrinth_icon.png"), 0, 0, 22, 22))
+                .horizontalSizing(Sizing.fixed(22))
+                .verticalSizing(Sizing.fixed(22));
+
+        ButtonComponent github = (ButtonComponent) Components.button(
+                        Text.empty(),
+                        button -> {
+                            Util.getOperatingSystem().open(info.getIssueTracker());
+                        }
+                )
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/github_icon.png"), 0, 0, 22, 22))
+                .horizontalSizing(Sizing.fixed(22))
+                .verticalSizing(Sizing.fixed(22));
+
+        linkButtonContainer.child(discord);
+        linkButtonContainer.child(modrinth);
+        linkButtonContainer.child(github);
+        footer.child(linkButtonContainer);
         footer.child(buttonContainer);
 
         return footer;
     }
 
     private ButtonComponent createPrimaryButton() {
-        String buttonText = isLastPage() ? "Finish" : "Continue →";
+        String buttonText = isLastPage() ? "Finish" : "Continue";
         return (ButtonComponent) Components.button(
                 Text.literal(buttonText),
                 button -> onContinuePressed()
-        ).sizing(Sizing.fixed(100), Sizing.fixed(24));
+        ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/continue.png"), 0, 0, 100, 60))
+                .horizontalSizing(Sizing.fixed(100))
+                .verticalSizing(Sizing.fixed(20));
     }
 
     private static int getScaledPadding() {
@@ -462,7 +519,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     }
 
     protected int getContentColumnWidthRightPercent() {
-        return 35;
+        return 40;
     }
 
     // Helper classes
