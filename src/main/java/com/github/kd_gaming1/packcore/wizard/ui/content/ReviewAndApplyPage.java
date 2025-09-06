@@ -7,10 +7,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.text.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReviewAndApplyPage extends MainContentInfo {
 
@@ -19,16 +24,27 @@ public class ReviewAndApplyPage extends MainContentInfo {
     private final ModpackSetupWizard wizard;
     private final Path runDir;
 
-    // UI Components
-    private JLabel configSummaryLabel;
+    // Enhanced UI Components
+    private JLabel configNameLabel;
+    private JLabel configDetailsLabel;
     private JLabel statusLabel;
-    private JProgressBar progressBar;
-    private JTextArea logArea;
-    private JButton applyButton;
+    private AnimatedProgressBar progressBar;
+    private StyledLogArea logArea;
+    private ModernButton applyButton;
+    private JPanel statusPanel;
 
     // State tracking
     private boolean extractionStarted = false;
     private boolean extractionCompleted = false;
+    private ExtractionState currentState = ExtractionState.IDLE;
+
+    // Animation timers
+    private Timer statusAnimationTimer;
+    private Timer progressAnimationTimer;
+
+    private enum ExtractionState {
+        IDLE, PREPARING, EXTRACTING, FINALIZING, COMPLETED, ERROR
+    }
 
     public ReviewAndApplyPage(Path runDir, ModpackSetupWizard wizard) {
         super();
@@ -39,123 +55,124 @@ public class ReviewAndApplyPage extends MainContentInfo {
     }
 
     private void createUI() {
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(0, 15));
+        setBackground(WizardTheme.BACKGROUND_DARK);
+        setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        // Summary panel at top
-        JPanel summaryPanel = createSummaryPanel();
+        // Top summary card with modern design
+        JPanel summaryCard = createModernSummaryCard();
 
-        // Progress panel in center
-        JPanel progressPanel = createProgressPanel();
+        // Center progress panel with enhanced visuals
+        JPanel progressPanel = createEnhancedProgressPanel();
 
-        // Action panel at bottom
-        JPanel actionPanel = createActionPanel();
+        // Bottom action panel with animated button
+        JPanel actionPanel = createModernActionPanel();
 
-        add(summaryPanel, BorderLayout.NORTH);
+        add(summaryCard, BorderLayout.NORTH);
         add(progressPanel, BorderLayout.CENTER);
         add(actionPanel, BorderLayout.SOUTH);
     }
 
-    private JPanel createSummaryPanel() {
-        JPanel panel = createTitledPanel("📋 Configuration Summary",
-                "Review your selection before applying");
-        panel.setPreferredSize(new Dimension(800, 120));
+    private JPanel createModernSummaryCard() {
+        JPanel card = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+                // Gradient background
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, WizardTheme.BACKGROUND_MEDIUM,
+                        0, getHeight(), WizardTheme.BACKGROUND_LIGHT
+                );
+                g2.setPaint(gradient);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setPreferredSize(new Dimension(800, 120));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(WizardTheme.ACCENT_GOLD, 2),
+                BorderFactory.createEmptyBorder(20, 25, 20, 25)
+        ));
 
-        // Config info
-        JPanel infoPanel = new JPanel(new GridLayout(2, 1, 0, 5));
-        infoPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
+        // Left side - config info
+        JPanel infoPanel = new JPanel(new GridLayout(3, 1, 0, 5));
+        infoPanel.setOpaque(false);
 
-        configSummaryLabel = new JLabel();
-        configSummaryLabel.setFont(WizardTheme.getBodyFont());
-        configSummaryLabel.setForeground(WizardTheme.TEXT_PRIMARY);
+        JLabel titleLabel = new JLabel("📋 Configuration Summary");
+        titleLabel.setFont(WizardTheme.getHeaderFont());
+        titleLabel.setForeground(WizardTheme.ACCENT_GOLD);
 
-        statusLabel = new JLabel("Ready to apply configuration");
-        statusLabel.setFont(WizardTheme.getHeaderFont());
-        statusLabel.setForeground(WizardTheme.SUCCESS);
+        configNameLabel = new JLabel("No configuration selected");
+        configNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        configNameLabel.setForeground(WizardTheme.TEXT_PRIMARY);
 
-        infoPanel.add(configSummaryLabel);
-        infoPanel.add(statusLabel);
+        configDetailsLabel = new JLabel("Select a configuration to see details");
+        configDetailsLabel.setFont(WizardTheme.getSmallFont());
+        configDetailsLabel.setForeground(WizardTheme.TEXT_SECONDARY);
 
-        contentPanel.add(infoPanel, BorderLayout.CENTER);
-        panel.add(contentPanel, BorderLayout.CENTER);
+        infoPanel.add(titleLabel);
+        infoPanel.add(configNameLabel);
+        infoPanel.add(configDetailsLabel);
 
-        return panel;
+        // Right side - status indicator
+        statusPanel = new StatusIndicatorPanel();
+
+        card.add(infoPanel, BorderLayout.WEST);
+        card.add(statusPanel, BorderLayout.EAST);
+
+        return card;
     }
 
-    private JPanel createProgressPanel() {
-        JPanel panel = createTitledPanel("⚙️ Installation Progress",
-                "Track the configuration extraction process");
+    private JPanel createEnhancedProgressPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 15));
+        panel.setBackground(WizardTheme.BACKGROUND_DARK);
 
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        // Progress section
+        JPanel progressSection = new JPanel(new BorderLayout(0, 10));
+        progressSection.setBackground(WizardTheme.BACKGROUND_DARK);
 
-        // Progress bar
-        progressBar = new JProgressBar(0, 100);
-        progressBar.setStringPainted(true);
-        progressBar.setString("Waiting to start...");
-        progressBar.setFont(WizardTheme.getBodyFont());
-        progressBar.setForeground(WizardTheme.ACCENT_GOLD);
-        progressBar.setBackground(WizardTheme.BACKGROUND_DARK);
-        progressBar.setPreferredSize(new Dimension(800, 30));
+        // Status label with icon
+        statusLabel = new JLabel("⏳ Waiting to begin...");
+        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        statusLabel.setForeground(WizardTheme.TEXT_SECONDARY);
 
-        // Log area
-        logArea = new JTextArea(12, 80);
-        logArea.setEditable(false);
-        logArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
-        logArea.setBackground(WizardTheme.BACKGROUND_DARK);
-        logArea.setForeground(WizardTheme.SUCCESS);
-        logArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        logArea.setText("🔍 Waiting for configuration extraction to begin...\n" +
-                "💡 Click 'Apply Configuration' to start the process.\n");
+        // Custom animated progress bar
+        progressBar = new AnimatedProgressBar();
 
+        progressSection.add(statusLabel, BorderLayout.NORTH);
+        progressSection.add(progressBar, BorderLayout.CENTER);
+
+        // Enhanced log area
+        logArea = new StyledLogArea();
         JScrollPane logScrollPane = new JScrollPane(logArea);
-        logScrollPane.setBorder(BorderFactory.createLineBorder(WizardTheme.BORDER));
+        logScrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(WizardTheme.BORDER, 1),
+                BorderFactory.createEmptyBorder(1, 1, 1, 1)
+        ));
         logScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        logScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        JPanel progressWrapper = new JPanel(new BorderLayout());
-        progressWrapper.setBackground(WizardTheme.BACKGROUND_MEDIUM);
-        progressWrapper.add(progressBar, BorderLayout.NORTH);
-        progressWrapper.add(Box.createVerticalStrut(15), BorderLayout.CENTER);
+        panel.add(progressSection, BorderLayout.NORTH);
+        panel.add(logScrollPane, BorderLayout.CENTER);
 
-        contentPanel.add(progressWrapper, BorderLayout.NORTH);
-        contentPanel.add(logScrollPane, BorderLayout.CENTER);
-
-        panel.add(contentPanel, BorderLayout.CENTER);
         return panel;
     }
 
-    private JPanel createActionPanel() {
+    private JPanel createModernActionPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panel.setBackground(WizardTheme.BACKGROUND_DARK);
         panel.setPreferredSize(new Dimension(800, 80));
 
-        applyButton = createActionButton("🚀 Apply Configuration",
-                WizardTheme.ACCENT_GOLD, WizardTheme.BACKGROUND_DARK);
-        applyButton.setPreferredSize(new Dimension(200, 45));
-        applyButton.setFont(WizardTheme.getHeaderFont());
-
+        applyButton = new ModernButton("Apply Configuration", "🚀");
         applyButton.addActionListener(e -> {
             if (!extractionStarted) {
                 startExtraction();
-            }
-        });
-
-        // Hover effect
-        applyButton.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (applyButton.isEnabled()) {
-                    applyButton.setBackground(WizardTheme.ACCENT_HOVER);
-                }
-            }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (applyButton.isEnabled()) {
-                    applyButton.setBackground(WizardTheme.ACCENT_GOLD);
-                }
+            } else if (currentState == ExtractionState.ERROR) {
+                retryExtraction();
             }
         });
 
@@ -167,20 +184,93 @@ public class ReviewAndApplyPage extends MainContentInfo {
         String selectedConfig = ConfigSelectionPage.selectedResolution;
 
         if (selectedConfig != null) {
-            configSummaryLabel.setText("🎯 Selected Configuration: " + selectedConfig);
+            configNameLabel.setText("✅ " + selectedConfig.toUpperCase() + " Configuration");
+            configDetailsLabel.setText("Ready to apply optimized settings for your system");
+            applyButton.setEnabled(true);
+            updateState(ExtractionState.IDLE);
         } else {
-            configSummaryLabel.setText("⚠️ No configuration selected");
+            configNameLabel.setText("⚠️ No configuration selected");
+            configDetailsLabel.setText("Please go back and select a configuration");
+            applyButton.setEnabled(false);
+            updateState(ExtractionState.ERROR);
         }
+    }
 
-        boolean canApply = selectedConfig != null;
-        applyButton.setEnabled(canApply);
+    private void updateState(ExtractionState newState) {
+        currentState = newState;
+        SwingUtilities.invokeLater(() -> {
+            switch (newState) {
+                case IDLE:
+                    statusLabel.setText("⏳ Ready to apply configuration");
+                    statusLabel.setForeground(WizardTheme.TEXT_SECONDARY);
+                    progressBar.setIndeterminate(false);
+                    progressBar.setValue(0);
+                    break;
 
-        if (!canApply) {
-            statusLabel.setText("⚠️ Please go back and select a configuration");
-            statusLabel.setForeground(WizardTheme.ERROR);
-        } else {
-            statusLabel.setText("✅ Ready to apply configuration");
-            statusLabel.setForeground(WizardTheme.SUCCESS);
+                case PREPARING:
+                    statusLabel.setText("🔍 Preparing configuration files...");
+                    statusLabel.setForeground(WizardTheme.INFO);
+                    progressBar.setIndeterminate(true);
+                    startStatusAnimation();
+                    break;
+
+                case EXTRACTING:
+                    statusLabel.setText("📦 Extracting configuration...");
+                    statusLabel.setForeground(WizardTheme.ACCENT_GOLD);
+                    progressBar.setIndeterminate(false);
+                    break;
+
+                case FINALIZING:
+                    statusLabel.setText("🔧 Finalizing setup...");
+                    statusLabel.setForeground(WizardTheme.SUCCESS);
+                    progressBar.setIndeterminate(true);
+                    break;
+
+                case COMPLETED:
+                    statusLabel.setText("🎉 Configuration applied successfully!");
+                    statusLabel.setForeground(WizardTheme.SUCCESS);
+                    progressBar.setValue(100);
+                    progressBar.setComplete(true);
+                    stopStatusAnimation();
+                    applyButton.setText("✅ Completed");
+                    applyButton.setEnabled(false);
+                    break;
+
+                case ERROR:
+                    statusLabel.setText("❌ An error occurred");
+                    statusLabel.setForeground(WizardTheme.ERROR);
+                    progressBar.setIndeterminate(false);
+                    stopStatusAnimation();
+                    applyButton.setText("🔄 Retry");
+                    applyButton.setEnabled(true);
+                    break;
+            }
+
+            if (statusPanel instanceof StatusIndicatorPanel) {
+                ((StatusIndicatorPanel) statusPanel).updateStatus(newState);
+            }
+        });
+    }
+
+    private void startStatusAnimation() {
+        if (statusAnimationTimer == null) {
+            final String[] frames = {"⚙️", "🔧", "⚡", "✨"};
+            final AtomicInteger frameIndex = new AtomicInteger(0);
+
+            statusAnimationTimer = new Timer(500, e -> {
+                String currentText = statusLabel.getText();
+                String baseText = currentText.substring(2); // Remove emoji
+                statusLabel.setText(frames[frameIndex.get()] + " " + baseText);
+                frameIndex.set((frameIndex.get() + 1) % frames.length);
+            });
+            statusAnimationTimer.start();
+        }
+    }
+
+    private void stopStatusAnimation() {
+        if (statusAnimationTimer != null) {
+            statusAnimationTimer.stop();
+            statusAnimationTimer = null;
         }
     }
 
@@ -188,110 +278,122 @@ public class ReviewAndApplyPage extends MainContentInfo {
         String selectedConfig = ConfigSelectionPage.selectedResolution;
 
         if (selectedConfig == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Please select a configuration before applying.",
-                    "Missing Selection", JOptionPane.WARNING_MESSAGE);
+            showErrorDialog("Please select a configuration before applying.");
             return;
         }
 
         extractionStarted = true;
         applyButton.setEnabled(false);
-        applyButton.setText("🔄 Extracting...");
-        applyButton.setBackground(WizardTheme.BACKGROUND_LIGHT);
-        statusLabel.setText("🔄 Extracting configuration files...");
-        statusLabel.setForeground(WizardTheme.INFO);
+        applyButton.startLoading();
 
-        Path configZipPath = runDir.resolve("packcore/modpack_config/official_configs").resolve(selectedConfig + ".zip");
+        updateState(ExtractionState.PREPARING);
+
+        Path configZipPath = runDir.resolve("packcore/modpack_config/official_configs")
+                .resolve(selectedConfig + ".zip");
         String destDir = System.getProperty("user.home") + "/Desktop/PackCoreTest";
 
-        addLogMessage("╔══════════════════════════════════════╗");
-        addLogMessage("║       Configuration Extraction       ║");
-        addLogMessage("╚══════════════════════════════════════╝");
-        addLogMessage("📦 Configuration: " + configZipPath.getFileName());
-        addLogMessage("📁 Destination: " + destDir);
-        addLogMessage("⏰ Started at: " + java.time.LocalTime.now());
-        addLogMessage("");
+        logArea.addHeaderLine("╔══════════════════════════════════════╗");
+        logArea.addHeaderLine("║     Configuration Installation       ║");
+        logArea.addHeaderLine("╚══════════════════════════════════════╝");
+        logArea.addInfoLine("📦 Configuration: " + configZipPath.getFileName());
+        logArea.addInfoLine("📁 Destination: " + destDir);
+        logArea.addInfoLine("⏰ Started: " + LocalDateTime.now().format(
+                DateTimeFormatter.ofPattern("HH:mm:ss")));
+        logArea.addLine("");
 
-        new Thread(() -> {
-            try {
-                UnzipFiles unzipper = new UnzipFiles();
-
-                SwingUtilities.invokeLater(() -> {
-                    progressBar.setString("Extracting configuration...");
-                    progressBar.setForeground(WizardTheme.INFO);
-                    addLogMessage("🔍 Verifying configuration file...");
-                });
-
-                if (!Files.exists(configZipPath)) {
-                    throw new IOException("Configuration file not found: " + configZipPath);
-                }
-
-                SwingUtilities.invokeLater(() -> addLogMessage("✅ Configuration file verified"));
-                SwingUtilities.invokeLater(() -> addLogMessage("🚀 Starting extraction process..."));
-
-                unzipper.unzip(configZipPath.toString(), destDir, (bytesProcessed, totalBytes, percentage) -> {
-                    SwingUtilities.invokeLater(() -> {
-                        progressBar.setValue(percentage);
-                        progressBar.setString("Extracting: " + percentage + "% complete");
-
-                        if (percentage % 10 == 0) {
-                            addLogMessage("📊 Progress: " + percentage + "% complete");
-                        }
-                    });
-                });
-
-                SwingUtilities.invokeLater(() -> {
-                    progressBar.setValue(100);
-                    progressBar.setString("🎉 Configuration applied successfully!");
-                    progressBar.setForeground(WizardTheme.SUCCESS);
-                    statusLabel.setText("🎉 Configuration applied successfully!");
-                    statusLabel.setForeground(WizardTheme.SUCCESS);
-                    applyButton.setText("✅ Completed");
-                    applyButton.setBackground(WizardTheme.SUCCESS);
-                    extractionCompleted = true;
-
-                    addLogMessage("");
-                    addLogMessage("╔══════════════════════════════════════╗");
-                    addLogMessage("║         Extraction Complete!         ║");
-                    addLogMessage("╚══════════════════════════════════════╝");
-                    addLogMessage("🎮 Your modpack is now configured and ready!");
-                    addLogMessage("➡️ Click 'Continue' to proceed to the final step.");
-                    addLogMessage("⏰ Completed at: " + java.time.LocalTime.now());
-
-                    // THIS IS THE IMPORTANT FIX - call the correct method
-                    wizard.getNavigationPanel().onExtractionCompleted();
-                });
-
-            } catch (IOException ex) {
-                LOGGER.error("Failed to extract configuration", ex);
-                SwingUtilities.invokeLater(() -> {
-                    progressBar.setString("❌ Extraction failed!");
-                    progressBar.setForeground(WizardTheme.ERROR);
-                    statusLabel.setText("❌ Extraction failed - see log for details");
-                    statusLabel.setForeground(WizardTheme.ERROR);
-                    applyButton.setText("🔄 Retry");
-                    applyButton.setBackground(WizardTheme.WARNING);
-                    applyButton.setEnabled(true);
-                    extractionStarted = false;
-
-                    addLogMessage("");
-                    addLogMessage("❌ ERROR: " + ex.getMessage());
-                    addLogMessage("💡 Please check that the configuration file exists and try again.");
-
-                    JOptionPane.showMessageDialog(this,
-                            "Extraction failed: " + ex.getMessage() +
-                                    "\n\nPlease check the log panel for more information.",
-                            "Extraction Error", JOptionPane.ERROR_MESSAGE);
-                });
-            }
-        }).start();
+        new Thread(() -> performExtraction(configZipPath, destDir)).start();
     }
 
-    private void addLogMessage(String message) {
-        SwingUtilities.invokeLater(() -> {
-            logArea.append(message + "\n");
-            logArea.setCaretPosition(logArea.getDocument().getLength());
-        });
+    private void performExtraction(Path configZipPath, String destDir) {
+        try {
+            Thread.sleep(1000); // Simulate preparation
+
+            SwingUtilities.invokeLater(() -> {
+                updateState(ExtractionState.EXTRACTING);
+                logArea.addSuccessLine("✅ Configuration file verified");
+                logArea.addInfoLine("🚀 Starting extraction process...");
+            });
+
+            if (!Files.exists(configZipPath)) {
+                throw new IOException("Configuration file not found: " + configZipPath);
+            }
+
+            UnzipFiles unzipper = new UnzipFiles();
+            unzipper.unzip(configZipPath.toString(), destDir, (bytesProcessed, totalBytes, percentage) -> {
+                SwingUtilities.invokeLater(() -> {
+                    progressBar.setValue(percentage);
+                    progressBar.setString(String.format("Extracting: %d%% (%s / %s)",
+                            percentage,
+                            formatBytes(bytesProcessed),
+                            formatBytes(totalBytes)));
+
+                    if (percentage % 20 == 0 && percentage > 0) {
+                        logArea.addProgressLine("📊 Progress: " + percentage + "% complete");
+                    }
+                });
+            });
+
+            SwingUtilities.invokeLater(() -> {
+                updateState(ExtractionState.FINALIZING);
+                logArea.addLine("");
+
+                try {
+                    Thread.sleep(500); // Brief pause for visual effect
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                updateState(ExtractionState.COMPLETED);
+                extractionCompleted = true;
+                applyButton.stopLoading();
+
+                logArea.addHeaderLine("╔══════════════════════════════════════╗");
+                logArea.addHeaderLine("║       Installation Complete!         ║");
+                logArea.addHeaderLine("╚══════════════════════════════════════╝");
+                logArea.addSuccessLine("🎮 Your modpack is now configured!");
+                logArea.addInfoLine("➡️ Click 'Continue' to proceed");
+                logArea.addInfoLine("⏰ Completed: " + LocalDateTime.now().format(
+                        DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+                wizard.getNavigationPanel().onExtractionCompleted();
+            });
+
+        } catch (Exception ex) {
+            LOGGER.error("Extraction failed", ex);
+            SwingUtilities.invokeLater(() -> {
+                updateState(ExtractionState.ERROR);
+                applyButton.stopLoading();
+                extractionStarted = false;
+
+                logArea.addLine("");
+                logArea.addErrorLine("❌ ERROR: " + ex.getMessage());
+                logArea.addWarningLine("💡 Please check the configuration and try again");
+
+                showErrorDialog("Extraction failed: " + ex.getMessage());
+            });
+        }
+    }
+
+    private void retryExtraction() {
+        extractionStarted = false;
+        extractionCompleted = false;
+        progressBar.setValue(0);
+        progressBar.setComplete(false);
+        logArea.clear();
+        applyButton.setText("Apply Configuration");
+        updateState(ExtractionState.IDLE);
+        startExtraction();
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        String pre = "KMGTPE".charAt(exp - 1) + "";
+        return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
+    }
+
+    private void showErrorDialog(String message) {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     public boolean isExtractionCompleted() {
@@ -300,5 +402,345 @@ public class ReviewAndApplyPage extends MainContentInfo {
 
     public void refreshSummary() {
         updateSummary();
+    }
+
+    // Custom animated progress bar
+    private class AnimatedProgressBar extends JProgressBar {
+        private Timer animationTimer;
+        private float hue = 0.15f; // Gold hue
+        private boolean isComplete = false;
+
+        public AnimatedProgressBar() {
+            super(0, 100);
+            setStringPainted(true);
+            setString("Waiting to start...");
+            setFont(WizardTheme.getBodyFont());
+            setPreferredSize(new Dimension(800, 35));
+            setBorderPainted(false);
+            setBackground(WizardTheme.BACKGROUND_LIGHT);
+        }
+
+        public void setComplete(boolean complete) {
+            this.isComplete = complete;
+            if (complete) {
+                startCompletionAnimation();
+            }
+        }
+
+        private void startCompletionAnimation() {
+            if (animationTimer == null) {
+                animationTimer = new Timer(50, e -> {
+                    hue += 0.01f;
+                    if (hue > 1.0f) hue = 0.0f;
+                    repaint();
+                });
+                animationTimer.start();
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Background
+            g2.setColor(WizardTheme.BACKGROUND_LIGHT);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+
+            // Progress fill
+            int progress = (int) ((getWidth() - 4) * (getValue() / 100.0));
+            if (progress > 0) {
+                Color fillColor = isComplete ?
+                        Color.getHSBColor(hue, 0.7f, 0.9f) :
+                        WizardTheme.ACCENT_GOLD;
+
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, fillColor,
+                        0, getHeight(), fillColor.darker()
+                );
+                g2.setPaint(gradient);
+                g2.fillRoundRect(2, 2, progress, getHeight() - 4, 8, 8);
+            }
+
+            // Draw string
+            g2.setColor(WizardTheme.TEXT_PRIMARY);
+            FontMetrics fm = g2.getFontMetrics();
+            String text = getString();
+            int textWidth = fm.stringWidth(text);
+            int x = (getWidth() - textWidth) / 2;
+            int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+            g2.drawString(text, x, y);
+
+            g2.dispose();
+        }
+    }
+
+    // Styled log area with colored output
+    private class StyledLogArea extends JTextPane {
+        private final StyledDocument doc;
+        private final SimpleAttributeSet normalStyle;
+        private final SimpleAttributeSet headerStyle;
+        private final SimpleAttributeSet successStyle;
+        private final SimpleAttributeSet errorStyle;
+        private final SimpleAttributeSet warningStyle;
+        private final SimpleAttributeSet infoStyle;
+        private final SimpleAttributeSet progressStyle;
+
+        public StyledLogArea() {
+            setEditable(false);
+            setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
+            setBackground(WizardTheme.BACKGROUND_DARK);
+            setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+            doc = getStyledDocument();
+
+            // Define styles
+            normalStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(normalStyle, WizardTheme.TEXT_SECONDARY);
+
+            headerStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(headerStyle, WizardTheme.ACCENT_GOLD);
+            StyleConstants.setBold(headerStyle, true);
+
+            successStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(successStyle, WizardTheme.SUCCESS);
+
+            errorStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(errorStyle, WizardTheme.ERROR);
+            StyleConstants.setBold(errorStyle, true);
+
+            warningStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(warningStyle, WizardTheme.WARNING);
+
+            infoStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(infoStyle, WizardTheme.INFO);
+
+            progressStyle = new SimpleAttributeSet();
+            StyleConstants.setForeground(progressStyle, WizardTheme.ACCENT_GOLD);
+            StyleConstants.setItalic(progressStyle, true);
+
+            addLine("System ready. Waiting for user action...");
+        }
+
+        public void addLine(String text) {
+            addStyledLine(text + "\n", normalStyle);
+        }
+
+        public void addHeaderLine(String text) {
+            addStyledLine(text + "\n", headerStyle);
+        }
+
+        public void addSuccessLine(String text) {
+            addStyledLine(text + "\n", successStyle);
+        }
+
+        public void addErrorLine(String text) {
+            addStyledLine(text + "\n", errorStyle);
+        }
+
+        public void addWarningLine(String text) {
+            addStyledLine(text + "\n", warningStyle);
+        }
+
+        public void addInfoLine(String text) {
+            addStyledLine(text + "\n", infoStyle);
+        }
+
+        public void addProgressLine(String text) {
+            addStyledLine(text + "\n", progressStyle);
+        }
+
+        private void addStyledLine(String text, SimpleAttributeSet style) {
+            try {
+                doc.insertString(doc.getLength(), text, style);
+                setCaretPosition(doc.getLength());
+            } catch (BadLocationException e) {
+                // Ignore
+            }
+        }
+
+        public void clear() {
+            setText("");
+            addLine("Log cleared. Ready for new operation...");
+        }
+    }
+
+    // Modern button with loading animation
+    private class ModernButton extends JButton {
+        private String icon;
+        private Timer loadingTimer;
+        private int loadingAngle = 0;
+        private boolean isLoading = false;
+
+        public ModernButton(String text, String icon) {
+            super(text);
+            this.icon = icon;
+            setupButton();
+        }
+
+        private void setupButton() {
+            setFont(new Font("Segoe UI", Font.BOLD, 16));
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setContentAreaFilled(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setPreferredSize(new Dimension(220, 50));
+        }
+
+        public void startLoading() {
+            isLoading = true;
+            if (loadingTimer == null) {
+                loadingTimer = new Timer(50, e -> {
+                    loadingAngle = (loadingAngle + 10) % 360;
+                    repaint();
+                });
+                loadingTimer.start();
+            }
+        }
+
+        public void stopLoading() {
+            isLoading = false;
+            if (loadingTimer != null) {
+                loadingTimer.stop();
+                loadingTimer = null;
+            }
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Button background with gradient
+            Color bgColor = isEnabled() ? WizardTheme.ACCENT_GOLD : WizardTheme.BACKGROUND_LIGHT;
+            GradientPaint gradient = new GradientPaint(
+                    0, 0, bgColor,
+                    0, getHeight(), bgColor.darker()
+            );
+            g2.setPaint(gradient);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 25, 25);
+
+            // Shadow effect
+            g2.setColor(new Color(0, 0, 0, 30));
+            g2.fillRoundRect(2, 2, getWidth() - 2, getHeight() - 2, 25, 25);
+
+            // Loading animation
+            if (isLoading) {
+                g2.setColor(Color.WHITE);
+                g2.setStroke(new BasicStroke(3));
+                int cx = getWidth() / 2;
+                int cy = getHeight() / 2;
+                g2.drawArc(cx - 15, cy - 15, 30, 30, loadingAngle, 60);
+            } else {
+                // Text and icon
+                g2.setColor(isEnabled() ? WizardTheme.BACKGROUND_DARK : WizardTheme.TEXT_MUTED);
+                FontMetrics fm = g2.getFontMetrics();
+                String displayText = (icon != null ? icon + " " : "") + getText();
+                int textWidth = fm.stringWidth(displayText);
+                int x = (getWidth() - textWidth) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString(displayText, x, y);
+            }
+
+            g2.dispose();
+        }
+    }
+
+    // Status indicator panel
+    private class StatusIndicatorPanel extends JPanel {
+        private ExtractionState currentState = ExtractionState.IDLE;
+        private Timer pulseTimer;
+        private float pulseAlpha = 1.0f;
+
+        public StatusIndicatorPanel() {
+            setOpaque(false);
+            setPreferredSize(new Dimension(150, 80));
+            startPulseAnimation();
+        }
+
+        private void startPulseAnimation() {
+            pulseTimer = new Timer(50, e -> {
+                pulseAlpha -= 0.02f;
+                if (pulseAlpha <= 0.3f) pulseAlpha = 1.0f;
+                repaint();
+            });
+            pulseTimer.start();
+        }
+
+        public void updateStatus(ExtractionState state) {
+            this.currentState = state;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Status circle
+            int cx = getWidth() / 2;
+            int cy = getHeight() / 2 - 10;
+            int radius = 20;
+
+            Color statusColor;
+            String statusIcon;
+            String statusText;
+
+            switch (currentState) {
+                case IDLE:
+                    statusColor = WizardTheme.TEXT_SECONDARY;
+                    statusIcon = "⏳";
+                    statusText = "Ready";
+                    break;
+                case PREPARING:
+                case EXTRACTING:
+                case FINALIZING:
+                    statusColor = new Color(
+                            WizardTheme.ACCENT_GOLD.getRed(),
+                            WizardTheme.ACCENT_GOLD.getGreen(),
+                            WizardTheme.ACCENT_GOLD.getBlue(),
+                            (int)(255 * pulseAlpha)
+                    );
+                    statusIcon = "⚡";
+                    statusText = "Working";
+                    break;
+                case COMPLETED:
+                    statusColor = WizardTheme.SUCCESS;
+                    statusIcon = "✅";
+                    statusText = "Complete";
+                    break;
+                case ERROR:
+                    statusColor = WizardTheme.ERROR;
+                    statusIcon = "❌";
+                    statusText = "Error";
+                    break;
+                default:
+                    statusColor = WizardTheme.TEXT_MUTED;
+                    statusIcon = "?";
+                    statusText = "Unknown";
+            }
+
+            // Draw status circle
+            g2.setColor(statusColor);
+            g2.fillOval(cx - radius, cy - radius, radius * 2, radius * 2);
+
+            // Draw icon
+            g2.setColor(Color.WHITE);
+            g2.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+            FontMetrics fm = g2.getFontMetrics();
+            int iconWidth = fm.stringWidth(statusIcon);
+            g2.drawString(statusIcon, cx - iconWidth / 2, cy + 5);
+
+            // Draw status text
+            g2.setColor(WizardTheme.TEXT_SECONDARY);
+            g2.setFont(WizardTheme.getSmallFont());
+            fm = g2.getFontMetrics();
+            int textWidth = fm.stringWidth(statusText);
+            g2.drawString(statusText, cx - textWidth / 2, cy + radius + 20);
+
+            g2.dispose();
+        }
     }
 }
