@@ -5,31 +5,18 @@ import com.github.kd_gaming1.packcore.gui.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.help.WizardDataManager;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
-import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
-import com.github.kd_gaming1.packcore.util.ModpackInfo;
-import com.vladsch.flexmark.ext.ins.Ins;
-import io.wispforest.lavendermd.MarkdownProcessor;
-import io.wispforest.lavendermd.compiler.OwoUICompiler;
-import io.wispforest.lavendermd.feature.*;
+import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import io.wispforest.owo.ops.TextOps;
-import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
-import io.wispforest.owo.ui.component.TextureComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.event.MouseDown;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.List;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 

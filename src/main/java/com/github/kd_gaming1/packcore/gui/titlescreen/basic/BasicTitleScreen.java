@@ -4,9 +4,9 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.titlescreen.UpdateAvailablePopup;
 import com.github.kd_gaming1.packcore.gui.titlescreen.toast.UpdateNotificationToast;
-import com.github.kd_gaming1.packcore.util.ModpackInfo;
-import com.github.kd_gaming1.packcore.util.UpdateCacheManager;
-import com.github.kd_gaming1.packcore.util.UpdateCheckResult;
+import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
+import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
+import com.github.kd_gaming1.packcore.util.api.UpdateCheckResult;
 
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;

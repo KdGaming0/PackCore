@@ -1,7 +1,6 @@
 package com.github.kd_gaming1.packcore.commands;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.copysystem.ZipArchiver;
 import eu.midnightdust.lib.config.MidnightConfig;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -230,33 +229,6 @@ public class PackCoreCommands {
 
         // Create the archive
         source.sendFeedback(() -> Text.literal("§6Creating archive with " + pathsToArchive.size() + " items..."), false);
-
-        boolean success = ZipArchiver.createZipArchive(
-                filename,
-                customConfigFolder.getAbsolutePath(),
-                pathsToArchive,
-                minecraftRoot,
-                new ZipArchiver.ArchiveProgressListener() {
-                    private int lastReportedProgress = 0;
-
-                    @Override
-                    public void onProgress(int percentComplete) {
-                        // Report progress every 20%
-                        if (percentComplete >= lastReportedProgress + 20) {
-                            lastReportedProgress = percentComplete;
-                            source.sendFeedback(() -> Text.literal("§6Archive progress: §e" + percentComplete + "%"), false);
-                        }
-                    }
-                }
-        );
-
-        if (success) {
-            String finalFilename = filename;
-            source.sendFeedback(() -> Text.literal("§aArchive created successfully: §f" + finalFilename), false);
-            source.sendFeedback(() -> Text.literal("§aLocation: §f" + customConfigFolder.getAbsolutePath()), false);
-        } else {
-            source.sendFeedback(() -> Text.literal("§cFailed to create archive. Check console for errors."), false);
-        }
     }
 
     private static List<Path> getPathsForTarget(String target, File minecraftRoot, ServerCommandSource source) {

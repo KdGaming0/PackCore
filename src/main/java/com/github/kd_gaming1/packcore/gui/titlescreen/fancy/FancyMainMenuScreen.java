@@ -3,11 +3,10 @@ package com.github.kd_gaming1.packcore.gui.titlescreen.fancy;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.UiSurfaces;
-import com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPage;
 import com.github.kd_gaming1.packcore.gui.titlescreen.toast.UpdateNotificationToast;
-import com.github.kd_gaming1.packcore.util.ModpackInfo;
-import com.github.kd_gaming1.packcore.util.UpdateCacheManager;
-import com.github.kd_gaming1.packcore.util.UpdateCheckResult;
+import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
+import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
+import com.github.kd_gaming1.packcore.util.api.UpdateCheckResult;
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.*;
@@ -34,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Flow;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 

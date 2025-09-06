@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.util;
+package com.github.kd_gaming1.packcore.util.api;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.google.gson.Gson;

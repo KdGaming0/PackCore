@@ -1,6 +1,7 @@
-package com.github.kd_gaming1.packcore.util;
+package com.github.kd_gaming1.packcore.util.api;
 
 import com.github.kd_gaming1.packcore.PackCore;
+import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 
 import static com.mojang.text2speech.Narrator.LOGGER;
 
