@@ -32,5 +32,8 @@
     "fabric-language-kotlin": ">=${fabric_kotlin_version}",
     "vistas": ">=${vistas_version}",
     "owo": ">=${owo_version}"
+  },
+  "suggests": {
+    "sodium": ">=0.6.0"
   }
 }
