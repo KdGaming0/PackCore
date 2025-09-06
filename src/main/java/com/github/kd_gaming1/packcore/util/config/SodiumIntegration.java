@@ -7,12 +7,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 /**
  * Integration class for Sodium-specific settings.
  * This class is only loaded when Sodium is present.
  */
 public class SodiumIntegration {
-    private static final Logger LOGGER = LoggerFactory.getLogger("YourMod-SodiumIntegration");
+    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     public static boolean applyProfile(PerformanceProfileUtil.PerformanceProfile profile) {
         try {

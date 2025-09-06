@@ -8,12 +8,14 @@ import net.minecraft.particle.ParticlesMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 /**
  * Integration class for vanilla Minecraft settings.
  * Handles GameOptions modifications for performance profiles.
  */
 public class MinecraftIntegration {
-    private static final Logger LOGGER = LoggerFactory.getLogger("YourMod-MinecraftIntegration");
+    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     public static boolean applyProfile(PerformanceProfileUtil.PerformanceProfile profile) {
         try {

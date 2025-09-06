@@ -4,12 +4,14 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 /**
  * Central utility class for managing performance profiles across different systems.
  * This class coordinates between Sodium and Minecraft vanilla settings.
  */
 public class PerformanceProfileUtil {
-    private static final Logger LOGGER = LoggerFactory.getLogger("YourMod-PerformanceProfile");
+    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final String SODIUM_MOD_ID = "sodium";
 
     /**
