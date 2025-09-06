@@ -1,8 +1,8 @@
 package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.gui.configscreen.ModpackConfigMenuScreen;
 import com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPage;
+import com.github.kd_gaming1.packcore.gui.titlescreen.fancy.FancyMainMenuScreen;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -28,7 +28,10 @@ public class PackCoreClient implements ClientModInitializer {
                 // Check if the screenoOld being opened is the vanilla main menu
                 if (screen instanceof TitleScreen) {
                     // Replace it with your custom menu on the next tick
-                    client.execute(() -> client.setScreen(new ModpackConfigMenuScreen()));
+                    if (!PackCoreConfig.haveShowWelcomeWizard) {
+                        client.execute(() -> client.setScreen(new IntroductionScreenPage()));
+                    }
+                    client.execute(() -> client.setScreen(new FancyMainMenuScreen()));
                 }
             });
         }

@@ -60,9 +60,13 @@ public class PackCoreConfig extends MidnightConfig {
      * Used to show different extraction confirmation messages.
      * This is automatically set to false after the first ever startup.
      */
-    @Hidden()
+    @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.first_startup")
     public static boolean isFirstStartup = true;
+
+    @Hidden
+    @Entry(category = ADVANCED, name = "Have show welcome wizard")
+    public static boolean haveShowWelcomeWizard = false;
 
     /**
      * Tracks the last applied configuration name for reference
