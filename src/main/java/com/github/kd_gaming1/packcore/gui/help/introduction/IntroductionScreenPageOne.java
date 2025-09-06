@@ -72,6 +72,12 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
 
         this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("Optimisation.md");
         this.modpackInfo = PackCore.getModpackInfo();
+
+        // Restore saved state
+        String savedProfile = WizardDataManager.getInstance().getOptimizationProfile();
+        if (!savedProfile.isEmpty()) {
+            this.selectedOptimisationProfile = savedProfile;
+        }
     }
 
     @Override
@@ -197,16 +203,16 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
     private void selectedOptimisationProfile(String profileKey) {
         selectedOptimisationProfile = profileKey;
 
-        // Store in data manager
+        // Store in data manager as optimization profile (NOT resource pack)
         WizardDataManager.getInstance().setOptimizationProfile(profileKey);
 
         if (headerTitle != null) {
             headerTitle.text(
-                    TextOps.withColor("Your selected profile is: " + selectedOptimisationProfile, ACCENT_GOLD)
+                    TextOps.withColor("Your selected performance profile: " + selectedOptimisationProfile, ACCENT_GOLD)
             );
         }
 
-        // Instead of clearing and rebuilding, just update the existing profile boxes
+        // Update UI to show selection
         updateProfileBoxes();
     }
 

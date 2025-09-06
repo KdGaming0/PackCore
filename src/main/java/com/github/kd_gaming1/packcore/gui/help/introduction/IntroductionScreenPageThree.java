@@ -74,6 +74,10 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
 
         this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("ResourcePacks.md");
         this.modpackInfo = PackCore.getModpackInfo();
+
+        // Restore saved state
+        List<String> savedPacks = WizardDataManager.getInstance().getResourcePacksOrdered();
+        this.selectedResourcePacks.addAll(savedPacks);
     }
 
     @Override

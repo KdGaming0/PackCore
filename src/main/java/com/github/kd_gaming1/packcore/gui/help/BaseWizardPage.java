@@ -49,6 +49,9 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     protected static final int CONTENT_PADDING = getScaledPadding();
     protected static final int PROGRESS_BAR_WIDTH = 125;
 
+    protected ButtonComponent primaryButton;
+    private boolean primaryButtonInitialActive = true;
+
     private boolean wizardFailed;
     private StackLayout confirmOverlay;
 
@@ -444,14 +447,26 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         return footer;
     }
 
+    protected void updatePrimaryButtonState(boolean enabled) {
+        if (this.primaryButton != null) {
+            this.primaryButton.active = enabled;
+        } else {
+            this.primaryButtonInitialActive = enabled;
+        }
+    }
+
     private ButtonComponent createPrimaryButton() {
         String buttonText = isLastPage() ? "Finish" : "Continue";
-        return (ButtonComponent) Components.button(
-                Text.literal(buttonText),
-                button -> onContinuePressed()
-        ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/continue.png"), 0, 0, 100, 60))
+        this.primaryButton = (ButtonComponent) Components.button(
+                        Text.literal(buttonText),
+                        button -> onContinuePressed()
+                ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/continue.png"), 0, 0, 100, 60))
                 .horizontalSizing(Sizing.fixed(100))
                 .verticalSizing(Sizing.fixed(20));
+
+        // Apply any initial state that may have been set earlier
+        this.primaryButton.active = this.primaryButtonInitialActive;
+        return this.primaryButton;
     }
 
     private static int getScaledPadding() {

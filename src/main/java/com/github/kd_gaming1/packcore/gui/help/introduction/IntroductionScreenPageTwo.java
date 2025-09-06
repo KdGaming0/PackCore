@@ -7,6 +7,7 @@ import com.github.kd_gaming1.packcore.gui.help.WizardDataManager;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
 import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
 import com.github.kd_gaming1.packcore.util.ModpackInfo;
+import com.vladsch.flexmark.ext.ins.Ins;
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.*;
@@ -55,12 +56,19 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
         );
 
         this.modpackInfo = PackCore.getModpackInfo();
+
+        // Restore saved state
+        String savedDesign = WizardDataManager.getInstance().getTabDesign();
+        if (!savedDesign.isEmpty()) {
+            this.selectedDesign = savedDesign;
+        }
     }
 
     @Override
     protected void buildContent(FlowLayout contentContainer) {
+        contentContainer.surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/frame.png"), 1920, 1080));
+        contentContainer.padding(Insets.of(24, 20, 18, 18));
 
-        contentContainer.margins(Insets.bottom(28));
         // Welcome header
         contentContainer.child(createWelcomeHeader());
 
@@ -77,8 +85,9 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
     }
 
     private FlowLayout createWelcomeHeader() {
-        FlowLayout header = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(6);
+        FlowLayout header = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(6)
+                .margins(Insets.of(6, 0, 12, 12));
 
         // Create welcome text
         Text welcomeText = TextOps.concat(

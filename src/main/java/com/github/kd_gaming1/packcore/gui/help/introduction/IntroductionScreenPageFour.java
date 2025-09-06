@@ -1,7 +1,9 @@
 package com.github.kd_gaming1.packcore.gui.help.introduction;
 
 import com.github.kd_gaming1.packcore.PackCore;
+import com.github.kd_gaming1.packcore.gui.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
+import com.github.kd_gaming1.packcore.gui.help.WizardDataManager;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
 import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
 import com.github.kd_gaming1.packcore.util.ModpackInfo;
@@ -25,7 +27,8 @@ import net.minecraft.util.Util;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Work in progress page for miscellaneous information
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class IntroductionScreenPageFour extends BaseWizardPage {
 
 
@@ -52,24 +55,23 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
                         4,
                         5 // Total wizard steps
                 ),
-                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/test_temp.png")
+                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
-        this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("Welcome.md");
+        this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("UsefulInformation.md");
         this.modpackInfo = PackCore.getModpackInfo();
     }
 
     @Override
     protected void buildContent(FlowLayout contentContainer) {
-        contentContainer.margins(Insets.bottom(42));
+        contentContainer.surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/frame.png"), 1920, 1080));
+        contentContainer.padding(Insets.of(24, 26, 18, 18));
+
         // Welcome header
         contentContainer.child(createWelcomeHeader());
 
         // Markdown content in scrollable area
         contentContainer.child(createMarkdownSection());
-
-        // Quick info section
-        contentContainer.child(createQuickInfoSection().positioning(Positioning.relative(0, 100)));
     }
 
     @Override
@@ -78,8 +80,9 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
     }
 
     private FlowLayout createWelcomeHeader() {
-        FlowLayout header = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(6);
+        FlowLayout header = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(6)
+                .margins(Insets.of(6, 0, 12, 12));
 
         // Create welcome text
         Text welcomeText = TextOps.concat(
@@ -90,7 +93,7 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
         LabelComponent welcomeTitle = Components.label(welcomeText);
 
         LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("The pack have many mods and some features are a bit hidden some tomes, here is a few tips to get you started.")
+                Text.literal("The pack have many mods and some features, here is a few tips to get you started.")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
 
@@ -102,7 +105,7 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
 
     private ScrollContainer<FlowLayout> createMarkdownSection() {
         // Create a FlowLayout to wrap the markdown content
-        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(96), Sizing.content())
                 .gap(4);
 
         // Get the processed markdown component
@@ -126,58 +129,9 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
         scrollContainer.scrollbarThiccness(6);
         scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
         scrollContainer.padding(Insets.of(8));
-        scrollContainer.margins(Insets.bottom(45));
+        scrollContainer.margins(Insets.bottom(4));
 
         return scrollContainer;
-    }
-
-    private FlowLayout createQuickInfoSection() {
-        FlowLayout infoSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .surface(Surface.flat(0x20_FFD700).and(Surface.outline(ACCENT_GOLD)))
-                .padding(Insets.of(6));
-
-        LabelComponent infoTitle = Components.label(
-                TextOps.withColor("Quick Links", ACCENT_GOLD)
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        );
-
-        infoSection.child(infoTitle);
-
-        // Discord link as a transparent button
-        if (modpackInfo.getDiscord() != null && !modpackInfo.getDiscord().isEmpty()) {
-            Text discordText = TextOps.concat(
-                    TextOps.withColor("💬 Discord: ", TEXT_WHITE),
-                    TextOps.withColor(modpackInfo.getDiscord(), TextOps.color(Formatting.AQUA))
-            );
-
-            ButtonComponent discordButton = (ButtonComponent) Components.button(discordText, btn -> {
-                        Util.getOperatingSystem().open(modpackInfo.getDiscord());
-                    })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000)) // fully transparent background
-                    .textShadow(false)
-                    .sizing(Sizing.content(), Sizing.fixed(16));
-
-            infoSection.child(discordButton);
-        }
-
-        // Issue tracker link as a transparent button
-        if (modpackInfo.getIssueTracker() != null && !modpackInfo.getIssueTracker().isEmpty()) {
-            Text issueText = TextOps.concat(
-                    TextOps.withColor("🐛 Issues: ", TEXT_WHITE),
-                    TextOps.withColor(modpackInfo.getIssueTracker(), TextOps.color(Formatting.AQUA))
-            );
-
-            ButtonComponent issueButton = (ButtonComponent) Components.button(issueText, btn -> {
-                        Util.getOperatingSystem().open(modpackInfo.getIssueTracker());
-                    })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000)) // fully transparent background
-                    .textShadow(false)
-                    .sizing(Sizing.content(), Sizing.fixed(16));
-
-            infoSection.child(issueButton);
-        }
-
-        return infoSection;
     }
 
     @Override
@@ -192,7 +146,7 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
 
     @Override
     protected boolean shouldShowStatusInfo() {
-        return false; // Show setup status on welcome page
+        return false;
     }
 
 }
