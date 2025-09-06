@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.util;
+package com.github.kd_gaming1.packcore.util.config;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import net.minecraft.client.MinecraftClient;
@@ -7,6 +7,7 @@ import net.minecraft.resource.ResourcePackProfile;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ResourcePackUtil {
 
@@ -30,95 +31,99 @@ public class ResourcePackUtil {
     );
 
     public static CompletableFuture<Boolean> applyResourcePacksOrdered(List<String> packKeysOrdered) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                MinecraftClient client = MinecraftClient.getInstance();
-                if (client == null) return false;
+        CompletableFuture<Boolean> result = new CompletableFuture<>();
 
-                // Find actual pack IDs that exist - PRESERVING ORDER
-                List<String> foundPackIds = findAvailablePackIdsOrderedList(packKeysOrdered);
-                if (foundPackIds.isEmpty()) {
-                    PackCore.LOGGER.warn("No matching resource packs found for keys: {}", packKeysOrdered);
-                    return false;
-                }
-
-                PackCore.LOGGER.info("Found {} packs in order: {}", foundPackIds.size(), foundPackIds);
-
-                // Apply them on main thread
-                CompletableFuture<Boolean> result = new CompletableFuture<>();
-                client.execute(() -> {
-                    try {
-                        ResourcePackManager packManager = client.getResourcePackManager();
-
-                        // Get current packs
-                        List<String> currentPacks = new ArrayList<>(client.options.resourcePacks);
-                        List<String> newPacks = new ArrayList<>();
-
-                        // Get ALL possible pack IDs from our keywords (FIXED)
-                        Set<String> allKnownPackIds = getAllKnownPackIds();
-
-                        PackCore.LOGGER.info("Current packs from options.txt: {}", currentPacks);
-                        PackCore.LOGGER.info("All known managed pack IDs: {}", allKnownPackIds);
-                        PackCore.LOGGER.info("Packs to add (in order): {}", foundPackIds);
-
-                        // Keep packs that aren't in our known list (vanilla, mods, etc)
-                        for (String pack : currentPacks) {
-                            if (!allKnownPackIds.contains(pack)) {
-                                newPacks.add(pack);
-                                PackCore.LOGGER.info("Keeping non-managed pack: {}", pack);
-                            } else {
-                                PackCore.LOGGER.info("Removing previously enabled managed pack: {}", pack);
-                            }
-                        }
-
-                        PackCore.LOGGER.info("Base packs (after removing managed): {}", newPacks);
-
-                        // Add selected packs IN THE ORDER THEY WERE SELECTED
-                        // First selected = first added = higher priority in resource loading
-                        Collections.reverse(foundPackIds);
-
-                        for (int i = 0; i < foundPackIds.size(); i++) {
-                            String packId = foundPackIds.get(i);
-                            if (!newPacks.contains(packId)) {
-                                newPacks.add(packId);
-                                PackCore.LOGGER.info("Adding resource pack: {} (reversed index: {}, final position: {})",
-                                        packId, i + 1, newPacks.size() - 1);
-                            } else {
-                                PackCore.LOGGER.warn("Pack {} was already in the list, skipping duplicate", packId);
-                            }
-                        }
-
-                        PackCore.LOGGER.info("Final pack order for options.txt: {}", newPacks);
-
-                        // Apply the changes
-                        packManager.setEnabledProfiles(newPacks);
-                        client.options.resourcePacks.clear();
-                        client.options.resourcePacks.addAll(newPacks);
-                        client.options.write();
-
-                        // Reload resources
-                        client.reloadResources().thenRun(() -> {
-                            PackCore.LOGGER.info("Resource reload completed successfully");
-                            result.complete(true);
-                        }).exceptionally(e -> {
-                            PackCore.LOGGER.error("Resource reload failed", e);
-                            result.complete(false);
-                            return null;
-                        });
-
-                    } catch (Exception e) {
-                        PackCore.LOGGER.error("Failed to apply packs", e);
-                        result.complete(false);
-                    }
-                });
-
-                return result.get();
-
-            } catch (Exception e) {
-                PackCore.LOGGER.error("Failed to apply resource packs", e);
-                return false;
+        try {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client == null) {
+                result.complete(false);
+                return result.completeOnTimeout(false, 10, TimeUnit.SECONDS);
             }
-        });
+
+            // Find actual pack IDs that exist - PRESERVING ORDER
+            List<String> foundPackIds = findAvailablePackIdsOrderedList(packKeysOrdered);
+            if (foundPackIds.isEmpty()) {
+                PackCore.LOGGER.warn("No matching resource packs found for keys: {}", packKeysOrdered);
+                result.complete(false);
+                return result.completeOnTimeout(false, 10, TimeUnit.SECONDS);
+            }
+
+            PackCore.LOGGER.info("Found {} packs in order: {}", foundPackIds.size(), foundPackIds);
+
+            // Execute UI / pack-manager changes on the main thread and complete the result asynchronously.
+            client.execute(() -> {
+                try {
+                    ResourcePackManager packManager = client.getResourcePackManager();
+
+                    // Get current packs
+                    List<String> currentPacks = new ArrayList<>(client.options.resourcePacks);
+                    List<String> newPacks = new ArrayList<>();
+
+                    // Get ALL possible pack IDs from our keywords
+                    Set<String> allKnownPackIds = getAllKnownPackIds();
+
+                    PackCore.LOGGER.info("Current packs from options.txt: {}", currentPacks);
+                    PackCore.LOGGER.info("All known managed pack IDs: {}", allKnownPackIds);
+                    PackCore.LOGGER.info("Packs to add (in order): {}", foundPackIds);
+
+                    // Keep packs that aren't in our known list (vanilla, mods, etc)
+                    for (String pack : currentPacks) {
+                        if (!allKnownPackIds.contains(pack)) {
+                            newPacks.add(pack);
+                            PackCore.LOGGER.info("Keeping non-managed pack: {}", pack);
+                        } else {
+                            PackCore.LOGGER.info("Removing previously enabled managed pack: {}", pack);
+                        }
+                    }
+
+                    PackCore.LOGGER.info("Base packs (after removing managed): {}", newPacks);
+
+                    // Add selected packs IN THE ORDER THEY WERE SELECTED
+                    // First selected = first added = higher priority in resource loading
+                    Collections.reverse(foundPackIds);
+
+                    for (int i = 0; i < foundPackIds.size(); i++) {
+                        String packId = foundPackIds.get(i);
+                        if (!newPacks.contains(packId)) {
+                            newPacks.add(packId);
+                            PackCore.LOGGER.info("Adding resource pack: {} (reversed index: {}, final position: {})",
+                                    packId, i + 1, newPacks.size() - 1);
+                        } else {
+                            PackCore.LOGGER.warn("Pack {} was already in the list, skipping duplicate", packId);
+                        }
+                    }
+
+                    PackCore.LOGGER.info("Final pack order for options.txt: {}", newPacks);
+
+                    // Apply the changes
+                    packManager.setEnabledProfiles(newPacks);
+                    client.options.resourcePacks.clear();
+                    client.options.resourcePacks.addAll(newPacks);
+                    client.options.write();
+
+                    // Reload resources and complete result accordingly
+                    client.reloadResources().thenRun(() -> {
+                        PackCore.LOGGER.info("Resource reload completed successfully");
+                        result.complete(true);
+                    }).exceptionally(e -> {
+                        PackCore.LOGGER.error("Resource reload failed", e);
+                        result.complete(false);
+                        return null;
+                    });
+
+                } catch (Exception e) {
+                    PackCore.LOGGER.error("Failed to apply packs", e);
+                    result.complete(false);
+                }
+            });
+
+        } catch (Exception e) {
+            PackCore.LOGGER.error("Failed to apply resource packs", e);
+            result.complete(false);
+        }
+
+        // Fail-fast: if reload never completes, treat as failed after timeout
+        return result.completeOnTimeout(false, 10, TimeUnit.SECONDS);
     }
 
     private static List<String> findAvailablePackIdsOrderedList(List<String> packKeysOrdered) {
