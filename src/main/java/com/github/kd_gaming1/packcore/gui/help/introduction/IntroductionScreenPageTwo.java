@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.gui.help.introduction;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
+import com.github.kd_gaming1.packcore.gui.help.WizardDataManager;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
 import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
 import com.github.kd_gaming1.packcore.util.ModpackInfo;
@@ -38,6 +39,9 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
     private String selectedDesign = "None";
     private LabelComponent selectionLabel; // placed in main content (above images)
 
+    private FlowLayout classicImageContainer;
+    private FlowLayout modernImageContainer;
+
     // image containers (outline will be put on these, so only the image gets bordered)
 
     public IntroductionScreenPageTwo() {
@@ -47,7 +51,7 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
                         2,
                         5 // Total wizard steps
                 ),
-                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/test_temp.png")
+                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
         this.modpackInfo = PackCore.getModpackInfo();
@@ -85,7 +89,7 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
         LabelComponent welcomeTitle = Components.label(welcomeText);
 
         LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("The pack has two mods that change the tab list: SkyHanni and Skyblocker. You can not use both at the same time, so decide which one you like best—and select it. (Tip: Scroll down or click the image)")
+                Text.literal("The pack has two mods that change the tab list: SkyHanni and Skyblocker. You can not use both at the same time, so decide which one you like best—and select it. (Tip: Click the image)")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
 
@@ -103,22 +107,35 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
         return this.selectionLabel;
     }
 
-    private ScrollContainer<FlowLayout> createImagesChoiceSection() {
-        FlowLayout choicesRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .gap(2);
+    private FlowLayout createImagesChoiceSection() {
+        // Remove ScrollContainer and use direct FlowLayout with expand sizing for responsive height
+        FlowLayout choicesRow = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.expand())
+                .gap(12) // Increased gap for better visual separation
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .verticalAlignment(VerticalAlignment.CENTER);
 
-        // CLASSIC card
-        FlowLayout classicWrapper = (FlowLayout) Containers.verticalFlow(Sizing.fill(45), Sizing.content())
+        // CLASSIC card - improved sizing and centering
+        FlowLayout classicWrapper = (FlowLayout) Containers.verticalFlow(Sizing.fill(48), Sizing.expand())
                 .verticalAlignment(VerticalAlignment.CENTER)
-                .margins(Insets.of(4));
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .margins(Insets.of(8))
+                .cursorStyle(CursorStyle.HAND); // Add hand cursor for clickability
 
+        // Add title text closer to image
         classicWrapper.child(Components.label(
                 TextOps.withColor("SkyHanni Compact Tab", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        ).margins(Insets.of(4)));
+        ).margins(Insets.of(4, 4, 2, 4))); // Reduced bottom margin
 
-        FlowLayout classicImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100))
+        // Improved image container with responsive height and selection border
+        FlowLayout classicImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.expand())
                 .verticalAlignment(VerticalAlignment.CENTER)
-                .surface(UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyhanni_tab.png"), 2560, 1441));
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .surface(UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyhanni_tab.png"), 2560, 1441))
+                .margins(Insets.of(4))
+                .cursorStyle(CursorStyle.HAND); // Hand cursor on image
+
+        // Store reference for selection border updates
+        this.classicImageContainer = classicImageContainer;
 
         classicImageContainer.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
             selectDesign("SkyHanni");
@@ -127,30 +144,26 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
 
         classicWrapper.child(classicImageContainer);
 
-        ButtonComponent classicUseBtn = (ButtonComponent) Components.button(Text.literal("Use SkyHanni tab list"), btn -> selectDesign("SkyHanni"))
-                .textShadow(false)
-                .renderer(ButtonComponent.Renderer.flat(0xFF_FFC107, 0xFF_FFD54F, 0xFF_A0A0A0))
-                .margins(Insets.of(4, 2, 2, 2))
-                .sizing(Sizing.content(3), Sizing.fixed(20));
-
-        classicWrapper.child(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .child(classicUseBtn)
-                .horizontalAlignment(HorizontalAlignment.CENTER)
-        );
-
-        // MODERN card
-        FlowLayout modernWrapper = (FlowLayout) Containers.verticalFlow(Sizing.fill(45), Sizing.content())
+        // MODERN card - same improvements
+        FlowLayout modernWrapper = (FlowLayout) Containers.verticalFlow(Sizing.fill(48), Sizing.expand())
                 .verticalAlignment(VerticalAlignment.CENTER)
-                .margins(Insets.of(4));
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .margins(Insets.of(8))
+                .cursorStyle(CursorStyle.HAND);
 
         modernWrapper.child(Components.label(
                 TextOps.withColor("Skyblocker Fancy TabList", TEXT_WHITE).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        ).margins(Insets.of(4)));
+        ).margins(Insets.of(4, 4, 2, 4))); // Reduced bottom margin
 
-        FlowLayout modernImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100))
+        FlowLayout modernImageContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.expand())
                 .verticalAlignment(VerticalAlignment.CENTER)
-                .surface(UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyblocker_tab.png"), 2560, 1441));
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .surface(UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyblocker_tab.png"), 2560, 1441))
+                .margins(Insets.of(4))
+                .cursorStyle(CursorStyle.HAND);
 
+        // Store reference for selection border updates
+        this.modernImageContainer = modernImageContainer;
 
         modernImageContainer.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
             selectDesign("Skyblocker");
@@ -159,44 +172,49 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
 
         modernWrapper.child(modernImageContainer);
 
-        ButtonComponent modernUseBtn = (ButtonComponent) Components.button(Text.literal("Use Skyblocker Fancy TabList"), btn -> selectDesign("Skyblocker"))
-                .textShadow(false)
-                .renderer(ButtonComponent.Renderer.flat(0xFF_8BC34A, 0xFFA5D6A7, 0xFF_A0A0A0))
-                .margins(Insets.of(4, 2, 2, 2))
-                .sizing(Sizing.content(3), Sizing.fixed(20));
-
-        modernWrapper.child(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .child(modernUseBtn)
-                .horizontalAlignment(HorizontalAlignment.CENTER)
-        );
-
         choicesRow.child(classicWrapper);
         choicesRow.child(modernWrapper);
 
-        ScrollContainer<FlowLayout> scroll = Containers.verticalScroll(
-                Sizing.fill(100),
-                Sizing.expand(),
-                choicesRow
-        );
-
-        scroll.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        scroll.scrollbarThiccness(6);
-        scroll.surface(Surface.flat(0x00_000000));
-        scroll.padding(Insets.of(6));
-
-        return scroll;
+        return choicesRow; // Return FlowLayout directly instead of ScrollContainer
     }
 
-    // Central selection handler updates label and the image-containers' surfaces to show outline on selected design (outline only on image container)
     private void selectDesign(String design) {
         this.selectedDesign = design;
 
+        // Store in data manager
+        WizardDataManager.getInstance().setTabDesign(design);
+
         if (this.selectionLabel != null) {
-            this.selectionLabel.text(TextOps.withColor("Selected menu: " + this.selectedDesign, ACCENT_GOLD)
+            this.selectionLabel.text(TextOps.withColor("Selected TabList: " + this.selectedDesign, ACCENT_GOLD)
                     .setStyle(Style.EMPTY.withBold(Boolean.TRUE)));
         }
 
-        // TODO: persist selection or navigate next
+        // Update border colors based on selection
+        if (this.classicImageContainer != null && this.modernImageContainer != null) {
+            if ("SkyHanni".equals(design)) {
+                // Add green border to selected image
+                this.classicImageContainer.surface(
+                        Surface.outline(Color.GREEN.argb()).and(
+                                UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyhanni_tab.png"), 2560, 1441)
+                        )
+                );
+                // Remove border from unselected image
+                this.modernImageContainer.surface(
+                        UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyblocker_tab.png"), 2560, 1441)
+                );
+            } else if ("Skyblocker".equals(design)) {
+                // Add green border to selected image
+                this.modernImageContainer.surface(
+                        Surface.outline(Color.GREEN.argb()).and(
+                                UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyblocker_tab.png"), 2560, 1441)
+                        )
+                );
+                // Remove border from unselected image
+                this.classicImageContainer.surface(
+                        UiSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/wizard/skyhanni_tab.png"), 2560, 1441)
+                );
+            }
+        }
     }
 
     @Override

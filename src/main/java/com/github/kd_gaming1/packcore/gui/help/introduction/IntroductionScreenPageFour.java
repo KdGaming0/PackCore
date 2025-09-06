@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.help.introduction;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
+import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
 import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
 import com.github.kd_gaming1.packcore.util.ModpackInfo;
 import io.wispforest.lavendermd.MarkdownProcessor;
@@ -24,6 +25,7 @@ import net.minecraft.util.Util;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+// Work in progress page for miscellaneous information
 public class IntroductionScreenPageFour extends BaseWizardPage {
 
 
@@ -180,7 +182,7 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
 
     @Override
     protected void onContinuePressed() {
-        //this.client.setScreen(WizardNavigator.createWizardPage(5));
+        this.client.setScreen(WizardNavigator.createWizardPage(5));
     }
 
     @Override

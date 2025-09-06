@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.help.introduction;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
+import com.github.kd_gaming1.packcore.gui.help.WizardDataManager;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
 import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
 import com.github.kd_gaming1.packcore.util.ModpackInfo;
@@ -9,7 +10,6 @@ import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.ops.TextOps;
-import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
@@ -20,7 +20,6 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,45 +41,38 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
     private final String welcomeMarkdown;
     private final ModpackInfo modpackInfo;
 
-    private final Set<String> selectedOptimisationProfiles = new HashSet<>();
+    // Allow multiple selections
+    private final Set<String> selectedResourcePacks = new LinkedHashSet<>();
     LabelComponent headerTitle;
     private FlowLayout rightPanel;
 
     private static final int SELECTED_OUTLINE_COLOR = 0xFF00FF00;
     private static final int UNSELECTED_OUTLINE_COLOR = ACCENT_GOLD;
 
-    // Helper POJO for options
-    public static class OptionProfile {
-        public final String key;
-        public final String title;
-        public final String description;
-
-        public OptionProfile(String key, String title, String description) {
-            this.key = key;
-            this.title = title;
-            this.description = description;
-        }
+    public record OptionProfile(String key, String title, String description) {
     }
 
-    // Easily extend this list!
-    private final List<OptionProfile> allProfiles = List.of(
-            new OptionProfile("Max FPS", "FPS Profile: Max FPS", "This profile optimises for FPS, prioritising frames over visuals. Recommended for low-end laptops."),
-            new OptionProfile("Balanced", "Normal Profile: Balanced", "This profile optimises for FPS and visuals, prioritising balance. Recommended for everyone."),
-            new OptionProfile("Shaders", "Shaders Profile: Quality", "This profile optimises for visuals, prioritising quality over frames. Recommended for mid-end PCs and those who want shaders.")
-            // Add more OptionProfiles here!
+    // The selectable options
+    private final List<IntroductionScreenPageThree.OptionProfile> allProfiles = List.of(
+            new IntroductionScreenPageThree.OptionProfile("HypixelPlus", "Pack: Hypixel Plus", "A clean, mostly vanilla pack designed for Hypixel modes like SkyBlock. It updates items and icons for better clarity without changing the overall Minecraft feel."),
+            new IntroductionScreenPageThree.OptionProfile("FurfSkyOverlay", "Pack: FurfSky Overlay", "A comprehensive resource pack for Hypixel SkyBlock, offering textures for nearly every item in the game. With full retextures for only items in a special style."),
+            new IntroductionScreenPageThree.OptionProfile("FurfSkyFull", "Pack: FurfSky Full", "A comprehensive resource pack for Hypixel SkyBlock, offering textures for nearly every item in the game. With full retextures for items and menus in a special style."),
+            new IntroductionScreenPageThree.OptionProfile("SkyBlockDarkUI", "Pack: SkyBlock Dark UI", " A sleek, dark-themed resource pack for Hypixel SkyBlock, enhancing all GUI elements, including mod interfaces, with a modern aesthetic. Inspired by PacksHQ Dark UI"),
+            new IntroductionScreenPageThree.OptionProfile("Defrosted", "Pack: Defrosted", "Icy-themed 16x pack for Minecraft 1.21.5. It offers a frosty blue aesthetic across items and menus, maintaining a minimalist look without altering gameplay clarity."),
+            new IntroductionScreenPageThree.OptionProfile("Looshy", "Pack: Looshy", "A smooth, vanilla‑like 16x resource pack with clean updates and subtle charm. It keeps Minecraft’s original style while offering refined textures that feel fresh and polished.")
     );
 
     public IntroductionScreenPageThree() {
         super(
                 new WizardPageInfo(
-                        Text.literal("Miscellaneous"),
+                        Text.literal("Resource Packs"),
                         3,
                         5 // Total wizard steps
                 ),
                 Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
-        this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("Optimisation.md");
+        this.welcomeMarkdown = MarkdownFileUtil.readMarkdownFile("ResourcePacks.md");
         this.modpackInfo = PackCore.getModpackInfo();
     }
 
@@ -88,7 +80,6 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
     protected void buildContent(FlowLayout contentContainer) {
         contentContainer.child(createWelcomeHeader());
         contentContainer.child(createMarkdownSection());
-        contentContainer.child(createQuickInfoSection().positioning(Positioning.relative(0, 100)));
     }
 
     @Override
@@ -103,14 +94,14 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
                 .gap(6);
 
         Text welcomeText = TextOps.concat(
-                TextOps.withColor("Edit a few miscellaneous settings", TEXT_WHITE),
+                TextOps.withColor("Choose your prefer resource packs when using ", TEXT_WHITE),
                 Text.literal(modpackInfo.getName()).setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
         );
 
         LabelComponent welcomeTitle = Components.label(welcomeText);
 
         LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("The pack have many mods and some settings are very personal, here you can edit some of them.")
+                Text.literal("Please read the information below carefully before continuing. Need help? Click the discord button at the bottom.")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
 
@@ -126,7 +117,7 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
         var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
                 welcomeMarkdown,
                 MARKDOWN_PROCESSOR::process
-        );
+        ).horizontalSizing(Sizing.fill(96));
 
         markdownWrapper.child(markdownComponent);
 
@@ -140,88 +131,45 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
         scrollContainer.scrollbarThiccness(6);
         scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
         scrollContainer.padding(Insets.of(8));
-        scrollContainer.margins(Insets.bottom(45));
 
         return scrollContainer;
     }
 
-    private FlowLayout createQuickInfoSection() {
-        FlowLayout infoSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .surface(Surface.flat(0x20_FFD700).and(Surface.outline(ACCENT_GOLD)))
-                .padding(Insets.of(6));
-
-        LabelComponent infoTitle = Components.label(
-                TextOps.withColor("Quick Links", ACCENT_GOLD)
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        );
-
-        infoSection.child(infoTitle);
-
-        if (modpackInfo.getDiscord() != null && !modpackInfo.getDiscord().isEmpty()) {
-            Text discordText = TextOps.concat(
-                    TextOps.withColor("💬 Discord: ", TEXT_WHITE),
-                    TextOps.withColor(modpackInfo.getDiscord(), TextOps.color(Formatting.AQUA))
-            );
-
-            ButtonComponent discordButton = (ButtonComponent) Components.button(discordText, btn -> {
-                        Util.getOperatingSystem().open(modpackInfo.getDiscord());
-                    })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000))
-                    .textShadow(false)
-                    .sizing(Sizing.content(), Sizing.fixed(16));
-
-            infoSection.child(discordButton);
-        }
-
-        if (modpackInfo.getIssueTracker() != null && !modpackInfo.getIssueTracker().isEmpty()) {
-            Text issueText = TextOps.concat(
-                    TextOps.withColor("🐛 Issues: ", TEXT_WHITE),
-                    TextOps.withColor(modpackInfo.getIssueTracker(), TextOps.color(Formatting.AQUA))
-            );
-
-            ButtonComponent issueButton = (ButtonComponent) Components.button(issueText, btn -> {
-                        Util.getOperatingSystem().open(modpackInfo.getIssueTracker());
-                    })
-                    .renderer(ButtonComponent.Renderer.flat(0x00000000, 0x00000000, 0x00000000))
-                    .textShadow(false)
-                    .sizing(Sizing.content(), Sizing.fixed(16));
-
-            infoSection.child(issueButton);
-        }
-
-        return infoSection;
-    }
-
     private FlowLayout createHeader() {
-        FlowLayout header = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(6);
+        FlowLayout header = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(6)
+                .margins(Insets.top(4));
 
-        String selected = selectedOptimisationProfiles.isEmpty() ? "None" : String.join(", ", selectedOptimisationProfiles);
-        headerTitle = Components.label(TextOps.withColor("Selected profiles: " + selected, ACCENT_GOLD)).maxWidth(250);
+        if (selectedResourcePacks.isEmpty()) {
+            headerTitle = (LabelComponent) Components.label(TextOps.withColor("Select the resource packs you want by click the boxes below", ACCENT_GOLD)).horizontalSizing(Sizing.fill(100));
+        } else {
+            String joined = String.join(", ", selectedResourcePacks);
+            headerTitle = (LabelComponent) Components.label(TextOps.withColor("Your selected resource packs are: " + joined, ACCENT_GOLD)).horizontalSizing(Sizing.fill(100));
+        }
 
         header.child(headerTitle);
 
         return header;
     }
 
-    // Helper method for creating profile boxes
-    private FlowLayout createProfileBox(OptionProfile profile) {
-        boolean isSelected = selectedOptimisationProfiles.contains(profile.key);
+    private FlowLayout createProfileBox(IntroductionScreenPageThree.OptionProfile profile) {
+        boolean isSelected = selectedResourcePacks.contains(profile.key);
         FlowLayout box = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
         box.surface(Surface.flat(0x20_FFD700).and(Surface.outline(isSelected ? SELECTED_OUTLINE_COLOR : UNSELECTED_OUTLINE_COLOR)));
-        box.padding(Insets.of(6));
+        box.padding(Insets.of(2));
 
-        LabelComponent infoTitle = Components.label(
+        LabelComponent infoTitle = (LabelComponent) Components.label(
                 TextOps.withColor(profile.title, ACCENT_GOLD).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        );
-        LabelComponent infoText = Components.label(
-                TextOps.withColor(profile.description, TEXT_WHITE).setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
-        ).maxWidth(220);
+        ).margins(Insets.of(2, 2, 2, 2));
+        LabelComponent infoText = (LabelComponent) Components.label(
+                        TextOps.withColor(profile.description, TEXT_WHITE).setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
+                ).horizontalSizing(Sizing.fill(100))
+                .margins(Insets.of(2, 2, 2, 2));
 
         box.child(infoTitle).child(infoText);
 
         box.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            toggleOptimisationProfile(profile.key);
+            toggleSelectedProfile(profile.key);
             return true;
         });
 
@@ -230,9 +178,9 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
 
     // Scrollable container for all profile boxes
     private ScrollContainer<FlowLayout> createProfilesScrollContainer() {
-        FlowLayout profilesLayout = Containers.verticalFlow(Sizing.fill(95), Sizing.content()).gap(8);
+        FlowLayout profilesLayout = Containers.verticalFlow(Sizing.fill(96), Sizing.content()).gap(6);
 
-        for (OptionProfile profile : allProfiles) {
+        for (IntroductionScreenPageThree.OptionProfile profile : allProfiles) {
             profilesLayout.child(createProfileBox(profile));
         }
 
@@ -244,28 +192,55 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
         scrollContainer.scrollbarThiccness(6);
         scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
-        scrollContainer.padding(Insets.of(8));
-        scrollContainer.margins(Insets.bottom(45));
+        scrollContainer.padding(Insets.of(6));
+        scrollContainer.margins(Insets.bottom(4));
         return scrollContainer;
     }
 
-    private void toggleOptimisationProfile(String profileKey) {
-        if (selectedOptimisationProfiles.contains(profileKey)) {
-            selectedOptimisationProfiles.remove(profileKey);
+    // Toggle selection and update manager + UI
+    private void toggleSelectedProfile(String profileKey) {
+        if (selectedResourcePacks.contains(profileKey)) {
+            selectedResourcePacks.remove(profileKey);
         } else {
-            selectedOptimisationProfiles.add(profileKey);
+            selectedResourcePacks.add(profileKey);
         }
-        redrawRightPanel();
+
+        // NEW: Store in data manager using proper ordered list
+        List<String> orderedList = new ArrayList<>(selectedResourcePacks);
+        WizardDataManager.getInstance().setResourcePacksOrdered(orderedList);
+
+        if (headerTitle != null) {
+            if (selectedResourcePacks.isEmpty()) {
+                headerTitle.text(TextOps.withColor("Select the resource packs you want by click the boxes below", ACCENT_GOLD));
+            } else {
+                headerTitle.text(TextOps.withColor("Your selected resource packs are: " + String.join(", ", selectedResourcePacks), ACCENT_GOLD));
+            }
+        }
+
+        // Update UI outlines for profile boxes
+        updateProfileBoxes();
     }
 
-    private void redrawRightPanel() {
-        if (headerTitle != null) {
-            String selected = selectedOptimisationProfiles.isEmpty() ? "None" : String.join(", ", selectedOptimisationProfiles);
-            headerTitle.text(TextOps.withColor("Selected profiles: " + selected, ACCENT_GOLD));
-        }
-        rightPanel.clearChildren();
-        rightPanel.child(createHeader());
-        rightPanel.child(createProfilesScrollContainer());
+    private void updateProfileBoxes() {
+        rightPanel.children().stream()
+                .filter(child -> child instanceof ScrollContainer)
+                .findFirst()
+                .ifPresent(scrollContainer -> {
+                    FlowLayout profilesLayout = (FlowLayout) ((ScrollContainer<?>) scrollContainer).child();
+
+                    // Update existing profile boxes' surface to reflect selection state
+                    for (int i = 0; i < profilesLayout.children().size() && i < allProfiles.size(); i++) {
+                        Component child = profilesLayout.children().get(i);
+                        if (child instanceof FlowLayout existingBox) {
+                            IntroductionScreenPageThree.OptionProfile profile = allProfiles.get(i);
+                            boolean isSelected = selectedResourcePacks.contains(profile.key);
+
+                            existingBox.surface(Surface.flat(0x20_FFD700).and(
+                                    Surface.outline(isSelected ? SELECTED_OUTLINE_COLOR : UNSELECTED_OUTLINE_COLOR)
+                            ));
+                        }
+                    }
+                });
     }
 
     @Override

@@ -8,13 +8,14 @@ import net.minecraft.client.gui.screen.Screen;
  */
 public class WizardNavigator {
 
+    // Update the switch statement in createWizardPage method:
     public static Screen createWizardPage(int pageNumber) {
         return switch (pageNumber) {
             case 1 -> new IntroductionScreenPageOne();
             case 2 -> new IntroductionScreenPageTwo();
             case 3 -> new IntroductionScreenPageThree();
-            case 4 -> new IntroductionScreenPageThree();
-            case 5 -> new IntroductionScreenPageFour();
+            case 4 -> new IntroductionScreenPageFour();
+            case 5 -> new IntroductionScreenPageFinal();
             default -> new IntroductionScreenPage();
         };
     }
