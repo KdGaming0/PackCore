@@ -10,6 +10,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class ModpackSetupWizard extends JFrame {
     private final Path runDir;
@@ -348,8 +349,11 @@ public class ModpackSetupWizard extends JFrame {
             JPanel brandPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 25));
             brandPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
 
-            JLabel logoLabel = new JLabel("⚙️");
-            logoLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 36));
+            JLabel iconLabel = new JLabel();
+            ImageIcon rawIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/assets/packcore/textures/gui/assets/sbe_logo.png")));
+            Image img = rawIcon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
+            iconLabel.setIcon(new ImageIcon(img));
+            iconLabel.setPreferredSize(new Dimension(64, 64));
 
             JPanel titlePanel = new JPanel(new GridLayout(2, 1, 0, -5));
             titlePanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
@@ -365,7 +369,7 @@ public class ModpackSetupWizard extends JFrame {
             titlePanel.add(titleLabel);
             titlePanel.add(subtitleLabel);
 
-            brandPanel.add(logoLabel);
+            brandPanel.add(iconLabel);
             brandPanel.add(titlePanel);
 
             // Center - progress indicator
