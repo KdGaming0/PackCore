@@ -30,8 +30,9 @@ public class PackCoreClient implements ClientModInitializer {
                     // Replace it with your custom menu on the next tick
                     if (!PackCoreConfig.haveShowWelcomeWizard) {
                         client.execute(() -> client.setScreen(new IntroductionScreenPage()));
+                    } else {
+                        client.execute(() -> client.setScreen(new FancyMainMenuScreen()));
                     }
-                    client.execute(() -> client.setScreen(new FancyMainMenuScreen()));
                 }
             });
         }

@@ -449,7 +449,7 @@ public class ModpackSetupWizard extends JFrame {
     }
 
     // Enhanced welcome page with better visuals
-    private class EnhancedWelcomePage extends WelcomePage {
+    private static class EnhancedWelcomePage extends WelcomePage {
         public EnhancedWelcomePage(Path runDir) {
             super(runDir);
 

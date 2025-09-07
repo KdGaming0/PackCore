@@ -18,12 +18,32 @@ public class MarkdownFileUtil {
     private static final Path INFO_HELP_DIR = runDir.resolve("packcore/info_help");
 
     public static String readMarkdownFile(String fileName) {
+        try {
+            if (!Files.exists(INFO_HELP_DIR)) {
+                Files.createDirectories(INFO_HELP_DIR);
+                LOGGER.info("Created directory: {}", INFO_HELP_DIR);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to create directory: {}", INFO_HELP_DIR, e);
+            return "> **Error:** Could not create info directory.\n>\n> " + e.getMessage();
+        }
+
         Path filePath = INFO_HELP_DIR.resolve(fileName);
+
+        if (!Files.exists(filePath)) {
+            String message = "# Missing File\n" +
+                    "> **Could not find** `" + fileName + "` in the `info_help` folder.\n" +
+                    "> Please create it to display help content.";
+            LOGGER.warn("Could not find {}, please make it in the info_help folder", fileName);
+            return message;
+        }
+
         try {
             return Files.readString(filePath);
         } catch (IOException e) {
             LOGGER.error("Failed to read markdown file: {}", fileName, e);
-            return "Error loading content. " + e.getMessage();
+            return "> **Error loading content:**\n>\n> " + e.getMessage();
         }
     }
+
 }
