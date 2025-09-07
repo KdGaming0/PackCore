@@ -10,20 +10,14 @@ public class PackCoreConfig extends MidnightConfig {
     public static final String CUSTOMIZATION = "customization";
     public static final String ADVANCED = "advanced";
 
-    // Dialog Settings Category
-    @Comment(category = DIALOG, name = "packcore.midnightconfig.dialog_header")
-    public static Comment dialogHeader;
-
-    @Entry(category = DIALOG, name = "Show Pre-Launch Install Wizard")
+    // DIALOG CATEGORY
+    @Entry(category = DIALOG, name = "packcore.midnightconfig.show_install_wizard")
     public static boolean showInstallWizard = false;
 
     @Entry(category = DIALOG, name = "packcore.midnightconfig.dialog_timeout", min = 1, max = 60)
     public static int dialogTimeoutMinutes = 10;
 
-    // UI Customization Settings Category
-    @Comment(category = UI, name = "packcore.midnightconfig.ui_header")
-    public static Comment uiHeader;
-
+    // UI CATEGORY
     @Entry(category = UI, name = "packcore.midnightconfig.enable_custom_menu")
     public static boolean enableCustomMenu = true;
 
@@ -34,56 +28,41 @@ public class PackCoreConfig extends MidnightConfig {
     @Comment(category = UI)
     public static Comment spacer1;
 
-    @Entry(category = CUSTOMIZATION, name = "Server Address For Quick Join Button")
+    // CUSTOMIZATION CATEGORY
+    @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.server_address")
     public static String serverAddressForQuickJoinButton = "mc.hypixel.net";
 
-    @Entry(category = CUSTOMIZATION, name = "Replace Realms Button With Quick Server Join Button")
-    public static boolean replaceRealmsButtonWithQuickServerJoinButton = true;
-
-    @Entry(category = CUSTOMIZATION, name = "Use Custom Panorama")
-    public static boolean useCustomPanorama = true;
-
-    @Entry(category = CUSTOMIZATION, name = "Override Vanilla Panorama")
+    @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.override_vanilla_panorama")
     public static boolean overrideVanillaPanorama = true;
 
-    @Entry(category = CUSTOMIZATION, name = "Enable Update Notifications")
+    @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.enable_update_notifications")
     public static boolean enableUpdateNotifications = true;
 
-    @Entry(category = CUSTOMIZATION, name = "Show Update Notifications On Title Screen")
+    @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.show_update_notifications_title")
     public static boolean showUpdateNotificationsOnTitleScreen = true;
 
-    @Entry(category = CUSTOMIZATION, name = "Update Check Delay Seconds")
-    public static int updateCheckDelaySeconds = 5; // Wait 5 seconds after reaching the main menu
-
-    /**
-     * Hidden data value to track if this is the first time the game has started.
-     * Used to show different extraction confirmation messages.
-     * This is automatically set to false after the first ever startup.
-     */
+    // ADVANCED CATEGORY (Hidden options)
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.first_startup")
     public static boolean isFirstStartup = true;
 
     @Hidden
-    @Entry(category = ADVANCED, name = "Have show welcome wizard")
-    public static boolean haveShowWelcomeWizard = false;
+    @Entry(category = ADVANCED, name = "packcore.midnightconfig.welcome_wizard_shown")
+    public static boolean haveShownWelcomeWizard = false;
 
-    /**
-     * Tracks the last applied configuration name for reference
-     */
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.last_config_applied")
     public static String lastConfigApplied = "";
 
     @Hidden
-    @Entry(category = ADVANCED, name = "Have Setup Wizard shown")
+    @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_shown")
     public static boolean haveSetupWizardShown = false;
 
     @Hidden
-    @Entry(category = ADVANCED, name = "Have Setup Wizard completed successfully")
+    @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_completed")
     public static boolean haveSetupWizardCompletedSuccessfully = false;
 
     @Hidden
-    @Entry(category = ADVANCED, name = "What config was applied?")
+    @Entry(category = ADVANCED, name = "packcore.midnightconfig.applied_config_name")
     public static String appliedConfigName = "";
 }

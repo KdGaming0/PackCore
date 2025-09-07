@@ -291,7 +291,6 @@ public class PackCoreCommands {
         source.sendFeedback(() -> Text.literal("§6=== PackCore Configuration Status ==="), false);
         source.sendFeedback(() -> Text.literal("§7Dialog Window: " + (PackCoreConfig.showInstallWizard ? "§aEnabled" : "§cDisabled")), false);
         source.sendFeedback(() -> Text.literal("§7Custom Menu: " + (PackCoreConfig.enableCustomMenu ? "§aEnabled" : "§cDisabled")), false);
-        source.sendFeedback(() -> Text.literal("§7Custom Panorama: " + (PackCoreConfig.enableCustomPanorama ? "§aEnabled" : "§cDisabled")), false);
         source.sendFeedback(() -> Text.literal("§7Dialog Timeout: §e" + PackCoreConfig.dialogTimeoutMinutes + " minutes"), false);
         source.sendFeedback(() -> Text.literal("§7Use §f/packcore help §7for more commands."), false);
 

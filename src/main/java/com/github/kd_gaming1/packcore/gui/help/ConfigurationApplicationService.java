@@ -247,7 +247,8 @@ public class ConfigurationApplicationService {
         return switch (optimizationProfile.toLowerCase()) {
             case "max fps" -> PerformanceProfileUtil.PerformanceProfile.PERFORMANCE;
             case "balanced" -> PerformanceProfileUtil.PerformanceProfile.BALANCED;
-            case "quality", "shaders" -> PerformanceProfileUtil.PerformanceProfile.QUALITY;
+            case "quality" -> PerformanceProfileUtil.PerformanceProfile.QUALITY;
+            case "shaders" -> PerformanceProfileUtil.PerformanceProfile.SHADERS;
             default -> null;
         };
     }

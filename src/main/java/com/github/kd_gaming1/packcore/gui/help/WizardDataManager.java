@@ -30,7 +30,6 @@ public class WizardDataManager {
         return instance;
     }
 
-    // CORRECTED: Optimization Profile Management (Performance Settings)
     public void setOptimizationProfile(String profile) {
         this.selectedOptimizationProfile = profile;
     }

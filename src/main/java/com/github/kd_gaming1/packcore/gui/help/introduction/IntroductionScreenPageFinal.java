@@ -460,9 +460,6 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
             if (configSummary.length() > 0) configSummary.append(", ");
             configSummary.append("Tab: ").append(config.getTabDesign());
         }
-
-        PackCoreConfig.appliedConfigName = configSummary.length() > 0 ?
-                configSummary.toString() : "Default Configuration";
     }
 
     private void onConfigurationFailed(ConfigurationApplicationService.ConfigurationResult result, Throwable throwable) {
@@ -509,7 +506,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         }
 
         // Proceed to main menu when configuration has finished successfully
-        PackCoreConfig.haveShowWelcomeWizard = true;
+        PackCoreConfig.haveShownWelcomeWizard = true;
         this.client.setScreen(new FancyMainMenuScreen());
     }
 

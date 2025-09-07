@@ -28,7 +28,7 @@ public class PackCoreClient implements ClientModInitializer {
                 // Check if the screenoOld being opened is the vanilla main menu
                 if (screen instanceof TitleScreen) {
                     // Replace it with your custom menu on the next tick
-                    if (!PackCoreConfig.haveShowWelcomeWizard) {
+                    if (!PackCoreConfig.haveShownWelcomeWizard) {
                         client.execute(() -> client.setScreen(new IntroductionScreenPage()));
                     } else {
                         client.execute(() -> client.setScreen(new FancyMainMenuScreen()));

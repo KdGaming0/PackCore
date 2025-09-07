@@ -28,7 +28,7 @@ public class SodiumIntegration {
             switch (profile) {
                 case PERFORMANCE -> applyPerformanceSettings(options);
                 case BALANCED -> applyBalancedSettings(options);
-                case QUALITY -> applyQualitySettings(options);
+                case QUALITY, SHADERS -> applyQualitySettings(options);
                 default -> {
                     LOGGER.warn("Unknown profile: {}", profile);
                     return false;

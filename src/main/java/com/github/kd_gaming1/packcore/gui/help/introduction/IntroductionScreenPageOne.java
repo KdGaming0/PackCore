@@ -203,7 +203,7 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
     private void selectedOptimisationProfile(String profileKey) {
         selectedOptimisationProfile = profileKey;
 
-        // Store in data manager as optimization profile (NOT resource pack)
+        // Store in data manager as an optimization profile
         WizardDataManager.getInstance().setOptimizationProfile(profileKey);
 
         if (headerTitle != null) {

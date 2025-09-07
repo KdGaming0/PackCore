@@ -11,12 +11,6 @@ public class PageContentProviders {
             "finished_en_us.md", PageContentProviders::getFinishedContent
     );
 
-    public static final Map<String, Supplier<String>> CONFIG_DESCRIPTION_PROVIDERS = Map.of(
-            "1080p_balanced.md", PageContentProviders::get1080pBalancedDescription,
-            "1440p_quality.md", PageContentProviders::get1440pQualityDescription,
-            "4k_ultra.md", PageContentProviders::get4kUltraDescription
-    );
-
     public static String getWelcomeContent() {
         return """
                 # 🎮 Welcome to Your Modpack Setup!
@@ -132,120 +126,6 @@ public class PageContentProviders {
                 • Try different resource packs
                 • Join multiplayer servers with same mods
                 • Share your configurations with friends
-                """;
-    }
-
-    public static String get1080pBalancedDescription() {
-        return """
-                # 1080p Balanced Configuration
-
-                Perfectly balanced configuration designed for Full HD displays and standard gaming setups.
-
-                ## 🎯 Target Audience
-                - **Display:** Full HD (1920x1080) monitors
-                - **System:** Mid-range gaming PCs and laptops
-                - **Focus:** Best balance of performance and visual quality
-
-                ## ⚙️ Technical Specifications
-                - **Render Distance:** 12 chunks (optimal for most systems)
-                - **Graphics Settings:** Medium-High (balanced approach)
-                - **UI Scaling:** 100% (standard scaling)
-                - **Memory Usage:** Moderate (4-6GB recommended)
-
-                ## 📊 Performance Expectations
-                - **Target FPS:** 60+ on recommended hardware
-                - **Compatibility:** Works well on most modern systems
-                - **Resource Usage:** Balanced CPU and GPU utilization
-
-                ## 🎮 What's Included
-                - Optimized video settings for 1080p displays
-                - Carefully positioned mod interfaces
-                - Performance-friendly resource pack selections
-                - Balanced render settings for smooth gameplay
-
-                > **Perfect for:** Most Minecraft players with standard gaming setups
-                """;
-    }
-
-    public static String get1440pQualityDescription() {
-        return """
-                # 1440p Quality Configuration
-
-                High-quality configuration designed for QHD displays and enthusiast gaming systems.
-
-                ## 🎯 Target Audience
-                - **Display:** QHD (2560x1440) monitors
-                - **System:** Mid-to-high-end gaming PCs
-                - **Focus:** Enhanced visual quality with good performance
-
-                ## ⚙️ Technical Specifications
-                - **Render Distance:** 16 chunks (enhanced view distance)
-                - **Graphics Settings:** High with selective Ultra options
-                - **UI Scaling:** 125% (improved readability on QHD)
-                - **Memory Usage:** Higher (6-8GB recommended)
-
-                ## 📊 Performance Expectations
-                - **Target FPS:** 45-60+ on recommended hardware
-                - **Compatibility:** Requires dedicated graphics card
-                - **Resource Usage:** Balanced with slight GPU preference
-
-                ## 🎮 What's Included
-                - Enhanced texture quality and visual effects
-                - Larger, more readable UI elements
-                - High-quality resource pack integration
-                - Optimized for 1440p screen real estate
-
-                ## 💡 Recommendations
-                - **GPU:** GTX 1660 / RX 580 or better recommended
-                - **RAM:** 8GB+ system memory
-                - **Storage:** SSD recommended for faster loading
-
-                > **Perfect for:** Gamers with QHD displays who want enhanced visuals
-                """;
-    }
-
-    public static String get4kUltraDescription() {
-        return """
-                # 4K Ultra Configuration
-
-                Maximum quality configuration designed for 4K displays and high-end gaming systems.
-
-                ## 🎯 Target Audience
-                - **Display:** 4K (3840x2160) and higher resolutions
-                - **System:** High-end gaming PCs with powerful GPUs
-                - **Focus:** Maximum visual fidelity and immersion
-
-                ## ⚙️ Technical Specifications
-                - **Render Distance:** 20+ chunks (maximum view distance)
-                - **Graphics Settings:** Ultra across all categories
-                - **UI Scaling:** 150-200% (4K clarity optimization)
-                - **Memory Usage:** High (8-12GB recommended)
-
-                ## 📊 Performance Expectations
-                - **Target FPS:** 30-60 depending on hardware
-                - **Compatibility:** Requires high-end dedicated graphics
-                - **Resource Usage:** GPU-intensive configuration
-
-                ## 🎮 What's Included
-                - Ultra-high resolution textures and effects
-                - Maximum quality shaders and lighting
-                - Large, crystal-clear UI elements for 4K
-                - Premium resource pack selections
-                - Advanced visual enhancement mods
-
-                ## ⚠️ System Requirements
-                - **GPU:** RTX 3070 / RX 6700 XT or better strongly recommended
-                - **RAM:** 16GB+ system memory
-                - **Storage:** NVMe SSD highly recommended
-                - **CPU:** Modern 6+ core processor
-
-                ## 🎨 Visual Enhancements
-                - Ray tracing support (if available)
-                - Advanced particle effects
-                - High-resolution shadow mapping
-                - Enhanced water and glass reflections
-
-                > **Perfect for:** Enthusiasts with 4K displays and powerful gaming rigs
                 """;
     }
 }
