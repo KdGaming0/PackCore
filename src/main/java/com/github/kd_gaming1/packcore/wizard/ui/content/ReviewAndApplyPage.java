@@ -184,7 +184,7 @@ public class ReviewAndApplyPage extends MainContentInfo {
         String selectedConfig = ConfigSelectionPage.selectedResolution;
 
         if (selectedConfig != null) {
-            configNameLabel.setText("✅ " + selectedConfig.toUpperCase() + " Configuration");
+            configNameLabel.setText("✅ " + selectedConfig + " is selected");
             configDetailsLabel.setText("Ready to apply optimized settings for your system");
             applyButton.setEnabled(true);
             updateState(ExtractionState.IDLE);

@@ -71,7 +71,7 @@ public class SuccessPage extends MainContentInfo {
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, 0, 0);
 
-        JLabel subtitle = new JLabel("Your modpack is configured and ready to launch");
+        JLabel subtitle = new JLabel("The modpack is configured and ready to launch");
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitle.setForeground(Color.WHITE);
         contentPanel.add(subtitle, gbc);
@@ -226,22 +226,25 @@ public class SuccessPage extends MainContentInfo {
         panel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
 
         panel.add(createStepCard("🎮", "Launch Minecraft",
-                "Your modpack is ready!\n\n" +
-                        "• Open your Minecraft launcher\n" +
-                        "• Select your modpack profile\n" +
-                        "• Click 'Play' to start"));
+                "The modpack is ready!\n\n" +
+                        "• Click Finished to open Minecraft\n" +
+                        "• This may take a few seconds"));
+
+        panel.add(createStepCard("🎯", "In-Game Wizard",
+                "Customize further in-game!\n\n" +
+                        "• Tutorial starts automatically\n" +
+                        "• Do target configuration into mods!\n" +
+                        "• Plus more!"));
 
         panel.add(createStepCard("🎯", "In-Game Tutorial",
                 "Learn about your mods!\n\n" +
-                        "• Tutorial starts automatically\n" +
-                        "• Learn mod controls and features\n" +
-                        "• Discover new gameplay mechanics"));
+                        "• Open it from main menu or Esc Menu\n" +
+                        "• Learn mod controls and features\n"));
 
         panel.add(createStepCard("⚙️", "Need Help?",
                 "Support resources available!\n\n" +
                         "• Check modpack documentation\n" +
-                        "• Visit community forums\n" +
-                        "• Use in-game help tooltips"));
+                        "• Join Discord\n"));
 
         return panel;
     }
@@ -290,7 +293,7 @@ public class SuccessPage extends MainContentInfo {
     private JPanel createFooter() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panel.setBackground(WizardTheme.BACKGROUND_DARK);
-        panel.setPreferredSize(new Dimension(860, 45)); // Reduced height
+        panel.setPreferredSize(new Dimension(860, 20));
 
         JLabel footerLabel = new JLabel("🎮 Click 'Finish' to close this wizard and start playing!");
         footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));

@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.RoundRectangle2D;
+import java.net.URI;
 
 public class NavigationPanel extends JPanel implements ActionListener {
 
@@ -316,16 +317,6 @@ public class NavigationPanel extends JPanel implements ActionListener {
 
         SwingUtilities.invokeLater(() -> {
             markWizardCompleted();
-
-            showStyledMessage(
-                    "Setup completed successfully!<br><br>" +
-                            "Your modpack is now configured and ready to use.<br><br>" +
-                            "Click 'Finish' to close this wizard and start playing!<br><br>" +
-                            "It may take a minute before Minecraft starts. Please be patient.",
-                    "Setup Complete",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
             hideTransitionStatus();
             wizard.completeWizard();
         });
@@ -354,19 +345,41 @@ public class NavigationPanel extends JPanel implements ActionListener {
     private void handleCancel() {
         showStyledConfirmation(
                 "Are you sure you want to cancel the setup?<br><br>" +
-                        "Any progress will be lost and you'll need to run the wizard again later.",
+                        "The wizard will be dismissed and won't show again." +
+                        "If the wizard is not finished, no configurations will be applied, and default configurations from mods will be used instead of modpack preconfigured configs.<br>" +
+                        "Not recommended!<br>",
                 "Cancel Setup",
                 () -> {
                     LOGGER.info("Setup wizard cancelled by user");
-                    System.exit(0);
+                    markWizardCancelled();
+                    wizard.completeWizard();
                 }
         );
+    }
+
+    private void markWizardCancelled() {
+        try {
+            // Set config states to indicate cancellation
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.appliedConfigName = "No config applied - process cancelled";
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.lastConfigApplied = "No config applied - process cancelled";
+
+            // Mark wizard as completed so it doesn't show again
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardShown = true;
+            com.github.kd_gaming1.packcore.config.PackCoreConfig.showInstallWizard = false;
+
+            // Save the config
+            eu.midnightdust.lib.config.MidnightConfig.write("packcore");
+            LOGGER.info("Wizard cancellation state saved successfully");
+        } catch (Exception e) {
+            LOGGER.error("Failed to save wizard cancellation state", e);
+        }
     }
 
     private void showStyledConfirmation(String message, String title, Runnable onConfirm) {
         JDialog dialog = new JDialog(wizard, title, true);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(450, 200);
+        dialog.setSize(450, 250);
         dialog.setLocationRelativeTo(wizard);
         dialog.setUndecorated(true);
 
@@ -421,21 +434,23 @@ public class NavigationPanel extends JPanel implements ActionListener {
         switch (pageName) {
             case "welcome":
                 return "<h2>Welcome</h2>" +
-                        "<p>This wizard will guide you through setting up your modpack.</p>" +
+                        "<p>This wizard will guide you through setting up the modpack.</p>" +
                         "<ul>" +
                         "<li><b>What's Next:</b> Click 'Next' to select your configuration</li>" +
                         "<li><b>Keyboard Shortcut:</b> Press Alt+N to continue</li>" +
+                        "<li>Need Help? Click the Discord button</li>"+
                         "</ul>";
 
             case "config":
                 return "<h2>Configuration Selection</h2>" +
                         "<p>Choose the configuration that matches your display and preferences.</p>" +
                         "<ul>" +
-                        "<li><b>Recommended:</b> The wizard suggests configs based on your screen</li>" +
+                        "<li><b>Recommended:</b> The wizard suggests configs based on your screen resolution</li>" +
                         "<li><b>Custom Choice:</b> You can select any configuration you prefer</li>" +
                         "<li><b>Details:</b> Click on a config to see its description</li>" +
                         "</ul>" +
-                        "<p><b>Tip:</b> Configurations with ⭐ are recommended for your system.</p>";
+                        "<p><b>Tip:</b> Configurations with ⭐ are recommended for your system.</p>" +
+                        "<li>Need Help? Click the Discord button</li>";
 
             case "review":
                 return "<h2>Review and Apply</h2>" +
@@ -445,7 +460,8 @@ public class NavigationPanel extends JPanel implements ActionListener {
                         "<li><b>Progress:</b> Watch the progress bar and log for status</li>" +
                         "<li><b>Completion:</b> Wait for extraction before continuing</li>" +
                         "</ul>" +
-                        "<p><b>Note:</b> This process may take a few moments.</p>";
+                        "<p><b>Note:</b> This process may take a few moments.</p>"+
+                        "<li>Need Help? Click the Discord button</li>";
 
             case "success":
                 return "<h2>Setup Complete!</h2>" +
@@ -453,11 +469,12 @@ public class NavigationPanel extends JPanel implements ActionListener {
                         "<ul>" +
                         "<li><b>Launch:</b> Start Minecraft with your new configuration</li>" +
                         "<li><b>Tutorial:</b> Check the in-game tutorial for mod info</li>" +
-                        "<li><b>Support:</b> Visit forums or docs if you need help</li>" +
+                        "<li><b>Support:</b> Visit discord you need help</li>" +
                         "</ul>";
 
             default:
-                return "<p>Help information for this page is not available.</p>";
+                return "<p>Help information for this page is not available.</p>" +
+                        "<li>Need Help? Click the Discord button</li>";
         }
     }
 
@@ -528,7 +545,8 @@ public class NavigationPanel extends JPanel implements ActionListener {
             PRIMARY(WizardTheme.ACCENT_GOLD, WizardTheme.BACKGROUND_DARK),
             SECONDARY(WizardTheme.BACKGROUND_LIGHT, WizardTheme.TEXT_PRIMARY),
             SUCCESS(WizardTheme.SUCCESS, Color.WHITE),
-            DANGER(WizardTheme.ERROR, Color.WHITE);
+            DANGER(WizardTheme.ERROR, Color.WHITE),
+            DISCORD(WizardTheme.DISCORD, Color.WHITE);
 
             final Color bg;
             final Color fg;
@@ -638,7 +656,7 @@ public class NavigationPanel extends JPanel implements ActionListener {
 
             JPanel mainPanel = new JPanel(new BorderLayout());
             mainPanel.setBackground(WizardTheme.BACKGROUND_DARK);
-            mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+            mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 15, 20));
 
             JEditorPane helpPane = new JEditorPane("text/html",
                     "<html><body style='font-family: Segoe UI; color: #ddd; background: #2f3136;'>" +
@@ -649,12 +667,29 @@ public class NavigationPanel extends JPanel implements ActionListener {
             JScrollPane scrollPane = new JScrollPane(helpPane);
             scrollPane.setBorder(BorderFactory.createLineBorder(WizardTheme.BORDER));
 
+            // Create Discord button
+            AnimatedButton discordButton = new AnimatedButton("Join Discord", "💬");
+            discordButton.setButtonStyle(AnimatedButton.Style.DISCORD);
+            discordButton.addActionListener(e -> {
+                try {
+                    Desktop.getDesktop().browse(new URI("https://discord.gg/pdwxyjTta7"));
+                } catch (Exception ex) {
+                    LOGGER.error("Failed to open Discord link", ex);
+                    // Show fallback message
+                    JOptionPane.showMessageDialog(this,
+                            "Could not open Discord automatically.\nPlease visit: discord.gg/pdwxyjTta7",
+                            "Discord Link",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+            });
+
             AnimatedButton closeButton = new AnimatedButton("Close", null);
             closeButton.setButtonStyle(AnimatedButton.Style.PRIMARY);
             closeButton.addActionListener(e -> dispose());
 
-            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
             buttonPanel.setBackground(WizardTheme.BACKGROUND_DARK);
+            buttonPanel.add(discordButton);
             buttonPanel.add(closeButton);
 
             mainPanel.add(scrollPane, BorderLayout.CENTER);

@@ -20,7 +20,7 @@ public class WelcomePage extends MainContentInfo {
     }
 
     private void createUI(Path runDir) {
-        JPanel welcomePanel = createTitledPanel("🎮 Welcome to Your Modpack!",
+        JPanel welcomePanel = createTitledPanel("🎮 Welcome to the Modpack!",
                 "Let's get your Minecraft experience perfectly configured");
 
         // Content area

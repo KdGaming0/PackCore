@@ -23,6 +23,7 @@ public class WizardTheme {
     public static final Color WARNING = new Color(250, 166, 26);
     public static final Color ERROR = new Color(237, 66, 69);
     public static final Color INFO = new Color(114, 137, 218);
+    public static final Color DISCORD = new Color(88, 101, 242);
 
     // Borders and separators
     public static final Color BORDER = new Color(72, 75, 81);

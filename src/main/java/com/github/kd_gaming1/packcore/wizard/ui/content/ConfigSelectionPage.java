@@ -158,7 +158,7 @@ public class ConfigSelectionPage extends MainContentInfo {
         if (isConfigRecommended(metadata)) {
             html.append("<blockquote>");
             html.append("<strong>💡 Recommended for your system</strong><br>");
-            html.append("This configuration matches your detected screen resolution and should provide optimal performance.");
+            html.append("This configuration matches your detected screen resolution and should provide optimal experience.");
             html.append("</blockquote>");
         }
 
@@ -265,9 +265,9 @@ public class ConfigSelectionPage extends MainContentInfo {
 
         // Main explanation
         var explanationText = new JTextArea(
-                "Each configuration contains pre-optimized settings for different screen resolutions and system capabilities. " +
+                "Each configuration contains pre-configured settings for a specific screen resolution. " +
                         "The configurations include metadata with detailed information about their purpose, features, and requirements. " +
-                        "Select a configuration from the list to view its details and apply it to your modpack."
+                        "Select a configuration from the list to view its details and apply it to the modpack."
         );
         explanationText.setEditable(false);
         explanationText.setBackground(WizardTheme.BACKGROUND_MEDIUM);

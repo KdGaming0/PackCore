@@ -85,14 +85,6 @@ public class ModpackSetupWizard extends JFrame {
         setLocationRelativeTo(null);
         setMinimumSize(new Dimension(800, 600));
 
-        // Set icon if available
-        try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("/icon.png"));
-            setIconImage(icon.getImage());
-        } catch (Exception e) {
-            // No icon available
-        }
-
         // Modern window decorations
         getRootPane().putClientProperty("apple.awt.brushMetalLook", Boolean.TRUE);
         getRootPane().putClientProperty("apple.awt.windowTitleVisible", Boolean.FALSE);
@@ -169,13 +161,10 @@ public class ModpackSetupWizard extends JFrame {
         contentPanel.setBackground(WizardTheme.BACKGROUND_MEDIUM);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel iconLabel = new JLabel("⚠️", SwingConstants.CENTER);
-        iconLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 48));
-
         JLabel messageLabel = new JLabel(
                 "<html><center>The setup wizard is not yet complete.<br><br>" +
                         "Are you sure you want to exit?<br>" +
-                        "You'll need to run the wizard again next time.</center></html>",
+                        "The wizard will run again at the next launch.</center></html>",
                 SwingConstants.CENTER
         );
         messageLabel.setForeground(WizardTheme.TEXT_PRIMARY);
@@ -196,7 +185,6 @@ public class ModpackSetupWizard extends JFrame {
         buttonPanel.add(continueButton);
         buttonPanel.add(exitButton);
 
-        contentPanel.add(iconLabel, BorderLayout.WEST);
         contentPanel.add(messageLabel, BorderLayout.CENTER);
         contentPanel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -362,7 +350,7 @@ public class ModpackSetupWizard extends JFrame {
             titleLabel.setFont(WizardTheme.getTitleFont());
             titleLabel.setForeground(WizardTheme.TEXT_PRIMARY);
 
-            JLabel subtitleLabel = new JLabel("Configure your modpack for the best experience");
+            JLabel subtitleLabel = new JLabel("Configure the modpack for the best experience!");
             subtitleLabel.setFont(WizardTheme.getSmallFont());
             subtitleLabel.setForeground(WizardTheme.TEXT_SECONDARY);
 
