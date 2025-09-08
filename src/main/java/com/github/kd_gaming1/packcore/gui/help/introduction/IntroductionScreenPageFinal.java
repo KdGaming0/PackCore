@@ -442,6 +442,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Mark wizard as completed
         PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
+        PackCoreConfig.haveShownWelcomeWizard = true;
 
         // Create comprehensive configuration summary
         WizardDataManager.WizardConfiguration config = dataManager.getConfiguration();
@@ -505,8 +506,6 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
             return;
         }
 
-        // Proceed to main menu when configuration has finished successfully
-        PackCoreConfig.haveShownWelcomeWizard = true;
         this.client.setScreen(new FancyMainMenuScreen());
     }
 

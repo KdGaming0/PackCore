@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.gui.titlescreen.fancy;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.UiSurfaces;
+import com.github.kd_gaming1.packcore.gui.configscreen.ModpackConfigMenuScreen;
 import com.github.kd_gaming1.packcore.gui.titlescreen.toast.UpdateNotificationToast;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
@@ -80,28 +81,14 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     @Override
     protected void build(FlowLayout rootComponent) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        int backgroundWidth = client.getWindow().getScaledWidth();
-        int backgroundHeight = client.getWindow().getScaledHeight();
-
-        rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
+        rootComponent.surface(UiSurfaces.stretched(backgroundTexture, 1920, 1082));
         rootComponent.child(createMainButtonAndTitle()).horizontalAlignment(HorizontalAlignment.CENTER);
         rootComponent.child(createSocialButtons().positioning(Positioning.relative(0, 100)));
         rootComponent.child(createSeeWhatIsNewButtons().positioning(Positioning.relative(100, 0)));
+        rootComponent.child(createModpackButtons().positioning(Positioning.relative(100, 100)));
 
         // Create changelog layout but don't add it initially
         changelogLayout = (FlowLayout) createChangelogFiled().positioning(Positioning.relative(50, 75));
-    }
-
-
-    @Override
-    public void resize(MinecraftClient client, int width, int height) {
-        super.resize(client, width, height);
-
-        int backgroundWidth = client.getWindow().getScaledWidth();
-        int backgroundHeight = client.getWindow().getScaledHeight();
-
-        this.uiAdapter.rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
     }
 
     @Override
@@ -177,7 +164,19 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
                 .padding(Insets.of(4));
 
         buttonLayout
-                .child(createSeeWhatIsNewButton())
+                .child(createSeeWhatIsNewButton());
+
+        return buttonLayout;
+    }
+
+    private FlowLayout createModpackButtons() {
+        FlowLayout buttonLayout = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
+                .gap(6)
+                .horizontalAlignment(HorizontalAlignment.RIGHT)
+                .padding(Insets.of(4));
+
+        buttonLayout
+                .child(createModpackButton())
                 .child(createHelpUpdateButton());
 
         return buttonLayout;
@@ -375,14 +374,27 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createHelpUpdateButton() {
         return (ButtonComponent) Components.button(
-                        Text.literal("How to Update?").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))), button -> {
+                        Text.literal("Guide/help").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))), button -> {
 
                         }
                 )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 160, 60))
-                .horizontalSizing(Sizing.fixed(160))
-                .verticalSizing(Sizing.fixed(20));
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 140, 63))
+                .horizontalSizing(Sizing.fixed(140))
+                .verticalSizing(Sizing.fixed(21));
     }
+
+    private ButtonComponent createModpackButton() {
+        return (ButtonComponent) Components.button(
+                        Text.literal("Modpack Configs").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))), button -> {
+                            this.client.setScreen(new ModpackConfigMenuScreen());
+                }
+        )
+        .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 140, 63))
+        .horizontalSizing(Sizing.fixed(140))
+        .verticalSizing(Sizing.fixed(21));
+    }
+
+
 
     private void toggleChangelog() {
         showChangelog = !showChangelog;

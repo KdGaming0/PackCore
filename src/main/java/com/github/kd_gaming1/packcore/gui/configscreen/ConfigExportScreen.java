@@ -1,5 +1,7 @@
 package com.github.kd_gaming1.packcore.gui.configscreen;
 
+import com.github.kd_gaming1.packcore.gui.UiSurfaces;
+import com.github.kd_gaming1.packcore.gui.configscreen.ui.UITheme;
 import com.github.kd_gaming1.packcore.gui.configscreen.util.FileTreeNode;
 import com.github.kd_gaming1.packcore.util.ConfigExportManager;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
@@ -14,6 +16,8 @@ import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.OverlayContainer;
 import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
+import io.wispforest.owo.ui.core.Color;
+import io.wispforest.owo.ui.core.Insets;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -22,35 +26,21 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 import static com.github.kd_gaming1.packcore.PackCore.getModpackInfo;
+import static com.github.kd_gaming1.packcore.gui.configscreen.ui.UITheme.*;
 
 public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-
-    // Theme constants
-    protected static final int OVERLAY_DARK = 0x80_000000;
-    protected static final int PANEL_BACKGROUND = 0xC0_1A1A1A;
-    protected static final int ACCENT_GOLD = 0xFF_FFD700;
-    protected static final int TEXT_WHITE = 0xFFFFFF;
-    protected static final int TEXT_SECONDARY = 0xB9BBBE;
-    protected static final int STATUS_SUCCESS_BG = 0xC0_2D5016;
-    protected static final int STATUS_SUCCESS_BORDER = 0xFF_52C41A;
-    protected static final int STATUS_WARNING_BG = 0xC0_5C3317;
-    protected static final int STATUS_WARNING_BORDER = 0xFF_FAAD14;
-    protected static final int STATUS_ERROR_BG = 0xC0_5C1717;
-    protected static final int STATUS_ERROR_BORDER = 0xFF_FF4D4F;
-    protected static final int ENTRY_BACKGROUND = 0xC0_2A2A2A;
-    protected static final int ENTRY_HOVER = 0xC0_3A3A3A;
-    protected static final int ENTRY_SELECTED = 0xC0_4A4A4A;
-    protected static final int ENTRY_BORDER = 0xFF_555555;
 
     private Identifier backgroundTexture;
     private ConfigExportManager exportManager;
@@ -68,14 +58,18 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     // Metadata fields
     private TextBoxComponent nameField;
-    private TextAreaComponent descriptionArea; // expanding area
+    private TextAreaComponent descriptionArea;
     private TextBoxComponent versionField;
     private TextBoxComponent authorField;
 
     // Resolution dropdown
+    private final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    private final String defaultResolution = screenSize.width + "x" + screenSize.height;
     private ButtonComponent resolutionButton;
-    private List<String> resolutionPresets = new ArrayList<>(List.of("1920x1080", "1600x900", "1280x720"));
-    private String selectedResolution = "1920x1080";
+    private List<String> resolutionPresets = new ArrayList<>(List.of(
+            "1920x1080", "2560x1440", "3840x2160"
+    ));
+    private String selectedResolution;
     private OverlayContainer<FlowLayout> resolutionOverlay = null;
 
     // Features / requirements
@@ -86,7 +80,16 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private final Map<String, Boolean> modsSelected = new LinkedHashMap<>();
     private FlowLayout modsListContainer;
 
-    public ConfigExportScreen() { }
+    // Placeholder info
+    private boolean nameFieldHasPlaceholder = true;
+    private boolean descriptionAreaHasPlaceholder = true;
+    private boolean versionFieldHasPlaceholder = true;
+    private boolean authorFieldHasPlaceholder = true;
+    private boolean featuresAreaHasPlaceholder = true;
+    private boolean requirementsAreaHasPlaceholder = true;
+
+    public ConfigExportScreen() {
+    }
 
     @Override
     protected @NotNull OwoUIAdapter createAdapter() {
@@ -95,22 +98,26 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     @Override
     protected void build(FlowLayout rootComponent) {
+        if (resolutionPresets.contains(defaultResolution)) {
+            selectedResolution = defaultResolution;
+        } else {
+            selectedResolution = "Click Me"; // fallback
+        }
+
         exportManager = new ConfigExportManager();
+        backgroundTexture = Identifier.of(MOD_ID, "textures/gui/wizard/welcome_bg.png");
 
-        int backgroundWidth = MinecraftClient.getInstance().getWindow().getScaledWidth();
-        int backgroundHeight = MinecraftClient.getInstance().getWindow().getScaledHeight();
-        backgroundTexture = Identifier.of(MOD_ID, "textures/gui/wizard/test_temp.png");
-
-        rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
-        rootComponent.padding(Insets.of(16));
+        rootComponent.surface(UiSurfaces.stretched(backgroundTexture, 1920, 1082));
+        rootComponent.padding(Insets.of(6, 8, 8, 8));
 
         rootComponent.child(createHeader());
 
         FlowLayout contentArea = Containers.horizontalFlow(Sizing.fill(100), Sizing.expand());
-        contentArea.gap(8);
+        contentArea.gap(6);
 
-        FlowLayout mainPanel = (FlowLayout) Containers.verticalFlow(Sizing.fill(75), Sizing.expand())
-                .margins(Insets.right(1));
+        contentArea.child(createSidebar());
+
+        FlowLayout mainPanel = Containers.verticalFlow(Sizing.expand(65), Sizing.expand());
 
         treePanelContainer = createTreePanel();
         metadataPanel = createMetadataPanel();
@@ -118,7 +125,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         // start with tree view
         mainPanel.child(treePanelContainer);
 
-        contentArea.child(createSidebar());
         contentArea.child(mainPanel);
 
         rootComponent.child(contentArea);
@@ -131,118 +137,118 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     private FlowLayout createHeader() {
         FlowLayout header = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        header.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        header.padding(Insets.of(8));
+        header.padding(Insets.of(4));
         header.verticalAlignment(VerticalAlignment.CENTER);
 
         Identifier logoId = Identifier.of(MOD_ID, "textures/gui/assets/sbe_logo.png");
-        TextureComponent logo = Components.texture(logoId, 0, 0, 48, 48, 48, 48);
+        TextureComponent logo = Components.texture(logoId, 0, 0, 40, 40, 40, 40);
 
         Text titleText = Text.literal("Export Configs - " + getModpackInfo().getName())
-                .setStyle(Style.EMPTY.withBold(Boolean.TRUE));
-        LabelComponent titleLabel = Components.label(titleText).color(Color.ofRgb(TEXT_WHITE));
-        titleLabel.margins(Insets.of(8, 0, 0, 0));
+                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")));
+        LabelComponent titleLabel = Components.label(titleText).color(UITheme.color(UITheme.TEXT_WHITE));
+        titleLabel.margins(Insets.of(4, 0, 4, 0));
 
         // Back button
-        ButtonComponent backButton = (ButtonComponent) Components.button(Text.literal("← Back"), button -> {
+        ButtonComponent backButton = (ButtonComponent) Components.button(Text.literal("Back"), button -> {
                     MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
                 })
-                .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_GOLD, ENTRY_BORDER))
-                .sizing(Sizing.fixed(80), Sizing.fixed(25));
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 90, 57))
+                .horizontalSizing(Sizing.fixed(90))
+                .verticalSizing(Sizing.fixed(19));
+
+        FlowLayout rightSection = Containers.horizontalFlow(Sizing.expand(), Sizing.content());
+        rightSection.horizontalAlignment(HorizontalAlignment.RIGHT);
+        rightSection.child(backButton);
 
         header.child(logo);
         header.child(titleLabel);
-        header.child(Containers.horizontalFlow(Sizing.expand(), Sizing.content())); // spacer
-        header.child(backButton);
-        header.margins(Insets.bottom(8));
+        header.child(rightSection);
+        header.margins(Insets.bottom(6));
 
         return header;
     }
 
     private FlowLayout createSidebar() {
-        FlowLayout sidebar = Containers.verticalFlow(Sizing.fill(25), Sizing.expand());
-        sidebar.gap(6);
-        sidebar.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        sidebar.padding(Insets.of(8));
+        FlowLayout sidebar = Containers.verticalFlow(Sizing.fill(35), Sizing.expand());
+        sidebar.gap(4);
+        sidebar.surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/menu/notif_box.png"), 607, 755));
+        sidebar.padding(Insets.of(12,12,10,10));
+        sidebar.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        FlowLayout infoSection = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        infoSection.gap(4);
-        infoSection.surface(Surface.flat(0xC0_2A3A2A).and(Surface.outline(0xFF_4A7C59)));
-        infoSection.padding(Insets.of(8));
+        // Wrap scrollable content in a container
+        FlowLayout scrollContent = Containers.verticalFlow(Sizing.fill(96), Sizing.content());
+        scrollContent.gap(6);
 
-        LabelComponent infoLabel = (LabelComponent) Components.label(Text.literal("Select folders and files from your game directory to export as a config. " +
-                        "Choose what to include, then fill in the metadata details."))
-                .color(Color.ofRgb(TEXT_WHITE))
-                .sizing(Sizing.fill(95), Sizing.content());
+        // Info section
+        FlowLayout infoSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(4)
+                .padding(Insets.of(2));
+
+        LabelComponent infoLabel = (LabelComponent) Components.label(Text.literal(
+                        "Select folders and files from your game directory to export as a config. " +
+                                "Choose what to include, then fill in the metadata details."
+                )).color(UITheme.color(UITheme.TEXT_WHITE))
+                .horizontalSizing(Sizing.fill(100));
 
         infoSection.child(infoLabel);
-        sidebar.child(infoSection);
+        scrollContent.child(infoSection);
 
-        // Preset buttons
-        FlowLayout presetSection = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        presetSection.gap(4);
-        presetSection.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ENTRY_BORDER)));
-        presetSection.padding(Insets.of(8));
+        // Preset section
+        FlowLayout presetSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(2)
+                .surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)))
+                .padding(Insets.of(6))
+                .horizontalAlignment(HorizontalAlignment.CENTER);
 
         LabelComponent presetLabel = Components.label(Text.literal("Quick Presets")
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(Color.ofRgb(ACCENT_GOLD));
+                        .setStyle(Style.EMPTY.withBold(true)))
+                .color(UITheme.color(UITheme.ACCENT_GOLD));
         presetSection.child(presetLabel);
 
-        ButtonComponent modConfigButton = (ButtonComponent) Components.button(Text.literal("Mod Configs Only"),
-                        button -> applyPreset("mod_only"))
-                .renderer(ButtonComponent.Renderer.flat(STATUS_WARNING_BG, STATUS_WARNING_BORDER, ENTRY_BORDER))
-                .sizing(Sizing.fill(100), Sizing.fixed(22));
+        presetSection.child(makePresetButton("Mod Configs Only", "mod_only"));
+        presetSection.child(makePresetButton("MC Configs Only", "mc_only"));
+        presetSection.child(makePresetButton("Both Configs", "both"));
+        presetSection.child(makePresetButton("Clear All", "clear"));
 
-        ButtonComponent mcConfigButton = (ButtonComponent) Components.button(Text.literal("MC Configs Only"),
-                        button -> applyPreset("mc_only"))
-                .renderer(ButtonComponent.Renderer.flat(STATUS_WARNING_BG, STATUS_WARNING_BORDER, ENTRY_BORDER))
-                .sizing(Sizing.fill(100), Sizing.fixed(22));
-
-        ButtonComponent bothConfigButton = (ButtonComponent) Components.button(Text.literal("Both Configs"),
-                        button -> applyPreset("both"))
-                .renderer(ButtonComponent.Renderer.flat(STATUS_SUCCESS_BG, STATUS_SUCCESS_BORDER, ENTRY_BORDER))
-                .sizing(Sizing.fill(100), Sizing.fixed(22));
-
-        ButtonComponent clearButton = (ButtonComponent) Components.button(Text.literal("Clear All"),
-                        button -> applyPreset("clear"))
-                .renderer(ButtonComponent.Renderer.flat(STATUS_ERROR_BG, STATUS_ERROR_BORDER, ENTRY_BORDER))
-                .sizing(Sizing.fill(100), Sizing.fixed(22));
-
-        presetSection.child(modConfigButton);
-        presetSection.child(mcConfigButton);
-        presetSection.child(bothConfigButton);
-        presetSection.child(clearButton);
-
-        sidebar.child(presetSection);
+        scrollContent.child(presetSection);
 
         // Selection info
-        FlowLayout selectionInfo = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        selectionInfo.gap(4);
-        selectionInfo.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ENTRY_BORDER)));
-        selectionInfo.padding(Insets.of(8));
+        FlowLayout selectionInfo = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(4)
+                .surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)))
+                .padding(Insets.of(8))
+                .horizontalAlignment(HorizontalAlignment.CENTER);
 
-        LabelComponent selectionLabel = Components.label(Text.literal("Selection Info")
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(Color.ofRgb(ACCENT_GOLD));
+        LabelComponent selectionLabel = (LabelComponent) Components.label(Text.literal("Selection Info")
+                        .setStyle(Style.EMPTY.withBold(true)))
+                .color(UITheme.color(UITheme.ACCENT_GOLD))
+                .margins(Insets.bottom(2));
         selectionInfo.child(selectionLabel);
 
         selectionCountLabel = Components.label(Text.literal("Selected: 0 items"))
-                .color(Color.ofRgb(TEXT_SECONDARY));
+                .color(UITheme.color(TEXT_SECONDARY));
         selectionInfo.child(selectionCountLabel);
 
         selectionSizeLabel = Components.label(Text.literal("Estimated size: 0 MB"))
-                .color(Color.ofRgb(TEXT_SECONDARY));
+                .color(UITheme.color(TEXT_SECONDARY));
         selectionInfo.child(selectionSizeLabel);
 
-        sidebar.child(selectionInfo);
+        selectionInfo.sizing(Sizing.fill(100), Sizing.content());
+        scrollContent.child(selectionInfo);
 
-        sidebar.child(Containers.verticalFlow(Sizing.fill(100), Sizing.expand()));
+        // Wrap scrollContent in a ScrollContainer
+        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), scrollContent);
+        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
+        scrollContainer.scrollStep(10);
 
-        nextButton = (ButtonComponent) Components.button(Text.literal("Next: Add Metadata →"),
+        sidebar.child(scrollContainer);
+
+        // Next button stays outside of the scroll area
+        nextButton = (ButtonComponent) Components.button(Text.literal("Next: Add Metadata"),
                         button -> showMetadataPanel())
-                .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ENTRY_BORDER, ENTRY_BORDER))
-                .sizing(Sizing.fill(100), Sizing.fixed(30));
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 120, 60))
+                .horizontalSizing(Sizing.fixed(120))
+                .verticalSizing(Sizing.fixed(20));
 
         updateNextButton();
         sidebar.child(nextButton);
@@ -250,15 +256,25 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         return sidebar;
     }
 
+    private ButtonComponent makePresetButton(String text, String presetType) {
+        return (ButtonComponent) Components.button(Text.literal(text), button -> applyPreset(presetType))
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"),
+                        0, 0, 90, 57))
+                .horizontalSizing(Sizing.fixed(90))
+                .verticalSizing(Sizing.fixed(19));
+    }
+
+
     private FlowLayout createTreePanel() {
         FlowLayout treePanel = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
         treePanel.gap(4);
-        treePanel.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        treePanel.padding(Insets.of(8));
+        treePanel.surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/menu/info_box.png"), 1142, 934));
+        treePanel.padding(Insets.of(14));
 
         LabelComponent header = Components.label(Text.literal("Game Directory Structure")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(Color.ofRgb(TEXT_WHITE));
+                .color(UITheme.color(UITheme.TEXT_WHITE));
         treePanel.child(header);
 
         treeContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
@@ -273,61 +289,83 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private FlowLayout createMetadataPanel() {
         FlowLayout panel = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
         panel.gap(6);
-        panel.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        panel.padding(Insets.of(8));
+        panel.surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/menu/info_box.png"), 1142, 934));
+        panel.padding(Insets.of(14));
 
         LabelComponent header = Components.label(Text.literal("Config Metadata")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(Color.ofRgb(TEXT_WHITE));
+                .color(UITheme.color(UITheme.TEXT_WHITE));
         panel.child(header);
 
         FlowLayout formContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
         formContainer.gap(8);
 
-        // Name
-        nameField = Components.textBox(Sizing.fill(70), "My Custom Config");
+        // Name field with placeholder
+        nameField = Components.textBox(Sizing.fill(65));
+        nameField.setText("Enter a descriptive name for your config");
+        nameField.setEditableColor(UITheme.TEXT_SECONDARY);
+        setupTextBoxPlaceholder(nameField, "Enter a descriptive name for your config",
+                () -> nameFieldHasPlaceholder, (value) -> nameFieldHasPlaceholder = value);
         formContainer.child(createFieldRow("Name*:", nameField));
 
-        // Description - expanding text area
-        descriptionArea = Components.textArea(Sizing.fill(70), Sizing.content(), "A custom configuration...");
-        descriptionArea.maxLines(12); // grows up to 12 lines
+        // Description area with placeholder
+        descriptionArea = Components.textArea(Sizing.fill(65), Sizing.content());
+        descriptionArea.maxLines(12);
         descriptionArea.displayCharCount(false);
+        descriptionArea.setText("Describe what this config does, what features it enables, and any special instructions for users...");
+        setupTextAreaPlaceholder(descriptionArea, "Describe what this config does, what features it enables, and any special instructions for users...",
+                () -> descriptionAreaHasPlaceholder, (value) -> descriptionAreaHasPlaceholder = value);
         formContainer.child(createFieldRow("Description*:", descriptionArea));
 
-        // Version / Author
-        versionField = Components.textBox(Sizing.fill(70), "1.0.0");
+        // Version field with placeholder
+        versionField = Components.textBox(Sizing.fill(65));
+        versionField.setText("1.0.0");
+        versionField.setEditableColor(UITheme.TEXT_SECONDARY);
+        setupTextBoxPlaceholder(versionField, "1.0.0",
+                () -> versionFieldHasPlaceholder, (value) -> versionFieldHasPlaceholder = value);
         formContainer.child(createFieldRow("Version:", versionField));
 
-        authorField = Components.textBox(Sizing.fill(70), MinecraftClient.getInstance().getSession().getUsername());
+        // Author field - pre-fill with username, not a placeholder
+        authorField = Components.textBox(Sizing.fill(65));
+        authorField.setText(MinecraftClient.getInstance().getSession().getUsername());
         formContainer.child(createFieldRow("Author:", authorField));
 
-        // Resolution: button that opens overlay of presets + custom input
+        // Resolution button (unchanged)
         resolutionButton = (ButtonComponent) Components.button(Text.literal(selectedResolution), b -> {
-            showResolutionDropdown(b);
-        }).sizing(Sizing.fill(70), Sizing.fixed(20));
+                    showResolutionDropdown(b);
+                }).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
+                .horizontalSizing(Sizing.fixed(90))
+                .verticalSizing(Sizing.fixed(19));
         formContainer.child(createFieldRow("Target Resolution:", resolutionButton));
 
-        // Features and Requirements (multi-line)
-        featuresArea = Components.textArea(Sizing.fill(70), Sizing.fixed(60), "Better FPS\nCustom UI\nBalanced progression");
+        // Features area with placeholder
+        featuresArea = Components.textArea(Sizing.fill(65), Sizing.fixed(60));
         featuresArea.maxLines(6);
+        featuresArea.setText("List the key features this config provides (one per line):\nBetter performance\nEnhanced visuals\nQuality of life improvements");
+        setupTextAreaPlaceholder(featuresArea, "List the key features this config provides (one per line):\nBetter performance\nEnhanced visuals\nQuality of life improvements",
+                () -> featuresAreaHasPlaceholder, (value) -> featuresAreaHasPlaceholder = value);
         formContainer.child(createFieldRow("Features (one per line):", featuresArea));
 
-        requirementsArea = Components.textArea(Sizing.fill(70), Sizing.fixed(60), "Minecraft 1.20.2\nFabric API");
+        // Requirements area with placeholder
+        requirementsArea = Components.textArea(Sizing.fill(65), Sizing.fixed(60));
         requirementsArea.maxLines(6);
+        requirementsArea.setText("List what users need to use this config (one per line):\nMinecraft 1.21.5\nFabric API\nSpecific mods if required");
+        setupTextAreaPlaceholder(requirementsArea, "List what users need to use this config (one per line):\nMinecraft 1.21.5\nFabric API\nSpecific mods if required",
+                () -> requirementsAreaHasPlaceholder, (value) -> requirementsAreaHasPlaceholder = value);
         formContainer.child(createFieldRow("Requirements (one per line):", requirementsArea));
 
-        // Mods (auto-detected)
-        LabelComponent modsLabel = Components.label(Text.literal("Mods (auto-detected):"))
-                .color(Color.ofRgb(TEXT_WHITE));
+        // Rest of the method remains the same...
+        LabelComponent modsLabel = Components.label(Text.literal("Mods (auto-detected) (These are just to let the import user know what mods where used when the config was created):"))
+                .color(UITheme.color(UITheme.TEXT_WHITE));
         FlowLayout modsRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         modsRow.gap(8);
         modsRow.child(modsLabel);
 
-        modsListContainer = Containers.verticalFlow(Sizing.fill(70), Sizing.fixed(90));
+        modsListContainer = Containers.verticalFlow(Sizing.fill(65), Sizing.fixed(90));
         modsListContainer.gap(2);
-        modsListContainer.surface(Surface.flat(0xC0_222222).and(Surface.outline(0xFF333333)));
+        modsListContainer.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
         modsListContainer.padding(Insets.of(4));
-        modsListContainer.child(Components.label(Text.literal("Scanning mods folder...")).color(Color.ofRgb(TEXT_SECONDARY)));
+        modsListContainer.child(Components.label(Text.literal("Scanning mods folder...")).color(UITheme.color(TEXT_SECONDARY)));
 
         formContainer.child(modsRow);
         formContainer.child(modsListContainer);
@@ -340,20 +378,22 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
         panel.child(formScroll);
 
-        // Buttons
+        // Buttons (unchanged)
         FlowLayout buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         buttonRow.gap(8);
         buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        ButtonComponent backToSelectionButton = (ButtonComponent) Components.button(Text.literal("← Back to Selection"),
+        ButtonComponent backToSelectionButton = (ButtonComponent) Components.button(Text.literal("Back to Selection"),
                         button -> hideMetadataPanel())
-                .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ENTRY_BORDER, ENTRY_BORDER))
-                .sizing(Sizing.fixed(140), Sizing.fixed(25));
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                .horizontalSizing(Sizing.fixed(100))
+                .verticalSizing(Sizing.fixed(20));
 
         ButtonComponent exportButton = (ButtonComponent) Components.button(Text.literal("Export Config"),
                         button -> exportConfig())
-                .renderer(ButtonComponent.Renderer.flat(STATUS_SUCCESS_BG, STATUS_SUCCESS_BORDER, ENTRY_BORDER))
-                .sizing(Sizing.fixed(120), Sizing.fixed(25));
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                .horizontalSizing(Sizing.fixed(100))
+                .verticalSizing(Sizing.fixed(20));
 
         buttonRow.child(backToSelectionButton);
         buttonRow.child(exportButton);
@@ -362,12 +402,61 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         return panel;
     }
 
+    // Helper method for TextBoxComponent placeholder behavior
+    private void setupTextBoxPlaceholder(TextBoxComponent textBox, String placeholderText,
+                                         java.util.function.Supplier<Boolean> hasPlaceholder,
+                                         java.util.function.Consumer<Boolean> setPlaceholder) {
+
+        // Handle focus events using owo-lib's event system
+        textBox.focusGained().subscribe(focusSource -> {
+            if (hasPlaceholder.get()) {
+                textBox.setText("");
+                textBox.setEditableColor(UITheme.TEXT_WHITE);
+                setPlaceholder.accept(false);
+            }
+        });
+
+
+        textBox.focusLost().subscribe(() -> {
+            String currentText = textBox.getText();
+
+            if (currentText.trim().isEmpty()) {
+                textBox.setText(placeholderText);
+                textBox.setEditableColor(UITheme.TEXT_SECONDARY);
+                setPlaceholder.accept(true);
+            }
+        });
+    }
+
+    // Helper method for TextAreaComponent placeholder behavior
+    private void setupTextAreaPlaceholder(TextAreaComponent textArea, String placeholderText,
+                                          java.util.function.Supplier<Boolean> hasPlaceholder,
+                                          java.util.function.Consumer<Boolean> setPlaceholder) {
+
+        // Handle focus events using owo-lib's event system
+        textArea.focusGained().subscribe(focusSource -> {
+            if (hasPlaceholder.get()) {
+                textArea.setText("");
+                setPlaceholder.accept(false);
+            }
+        });
+
+        textArea.focusLost().subscribe(() -> {
+            String currentText = textArea.getText();
+
+            if (currentText.trim().isEmpty()) {
+                textArea.setText(placeholderText);
+                setPlaceholder.accept(true);
+            }
+        });
+    }
+
     private FlowLayout createFieldRow(String labelText, io.wispforest.owo.ui.core.Component field) {
         FlowLayout row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         row.gap(8);
         row.verticalAlignment(VerticalAlignment.CENTER);
 
-        LabelComponent label = Components.label(Text.literal(labelText)).color(Color.ofRgb(TEXT_WHITE));
+        LabelComponent label = Components.label(Text.literal(labelText)).color(UITheme.color(UITheme.TEXT_WHITE));
         label.sizing(Sizing.fill(30), Sizing.content());
 
         row.child(label);
@@ -399,7 +488,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                                 node.setExpanded(!node.isExpanded());
                                 populateFileTree();
                             })
-                    .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_GOLD, ENTRY_BORDER))
+                    .renderer(ButtonComponent.Renderer.flat(UITheme.ENTRY_BACKGROUND, UITheme.ACCENT_GOLD, UITheme.ENTRY_BORDER))
                     .sizing(Sizing.fixed(16), Sizing.fixed(16));
             nodeEntry.child(expandButton);
         } else {
@@ -408,22 +497,22 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
         boolean isSelected = selectedPaths.contains(node.getPath());
         String checkboxText = isSelected ? "☑" : "☐";
-        int checkboxColor = isSelected ? STATUS_SUCCESS_BORDER : ENTRY_BORDER;
+        int checkboxColor = isSelected ? UITheme.STATUS_SUCCESS_BORDER : UITheme.ENTRY_BORDER;
         ButtonComponent checkbox = (ButtonComponent) Components.button(Text.literal(checkboxText),
                         button -> toggleSelection(node))
-                .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, checkboxColor, ENTRY_BORDER))
+                .renderer(ButtonComponent.Renderer.flat(UITheme.ENTRY_BACKGROUND, checkboxColor, UITheme.ENTRY_BORDER))
                 .sizing(Sizing.fixed(20), Sizing.fixed(16));
         nodeEntry.child(checkbox);
 
         String icon = node.isDirectory() ? "📁" : "📄";
-        int nameColor = selectedPaths.contains(node.getPath()) ? ACCENT_GOLD : TEXT_WHITE;
+        int nameColor = selectedPaths.contains(node.getPath()) ? UITheme.ACCENT_GOLD : UITheme.TEXT_WHITE;
         LabelComponent nameLabel = Components.label(Text.literal(icon + " " + node.getName()))
-                .color(Color.ofRgb(nameColor));
+                .color(UITheme.color(nameColor));
         nodeEntry.child(nameLabel);
 
         nodeEntry.mouseEnter().subscribe(() -> {
             if (!selectedPaths.contains(node.getPath())) {
-                nodeEntry.surface(Surface.flat(ENTRY_HOVER));
+                nodeEntry.surface(Surface.flat(UITheme.ENTRY_HOVER));
             }
         });
 
@@ -434,7 +523,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         });
 
         if (selectedPaths.contains(node.getPath())) {
-            nodeEntry.surface(Surface.flat(ENTRY_SELECTED));
+            nodeEntry.surface(Surface.flat(UITheme.ENTRY_SELECTED));
         }
 
         treeContainer.child(nodeEntry);
@@ -506,15 +595,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     private void updateNextButton() {
         boolean hasSelection = !selectedPaths.isEmpty();
-        boolean shouldEnable = hasSelection && !showingMetadata;
-
-        if (shouldEnable) {
-            nextButton.renderer(ButtonComponent.Renderer.flat(STATUS_SUCCESS_BG, STATUS_SUCCESS_BORDER, ENTRY_BORDER));
-            nextButton.active = true;
-        } else {
-            nextButton.renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ENTRY_BORDER, ENTRY_BORDER));
-            nextButton.active = false;
-        }
+        nextButton.active = hasSelection && !showingMetadata;
     }
 
     private void applyPreset(String presetType) {
@@ -574,7 +655,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
         FlowLayout list = Containers.verticalFlow(Sizing.fixed(140), Sizing.content());
         list.gap(4);
-        list.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
+        list.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
         list.padding(Insets.of(6));
 
         for (String r : resolutionPresets) {
@@ -595,7 +676,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         list.child(custom);
 
         resolutionOverlay = Containers.overlay(list);
-        // position overlay centered-ish; it's acceptable — you can tune Positioning if needed
         resolutionOverlay.positioning(Positioning.relative(50, 40));
         resolutionOverlay.zIndex(50);
         resolutionOverlay.child(list);
@@ -605,7 +685,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private void showAddCustomResolutionPopup() {
         FlowLayout popup = Containers.verticalFlow(Sizing.fill(60), Sizing.content());
         popup.gap(6);
-        popup.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
+        popup.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
         popup.padding(Insets.of(8));
 
         TextBoxComponent input = Components.textBox(Sizing.fill(60), "");
@@ -692,9 +772,10 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     // --- Export wiring ---
     private void exportConfig() {
         try {
-            String name = nameField.getText().trim();
-            String description = descriptionArea.getText().trim();
-            String version = versionField.getText().trim();
+            // Get actual text values, checking for placeholders
+            String name = nameFieldHasPlaceholder ? "" : nameField.getText().trim();
+            String description = descriptionAreaHasPlaceholder ? "" : descriptionArea.getText().trim();
+            String version = versionFieldHasPlaceholder ? "1.0.0" : versionField.getText().trim();
             String author = authorField.getText().trim();
             String resolution = selectedResolution;
 
@@ -703,11 +784,16 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 return;
             }
 
-            List<String> features = Arrays.stream(featuresArea.getText().split("[\\r\\n,]+"))
-                    .map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toList());
+            String featuresText = featuresAreaHasPlaceholder ? "" : featuresArea.getText();
+            String requirementsText = requirementsAreaHasPlaceholder ? "" : requirementsArea.getText();
 
-            List<String> requirements = Arrays.stream(requirementsArea.getText().split("[\\r\\n,]+"))
-                    .map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toList());
+            List<String> features = featuresText.isEmpty() ? new ArrayList<>() :
+                    Arrays.stream(featuresText.split("[\\r\\n,]+"))
+                            .map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toList());
+
+            List<String> requirements = requirementsText.isEmpty() ? new ArrayList<>() :
+                    Arrays.stream(requirementsText.split("[\\r\\n,]+"))
+                            .map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toList());
 
             List<String> mods = modsSelected.entrySet().stream()
                     .filter(Map.Entry::getValue)
@@ -776,13 +862,5 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 Thread.currentThread().interrupt();
             }
         }).start();
-    }
-
-    @Override
-    public void resize(MinecraftClient client, int width, int height) {
-        super.resize(client, width, height);
-        int backgroundWidth = client.getWindow().getScaledWidth();
-        int backgroundHeight = client.getWindow().getScaledHeight();
-        this.uiAdapter.rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
     }
 }

@@ -74,11 +74,8 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     @Override
     protected final void build(StackLayout rootComponent) {
-        int backgroundWidth = MinecraftClient.getInstance().getWindow().getScaledWidth();
-        int backgroundHeight = MinecraftClient.getInstance().getWindow().getScaledHeight();
-
         // Set background
-        rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
+        rootComponent.surface(UiSurfaces.stretched(backgroundTexture, 1920, 1082));
 
         // Create main layout structure
         FlowLayout mainLayout = createMainLayout();
@@ -115,17 +112,6 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
         // Store reference for overlay management
         this.confirmOverlay = rootComponent;
-    }
-
-    @Override
-    public void resize(MinecraftClient client, int width, int height) {
-        super.resize(client, width, height);
-
-        int backgroundWidth = client.getWindow().getScaledWidth();
-        int backgroundHeight = client.getWindow().getScaledHeight();
-
-        // Update the background surface directly
-        this.uiAdapter.rootComponent.surface(Surface.tiled(backgroundTexture, backgroundWidth, backgroundHeight));
     }
 
     private FlowLayout createMainLayout() {
