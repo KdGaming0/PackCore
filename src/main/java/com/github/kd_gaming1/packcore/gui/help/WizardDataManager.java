@@ -1,25 +1,26 @@
 package com.github.kd_gaming1.packcore.gui.help;
 
+import com.github.kd_gaming1.packcore.PackCore;
 import java.util.*;
 
 /**
- * Manages wizard configuration data across all pages
+ * Singleton class to manage wizard data and state.
+ * This class stores user selections from the wizard pages,
+ * tracks application state, and provides methods to retrieve
+ * a summary of the configuration.
  */
 public class WizardDataManager {
     private static WizardDataManager instance;
 
-    // CORRECTED: Separate optimization profiles from resource packs
-    private String selectedOptimizationProfile = ""; // Performance settings profile
-    private final List<String> selectedResourcePacksOrdered = new ArrayList<>(); // Visual resource packs
-    private String selectedTabDesign = "";
-    private final Set<String> selectedAdditionalSettings = new HashSet<>();
-    private final Map<String, Object> customSettings = new HashMap<>();
+    // Core selections from wizard pages
+    private String optimizationProfile = "";
+    private final List<String> resourcePacksOrdered = new ArrayList<>();
+    private String tabDesign = "";
 
-    // NEW: Application state tracking
+    // Application tracking
     private boolean configurationApplied = false;
     private boolean configurationApplying = false;
-    private String configurationResult = ""; // "success", "failed", or ""
-    private String configurationErrorMessage = "";
+    private String lastError = "";
 
     private WizardDataManager() {}
 
@@ -30,89 +31,41 @@ public class WizardDataManager {
         return instance;
     }
 
+    // ===== Optimization Profile (Page 1) =====
+
     public void setOptimizationProfile(String profile) {
-        this.selectedOptimizationProfile = profile;
+        this.optimizationProfile = profile;
+        PackCore.LOGGER.debug("Set optimization profile: {}", profile);
     }
 
     public String getOptimizationProfile() {
-        return selectedOptimizationProfile;
+        return optimizationProfile;
     }
 
-    // Resource Pack Management (Visual Packs)
+    // ===== Resource Packs (Page 3) =====
+
     public void setResourcePacksOrdered(List<String> packs) {
-        selectedResourcePacksOrdered.clear();
-        selectedResourcePacksOrdered.addAll(packs);
+        this.resourcePacksOrdered.clear();
+        this.resourcePacksOrdered.addAll(packs);
+        PackCore.LOGGER.debug("Set resource packs: {}", packs);
     }
 
     public List<String> getResourcePacksOrdered() {
-        return new ArrayList<>(selectedResourcePacksOrdered);
+        return new ArrayList<>(resourcePacksOrdered);
     }
 
-    public void addResourcePack(String packKey) {
-        if (!selectedResourcePacksOrdered.contains(packKey)) {
-            selectedResourcePacksOrdered.add(packKey);
-        }
-    }
+    // ===== Tab Design (Page 2) =====
 
-    public void removeResourcePack(String packKey) {
-        selectedResourcePacksOrdered.remove(packKey);
-    }
-
-    public void toggleResourcePack(String packKey) {
-        if (selectedResourcePacksOrdered.contains(packKey)) {
-            selectedResourcePacksOrdered.remove(packKey);
-        } else {
-            selectedResourcePacksOrdered.add(packKey);
-        }
-    }
-
-    public boolean isResourcePackSelected(String packKey) {
-        return selectedResourcePacksOrdered.contains(packKey);
-    }
-
-    // Tab Design (Page 2)
     public void setTabDesign(String design) {
-        this.selectedTabDesign = design;
+        this.tabDesign = design;
+        PackCore.LOGGER.debug("Set tab design: {}", design);
     }
 
     public String getTabDesign() {
-        return selectedTabDesign;
+        return tabDesign;
     }
 
-    // Additional Settings
-    public void toggleAdditionalSetting(String setting) {
-        if (selectedAdditionalSettings.contains(setting)) {
-            selectedAdditionalSettings.remove(setting);
-        } else {
-            selectedAdditionalSettings.add(setting);
-        }
-    }
-
-    public boolean isAdditionalSettingSelected(String setting) {
-        return selectedAdditionalSettings.contains(setting);
-    }
-
-    public Set<String> getAdditionalSettings() {
-        return new HashSet<>(selectedAdditionalSettings);
-    }
-
-    // Custom settings storage
-    public void setCustomSetting(String key, Object value) {
-        customSettings.put(key, value);
-    }
-
-    public Object getCustomSetting(String key) {
-        return customSettings.get(key);
-    }
-
-    // NEW: Application state management
-    public void setConfigurationApplied(boolean applied) {
-        this.configurationApplied = applied;
-    }
-
-    public boolean isConfigurationApplied() {
-        return configurationApplied;
-    }
+    // ===== Application State =====
 
     public void setConfigurationApplying(boolean applying) {
         this.configurationApplying = applying;
@@ -122,77 +75,77 @@ public class WizardDataManager {
         return configurationApplying;
     }
 
+    public void setConfigurationApplied(boolean applied) {
+        this.configurationApplied = applied;
+    }
+
+    public boolean isConfigurationApplied() {
+        return configurationApplied;
+    }
+
     public void setConfigurationResult(String result, String errorMessage) {
-        this.configurationResult = result;
-        this.configurationErrorMessage = errorMessage != null ? errorMessage : "";
+        this.lastError = errorMessage != null ? errorMessage : "";
+        PackCore.LOGGER.debug("Configuration result: {} - {}", result, errorMessage);
     }
 
     public String getConfigurationResult() {
-        return configurationResult;
+        return configurationApplied ? "success" : (!lastError.isEmpty() ? "failed" : "");
     }
 
     public String getConfigurationErrorMessage() {
-        return configurationErrorMessage;
+        return lastError;
     }
 
-    public void resetConfigurationState() {
-        this.configurationApplied = false;
-        this.configurationApplying = false;
-        this.configurationResult = "";
-        this.configurationErrorMessage = "";
+    // ===== Additional Settings (unused but kept for compatibility) =====
+
+    public Set<String> getAdditionalSettings() {
+        return new HashSet<>(); // Return empty set for compatibility
     }
 
-    // Configuration summary
+    // ===== Configuration Summary =====
+
     public WizardConfiguration getConfiguration() {
         return new WizardConfiguration(
-                selectedOptimizationProfile,
-                new ArrayList<>(selectedResourcePacksOrdered),
-                selectedTabDesign,
-                new HashSet<>(selectedAdditionalSettings),
-                new HashMap<>(customSettings)
+                optimizationProfile,
+                new ArrayList<>(resourcePacksOrdered),
+                tabDesign
         );
     }
 
-    // Reset all data
-    public void reset() {
-        selectedOptimizationProfile = "";
-        selectedResourcePacksOrdered.clear();
-        selectedTabDesign = "";
-        selectedAdditionalSettings.clear();
-        customSettings.clear();
-        resetConfigurationState();
-    }
-
-    // Check if configuration is complete
     public boolean isConfigurationComplete() {
-        return !selectedOptimizationProfile.isEmpty() || !selectedResourcePacksOrdered.isEmpty();
+        // At minimum we need an optimization profile
+        return !optimizationProfile.isEmpty();
     }
 
-    // Get configuration summary text
-    public String getConfigurationSummary() {
-        StringBuilder summary = new StringBuilder();
-        summary.append("Optimization Profile: ").append(selectedOptimizationProfile.isEmpty() ? "None" : selectedOptimizationProfile).append("\n");
-        summary.append("Resource Packs: ").append(selectedResourcePacksOrdered.isEmpty() ? "None" : String.join(", ", selectedResourcePacksOrdered)).append("\n");
-        summary.append("Tab Design: ").append(selectedTabDesign.isEmpty() ? "None" : selectedTabDesign).append("\n");
-        summary.append("Additional Settings: ").append(selectedAdditionalSettings.isEmpty() ? "None" : String.join(", ", selectedAdditionalSettings));
-        return summary.toString();
+    // ===== Reset =====
+
+    public void reset() {
+        optimizationProfile = "";
+        resourcePacksOrdered.clear();
+        tabDesign = "";
+        configurationApplied = false;
+        configurationApplying = false;
+        lastError = "";
+        PackCore.LOGGER.info("Wizard data reset");
     }
+
+    public static void clearInstance() {
+        instance = null;
+    }
+
+    // ===== Data Class =====
 
     public static class WizardConfiguration {
         private final String optimizationProfile;
         private final List<String> resourcePacksOrdered;
         private final String tabDesign;
-        private final Set<String> additionalSettings;
-        private final Map<String, Object> customSettings;
 
-        public WizardConfiguration(String optimizationProfile, List<String> resourcePacksOrdered,
-                                   String tabDesign, Set<String> additionalSettings,
-                                   Map<String, Object> customSettings) {
+        public WizardConfiguration(String optimizationProfile,
+                                   List<String> resourcePacksOrdered,
+                                   String tabDesign) {
             this.optimizationProfile = optimizationProfile;
             this.resourcePacksOrdered = resourcePacksOrdered;
             this.tabDesign = tabDesign;
-            this.additionalSettings = additionalSettings;
-            this.customSettings = customSettings;
         }
 
         public String getOptimizationProfile() {
@@ -207,12 +160,13 @@ public class WizardDataManager {
             return tabDesign;
         }
 
+        // For compatibility with existing code
         public Set<String> getAdditionalSettings() {
-            return new HashSet<>(additionalSettings);
+            return new HashSet<>();
         }
 
         public Map<String, Object> getCustomSettings() {
-            return new HashMap<>(customSettings);
+            return new HashMap<>();
         }
     }
 }
