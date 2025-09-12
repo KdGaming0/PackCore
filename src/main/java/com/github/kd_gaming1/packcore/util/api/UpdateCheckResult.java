@@ -6,7 +6,6 @@ import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import static com.mojang.text2speech.Narrator.LOGGER;
 
 public class UpdateCheckResult {
-
     private final boolean success;
     private final boolean updateAvailable;
     private final String versionNumber;
@@ -15,7 +14,6 @@ public class UpdateCheckResult {
     private final String versionId;
     private final String errorMessage;
 
-    // Constructor for successful update check
     public UpdateCheckResult(boolean updateAvailable, String versionNumber,
                              String versionType, String changelog, String versionId) {
         this.success = true;
@@ -27,7 +25,6 @@ public class UpdateCheckResult {
         this.errorMessage = null;
     }
 
-    // Constructor for error cases
     private UpdateCheckResult(String errorMessage) {
         this.success = false;
         this.updateAvailable = false;
@@ -38,12 +35,10 @@ public class UpdateCheckResult {
         this.errorMessage = errorMessage;
     }
 
-    // Static method to create error result
     public static UpdateCheckResult error(String errorMessage) {
         return new UpdateCheckResult(errorMessage);
     }
 
-    // Getters
     public boolean isSuccess() { return success; }
     public boolean isUpdateAvailable() { return updateAvailable; }
     public String getVersionNumber() { return versionNumber; }
@@ -52,7 +47,6 @@ public class UpdateCheckResult {
     public String getVersionId() { return versionId; }
     public String getErrorMessage() { return errorMessage; }
 
-    // Helper method to create Modrinth version URL
     public String getModrinthUrl() {
         ModpackInfo info = PackCore.getModpackInfo();
         if (info == null) {
@@ -60,18 +54,14 @@ public class UpdateCheckResult {
             return null;
         }
 
-        // Check if the configuration is valid
         if (!info.isConfigurationValid()) {
             LOGGER.warn("Configuration is invalid, cannot create URL for changelog: {}",
                     info.getValidationError());
             return null;
         }
 
-        String projectId = info.getModrinthProjectId();
-
-        if (versionId != null) {
-            return "https://modrinth.com/project/" + projectId + "/version/" + versionId;
-        }
-        return null;
+        return versionId != null
+                ? "https://modrinth.com/project/" + info.getModrinthProjectId() + "/version/" + versionId
+                : null;
     }
 }
