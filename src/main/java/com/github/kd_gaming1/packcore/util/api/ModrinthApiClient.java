@@ -14,10 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModrinthApiClient {
-
     private static final String API_BASE_URL = "https://api.modrinth.com/v2";
     private static final String USER_AGENT = "kdgaming0/packcore/2.0.0";
-
     private final HttpClient httpClient;
     private final Gson gson;
 
@@ -58,24 +56,15 @@ public class ModrinthApiClient {
         JsonArray versionsArray = gson.fromJson(jsonResponse, JsonArray.class);
         List<ModrinthVersion> suitableVersions = new ArrayList<>();
 
-        // Filter versions that match our criteria
         for (int i = 0; i < versionsArray.size(); i++) {
             JsonObject versionObj = versionsArray.get(i).getAsJsonObject();
-
             String versionType = versionObj.get("version_type").getAsString();
             JsonArray gameVersions = versionObj.getAsJsonArray("game_versions");
 
-            // Check if version type matches our update channel
-            if (!isVersionTypeAllowed(versionType, updateChannel)) {
+            if (!isVersionTypeAllowed(versionType, updateChannel) || !supportsMinecraftVersion(gameVersions, minecraftVersion)) {
                 continue;
             }
 
-            // REPLACE the inline code with this method call:
-            if (!supportsMinecraftVersion(gameVersions, minecraftVersion)) {
-                continue;
-            }
-
-            // This version meets our criteria
             ModrinthVersion version = new ModrinthVersion(
                     versionObj.get("version_number").getAsString(),
                     versionType,
@@ -88,40 +77,26 @@ public class ModrinthApiClient {
             suitableVersions.add(version);
         }
 
-        // Return the most recent suitable version (versions are already sorted by date)
-        return suitableVersions.isEmpty() ? null : suitableVersions.get(0);
+        return suitableVersions.isEmpty() ? null : suitableVersions.getFirst();
     }
 
     private boolean isVersionTypeAllowed(String versionType, String updateChannel) {
-        switch (updateChannel.toLowerCase()) {
-            case "alpha":
-                return true;
-            case "beta":
-                return versionType.equals("beta") || versionType.equals("release");
-            case "release":
-                return versionType.equals("release");
-            default:
-                return false;
-        }
+        return switch (updateChannel.toLowerCase()) {
+            case "alpha" -> true;
+            case "beta" -> versionType.equals("beta") || versionType.equals("release");
+            case "release" -> versionType.equals("release");
+            default -> false;
+        };
     }
 
     private boolean supportsMinecraftVersion(JsonArray gameVersions, String targetVersion) {
-        // Handle exact matches first
-        for (int j = 0; j < gameVersions.size(); j++) {
-            String gameVersion = gameVersions.get(j).getAsString();
-            if (gameVersion.equals(targetVersion)) {
-                return true;
-            }
-        }
+        String baseVersion = targetVersion.endsWith("+") ? targetVersion.substring(0, targetVersion.length() - 1) : null;
 
-        // Handle pattern matching (e.g., "1.21.+" matches "1.21.0", "1.21.1", etc.)
-        if (targetVersion.endsWith("+")) {
-            String baseVersion = targetVersion.substring(0, targetVersion.length() - 1);
-            for (int j = 0; j < gameVersions.size(); j++) {
-                String gameVersion = gameVersions.get(j).getAsString();
-                if (gameVersion.startsWith(baseVersion)) {
-                    return true;
-                }
+        for (int i = 0; i < gameVersions.size(); i++) {
+            String version = gameVersions.get(i).getAsString();
+
+            if (version.equals(targetVersion) || (baseVersion != null && version.startsWith(baseVersion))) {
+                return true;
             }
         }
 

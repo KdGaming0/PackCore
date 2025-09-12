@@ -6,25 +6,20 @@ import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import java.time.Instant;
 
 public class UpdateCacheManager {
-
-    // Cached data from API response
     private String cachedVersionNumber;
     private String cachedVersionType;
     private String cachedChangelog;
     private String cachedVersionId;
     private boolean updateAvailable;
 
-    // Configuration data we used for the cached API call
     private String cachedModrinthProjectId;
     private String cachedUpdateChannel;
     private String cachedCurrentVersion;
     private String cachedMinecraftVersion;
 
-    // Cache timing
     private Instant lastUpdateCheck;
-    private static final long CACHE_DURATION_MINUTES = 15; // Cache for 15 minutes
+    private static final long CACHE_DURATION_MINUTES = 15;
 
-    // API caller instance
     private final ModrinthApiClient apiClient;
 
     public UpdateCacheManager() {
@@ -39,7 +34,7 @@ public class UpdateCacheManager {
             PackCore.LOGGER.error("Invalid modpack configuration: {}", error);
             return UpdateCheckResult.error("Configuration error: " + error);
         }
-        // First, check if we can use cached data
+
         if (isCacheValid(modpackInfo)) {
             return createResultFromCache();
         }
@@ -53,23 +48,9 @@ public class UpdateCacheManager {
     }
 
     private boolean isCacheValid(ModpackInfo modpackInfo) {
-        // No cached data yet
-        if (lastUpdateCheck == null) {
-            return false;
-        }
-
-        // Cache expired?
-        long minutesSinceLastCheck = java.time.Duration.between(lastUpdateCheck, Instant.now()).toMinutes();
-        if (minutesSinceLastCheck >= CACHE_DURATION_MINUTES) {
-            return false;
-        }
-
-        // Configuration changed?
-        if (!configMatches(modpackInfo)) {
-            return false;
-        }
-
-        return true;
+        return lastUpdateCheck != null &&
+                java.time.Duration.between(lastUpdateCheck, Instant.now()).toMinutes() < CACHE_DURATION_MINUTES &&
+                configMatches(modpackInfo);
     }
 
     private boolean configMatches(ModpackInfo modpackInfo) {
@@ -86,19 +67,16 @@ public class UpdateCacheManager {
 
     private UpdateCheckResult fetchAndCacheUpdates(ModpackInfo modpackInfo) {
         try {
-            // Call Modrinth API
             ModrinthVersion latestVersion = apiClient.getLatestVersion(
                     modpackInfo.getModrinthProjectId(),
                     modpackInfo.getUpdateChannel(),
                     modpackInfo.getMinecraftVersion()
             );
 
-            // Update cache with current config
             updateCacheConfig(modpackInfo);
             lastUpdateCheck = Instant.now();
 
             if (latestVersion == null) {
-                // No suitable version found
                 updateAvailable = false;
                 cachedVersionNumber = null;
                 cachedVersionType = null;
@@ -109,10 +87,8 @@ public class UpdateCacheManager {
                         "No versions found matching your criteria", null);
             }
 
-            // Check if this is actually newer than current version
-            boolean isNewer = isVersionNewer(modpackInfo.getVersion(), latestVersion.versionNumber());
+            boolean isNewer = compareVersions(latestVersion.versionNumber(), modpackInfo.getVersion()) > 0;
 
-            // Update cache
             updateAvailable = isNewer;
             cachedVersionNumber = latestVersion.versionNumber();
             cachedVersionType = latestVersion.versionType();
@@ -134,10 +110,21 @@ public class UpdateCacheManager {
         cachedMinecraftVersion = modpackInfo.getMinecraftVersion();
     }
 
-    // Simple version comparison - you might want to use a proper version comparison library
-    private boolean isVersionNewer(String currentVersion, String latestVersion) {
-        // For now, just do string comparison
-        // In a real implementation, you'd want proper semantic versioning comparison
-        return !currentVersion.equals(latestVersion);
+    private int compareVersions(String v1, String v2) {
+        String[] parts1 = v1.replaceAll("[^0-9.]", "").split("\\.");
+        String[] parts2 = v2.replaceAll("[^0-9.]", "").split("\\.");
+
+        int maxLength = Math.max(parts1.length, parts2.length);
+
+        for (int i = 0; i < maxLength; i++) {
+            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+
+            if (p1 != p2) {
+                return p1 - p2;
+            }
+        }
+
+        return 0;
     }
 }
