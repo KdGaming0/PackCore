@@ -441,7 +441,6 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         updatePrimaryButtonState(true);
 
         // Mark wizard as completed
-        PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
         PackCoreConfig.haveShownWelcomeWizard = true;
 
         // Create comprehensive configuration summary
