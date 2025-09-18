@@ -6,12 +6,10 @@ import com.github.kd_gaming1.packcore.util.ConfigApplicationManager;
 import com.github.kd_gaming1.packcore.util.ConfigFileUtils;
 import com.github.kd_gaming1.packcore.util.ConfigMetadata;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
-import io.wispforest.owo.ui.component.Components;
-import io.wispforest.owo.ui.component.ButtonComponent;
-import io.wispforest.owo.ui.component.LabelComponent;
-import io.wispforest.owo.ui.component.TextureComponent;
+import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.OverlayContainer;
 import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
@@ -27,15 +25,15 @@ import java.util.List;
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 import static com.github.kd_gaming1.packcore.PackCore.getModpackInfo;
 
+/**
+ * Main configuration menu screen - simplified version
+ */
 public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    private Identifier backgroundTexture;
     private ConfigFileUtils.ConfigFile selectedConfig = null;
-    private FlowLayout selectedEntry = null;
     private FlowLayout infoPanel;
-    private io.wispforest.owo.ui.container.OverlayContainer<FlowLayout> currentPopup = null;
+    private OverlayContainer<FlowLayout> confirmationPopup = null;
 
     @Override
     protected @NotNull OwoUIAdapter createAdapter() {
@@ -44,229 +42,175 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     @Override
     protected void build(FlowLayout rootComponent) {
-        backgroundTexture = Identifier.of(MOD_ID, "textures/gui/wizard/welcome_bg.png");
-        rootComponent.surface(UiSurfaces.stretched(backgroundTexture, 1920, 1082));
-        rootComponent.padding(Insets.of(6,8,8,8));
+        rootComponent.surface(UiSurfaces.stretched(
+                Identifier.of(MOD_ID, "textures/gui/wizard/welcome_bg.png"), 1920, 1082));
+        rootComponent.padding(Insets.of(8));
 
         rootComponent.child(createHeader());
-
-        FlowLayout contentArea = Containers.horizontalFlow(Sizing.fill(100), Sizing.expand());
-        contentArea.gap(6);
-
-        contentArea.child(createSidebar());
-
-        infoPanel = createInfoPanel();
-        contentArea.child(infoPanel);
-
-        rootComponent.child(contentArea);
+        rootComponent.child(createMainContent());
     }
 
     private FlowLayout createHeader() {
-        FlowLayout header = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        header.padding(Insets.of(4));
+        var header = Containers.horizontalFlow(Sizing.fill(100), Sizing.fixed(50));
+        header.gap(8);
         header.verticalAlignment(VerticalAlignment.CENTER);
 
-        ButtonComponent backButton = (ButtonComponent) Components.button(Text.literal("Back"), button -> {
-                    MinecraftClient.getInstance().setScreen(null); // closes to game
-                })
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"),
-                        0, 0, 90, 57))
-                .horizontalSizing(Sizing.fixed(90))
-                .verticalSizing(Sizing.fixed(19));
+        // Logo
+        header.child(Components.texture(
+                Identifier.of(MOD_ID, "textures/gui/assets/sbe_logo.png"),
+                0, 0, 40, 40, 40, 40));
 
-        Identifier logoId = Identifier.of(MOD_ID, "textures/gui/assets/sbe_logo.png");
-        TextureComponent logo = Components.texture(logoId, 0, 0, 40, 40, 40 ,40);
+        // Title
+        header.child(Components.label(
+                        Text.literal("Configuration Manager - " + getModpackInfo().getName())
+                                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
 
-        Text titleText = Text.literal(getModpackInfo().getName()).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")));
-        LabelComponent titleLabel = Components.label(titleText).color(UITheme.color(UITheme.TEXT_WHITE));
-        titleLabel.margins(Insets.of(4, 0, 4, 0));
-
-        // Use ConfigFileUtils.getCurrentConfig() which now returns the unified ConfigMetadata
+        // Current config display
         ConfigMetadata currentMeta = ConfigFileUtils.getCurrentConfig();
+        var currentConfigInfo = Containers.verticalFlow(Sizing.expand(), Sizing.content());
+        currentConfigInfo.gap(2);
+        currentConfigInfo.horizontalAlignment(HorizontalAlignment.RIGHT);
 
-        FlowLayout currentConfigSection = (FlowLayout) Containers.horizontalFlow(Sizing.expand(), Sizing.content())
-                .gap(8)
-                .horizontalAlignment(HorizontalAlignment.RIGHT)
-                .verticalAlignment(VerticalAlignment.CENTER)
-                .margins(Insets.horizontal(6));
+        currentConfigInfo.child(Components.label(
+                        Text.literal("Active: " + currentMeta.getName())
+                                .setStyle(Style.EMPTY.withBold(true)))
+                .color(UITheme.color(UITheme.ACCENT_GOLD)));
 
-        FlowLayout configInfo = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .gap(2)
-                .horizontalAlignment(HorizontalAlignment.RIGHT);
+        currentConfigInfo.child(Components.label(
+                        Text.literal("v" + currentMeta.getVersion() + " | " + currentMeta.getTargetResolution()))
+                .color(UITheme.color(UITheme.TEXT_SECONDARY)));
 
-        LabelComponent currentLabel = Components.label(Text.literal("Current: " + currentMeta.getName())
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(UITheme.color(UITheme.ACCENT_GOLD));
+        header.child(currentConfigInfo);
 
-        FlowLayout detailsRow = Containers.horizontalFlow(Sizing.content(), Sizing.content());
-        detailsRow.gap(8);
-
-        LabelComponent versionLabel = Components.label(Text.literal("v" + currentMeta.getVersion()))
-                .color(UITheme.color(UITheme.TEXT_SECONDARY));
-
-        LabelComponent resolutionLabel = Components.label(Text.literal("(" + currentMeta.getTargetResolution() + ")"))
-                .color(UITheme.color(UITheme.TEXT_SECONDARY));
-
-        detailsRow.child(versionLabel);
-        detailsRow.child(resolutionLabel);
-
-        configInfo.child(currentLabel);
-        configInfo.child(detailsRow);
-        currentConfigSection.child(configInfo);
-
-        header.child(logo);
-        header.child(titleLabel);
-        header.child(currentConfigSection);
-        header.child(backButton);
-        header.margins(Insets.bottom(6));
+        // Back button
+        header.child(Components.button(Text.literal("Close"),
+                        btn -> MinecraftClient.getInstance().setScreen(null))
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 90, 57))
+                .sizing(Sizing.fixed(90), Sizing.fixed(19)));
 
         return header;
     }
 
+    private FlowLayout createMainContent() {
+        var mainContent = Containers.horizontalFlow(Sizing.fill(100), Sizing.expand());
+        mainContent.gap(8);
+        mainContent.child(createSidebar());
+        mainContent.child(createInfoPanel());
+        return mainContent;
+    }
+
     private FlowLayout createSidebar() {
-        FlowLayout sidebar = Containers.verticalFlow(Sizing.fill(35), Sizing.expand());
-        sidebar.gap(4);
-        sidebar.surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/menu/notif_box.png"), 607, 755));
+        var sidebar = Containers.verticalFlow(Sizing.fill(35), Sizing.expand());
+        sidebar.gap(8);
+        sidebar.surface(UiSurfaces.stretched(
+                Identifier.of(MOD_ID, "textures/gui/menu/notif_box.png"), 607, 755));
         sidebar.padding(Insets.of(12));
-        sidebar.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        FlowLayout infoSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(4)
-                .padding(Insets.of(2));
-
-        LabelComponent infoLabel = (LabelComponent) Components.label(Text.literal("Export, Import or Apply Modpack Configurations"))
+        // Info text
+        sidebar.child(Components.label(
+                        Text.literal("Manage your modpack configurations. Select a config to view details or apply it."))
                 .color(UITheme.color(UITheme.TEXT_WHITE))
-                .horizontalSizing(Sizing.fill(100));
+                .sizing(Sizing.fill(95), Sizing.content()));
 
-        infoSection.child(infoLabel);
-        sidebar.child(infoSection);
+        // Official configs section
+        sidebar.child(createConfigSection("Official Configs",
+                ConfigFileUtils.getOfficialConfigs(), true));
 
-        FlowLayout topSection = createOfficialConfigSection();
-        FlowLayout bottomSection = createCustomConfigSection();
+        // Custom configs section
+        sidebar.child(createConfigSection("Custom Configs",
+                ConfigFileUtils.getCustomConfigs(), false));
 
-        FlowLayout buttonSection = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .gap(4)
-                .horizontalAlignment(HorizontalAlignment.CENTER);
+        // Action buttons
+        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonRow.gap(4);
+        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        ButtonComponent importButton = (ButtonComponent) Components.button(Text.literal("Import Configs"), button -> {
-                    MinecraftClient.getInstance().setScreen(new ConfigImportScreen());
-                })
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
-                .horizontalSizing(Sizing.fixed(90))
-                .verticalSizing(Sizing.fixed(19));
+        buttonRow.child(Components.button(Text.literal("Import"),
+                        btn -> MinecraftClient.getInstance().setScreen(new ConfigImportScreen()))
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
+                .sizing(Sizing.fixed(90), Sizing.fixed(19)));
 
-        ButtonComponent exportButton = (ButtonComponent) Components.button(Text.literal("Export Configs"), button -> {
-                    MinecraftClient.getInstance().setScreen(new ConfigExportScreen());
-                })
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
-                .horizontalSizing(Sizing.fixed(90))
-                .verticalSizing(Sizing.fixed(19));
+        buttonRow.child(Components.button(Text.literal("Export"),
+                        btn -> MinecraftClient.getInstance().setScreen(new ConfigExportScreen()))
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
+                .sizing(Sizing.fixed(90), Sizing.fixed(19)));
 
-        sidebar.child(topSection);
-        sidebar.child(bottomSection);
-        buttonSection.child(importButton).child(exportButton);
-        sidebar.child(buttonSection);
+        sidebar.child(buttonRow);
+
         return sidebar;
     }
 
-    private FlowLayout createOfficialConfigSection() {
-        FlowLayout topSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.expand(45))
-                .gap(4)
-                .surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)))
-                .padding(Insets.of(4))
-                .horizontalAlignment(HorizontalAlignment.CENTER);
+    private FlowLayout createConfigSection(String title, List<ConfigFileUtils.ConfigFile> configs, boolean official) {
+        var section = Containers.verticalFlow(Sizing.fill(100), Sizing.expand(official ? 45 : 50));
+        section.gap(4);
+        section.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
+        section.padding(Insets.of(8));
 
-        LabelComponent header = (LabelComponent) Components.label(Text.literal("Official Config Options")
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(UITheme.color(UITheme.TEXT_WHITE))
-                .horizontalSizing(Sizing.fill(100));
+        section.child(Components.label(Text.literal(title)
+                        .setStyle(Style.EMPTY.withBold(true)))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
 
-        topSection.child(header);
-
-        List<ConfigFileUtils.ConfigFile> officialConfigs = ConfigFileUtils.getOfficialConfigs();
-        ScrollContainer<FlowLayout> officialScrollContainer = createConfigList(officialConfigs, true);
-
-        topSection.child(officialScrollContainer);
-
-        return topSection;
-    }
-
-    private FlowLayout createCustomConfigSection() {
-        FlowLayout bottomSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.expand(50))
-                .gap(4)
-                .surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)))
-                .padding(Insets.of(4))
-                .horizontalAlignment(HorizontalAlignment.CENTER);
-
-        LabelComponent header2 = (LabelComponent) Components.label(Text.literal("Custom/Community Config Options")
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(UITheme.color(UITheme.TEXT_WHITE))
-                .horizontalSizing(Sizing.fill(100));
-
-        bottomSection.child(header2);
-
-        List<ConfigFileUtils.ConfigFile> customConfigs = ConfigFileUtils.getCustomConfigs();
-        ScrollContainer<FlowLayout> customScrollContainer = createConfigList(customConfigs, false);
-
-        bottomSection.child(customScrollContainer);
-
-        return bottomSection;
-    }
-
-    private ScrollContainer<FlowLayout> createConfigList(java.util.List<ConfigFileUtils.ConfigFile> configs, boolean isOfficial) {
-        FlowLayout listContent = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(2);
+        var listContent = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        listContent.gap(2);
 
         if (configs.isEmpty()) {
-            LabelComponent emptyLabel = Components.label(Text.literal("No configs found"))
-                    .color(UITheme.color(UITheme.TEXT_SECONDARY));
-            listContent.child(emptyLabel);
+            listContent.child(Components.label(Text.literal("No configs found"))
+                    .color(UITheme.color(UITheme.TEXT_SECONDARY)));
         } else {
             for (ConfigFileUtils.ConfigFile config : configs) {
-                FlowLayout entry = createConfigEntry(config);
-                listContent.child(entry);
+                listContent.child(createConfigEntry(config));
             }
         }
 
-        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), listContent);
+        var scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), listContent);
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        scrollContainer.scrollStep(10);
 
-        return scrollContainer;
+        section.child(scrollContainer);
+        return section;
     }
 
     private FlowLayout createConfigEntry(ConfigFileUtils.ConfigFile config) {
-        FlowLayout entry = Containers.verticalFlow(Sizing.fill(95), Sizing.content());
+        var entry = Containers.verticalFlow(Sizing.fill(95), Sizing.content());
         entry.gap(2);
         entry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
         entry.padding(Insets.of(6));
-        entry.margins(Insets.of(1));
 
-        LabelComponent nameLabel = Components.label(Text.literal(config.getDisplayName()))
-                .color(UITheme.color(UITheme.TEXT_WHITE));
+        // Config name
+        entry.child(Components.label(Text.literal(config.getDisplayName()))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
 
-        String typeText = config.isOfficial() ? "Official" : "Custom";
-        int typeColor = config.isOfficial() ? UITheme.STATUS_SUCCESS_BORDER : UITheme.STATUS_WARNING_BORDER;
-        LabelComponent typeLabel = Components.label(Text.literal(typeText))
-                .color(UITheme.color(typeColor));
+        // Metadata badges
+        var badges = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        badges.gap(4);
 
-        entry.child(nameLabel);
-        entry.child(typeLabel);
+        badges.child(Components.label(Text.literal(config.isOfficial() ? "Official" : "Custom"))
+                .color(UITheme.color(config.isOfficial() ?
+                        UITheme.STATUS_SUCCESS_BORDER : UITheme.STATUS_WARNING_BORDER)));
 
+        badges.child(Components.label(Text.literal("v" + config.getMetadata().getVersion()))
+                .color(UITheme.color(UITheme.TEXT_SECONDARY)));
+
+        entry.child(badges);
+
+        // Selection handling
         entry.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            selectConfig(config, entry);
+            selectConfig(config);
             return true;
         });
 
+        // Hover effects
         entry.mouseEnter().subscribe(() -> {
-            if (selectedEntry != entry) {
+            if (selectedConfig != config) {
                 entry.surface(Surface.flat(UITheme.ENTRY_HOVER).and(Surface.outline(UITheme.ACCENT_GOLD)));
             }
         });
 
         entry.mouseLeave().subscribe(() -> {
-            if (selectedEntry != entry) {
+            if (selectedConfig != config) {
                 entry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
             }
         });
@@ -274,183 +218,217 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         return entry;
     }
 
-    private void selectConfig(ConfigFileUtils.ConfigFile config, FlowLayout entry) {
-        if (selectedEntry != null) {
-            selectedEntry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
-        }
+    private FlowLayout createInfoPanel() {
+        infoPanel = Containers.verticalFlow(Sizing.fill(65), Sizing.expand());
+        infoPanel.gap(8);
+        infoPanel.surface(UiSurfaces.stretched(
+                Identifier.of(MOD_ID, "textures/gui/menu/info_box.png"), 1142, 934));
+        infoPanel.padding(Insets.of(14));
 
-        selectedConfig = config;
-        selectedEntry = entry;
-        entry.surface(Surface.flat(UITheme.ENTRY_SELECTED).and(Surface.outline(UITheme.ACCENT_GOLD)));
-
-        updateInfoPanel();
+        showEmptyState();
+        return infoPanel;
     }
 
-    private void updateInfoPanel() {
+    private void showEmptyState() {
+        infoPanel.clearChildren();
+        infoPanel.horizontalAlignment(HorizontalAlignment.CENTER);
+        infoPanel.verticalAlignment(VerticalAlignment.CENTER);
+        infoPanel.child(Components.label(Text.literal("Select a configuration to view details"))
+                .color(UITheme.color(UITheme.TEXT_SECONDARY)));
+    }
+
+    private void selectConfig(ConfigFileUtils.ConfigFile config) {
+        selectedConfig = config;
+        showConfigDetails();
+    }
+
+    private void showConfigDetails() {
         if (selectedConfig == null) return;
 
         infoPanel.clearChildren();
+        infoPanel.horizontalAlignment(HorizontalAlignment.LEFT);
+        infoPanel.verticalAlignment(VerticalAlignment.TOP);
 
         ConfigMetadata meta = selectedConfig.getMetadata();
 
-        FlowLayout header = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)))
-                .padding(Insets.of(6))
-                .verticalAlignment(VerticalAlignment.CENTER);
+        // Header
+        infoPanel.child(Components.label(Text.literal(meta.getName())
+                        .setStyle(Style.EMPTY.withBold(true)))
+                .color(UITheme.color(UITheme.ACCENT_GOLD)));
 
-        LabelComponent headerLabel = Components.label(Text.literal(selectedConfig.getDisplayName())
-                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(UITheme.color(UITheme.TEXT_WHITE));
-        header.child(headerLabel);
-        infoPanel.child(header);
+        // Info box
+        var infoBox = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        infoBox.gap(4);
+        infoBox.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
+        infoBox.padding(Insets.of(8));
 
-        FlowLayout extractInfo = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(2)
-                .surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)))
-                .padding(Insets.of(6));
+        infoBox.child(createInfoRow("Version:", meta.getVersion()));
+        infoBox.child(createInfoRow("Author:", meta.getAuthor()));
+        infoBox.child(createInfoRow("Resolution:", meta.getTargetResolution()));
+        infoBox.child(createInfoRow("Source:", meta.getSource()));
 
-        extractInfo.child(Components.label(Text.literal("Source: " + meta.getSource()))
-                .color(UITheme.color(UITheme.TEXT_WHITE)));
-        extractInfo.child(Components.label(Text.literal("Author: " + meta.getAuthor()))
-                .color(UITheme.color(UITheme.TEXT_SECONDARY)));
-        extractInfo.child(Components.label(Text.literal("Version: " + meta.getVersion()))
-                .color(UITheme.color(UITheme.TEXT_SECONDARY)));
         if (meta.getCreatedDate() != null && !meta.getCreatedDate().isEmpty()) {
-            extractInfo.child(Components.label(Text.literal("Created: " + meta.getCreatedDate()))
-                    .color(UITheme.color(UITheme.TEXT_SECONDARY)));
+            infoBox.child(createInfoRow("Created:", formatDate(meta.getCreatedDate())));
         }
 
-        infoPanel.child(extractInfo);
+        infoPanel.child(infoBox);
 
-        FlowLayout contentWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
-        contentWrapper.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
-        contentWrapper.padding(Insets.of(2));
-
-        FlowLayout scrollableContent = (FlowLayout) Containers.verticalFlow(Sizing.fill(98), Sizing.content())
-                .gap(4)
-                .padding(Insets.of(6));
-
-        scrollableContent.child(Components.label(Text.literal("Description:").setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(UITheme.color(UITheme.ACCENT_GOLD)));
-        scrollableContent.child(Components.label(Text.literal(meta.getDescription()))
-                .color(UITheme.color(UITheme.TEXT_WHITE))
-                .sizing(Sizing.fill(95), Sizing.content()));
-
-        scrollableContent.child(Components.label(Text.literal("Technical Details:").setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                .color(UITheme.color(UITheme.ACCENT_GOLD)));
-        scrollableContent.child(Components.label(Text.literal("Resolution: " + meta.getTargetResolution()))
-                .color(UITheme.color(UITheme.TEXT_SECONDARY)));
-
-        // Features
-        if (meta.getFeatures() != null && !meta.getFeatures().isEmpty()) {
-            scrollableContent.child(Components.label(Text.literal("Features:").setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
+        // Description
+        if (meta.getDescription() != null && !meta.getDescription().isEmpty()) {
+            infoPanel.child(Components.label(Text.literal("Description:")
+                            .setStyle(Style.EMPTY.withBold(true)))
                     .color(UITheme.color(UITheme.ACCENT_GOLD)));
-            for (String feature : meta.getFeatures()) {
-                scrollableContent.child(Components.label(Text.literal("• " + feature))
-                        .color(UITheme.color(UITheme.TEXT_WHITE)));
-            }
-        }
 
-        // Requirements
-        if (meta.getRequirements() != null && !meta.getRequirements().isEmpty()) {
-            scrollableContent.child(Components.label(Text.literal("Requirements:").setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
-                    .color(UITheme.color(UITheme.ACCENT_GOLD)));
-            for (String req : meta.getRequirements()) {
-                scrollableContent.child(Components.label(Text.literal("• " + req))
-                        .color(UITheme.color(UITheme.TEXT_WHITE)));
-            }
+            infoPanel.child(Components.label(Text.literal(meta.getDescription()))
+                    .color(UITheme.color(UITheme.TEXT_WHITE))
+                    .sizing(Sizing.fill(95), Sizing.content()));
         }
 
         // Mods list
         if (meta.getMods() != null && !meta.getMods().isEmpty()) {
-            scrollableContent.child(Components.label(Text.literal("Mods:").setStyle(Style.EMPTY.withBold(Boolean.TRUE)))
+            infoPanel.child(Components.label(Text.literal("Included Mods:")
+                            .setStyle(Style.EMPTY.withBold(true)))
                     .color(UITheme.color(UITheme.ACCENT_GOLD)));
-            for (String mod : meta.getMods()) {
-                scrollableContent.child(Components.label(Text.literal("• " + mod))
+
+            var modsContainer = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+            modsContainer.gap(2);
+
+            int displayCount = Math.min(15, meta.getMods().size());
+            for (int i = 0; i < displayCount; i++) {
+                modsContainer.child(Components.label(Text.literal("• " + meta.getMods().get(i)))
                         .color(UITheme.color(UITheme.TEXT_WHITE)));
             }
+
+            if (meta.getMods().size() > displayCount) {
+                modsContainer.child(Components.label(
+                                Text.literal("... and " + (meta.getMods().size() - displayCount) + " more"))
+                        .color(UITheme.color(UITheme.TEXT_SECONDARY)));
+            }
+
+            var scrollableMods = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), modsContainer);
+            scrollableMods.scrollbar(ScrollContainer.Scrollbar.vanilla());
+            infoPanel.child(scrollableMods);
         }
 
-        ScrollContainer<FlowLayout> contentScrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), scrollableContent);
-        contentScrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        contentScrollContainer.scrollStep(15);
+        // Action buttons
+        var buttonPanel = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonPanel.gap(8);
+        buttonPanel.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        contentWrapper.child(contentScrollContainer);
-        infoPanel.child(contentWrapper);
+        buttonPanel.child(Components.button(Text.literal("Apply Config"),
+                        btn -> showConfirmationPopup())
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                .sizing(Sizing.fixed(100), Sizing.fixed(20)));
 
-        FlowLayout buttonPanel = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .horizontalAlignment(HorizontalAlignment.CENTER);
+        // Delete button for custom configs only
+        if (!selectedConfig.isOfficial()) {
+            buttonPanel.child(Components.button(Text.literal("Delete"),
+                            btn -> deleteConfig())
+                    .renderer(ButtonComponent.Renderer.texture(
+                            Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                    .sizing(Sizing.fixed(100), Sizing.fixed(20)));
+        }
 
-        ButtonComponent applyButton = (ButtonComponent) Components.button(Text.literal("Apply Config"), button -> showConfirmationPopup())
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
-                .horizontalSizing(Sizing.fixed(100))
-                .verticalSizing(Sizing.fixed(20));
-
-        buttonPanel.child(applyButton);
         infoPanel.child(buttonPanel);
+    }
+
+    private FlowLayout createInfoRow(String label, String value) {
+        var row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        row.gap(8);
+        row.child(Components.label(Text.literal(label))
+                .color(UITheme.color(UITheme.TEXT_SECONDARY))
+                .sizing(Sizing.fixed(80), Sizing.content()));
+        row.child(Components.label(Text.literal(value))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+        return row;
+    }
+
+    private String formatDate(String isoDate) {
+        try {
+            return isoDate.replace('T', ' ').substring(0, Math.min(isoDate.length(), 19));
+        } catch (Exception e) {
+            return isoDate;
+        }
     }
 
     private void showConfirmationPopup() {
         if (selectedConfig == null) return;
 
-        currentPopup = ConfigConfirmationPopup.createConfirmationPopup(
-                selectedConfig,
-                this::onConfigApply,
-                this::closeConfirmationPopup
-        );
+        var popup = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
+        popup.gap(8);
+        popup.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
+        popup.padding(Insets.of(16));
 
-        currentPopup.zIndex(10);
-        this.uiAdapter.rootComponent.child(currentPopup);
+        popup.child(Components.label(Text.literal("Apply Configuration?")
+                        .setStyle(Style.EMPTY.withBold(true)))
+                .color(UITheme.color(UITheme.ACCENT_GOLD)));
+
+        popup.child(Components.label(Text.literal(
+                        "This will restart the game and apply:\n" +
+                                selectedConfig.getDisplayName()))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        popup.child(Components.label(Text.literal(
+                        "⚠ Current configurations will be backed up automatically."))
+                .color(UITheme.color(UITheme.STATUS_WARNING_BORDER)));
+
+        var buttons = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttons.gap(8);
+        buttons.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        buttons.child(Components.button(Text.literal("Apply"), btn -> applyConfig())
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 60))
+                .sizing(Sizing.fixed(90), Sizing.fixed(20)));
+
+        buttons.child(Components.button(Text.literal("Cancel"), btn -> closePopup())
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 60))
+                .sizing(Sizing.fixed(90), Sizing.fixed(20)));
+
+        popup.child(buttons);
+
+        confirmationPopup = Containers.overlay(popup);
+        confirmationPopup.positioning(Positioning.relative(50, 40));
+        confirmationPopup.zIndex(10);
+
+        this.uiAdapter.rootComponent.child(confirmationPopup);
     }
 
-    private void closeConfirmationPopup() {
-        if (currentPopup != null) {
-            this.uiAdapter.rootComponent.removeChild(currentPopup);
-            currentPopup = null;
-        }
-    }
-
-    private void onConfigApply() {
+    private void applyConfig() {
         if (selectedConfig == null) return;
 
-        closeConfirmationPopup();
+        closePopup();
 
         try {
-            ConfigApplicationManager.applyConfigOnRestart(selectedConfig);
+            ConfigApplicationManager.scheduleConfigApplication(selectedConfig);
 
+            // Show notification
             if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.sendMessage(
-                        Text.literal("Applying config: " + selectedConfig.getDisplayName() + " - Game will restart..."),
-                        false
-                );
+                        Text.literal("Applying: " + selectedConfig.getDisplayName() + " - Restarting..."),
+                        false);
             }
-
         } catch (Exception e) {
             LOGGER.error("Failed to apply config", e);
-
-            if (MinecraftClient.getInstance().player != null) {
-                MinecraftClient.getInstance().player.sendMessage(
-                        Text.literal("Failed to apply config: " + e.getMessage()).styled(style ->
-                                style.withColor(net.minecraft.util.Formatting.RED)),
-                        false
-                );
-            }
         }
     }
 
-    private FlowLayout createInfoPanel() {
-        FlowLayout infoPanel = (FlowLayout) Containers.verticalFlow(Sizing.expand(65), Sizing.expand())
-                .gap(4)
-                .surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/menu/info_box.png"), 1142, 934))
-                .padding(Insets.of(14))
-                .horizontalAlignment(HorizontalAlignment.CENTER)
-                .verticalAlignment(VerticalAlignment.CENTER);
+    private void deleteConfig() {
+        if (selectedConfig == null || selectedConfig.isOfficial()) return;
 
-        LabelComponent emptyLabel = Components.label(Text.literal("Select a config to view details"))
-                .color(UITheme.color(UITheme.TEXT_SECONDARY));
+        if (ConfigFileUtils.deleteConfig(selectedConfig)) {
+            selectedConfig = null;
+            // Refresh screen
+            this.build(this.uiAdapter.rootComponent);
+        }
+    }
 
-        infoPanel.child(emptyLabel);
-
-        return infoPanel;
+    private void closePopup() {
+        if (confirmationPopup != null) {
+            this.uiAdapter.rootComponent.removeChild(confirmationPopup);
+            confirmationPopup = null;
+        }
     }
 }

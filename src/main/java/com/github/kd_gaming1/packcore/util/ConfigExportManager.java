@@ -15,12 +15,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
-
 public class ConfigExportManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    private static final Set<String> HIDDEN_FOLDERS = Set.of("packcore", "logs", "crash-reports", "screenshots", ".git", ".minecraft");
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigExportManager.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Set<String> HIDDEN_FOLDERS = Set.of(
+            "packcore", "logs", "crash-reports", "screenshots", ".git", ".minecraft", "saves", "assets", "mods"
+    );
+    private static final int MAX_TREE_DEPTH = 3;
+    private static final int MAX_CHILDREN_PER_NODE = 50;
 
     private final Path gameDir;
     private final Path exportDir;
@@ -37,8 +39,7 @@ public class ConfigExportManager {
     }
 
     /**
-     * Build a limited-depth file tree suitable for UI display.
-     * Depth is intentionally limited to avoid expensive recursion on big directories.
+     * Build a file tree for UI display with limited depth to prevent performance issues
      */
     public FileTreeNode buildFileTree() {
         FileTreeNode root = new FileTreeNode(gameDir, "Game Directory", true);
@@ -46,11 +47,14 @@ public class ConfigExportManager {
 
         try (Stream<Path> entries = Files.list(gameDir)) {
             entries.filter(Files::exists)
-                    .sorted(Comparator.comparing((Path p) -> !Files.isDirectory(p))
-                            .thenComparing(p -> p.getFileName().toString().toLowerCase()))
+                    .filter(path -> !isHidden(path))
+                    .sorted(comparePaths())
+                    .limit(MAX_CHILDREN_PER_NODE)
                     .forEach(path -> {
                         FileTreeNode node = createNode(path, 0);
-                        if (node != null) root.addChild(node);
+                        if (node != null && !node.isHidden()) {
+                            root.addChild(node);
+                        }
                     });
         } catch (IOException e) {
             LOGGER.error("Failed to build file tree", e);
@@ -65,20 +69,18 @@ public class ConfigExportManager {
 
         FileTreeNode node = new FileTreeNode(path, fileName, isDirectory);
 
-        // Hide certain folders by name
-        if (HIDDEN_FOLDERS.contains(fileName.toLowerCase())) {
+        if (isHidden(path)) {
             node.setHidden(true);
             return node;
         }
 
-        // Explore children up to a depth of 3 to keep UI snappy
-        if (isDirectory && depth < 3) {
+        // Only explore directories up to max depth
+        if (isDirectory && depth < MAX_TREE_DEPTH) {
             try (Stream<Path> children = Files.list(path)) {
                 children.filter(Files::exists)
-                        .filter(childPath -> !HIDDEN_FOLDERS.contains(childPath.getFileName().toString().toLowerCase()))
-                        .sorted(Comparator.comparing((Path p) -> !Files.isDirectory(p))
-                                .thenComparing(p -> p.getFileName().toString().toLowerCase()))
-                        .limit(50)
+                        .filter(child -> !isHidden(child))
+                        .sorted(comparePaths())
+                        .limit(MAX_CHILDREN_PER_NODE)
                         .forEach(childPath -> {
                             FileTreeNode childNode = createNode(childPath, depth + 1);
                             if (childNode != null && !childNode.isHidden()) {
@@ -93,157 +95,242 @@ public class ConfigExportManager {
         return node;
     }
 
-    public Set<Path> getPresetPaths(String presetType) {
-        Set<Path> paths = new HashSet<>();
-        if (presetType == null) return paths;
+    private boolean isHidden(Path path) {
+        String name = path.getFileName().toString().toLowerCase();
+        return HIDDEN_FOLDERS.contains(name) || name.startsWith(".");
+    }
 
-        switch (presetType.toLowerCase(Locale.ROOT)) {
-            case "mod_only":
-                addIfExists(paths, gameDir.resolve("config"));
-                addIfExists(paths, gameDir.resolve("mods"));
-                break;
-            case "mc_only":
-                addIfExists(paths, gameDir.resolve("options.txt"));
-                addIfExists(paths, gameDir.resolve("servers.dat"));
-                addIfExists(paths, gameDir.resolve("resourcepacks"));
-                addIfExists(paths, gameDir.resolve("shaderpacks"));
-                break;
-            case "both":
-                addIfExists(paths, gameDir.resolve("config"));
-                addIfExists(paths, gameDir.resolve("mods"));
-                addIfExists(paths, gameDir.resolve("options.txt"));
-                addIfExists(paths, gameDir.resolve("servers.dat"));
-                addIfExists(paths, gameDir.resolve("resourcepacks"));
-                addIfExists(paths, gameDir.resolve("shaderpacks"));
-                break;
-            case "clear":
-            default:
-                // empty
-                break;
+    private Comparator<Path> comparePaths() {
+        return Comparator.comparing((Path p) -> !Files.isDirectory(p))
+                .thenComparing(p -> p.getFileName().toString().toLowerCase());
+    }
+
+    /**
+     * Get preset paths for common configuration combinations
+     */
+    public Set<Path> getPresetPaths(PresetType presetType) {
+        Set<Path> paths = new HashSet<>();
+
+        switch (presetType) {
+            case MODS_ONLY -> {
+                addIfExists(paths, "config");
+                addIfExists(paths, "mods");
+            }
+            case MINECRAFT_ONLY -> {
+                addIfExists(paths, "options.txt");
+                addIfExists(paths, "servers.dat");
+                addIfExists(paths, "resourcepacks");
+                addIfExists(paths, "shaderpacks");
+            }
+            case ALL_CONFIGS -> {
+                addIfExists(paths, "config");
+                addIfExists(paths, "mods");
+                addIfExists(paths, "options.txt");
+                addIfExists(paths, "servers.dat");
+                addIfExists(paths, "resourcepacks");
+                addIfExists(paths, "shaderpacks");
+            }
+            case CLEAR -> paths.clear();
         }
 
         return paths;
     }
 
-    private void addIfExists(Set<Path> paths, Path path) {
-        if (Files.exists(path)) paths.add(path);
-    }
+    public enum PresetType {
+        MODS_ONLY("Mod Configs Only"),
+        MINECRAFT_ONLY("MC Configs Only"),
+        ALL_CONFIGS("Both Configs"),
+        CLEAR("Clear All");
 
-    public long calculateSelectionSize(Set<Path> selectedPaths) {
-        long totalSize = 0;
-        for (Path path : selectedPaths) {
-            try {
-                if (Files.isDirectory(path)) totalSize += calculateDirectorySize(path);
-                else if (Files.isRegularFile(path)) totalSize += Files.size(path);
-            } catch (IOException e) {
-                LOGGER.debug("Could not calculate size for: {}", path);
-            }
+        private final String displayName;
+
+        PresetType(String displayName) {
+            this.displayName = displayName;
         }
-        return totalSize;
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 
-    private long calculateDirectorySize(Path directory) {
-        try (Stream<Path> paths = Files.walk(directory)) {
-            return paths.filter(Files::isRegularFile)
-                    .mapToLong(p -> {
-                        try { return Files.size(p); }
-                        catch (IOException e) { return 0L; }
-                    })
-                    .sum();
-        } catch (IOException e) {
-            LOGGER.debug("Could not calculate directory size: {}", directory);
-            return 0L;
+    private void addIfExists(Set<Path> paths, String relativePath) {
+        Path path = gameDir.resolve(relativePath);
+        if (Files.exists(path)) {
+            paths.add(path);
         }
     }
 
     /**
-     * Export config to a zip. Accepts features, requirements and mods lists so those end up in metadata.
+     * Calculate total size of selected paths
      */
-    public Path exportConfig(Set<Path> selectedPaths, String name, String description,
-                             String version, String author, String resolution,
-                             List<String> features, List<String> requirements, List<String> mods) throws IOException {
+    public long calculateSelectionSize(Set<Path> selectedPaths) {
+        return selectedPaths.stream()
+                .mapToLong(this::getPathSize)
+                .sum();
+    }
+
+    private long getPathSize(Path path) {
+        try {
+            if (Files.isRegularFile(path)) {
+                return Files.size(path);
+            } else if (Files.isDirectory(path)) {
+                try (Stream<Path> paths = Files.walk(path)) {
+                    return paths.filter(Files::isRegularFile)
+                            .mapToLong(p -> {
+                                try {
+                                    return Files.size(p);
+                                } catch (IOException e) {
+                                    return 0L;
+                                }
+                            })
+                            .sum();
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.debug("Could not calculate size for: {}", path);
+        }
+        return 0L;
+    }
+
+    /**
+     * Scan mods folder and return list of mod names
+     */
+    public List<String> scanInstalledMods() {
+        List<String> mods = new ArrayList<>();
+        Path modsDir = gameDir.resolve("mods");
+
+        if (Files.exists(modsDir) && Files.isDirectory(modsDir)) {
+            try (Stream<Path> stream = Files.list(modsDir)) {
+                stream.filter(Files::isRegularFile)
+                        .filter(p -> {
+                            String name = p.getFileName().toString().toLowerCase();
+                            return name.endsWith(".jar") || name.endsWith(".zip");
+                        })
+                        .map(p -> p.getFileName().toString().replaceAll("\\.(jar|zip)$", ""))
+                        .sorted()
+                        .forEach(mods::add);
+            } catch (IOException e) {
+                LOGGER.error("Failed to scan mods folder", e);
+            }
+        }
+
+        return mods;
+    }
+
+    /**
+     * Export configuration to a zip file with metadata
+     */
+    public Path exportConfig(ExportRequest request) throws IOException {
+        validateExportRequest(request);
 
         Path tempDir = Files.createTempDirectory("packcore_export");
 
         try {
-            LOGGER.info("Starting export process for {} selected paths", selectedPaths.size());
+            LOGGER.info("Starting export for {} selected paths", request.selectedPaths.size());
 
-            for (Path selectedPath : selectedPaths) {
-                if (!Files.exists(selectedPath)) {
-                    LOGGER.warn("Selected path does not exist: {}", selectedPath);
-                    continue;
-                }
+            // Copy selected paths to temp directory
+            copySelectedPaths(request.selectedPaths, tempDir);
 
-                Path relativePath = gameDir.relativize(selectedPath);
-                Path targetPath = tempDir.resolve(relativePath);
+            // Create metadata
+            ConfigMetadata metadata = ConfigMetadata.builder()
+                    .name(request.name)
+                    .description(request.description)
+                    .version(request.version)
+                    .author(request.author)
+                    .targetResolution(request.targetResolution)
+                    .mods(request.includedMods)
+                    .source("Community")
+                    .createdNow()
+                    .build();
 
-                LOGGER.info("Copying {} to {}", selectedPath, targetPath);
-
-                if (Files.isDirectory(selectedPath)) {
-                    copyDirectoryRecursively(selectedPath, targetPath);
-                } else {
-                    Files.createDirectories(targetPath.getParent());
-                    Files.copy(selectedPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
-
-            ConfigMetadata metadata = new ConfigMetadata(
-                    name, description, version, author,
-                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                    resolution, features != null ? features : new ArrayList<>(),
-                    requirements != null ? requirements : new ArrayList<>(),
-                    mods != null ? mods : new ArrayList<>()
-            );
-            metadata.setSource("Community");
-
+            // Write metadata file
             Path metadataPath = tempDir.resolve(ConfigFileUtils.METADATA_FILE);
-            String metadataJson = GSON.toJson(metadata);
-            Files.writeString(metadataPath, metadataJson, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.writeString(metadataPath, GSON.toJson(metadata),
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-            LOGGER.info("Created metadata file: {}", metadataPath);
-
-            String sanitizedName = name.replaceAll("[^a-zA-Z0-9\\-_]", "_");
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-            String zipFileName = sanitizedName + "_" + timestamp + ".zip";
+            // Create zip file
+            String zipFileName = generateZipFileName(request.name);
             Path zipPath = exportDir.resolve(zipFileName);
 
             ZipFiles zipFiles = new ZipFiles();
-            zipFiles.zipDirectory(tempDir.toFile(), zipPath.toString(), (bytesProcessed, totalBytes, percentage) -> {
-                if (percentage % 25 == 0) LOGGER.info("Export progress: {}%", percentage);
-            });
+            zipFiles.zipDirectory(tempDir.toFile(), zipPath.toString(),
+                    (bytesProcessed, totalBytes, percentage) -> {
+                        if (percentage % 25 == 0) {
+                            LOGGER.info("Export progress: {}%", percentage);
+                        }
+                    });
 
             LOGGER.info("Config exported successfully to: {}", zipPath);
             return zipPath;
+
         } finally {
             deleteDirectory(tempDir);
         }
     }
 
-    private void copyDirectoryRecursively(Path source, Path target) throws IOException {
-        LOGGER.info("Copying directory recursively: {} -> {}", source, target);
+    private void validateExportRequest(ExportRequest request) {
+        if (request.selectedPaths == null || request.selectedPaths.isEmpty()) {
+            throw new IllegalArgumentException("No paths selected for export");
+        }
+        if (request.name == null || request.name.isBlank()) {
+            throw new IllegalArgumentException("Config name is required");
+        }
+    }
 
+    private void copySelectedPaths(Set<Path> selectedPaths, Path targetDir) throws IOException {
+        for (Path selectedPath : selectedPaths) {
+            if (!Files.exists(selectedPath)) {
+                LOGGER.warn("Selected path does not exist: {}", selectedPath);
+                continue;
+            }
+
+            Path relativePath = gameDir.relativize(selectedPath);
+            Path targetPath = targetDir.resolve(relativePath);
+
+            LOGGER.debug("Copying {} to {}", selectedPath, targetPath);
+
+            if (Files.isDirectory(selectedPath)) {
+                copyDirectoryRecursively(selectedPath, targetPath);
+            } else {
+                Files.createDirectories(targetPath.getParent());
+                Files.copy(selectedPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+    }
+
+    private void copyDirectoryRecursively(Path source, Path target) throws IOException {
         try (Stream<Path> paths = Files.walk(source)) {
             paths.forEach(sourcePath -> {
                 try {
                     Path targetPath = target.resolve(source.relativize(sourcePath));
-                    if (Files.isDirectory(sourcePath)) Files.createDirectories(targetPath);
-                    else {
+                    if (Files.isDirectory(sourcePath)) {
+                        Files.createDirectories(targetPath);
+                    } else {
                         Files.createDirectories(targetPath.getParent());
                         Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
                     }
                 } catch (IOException e) {
-                    LOGGER.error("Failed to copy: {} -> {}", sourcePath, target.resolve(source.relativize(sourcePath)), e);
+                    LOGGER.error("Failed to copy: {}", sourcePath, e);
                 }
             });
         }
+    }
+
+    private String generateZipFileName(String configName) {
+        String sanitized = configName.replaceAll("[^a-zA-Z0-9\\-_]", "_");
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        return sanitized + "_" + timestamp + ".zip";
     }
 
     private void deleteDirectory(Path directory) {
         try (Stream<Path> paths = Files.walk(directory)) {
             paths.sorted(Comparator.reverseOrder())
                     .forEach(path -> {
-                        try { Files.deleteIfExists(path); }
-                        catch (IOException e) { LOGGER.debug("Could not delete: {}", path); }
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException e) {
+                            LOGGER.debug("Could not delete: {}", path);
+                        }
                     });
         } catch (IOException e) {
             LOGGER.debug("Could not delete temp directory: {}", directory);
@@ -255,6 +342,31 @@ public class ConfigExportManager {
             java.awt.Desktop.getDesktop().open(exportDir.toFile());
         } catch (Exception e) {
             LOGGER.error("Failed to open export folder", e);
+        }
+    }
+
+    /**
+     * Export request data class for cleaner API
+     */
+    public static class ExportRequest {
+        public final Set<Path> selectedPaths;
+        public final String name;
+        public final String description;
+        public final String version;
+        public final String author;
+        public final String targetResolution;
+        public final List<String> includedMods;
+
+        public ExportRequest(Set<Path> selectedPaths, String name, String description,
+                             String version, String author, String targetResolution,
+                             List<String> includedMods) {
+            this.selectedPaths = selectedPaths;
+            this.name = name;
+            this.description = description;
+            this.version = version;
+            this.author = author;
+            this.targetResolution = targetResolution;
+            this.includedMods = includedMods != null ? includedMods : new ArrayList<>();
         }
     }
 }

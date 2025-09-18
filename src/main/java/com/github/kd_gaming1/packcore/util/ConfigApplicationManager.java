@@ -1,122 +1,131 @@
 package com.github.kd_gaming1.packcore.util;
 
 import com.github.kd_gaming1.packcore.wizard.copysystem.UnzipFiles;
+import com.google.gson.Gson;
 import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
-
+/**
+ * Simplified config application manager
+ * Handles applying configs on game restart
+ */
 public class ConfigApplicationManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    private static final String PENDING_CONFIG_FLAG = "packcore_pending_config.txt";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigApplicationManager.class);
+    private static final String PENDING_CONFIG_FILE = "packcore_pending_config.json";
+    private static final Gson GSON = new Gson();
 
     /**
-     * Marks a config for application on next startup and shuts down the game
+     * Schedule a config to be applied on next game start
      */
-    public static void applyConfigOnRestart(ConfigFileUtils.ConfigFile config) {
+    public static void scheduleConfigApplication(ConfigFileUtils.ConfigFile config) {
         try {
             Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
-            Path flagFile = gameDir.resolve(PENDING_CONFIG_FLAG);
+            Path pendingFile = gameDir.resolve(PENDING_CONFIG_FILE);
 
-            // Write the config path to the flag file
-            String configData = config.getPath().toString() + "\n" + config.getDisplayName();
-            Files.writeString(flagFile, configData, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            // Create pending config info
+            PendingConfig pending = new PendingConfig(
+                    config.getPath().toString(),
+                    config.getDisplayName(),
+                    config.getMetadata()
+            );
 
-            LOGGER.info("Marked config for application on restart: {}", config.getDisplayName());
+            // Write to file
+            String json = GSON.toJson(pending);
+            Files.writeString(pendingFile, json, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-            // Close the game
+            LOGGER.info("Scheduled config for application: {}", config.getDisplayName());
+
+            // Schedule game shutdown
             MinecraftClient.getInstance().scheduleStop();
 
         } catch (IOException e) {
-            LOGGER.error("Failed to mark config for application", e);
+            LOGGER.error("Failed to schedule config application", e);
             throw new RuntimeException("Failed to prepare config application", e);
         }
     }
 
     /**
-     * Checks if there's a pending config to apply and applies it
-     * Should be called during pre-launch
+     * Check and apply pending config during pre-launch
+     * @return true if a config was applied
      */
     public static boolean checkAndApplyPendingConfig(Path gameDir) {
-        Path flagFile = gameDir.resolve(PENDING_CONFIG_FLAG);
+        Path pendingFile = gameDir.resolve(PENDING_CONFIG_FILE);
 
-        if (!Files.exists(flagFile)) {
+        if (!Files.exists(pendingFile)) {
             return false;
         }
 
         try {
-            String content = Files.readString(flagFile);
-            String[] lines = content.split("\n");
-            if (lines.length < 2) {
-                LOGGER.warn("Invalid pending config flag file format");
-                Files.deleteIfExists(flagFile);
+            // Read pending config info
+            String json = Files.readString(pendingFile, StandardCharsets.UTF_8);
+            PendingConfig pending = GSON.fromJson(json, PendingConfig.class);
+
+            if (pending == null || pending.configPath == null) {
+                LOGGER.warn("Invalid pending config file");
+                Files.deleteIfExists(pendingFile);
                 return false;
             }
 
-            String configPath = lines[0];
-            String configName = lines[1];
+            LOGGER.info("Found pending config: {}", pending.configName);
 
-            LOGGER.info("Found pending config application: {}", configName);
+            // Create backup before applying
+            createBackup(gameDir);
 
             // Apply the config
-            boolean success = extractConfigToGameDir(Path.of(configPath), gameDir);
+            boolean success = applyConfig(Path.of(pending.configPath), gameDir);
 
             if (success) {
-                // Read metadata from the applied config and write it to the game's metadata file
-                try {
-                    ConfigMetadata appliedMetadata = ConfigFileUtils.readMetadataFromZip(Path.of(configPath), false);
-                    Path configInfoPath = gameDir.resolve(ConfigFileUtils.METADATA_FILE);
-                    String metadataJson = new com.google.gson.Gson().toJson(appliedMetadata);
-                    Files.writeString(configInfoPath, metadataJson, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                } catch (IOException e) {
-                    LOGGER.error("Failed to update current config metadata", e);
-                }
-
-                LOGGER.info("Successfully applied config: {}", configName);
+                // Save the metadata as current config
+                ConfigFileUtils.saveCurrentConfig(pending.metadata);
+                LOGGER.info("Successfully applied config: {}", pending.configName);
+            } else {
+                LOGGER.error("Failed to apply config: {}", pending.configName);
             }
 
-            // Remove the flag file
-            Files.deleteIfExists(flagFile);
+            // Clean up pending file
+            Files.deleteIfExists(pendingFile);
 
             return success;
 
-        } catch (IOException e) {
-            LOGGER.error("Failed to process pending config", e);
+        } catch (Exception e) {
+            LOGGER.error("Error processing pending config", e);
             try {
-                Files.deleteIfExists(flagFile);
+                Files.deleteIfExists(pendingFile);
             } catch (IOException ex) {
-                LOGGER.warn("Failed to clean up flag file", ex);
+                LOGGER.warn("Failed to clean up pending file", ex);
             }
             return false;
         }
     }
 
-    private static boolean extractConfigToGameDir(Path configZipPath, Path gameDir) {
+    private static boolean applyConfig(Path configZipPath, Path gameDir) {
         try {
             if (!Files.exists(configZipPath)) {
                 LOGGER.error("Config file not found: {}", configZipPath);
                 return false;
             }
 
-            // Create backup of current config if needed
-            createConfigBackup(gameDir);
-
-            // Extract the config
+            // Extract config zip to game directory
             UnzipFiles unzipper = new UnzipFiles();
-            unzipper.unzip(configZipPath.toString(), gameDir.toString(),
+            unzipper.unzip(
+                    configZipPath.toString(),
+                    gameDir.toString(),
                     (bytesProcessed, totalBytes, percentage) -> {
                         if (percentage % 25 == 0) {
-                            LOGGER.info("Config extraction progress: {}%", percentage);
+                            LOGGER.info("Extraction progress: {}%", percentage);
                         }
-                    });
+                    }
+            );
 
-            LOGGER.info("Config extraction completed successfully");
+            LOGGER.info("Config extraction completed");
             return true;
 
         } catch (IOException e) {
@@ -125,20 +134,79 @@ public class ConfigApplicationManager {
         }
     }
 
-    private static void createConfigBackup(Path gameDir) {
+    private static void createBackup(Path gameDir) {
         try {
-            Path backupDir = gameDir.resolve("packcore/config_backups");
+            Path backupDir = gameDir.resolve("packcore/backups");
             Files.createDirectories(backupDir);
 
-            String timestamp = java.time.LocalDateTime.now()
-                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-            Path backupPath = backupDir.resolve("backup_" + timestamp);
+            String timestamp = LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
 
-            // You could implement a backup system here if needed
-            LOGGER.info("Config backup location prepared: {}", backupPath);
+            Path backupPath = backupDir.resolve("config_backup_" + timestamp);
+            Files.createDirectories(backupPath);
+
+            // Backup key configuration files and folders
+            backupIfExists(gameDir.resolve("config"), backupPath.resolve("config"));
+            backupIfExists(gameDir.resolve("options.txt"), backupPath.resolve("options.txt"));
+            backupIfExists(gameDir.resolve("servers.dat"), backupPath.resolve("servers.dat"));
+
+            // Also backup current metadata if it exists
+            Path currentMetadata = gameDir.resolve(ConfigFileUtils.METADATA_FILE);
+            if (Files.exists(currentMetadata)) {
+                Files.copy(currentMetadata, backupPath.resolve(ConfigFileUtils.METADATA_FILE),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            LOGGER.info("Created backup at: {}", backupPath);
 
         } catch (IOException e) {
-            LOGGER.warn("Failed to prepare config backup", e);
+            LOGGER.warn("Failed to create full backup, continuing anyway", e);
+        }
+    }
+
+    private static void backupIfExists(Path source, Path target) {
+        try {
+            if (Files.exists(source)) {
+                if (Files.isDirectory(source)) {
+                    copyDirectoryRecursively(source, target);
+                } else {
+                    Files.createDirectories(target.getParent());
+                    Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.debug("Could not backup: {}", source);
+        }
+    }
+
+    private static void copyDirectoryRecursively(Path source, Path target) throws IOException {
+        Files.walk(source).forEach(sourcePath -> {
+            try {
+                Path targetPath = target.resolve(source.relativize(sourcePath));
+                if (Files.isDirectory(sourcePath)) {
+                    Files.createDirectories(targetPath);
+                } else {
+                    Files.createDirectories(targetPath.getParent());
+                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (IOException e) {
+                LOGGER.debug("Failed to copy: {}", sourcePath);
+            }
+        });
+    }
+
+    /**
+     * Simple data class for pending config info
+     */
+    private static class PendingConfig {
+        String configPath;
+        String configName;
+        ConfigMetadata metadata;
+
+        PendingConfig(String configPath, String configName, ConfigMetadata metadata) {
+            this.configPath = configPath;
+            this.configName = configName;
+            this.metadata = metadata;
         }
     }
 }
