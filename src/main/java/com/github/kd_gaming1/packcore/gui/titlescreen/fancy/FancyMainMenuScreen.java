@@ -4,6 +4,7 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.configscreen.ModpackConfigMenuScreen;
+import com.github.kd_gaming1.packcore.gui.help.guide.BaseGuidePage;
 import com.github.kd_gaming1.packcore.gui.titlescreen.toast.UpdateNotificationToast;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
@@ -375,7 +376,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent createHelpUpdateButton() {
         return (ButtonComponent) Components.button(
                         Text.literal("Guide/help").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))), button -> {
-
+                            this.client.setScreen(new BaseGuidePage());
                         }
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 140, 63))
