@@ -338,8 +338,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createGitHubButton() {
         return (ButtonComponent) Components.button(
-                        Text.empty(),
-                        button -> {
+                        Text.empty(), button -> {
                             Util.getOperatingSystem().open(info.getIssueTracker());
                         }
                 )
@@ -365,34 +364,34 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createSeeWhatIsNewButton() {
         return (ButtonComponent) Components.button(
-                        Text.literal("See What's New").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
+                        Text.empty(),
                         button -> toggleChangelog()
                 )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 160, 60))
-                .horizontalSizing(Sizing.fixed(160))
-                .verticalSizing(Sizing.fixed(20));
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/update_icon.png"), 0, 0, 22, 22))
+                .horizontalSizing(Sizing.fixed(22))
+                .verticalSizing(Sizing.fixed(22));
     }
 
     private ButtonComponent createHelpUpdateButton() {
         return (ButtonComponent) Components.button(
-                        Text.literal("Guide/help").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))), button -> {
+                        Text.empty(), button -> {
                             this.client.setScreen(new BaseGuidePage());
                         }
                 )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 140, 63))
-                .horizontalSizing(Sizing.fixed(140))
-                .verticalSizing(Sizing.fixed(21));
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/guide_icon.png"), 0, 0, 22, 22))
+                .horizontalSizing(Sizing.fixed(22))
+                .verticalSizing(Sizing.fixed(22));
     }
 
     private ButtonComponent createModpackButton() {
         return (ButtonComponent) Components.button(
-                        Text.literal("Modpack Configs").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))), button -> {
+                        Text.empty(), button -> {
                             this.client.setScreen(new ModpackConfigMenuScreen());
-                }
-        )
-        .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 140, 63))
-        .horizontalSizing(Sizing.fixed(140))
-        .verticalSizing(Sizing.fixed(21));
+                        }
+                )
+                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/settings_icon.png"), 0, 0, 22, 22))
+                .horizontalSizing(Sizing.fixed(22))
+                .verticalSizing(Sizing.fixed(22));
     }
 
 
