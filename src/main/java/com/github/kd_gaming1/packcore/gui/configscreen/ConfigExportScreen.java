@@ -2,7 +2,7 @@ package com.github.kd_gaming1.packcore.gui.configscreen;
 
 import com.github.kd_gaming1.packcore.gui.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.component.PlaceholderTextAreaComponent;
-import com.github.kd_gaming1.packcore.gui.configscreen.ui.UITheme;
+import com.github.kd_gaming1.packcore.gui.ui.UITheme;
 import com.github.kd_gaming1.packcore.gui.configscreen.util.FileTreeNode;
 import com.github.kd_gaming1.packcore.util.ConfigExportManager;
 import com.github.kd_gaming1.packcore.util.ConfigExportManager.ExportRequest;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 import static com.github.kd_gaming1.packcore.PackCore.getModpackInfo;
-import static com.github.kd_gaming1.packcore.gui.configscreen.ui.UITheme.*;
+import static com.github.kd_gaming1.packcore.gui.ui.UITheme.*;
 
 public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);

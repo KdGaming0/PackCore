@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.gui.configscreen.ui;
+package com.github.kd_gaming1.packcore.gui.ui;
 
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.core.Color;

@@ -28,7 +28,6 @@ import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class IntroductionScreenPageFour extends BaseWizardPage {
 
-
     private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
             new MarkdownProcessor<>(
                     OwoUICompiler::new,
