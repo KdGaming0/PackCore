@@ -2,8 +2,8 @@ package com.github.kd_gaming1.packcore.wizard;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.util.ConfigApplicationManager;
+import com.github.kd_gaming1.packcore.util.PackCoreFileManager;
 import com.github.kd_gaming1.packcore.wizard.ui.ModpackSetupWizard;
-import com.github.kd_gaming1.packcore.wizard.util.PageContentProviders;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
@@ -11,10 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -199,41 +196,7 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
 
     // Renamed from createDirectories to be more explicit about what it does
     private void createDirectoriesAndFiles(Path runDir) {
-        Path langDir = runDir.resolve("packcore/lang");
-        Path officialConfigDir = runDir.resolve("packcore/modpack_config/official_configs");
-        Path customConfigDir = runDir.resolve("packcore/modpack_config/custom_configs");
-
-        // Create lang files (from original)
-        try {
-            Files.createDirectories(langDir);
-            for (var entry : PageContentProviders.CONTENT_PROVIDERS.entrySet()) {
-                Path file = langDir.resolve(entry.getKey());
-                try {
-                    Files.writeString(
-                            file,
-                            entry.getValue().get(),
-                            StandardOpenOption.CREATE_NEW
-                    );
-                    LOGGER.info("Created file at {}", file.toAbsolutePath());
-                } catch (IOException e) {
-                    if (!Files.exists(file)) {
-                        LOGGER.error("Failed to create file: {}", file, e);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.error("Failed to create lang directory", e);
-        }
-
-        // Create config directories (from original)
-        try {
-            Files.createDirectories(officialConfigDir);
-            Files.createDirectories(customConfigDir);
-
-            LOGGER.info("Created modpack data directories");
-        } catch (IOException e) {
-            LOGGER.error("Failed to create modpack data directories", e);
-        }
+        PackCoreFileManager.initializeFileStructure();
     }
 
     // Static method to check if wizard is needed (can be called from other parts of your mod)

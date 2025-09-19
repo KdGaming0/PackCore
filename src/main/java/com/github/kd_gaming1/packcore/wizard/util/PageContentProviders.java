@@ -5,6 +5,9 @@ import java.util.function.Supplier;
 
 public class PageContentProviders {
 
+    // TODO Remove this class and load everything form PackCoreFileManager
+    // Find and update other classes that relay this class
+
     public static final Map<String, Supplier<String>> CONTENT_PROVIDERS = Map.of(
             "welcome_en_us.md", PageContentProviders::getWelcomeContent,
             "choose_config_en_us.md", PageContentProviders::getChooseConfig,
