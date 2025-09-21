@@ -165,7 +165,7 @@ public class ConfigImportScreen extends BaseOwoScreen<FlowLayout> {
                 .color(UITheme.color(UITheme.ACCENT_GOLD)));
 
         applyImmediatelyCheckbox = Components.checkbox(
-                Text.literal("Apply after restart"));
+                Text.literal("Apply Immediately"));
         applyImmediatelyCheckbox.checked(false);
         applyImmediatelyCheckbox.tooltip(Text.literal(
                 "If checked, the game will restart and apply this configuration"));

@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Simplified metadata model for exported configs.
- * Contains only essential information needed by importers.
+ * Represents metadata information for a configuration, such as name, description,
+ * version, author, creation date, target resolution, associated mods, and source.
+ * <p>
+ * Instances are intended to be immutable after creation.
  */
 public class ConfigMetadata {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
