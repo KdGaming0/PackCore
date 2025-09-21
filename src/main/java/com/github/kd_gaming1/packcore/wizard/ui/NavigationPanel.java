@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.wizard.ui;
 
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.wizard.ui.content.ConfigSelectionPage;
 import com.github.kd_gaming1.packcore.wizard.ui.theme.WizardTheme;
 import org.slf4j.Logger;
@@ -324,15 +325,15 @@ public class NavigationPanel extends JPanel implements ActionListener {
 
     private void markWizardCompleted() {
         try {
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardShown = true;
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.isFirstStartup = false;
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.showInstallWizard = false;
+            PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
+            PackCoreConfig.haveSetupWizardShown = true;
+            PackCoreConfig.isFirstStartup = false;
+            PackCoreConfig.showInstallWizard = false;
 
             String selectedConfig = ConfigSelectionPage.selectedResolution;
             if (selectedConfig != null) {
-                com.github.kd_gaming1.packcore.config.PackCoreConfig.appliedConfigName = selectedConfig;
-                com.github.kd_gaming1.packcore.config.PackCoreConfig.lastConfigApplied = selectedConfig;
+                PackCoreConfig.appliedConfigName = selectedConfig;
+                PackCoreConfig.lastConfigApplied = selectedConfig;
             }
 
             eu.midnightdust.lib.config.MidnightConfig.write("packcore");
@@ -360,13 +361,13 @@ public class NavigationPanel extends JPanel implements ActionListener {
     private void markWizardCancelled() {
         try {
             // Set config states to indicate cancellation
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.appliedConfigName = "No config applied - process cancelled";
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.lastConfigApplied = "No config applied - process cancelled";
+            PackCoreConfig.appliedConfigName = "No config applied - process cancelled";
+            PackCoreConfig.lastConfigApplied = "No config applied - process cancelled";
 
             // Mark wizard as completed so it doesn't show again
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.haveSetupWizardShown = true;
-            com.github.kd_gaming1.packcore.config.PackCoreConfig.showInstallWizard = false;
+            PackCoreConfig.haveSetupWizardCompletedSuccessfully = true;
+            PackCoreConfig.haveSetupWizardShown = true;
+            PackCoreConfig.showInstallWizard = false;
 
             // Save the config
             eu.midnightdust.lib.config.MidnightConfig.write("packcore");
