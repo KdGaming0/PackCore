@@ -288,8 +288,11 @@ public class ReviewAndApplyPage extends MainContentInfo {
 
         updateState(ExtractionState.PREPARING);
 
+        String configPath = selectedConfig.endsWith(".zip") ? selectedConfig : selectedConfig + ".zip";
         Path configZipPath = runDir.resolve("packcore/modpack_config/official_configs")
-                .resolve(selectedConfig + ".zip");
+                .resolve(configPath);
+
+        // TODO: Impl before release
         String destDir = System.getProperty("user.home") + "/Desktop/PackCoreTest";
 
         logArea.addHeaderLine("╔══════════════════════════════════════╗");

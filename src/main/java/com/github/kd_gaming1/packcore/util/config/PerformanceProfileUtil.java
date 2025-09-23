@@ -24,64 +24,41 @@ public class PerformanceProfileUtil {
      */
     public static ProfileResult applyPerformanceProfile(PerformanceProfile profile) {
         LOGGER.info("Applying performance profile: {}", profile.getDisplayName());
-
         ProfileResult result = new ProfileResult();
 
-        // Apply Sodium settings if available
-        if (isSodiumAvailable()) {
-            try {
-                boolean sodiumSuccess = SodiumIntegration.applyProfile(profile);
-                result.setSodiumApplied(sodiumSuccess);
-                if (sodiumSuccess) {
-                    LOGGER.info("Sodium profile applied successfully");
-                } else {
-                    LOGGER.warn("Failed to apply Sodium profile");
-                }
-            } catch (Throwable t) {
-                LOGGER.error("Error applying Sodium profile", t);
-                result.setSodiumApplied(false);
-            }
-        } else {
-            LOGGER.debug("Sodium not available, skipping Sodium profile");
-        }
-
-        // Apply vanilla Minecraft settings
-        try {
-            boolean vanillaSuccess = MinecraftIntegration.applyProfile(profile);
-            result.setVanillaApplied(vanillaSuccess);
-            if (vanillaSuccess) {
-                LOGGER.info("Vanilla Minecraft profile applied successfully");
-            } else {
-                LOGGER.warn("Failed to apply vanilla Minecraft profile");
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Error applying vanilla Minecraft profile", t);
-            result.setVanillaApplied(false);
-        }
-
-        // Apply Iris shader settings if available and profile requires shaders
-        if (isIrisAvailable()) {
-            try {
-                boolean irisSuccess = applyIrisSettings(profile);
-                result.setIrisApplied(irisSuccess);
-                if (irisSuccess) {
-                    LOGGER.info("Iris shader settings applied successfully");
-                } else {
-                    LOGGER.warn("Failed to apply Iris shader settings");
-                }
-            } catch (Throwable t) {
-                LOGGER.error("Error applying Iris shader settings", t);
-                result.setIrisApplied(false);
-            }
-        } else if (profile == PerformanceProfile.SHADERS) {
-            LOGGER.warn("Shaders profile selected but Iris is not available");
-            result.setIrisApplied(false);
-        }
+        result.setSodiumApplied(applySystemProfile(() -> SodiumIntegration.applyProfile(profile), "Sodium", isSodiumAvailable()));
+        result.setVanillaApplied(applySystemProfile(() -> MinecraftIntegration.applyProfile(profile), "Vanilla Minecraft", true));
+        result.setIrisApplied(applySystemProfile(() -> applyIrisSettings(profile), "Iris shader", isIrisAvailable() || profile == PerformanceProfile.SHADERS));
 
         return result;
     }
 
+    private static boolean applySystemProfile(SystemProfileApplier applier, String systemName, boolean shouldApply) {
+        if (!shouldApply) {
+            LOGGER.debug("{} not available, skipping profile", systemName);
+            return true;
+        }
+
+        try {
+            boolean success = applier.apply();
+            if (success) {
+                LOGGER.info("{} profile applied successfully", systemName);
+            } else {
+                LOGGER.warn("Failed to apply {} profile", systemName);
+            }
+            return success;
+        } catch (Throwable t) {
+            LOGGER.error("Error applying {} profile", systemName, t);
+            return false;
+        }
+    }
+
     private static boolean applyIrisSettings(PerformanceProfile profile) {
+        if (!isIrisAvailable() && profile == PerformanceProfile.SHADERS) {
+            LOGGER.warn("Shaders profile selected but Iris is not available");
+            return false;
+        }
+
         if (Objects.requireNonNull(profile) == PerformanceProfile.SHADERS) {
             return IrisIntegration.setShaderPack("ComplementaryUnbound");
         }
@@ -94,39 +71,11 @@ public class PerformanceProfileUtil {
      */
     public static ProfileResult restoreDefaults() {
         LOGGER.info("Restoring default settings");
-
         ProfileResult result = new ProfileResult();
 
-        // Restore Sodium defaults if available
-        if (isSodiumAvailable()) {
-            try {
-                boolean sodiumSuccess = SodiumIntegration.restoreDefaults();
-                result.setSodiumApplied(sodiumSuccess);
-            } catch (Throwable t) {
-                LOGGER.error("Error restoring Sodium defaults", t);
-                result.setSodiumApplied(false);
-            }
-        }
-
-        // Restore vanilla defaults
-        try {
-            boolean vanillaSuccess = MinecraftIntegration.restoreDefaults();
-            result.setVanillaApplied(vanillaSuccess);
-        } catch (Throwable t) {
-            LOGGER.error("Error restoring vanilla defaults", t);
-            result.setVanillaApplied(false);
-        }
-
-        // Restore Iris defaults if available
-        if (isIrisAvailable()) {
-            try {
-                boolean irisSuccess = IrisIntegration.disableShaders(); // Default to shaders off
-                result.setIrisApplied(irisSuccess);
-            } catch (Throwable t) {
-                LOGGER.error("Error restoring Iris defaults", t);
-                result.setIrisApplied(false);
-            }
-        }
+        result.setSodiumApplied(applySystemProfile(SodiumIntegration::restoreDefaults, "Sodium", isSodiumAvailable()));
+        result.setVanillaApplied(applySystemProfile(MinecraftIntegration::restoreDefaults, "Vanilla", true));
+        result.setIrisApplied(applySystemProfile(IrisIntegration::disableShaders, "Iris", isIrisAvailable()));
 
         return result;
     }
@@ -145,6 +94,11 @@ public class PerformanceProfileUtil {
 
     private static boolean isIrisAvailable() {
         return FabricLoader.getInstance().isModLoaded(IRIS_MOD_ID);
+    }
+
+    @FunctionalInterface
+    private interface SystemProfileApplier {
+        boolean apply() throws Exception;
     }
 
     public enum PerformanceProfile {
