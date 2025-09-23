@@ -84,6 +84,7 @@ public class PackCoreFileManager {
     /**
      * Create language files from existing system
      */
+    //TODO Remove the choose_config_en_us no longer in use/needed
     private static void createLanguageFiles() {
         Map<String, String> langFiles = Map.of(
                 "welcome_en_us.md", getWizardWelcomeContent(),
