@@ -6,7 +6,6 @@ import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +42,7 @@ public class IrisIntegration {
             irisConfig.setShadersEnabled(true);
             irisConfig.setShaderPackName(foundPack);
 
-            LOGGER.info("Setting shader pack to: {}", foundPack);
+            LOGGER.info("Setting shader pack in method setShaderPack to: {}", foundPack);
 
             // Save the configuration
             irisConfig.save();
@@ -76,37 +75,40 @@ public class IrisIntegration {
      */
     public static boolean disableShaders() {
         try {
-            // Get the Iris configuration instance
-            IrisConfig irisConfig = Iris.getIrisConfig();
-
-            // Disable shaders
-            irisConfig.setShadersEnabled(false);
-
-            LOGGER.info("Disabling Iris shaders");
-
-            // Save the configuration
-            irisConfig.save();
-            Thread.sleep(100); // Brief delay for file I/O
-
-            // Schedule reload on main thread
-            CompletableFuture<Boolean> reloadFuture = new CompletableFuture<>();
-            MinecraftClient.getInstance().execute(() -> {
-                try {
-                    LOGGER.info("Reloading Iris with shaders disabled");
-                    Iris.reload();
-                    reloadFuture.complete(true);
-                } catch (Exception e) {
-                    LOGGER.error("Failed to reload Iris", e);
-                    reloadFuture.complete(false);
-                }
-            });
-
-            return reloadFuture.get(30, TimeUnit.SECONDS);
-
+            return configureAndReload(null, false);
         } catch (Exception e) {
             LOGGER.error("Failed to disable shaders", e);
             return false;
         }
+    }
+
+    private static boolean configureAndReload(String shaderPack, boolean enabled) throws Exception {
+        IrisConfig irisConfig = Iris.getIrisConfig();
+        irisConfig.setShadersEnabled(enabled);
+
+        if (enabled && shaderPack != null) {
+            irisConfig.setShaderPackName(shaderPack);
+            LOGGER.info("Setting shader pack in method configureAndReload to: {}", shaderPack);
+        } else {
+            LOGGER.info("Disabling Iris shaders");
+        }
+
+        irisConfig.save();
+        Thread.sleep(enabled ? 200 : 100);
+
+        CompletableFuture<Boolean> reloadFuture = new CompletableFuture<>();
+        MinecraftClient.getInstance().execute(() -> {
+            try {
+                LOGGER.info("Reloading Iris with shaders {}", enabled ? "enabled" : "disabled");
+                Iris.reload();
+                reloadFuture.complete(true);
+            } catch (Exception e) {
+                LOGGER.error("Failed to reload Iris", e);
+                reloadFuture.complete(false);
+            }
+        });
+
+        return reloadFuture.get(30, TimeUnit.SECONDS);
     }
 
     /**

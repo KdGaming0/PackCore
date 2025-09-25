@@ -19,17 +19,8 @@ public class MinecraftIntegration {
 
     public static boolean applyProfile(PerformanceProfileUtil.PerformanceProfile profile) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null) {
-                LOGGER.warn("MinecraftClient is null, cannot apply profile");
-                return false;
-            }
-
-            GameOptions options = client.options;
-            if (options == null) {
-                LOGGER.warn("GameOptions is null, cannot apply profile");
-                return false;
-            }
+            GameOptions options = getValidatedOptions();
+            if (options == null) return false;
 
             switch (profile) {
                 case PERFORMANCE -> applyPerformanceSettings(options);
@@ -41,11 +32,9 @@ public class MinecraftIntegration {
                 }
             }
 
-            // Save the options to file
             options.write();
             LOGGER.debug("Minecraft profile '{}' applied successfully", profile.name());
             return true;
-
         } catch (Exception e) {
             LOGGER.error("Failed to apply Minecraft profile", e);
             return false;
@@ -54,13 +43,8 @@ public class MinecraftIntegration {
 
     public static boolean restoreDefaults() {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.options == null) {
-                LOGGER.warn("Cannot restore defaults - client or options is null");
-                return false;
-            }
-
-            GameOptions options = client.options;
+            GameOptions options = getValidatedOptions();
+            if (options == null) return false;
 
             // Reset to default values using getter methods
             options.getGraphicsMode().setValue(GraphicsMode.FANCY);
@@ -77,11 +61,26 @@ public class MinecraftIntegration {
             options.write();
             LOGGER.debug("Minecraft default settings restored");
             return true;
-
         } catch (Exception e) {
             LOGGER.error("Failed to restore Minecraft defaults", e);
             return false;
         }
+    }
+
+    private static GameOptions getValidatedOptions() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) {
+            LOGGER.warn("MinecraftClient is null, cannot apply profile");
+            return null;
+        }
+
+        GameOptions options = client.options;
+        if (options == null) {
+            LOGGER.warn("GameOptions is null, cannot apply profile");
+            return null;
+        }
+
+        return options;
     }
 
     private static void applyPerformanceSettings(GameOptions options) {
