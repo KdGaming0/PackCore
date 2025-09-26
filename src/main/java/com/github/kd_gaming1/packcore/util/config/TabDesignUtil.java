@@ -77,6 +77,7 @@ public class TabDesignUtil {
     }
 
     private static boolean enableSkyHanniTabList(boolean enable) {
+        //TODO find out how to do reflection so there is no delay in applying the config
         try {
             MinecraftClient client = MinecraftClient.getInstance();
 

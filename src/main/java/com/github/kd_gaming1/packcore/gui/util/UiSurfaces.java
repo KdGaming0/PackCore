@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.gui;
+package com.github.kd_gaming1.packcore.gui.util;
 
 import io.wispforest.owo.ui.core.Surface;
 import net.minecraft.client.render.RenderLayer;

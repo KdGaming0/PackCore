@@ -1,6 +1,6 @@
 package com.github.kd_gaming1.packcore.gui.configscreen;
 
-import com.github.kd_gaming1.packcore.gui.UiSurfaces;
+import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.ui.UITheme;
 import com.github.kd_gaming1.packcore.util.ConfigImportManager;
 import com.github.kd_gaming1.packcore.util.ImportCallback;

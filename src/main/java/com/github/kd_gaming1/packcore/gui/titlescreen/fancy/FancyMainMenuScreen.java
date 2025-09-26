@@ -2,7 +2,7 @@ package com.github.kd_gaming1.packcore.gui.titlescreen.fancy;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.gui.UiSurfaces;
+import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.configscreen.ModpackConfigMenuScreen;
 import com.github.kd_gaming1.packcore.gui.help.guide.BaseGuidePage;
 import com.github.kd_gaming1.packcore.gui.titlescreen.toast.UpdateNotificationToast;

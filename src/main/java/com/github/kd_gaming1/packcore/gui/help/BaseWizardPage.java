@@ -2,7 +2,7 @@ package com.github.kd_gaming1.packcore.gui.help;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.gui.UiSurfaces;
+import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseOwoScreen;

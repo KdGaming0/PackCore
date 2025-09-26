@@ -1,7 +1,7 @@
 package com.github.kd_gaming1.packcore.gui.help.introduction;
 
 import com.github.kd_gaming1.packcore.PackCore;
-import com.github.kd_gaming1.packcore.gui.UiSurfaces;
+import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
 import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
