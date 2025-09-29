@@ -398,7 +398,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
                             // Build the error message here to store it
                             StringBuilder failureMessage = new StringBuilder("❌ Configuration failed: ");
-                            if (result != null && !result.getFailedSteps().isEmpty()) {
+                            if (!result.getFailedSteps().isEmpty()) {
                                 failureMessage.append("\n");
                                 for (Map.Entry<String, String> failure : result.getFailedSteps().entrySet()) {
                                     failureMessage.append("• ").append(failure.getKey()).append(": ").append(failure.getValue()).append("\n");
@@ -452,12 +452,12 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         }
 
         if (!config.getResourcePacksOrdered().isEmpty()) {
-            if (configSummary.length() > 0) configSummary.append(", ");
+            if (!configSummary.isEmpty()) configSummary.append(", ");
             configSummary.append("Packs: ").append(String.join(", ", config.getResourcePacksOrdered()));
         }
 
         if (!config.getTabDesign().isEmpty()) {
-            if (configSummary.length() > 0) configSummary.append(", ");
+            if (!configSummary.isEmpty()) configSummary.append(", ");
             configSummary.append("Tab: ").append(config.getTabDesign());
         }
     }

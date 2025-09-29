@@ -62,7 +62,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
 
         // Title
         header.child(Components.label(
-                        Text.literal("Configuration Manager - " + getModpackInfo().getName())
+                        Text.literal("Configuration Manager")
                                 .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
                 .color(UITheme.color(UITheme.TEXT_WHITE)));
 
@@ -109,20 +109,20 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         sidebar.padding(Insets.of(12));
 
         // Info text
-        sidebar.child(Components.label(
-                        Text.literal("Manage your modpack configurations. Select a config to view details or apply it."))
-                .color(UITheme.color(UITheme.TEXT_WHITE))
-                .sizing(Sizing.fill(95), Sizing.content()));
+        int guiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
+        int padding = guiScale <= 2 ? 16 : 8;
 
-        // Official configs section
-        sidebar.child(createConfigSection("Official Configs",
-                ConfigFileUtils.getOfficialConfigs(), true));
+        var infoLabel = Components.label(Text.literal("Manage your modpack configurations. Select a config to view details or apply it.")).color(UITheme.color(UITheme.TEXT_WHITE)).sizing(Sizing.fill(95), Sizing.content());
 
-        // Custom configs section
-        sidebar.child(createConfigSection("Custom Configs",
-                ConfigFileUtils.getCustomConfigs(), false));
+        var infoContainer = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        infoContainer.padding(Insets.of(padding, 0, padding, 0));
+        infoContainer.child(infoLabel);
 
-        // Action buttons
+        sidebar.child(infoContainer);
+
+        sidebar.child(createConfigSection("Official Configs", ConfigFileUtils.getOfficialConfigs(), true));
+        sidebar.child(createConfigSection("Custom Configs", ConfigFileUtils.getCustomConfigs(), false));
+
         var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         buttonRow.gap(4);
         buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
@@ -179,8 +179,12 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         entry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
         entry.padding(Insets.of(6));
 
-        // Config name
-        entry.child(Components.label(Text.literal(config.getDisplayName()))
+        String version = "v" + config.getMetadata().getVersion();
+        String configName = config.getDisplayName().endsWith(version)
+                ? config.getDisplayName().replaceAll(version, "")
+                : config.getDisplayName();
+
+        entry.child(Components.label(Text.literal(configName))
                 .color(UITheme.color(UITheme.TEXT_WHITE)));
 
         // Metadata badges
@@ -191,7 +195,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
                 .color(UITheme.color(config.isOfficial() ?
                         UITheme.STATUS_SUCCESS_BORDER : UITheme.STATUS_WARNING_BORDER)));
 
-        badges.child(Components.label(Text.literal("v" + config.getMetadata().getVersion()))
+        badges.child(Components.label(Text.literal(version))
                 .color(UITheme.color(UITheme.TEXT_SECONDARY)));
 
         entry.child(badges);
@@ -252,9 +256,13 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         ConfigMetadata meta = selectedConfig.getMetadata();
 
         // Header
+        int guiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
+        int padding = guiScale <= 2 ? 6 : 0;
+
         infoPanel.child(Components.label(Text.literal(meta.getName())
                         .setStyle(Style.EMPTY.withBold(true)))
-                .color(UITheme.color(UITheme.ACCENT_GOLD)));
+                .color(UITheme.color(UITheme.ACCENT_GOLD))
+                .margins(Insets.of(padding, 0, 0, 0)));
 
         // Info box
         var infoBox = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
@@ -420,6 +428,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
 
         if (ConfigFileUtils.deleteConfig(selectedConfig)) {
             selectedConfig = null;
+
             // Refresh screen
             this.build(this.uiAdapter.rootComponent);
         }
