@@ -472,7 +472,6 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     protected void onResetPressed() {
         // Reset values and close the game
-        PackCoreConfig.haveConfigApplied = false;
         PackCoreConfig.defaultConfigSuccessfullyApplied = false;
         MinecraftClient.getInstance().scheduleStop();
     }

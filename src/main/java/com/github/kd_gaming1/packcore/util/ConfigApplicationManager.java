@@ -75,10 +75,10 @@ public class ConfigApplicationManager {
 
             LOGGER.info("Found pending config: {}", pending.configName);
 
-            // Create backup using shared utility
-            Path backup = ConfigFileOperations.createBackup(gameDir);
+            // Create backup using new backup manager
+            Path backup = BackupManager.createAutoBackup();
             if (backup != null) {
-                ConfigFileOperations.cleanOldBackups(gameDir, 5);
+                LOGGER.info("Created auto-backup before applying config: {}", backup);
             }
 
             // Apply the config

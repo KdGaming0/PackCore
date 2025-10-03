@@ -5,6 +5,7 @@ import com.github.kd_gaming1.packcore.gui.ui.UITheme;
 import com.github.kd_gaming1.packcore.util.ConfigApplicationManager;
 import com.github.kd_gaming1.packcore.util.ConfigFileUtils;
 import com.github.kd_gaming1.packcore.util.ConfigMetadata;
+import com.github.kd_gaming1.packcore.util.BackupManager;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
@@ -20,10 +21,11 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
-import static com.github.kd_gaming1.packcore.PackCore.getModpackInfo;
 
 /**
  * Main configuration menu screen - simplified version
@@ -34,6 +36,9 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
     private ConfigFileUtils.ConfigFile selectedConfig = null;
     private FlowLayout infoPanel;
     private OverlayContainer<FlowLayout> confirmationPopup = null;
+
+    // FIX: Store entry components to update their surfaces
+    private Map<ConfigFileUtils.ConfigFile, FlowLayout> entryComponents = new HashMap<>();
 
     @Override
     protected @NotNull OwoUIAdapter createAdapter() {
@@ -123,7 +128,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         sidebar.child(createConfigSection("Official Configs", ConfigFileUtils.getOfficialConfigs(), true));
         sidebar.child(createConfigSection("Custom Configs", ConfigFileUtils.getCustomConfigs(), false));
 
-        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        var buttonRow = Containers.ltrTextFlow(Sizing.fill(100), Sizing.content());
         buttonRow.gap(4);
         buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
 
@@ -131,13 +136,22 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
                         btn -> MinecraftClient.getInstance().setScreen(new ConfigImportScreen()))
                 .renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
-                .sizing(Sizing.fixed(90), Sizing.fixed(19)));
+                .sizing(Sizing.fixed(90), Sizing.fixed(19))
+                .margins(Insets.bottom(4)));
 
         buttonRow.child(Components.button(Text.literal("Export"),
                         btn -> MinecraftClient.getInstance().setScreen(new ConfigExportScreen()))
                 .renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
-                .sizing(Sizing.fixed(90), Sizing.fixed(19)));
+                .sizing(Sizing.fixed(90), Sizing.fixed(19))
+                .margins(Insets.bottom(4)));
+
+        buttonRow.child(Components.button(Text.literal("Backup"),
+                        btn -> MinecraftClient.getInstance().setScreen(new BackupManagementScreen()))
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
+                .sizing(Sizing.fixed(90), Sizing.fixed(19))
+                .margins(Insets.bottom(4)));
 
         sidebar.child(buttonRow);
 
@@ -200,6 +214,9 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
 
         entry.child(badges);
 
+        // FIX: Store the entry component
+        entryComponents.put(config, entry);
+
         // Selection handling
         entry.mouseDown().subscribe((mouseX, mouseY, button) -> {
             selectConfig(config);
@@ -242,7 +259,21 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void selectConfig(ConfigFileUtils.ConfigFile config) {
+        // FIX: Reset previous selection's surface
+        if (selectedConfig != null && entryComponents.containsKey(selectedConfig)) {
+            FlowLayout previousEntry = entryComponents.get(selectedConfig);
+            previousEntry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
+        }
+
+        // Set new selection
         selectedConfig = config;
+
+        // FIX: Update new selection's surface
+        if (entryComponents.containsKey(config)) {
+            FlowLayout currentEntry = entryComponents.get(config);
+            currentEntry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
+        }
+
         showConfigDetails();
     }
 

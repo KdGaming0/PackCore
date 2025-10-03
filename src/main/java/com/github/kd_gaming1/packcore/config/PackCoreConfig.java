@@ -9,10 +9,7 @@ public class PackCoreConfig extends MidnightConfig {
     public static final String UI = "ui";
     public static final String CUSTOMIZATION = "customization";
     public static final String ADVANCED = "advanced";
-
-    // DIALOG CATEGORY
-    @Entry(category = DIALOG, name = "packcore.midnightconfig.dialog_timeout", min = 1, max = 60)
-    public static int dialogTimeoutMinutes = 10;
+    public static final String BACKUP = "backup";
 
     // UI CATEGORY
     @Entry(category = UI, name = "packcore.midnightconfig.enable_custom_menu")
@@ -25,12 +22,20 @@ public class PackCoreConfig extends MidnightConfig {
     @Comment(category = UI)
     public static Comment spacer1;
 
+    // BACKUP CATEGORY
+    @Entry(category = BACKUP, name = "packcore.midnightconfig.enable_auto_backups")
+    public static boolean enableAutoBackups = true;
+
+    @Entry(category = BACKUP, name = "packcore.midnightconfig.max_backups", min = 1, max = 20)
+    public static int maxBackups = 5;
+
+    // Spacer
+    @Comment(category = BACKUP)
+    public static Comment backupSpacer;
+
     // CUSTOMIZATION CATEGORY
     @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.server_address")
     public static String serverAddressForQuickJoinButton = "mc.hypixel.net";
-
-    @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.override_vanilla_panorama")
-    public static boolean overrideVanillaPanorama = true;
 
     @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.enable_update_notifications")
     public static boolean enableUpdateNotifications = true;
@@ -46,10 +51,6 @@ public class PackCoreConfig extends MidnightConfig {
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.welcome_wizard_shown")
     public static boolean haveShownWelcomeWizard = false;
-
-    @Hidden
-    @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_shown")
-    public static boolean haveConfigApplied = false;
 
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_completed")
