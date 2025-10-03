@@ -2,7 +2,7 @@ package com.github.kd_gaming1.packcore.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import net.minecraft.client.MinecraftClient;
+import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +66,7 @@ public class ConfigFileUtils {
      * @return Current config metadata or default if none applied
      */
     public static ConfigMetadata getCurrentConfig() {
-        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path gameDir = FabricLoader.getInstance().getGameDir();
         Path metadataPath = gameDir.resolve(METADATA_FILE);
 
         if (!Files.exists(metadataPath)) {
@@ -98,7 +98,7 @@ public class ConfigFileUtils {
      * Save current config metadata to game directory
      */
     public static void saveCurrentConfig(ConfigMetadata metadata) throws IOException {
-        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path gameDir = FabricLoader.getInstance().getGameDir();
         Path metadataPath = gameDir.resolve(METADATA_FILE);
 
         String json = GSON.toJson(metadata);
@@ -175,7 +175,7 @@ public class ConfigFileUtils {
 
     private static List<ConfigFile> getConfigs(String relativePath, boolean official) {
         List<ConfigFile> configs = new ArrayList<>();
-        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path gameDir = FabricLoader.getInstance().getGameDir();
         Path configDir = gameDir.resolve(relativePath);
 
         // Create directory if it doesn't exist
@@ -227,7 +227,7 @@ public class ConfigFileUtils {
             fileName += ".zip";
         }
 
-        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path gameDir = FabricLoader.getInstance().getGameDir();
         Path officialPath = gameDir.resolve(OFFICIAL_CONFIGS_PATH).resolve(fileName);
         Path customPath = gameDir.resolve(CUSTOM_CONFIGS_PATH).resolve(fileName);
 

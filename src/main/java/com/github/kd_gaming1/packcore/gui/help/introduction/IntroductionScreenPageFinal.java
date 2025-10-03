@@ -26,6 +26,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     private LabelComponent statusLabel;
     private ButtonComponent applyButton;
     private FlowLayout progressContainer;
+    private FlowLayout warningBanner;
     private Map<String, LabelComponent> stepLabels = new LinkedHashMap<>();
 
     public IntroductionScreenPageFinal() {
@@ -51,6 +52,10 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         // Configuration summary
         contentContainer.child(createConfigurationSummary());
 
+        // Warning banner (initially hidden)
+        warningBanner = createWarningBanner();
+        contentContainer.child(warningBanner);
+
         // Progress section
         contentContainer.child(createProgressSection());
 
@@ -75,8 +80,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         if (dataManager.isConfigurationApplying()) {
             // Show progress section if currently applying
             progressContainer.positioning(Positioning.layout());
-            updateApplyButtonState(true, "Applying...");
-            updateStatusLabel("⏳ Applying configuration...", Formatting.YELLOW);
+            updateApplyButtonState(true, "Applying Settings...");
+            updateStatusLabel("⏳ Please wait while we apply your settings...", Formatting.YELLOW);
 
             // Disable continue while applying
             updatePrimaryButtonState(false);
@@ -102,12 +107,12 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                 .gap(4);
 
         LabelComponent title = (LabelComponent) Components.label(
-                Text.literal("Ready to Apply Configuration!")
+                Text.literal("✨ Ready to Apply Your Settings!")
                         .setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
         ).horizontalSizing(Sizing.fill(98)).margins(Insets.of(2));
 
         LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("Review your selections below and click 'Apply Configuration' to activate your chosen settings.")
+                Text.literal("Review your choices below. When you're ready, click 'Apply Settings' to activate everything.")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(98)).margins(Insets.of(2));
 
@@ -123,32 +128,32 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Configuration summary title
         summaryContainer.child(Components.label(
-                Text.literal("Your Configuration Summary:")
+                Text.literal("📋 What You've Selected:")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).color(Color.ofRgb(ACCENT_GOLD))).horizontalSizing(Sizing.fill(98));
 
         // Optimization Profile (Performance Settings)
         String optimizationProfile = dataManager.getOptimizationProfile();
-        summaryContainer.child(createSummaryItem("Performance Profile:",
-                optimizationProfile.isEmpty() ? "Default" : optimizationProfile));
+        summaryContainer.child(createSummaryItem("🚀 Performance Level:",
+                optimizationProfile.isEmpty() ? "Default (no changes)" : optimizationProfile));
 
         // Resource packs with proper ordering display
         List<String> resourcePacks = dataManager.getResourcePacksOrdered();
         if (!resourcePacks.isEmpty()) {
-            summaryContainer.child(createSummaryItem("Resource Packs (in load order):", ""));
+            summaryContainer.child(createSummaryItem("🎨 Resource Packs (loading order):", ""));
             for (int i = 0; i < resourcePacks.size(); i++) {
                 summaryContainer.child(Components.label(
                         Text.literal("  " + (i + 1) + ". " + resourcePacks.get(i))
                 ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.left(16)));
             }
         } else {
-            summaryContainer.child(createSummaryItem("Resource Packs:", "None selected"));
+            summaryContainer.child(createSummaryItem("🎨 Resource Packs:", "None selected"));
         }
 
         // Tab design
         String tabDesign = dataManager.getTabDesign();
-        summaryContainer.child(createSummaryItem("Tab Design:",
-                tabDesign.isEmpty() ? "Default" : tabDesign));
+        summaryContainer.child(createSummaryItem("🖼️ Tab Menu Style:",
+                tabDesign.isEmpty() ? "Default (no changes)" : tabDesign));
 
         return summaryContainer;
     }
@@ -170,6 +175,45 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         return item;
     }
 
+    private FlowLayout createWarningBanner() {
+        FlowLayout banner = (FlowLayout) Containers.verticalFlow(Sizing.fill(98), Sizing.content())
+                .gap(4)
+                .surface(Surface.flat(0x30_FF8C00).and(Surface.outline(0xFF_FFA500)))
+                .padding(Insets.of(8))
+                .margins(Insets.vertical(4));
+
+        // Initially hidden - will be shown when warnings occur
+        banner.positioning(Positioning.absolute(0, -1000));
+
+        return banner;
+    }
+
+    private void showWarningBanner(String title, String message) {
+        MinecraftClient.getInstance().execute(() -> {
+            warningBanner.clearChildren();
+
+            // Warning title
+            warningBanner.child(Components.label(
+                    Text.literal("⚠️ " + title)
+                            .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+            ).color(Color.ofRgb(0xFFA500)));
+
+            // Warning message
+            warningBanner.child(Components.label(
+                    Text.literal(message)
+            ).color(Color.ofRgb(TEXT_WHITE)).horizontalSizing(Sizing.fill(95)));
+
+            // Show the banner
+            warningBanner.positioning(Positioning.layout());
+        });
+    }
+
+    private void hideWarningBanner() {
+        MinecraftClient.getInstance().execute(() -> {
+            warningBanner.positioning(Positioning.absolute(0, -1000));
+        });
+    }
+
     private FlowLayout createProgressSection() {
         progressContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(98), Sizing.content())
                 .gap(3)
@@ -178,7 +222,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Progress title
         progressContainer.child(Components.label(
-                Text.literal("Configuration Progress:")
+                Text.literal("⚙️ Applying Your Settings:")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).color(Color.ofRgb(ACCENT_GOLD)));
 
@@ -199,7 +243,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         // Add steps based on selected configurations
         String optimizationProfile = dataManager.getOptimizationProfile();
         if (!optimizationProfile.isEmpty()) {
-            LabelComponent stepLabel = createProgressStepLabel("Performance Profile", "pending");
+            LabelComponent stepLabel = createProgressStepLabel("Performance Settings", "pending");
             stepLabels.put("performance", stepLabel);
             progressContainer.child(stepLabel);
         }
@@ -213,14 +257,14 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         String tabDesign = dataManager.getTabDesign();
         if (!tabDesign.isEmpty()) {
-            LabelComponent stepLabel = createProgressStepLabel("Tab Design", "pending");
+            LabelComponent stepLabel = createProgressStepLabel("Tab Menu Style", "pending");
             stepLabels.put("tabdesign", stepLabel);
             progressContainer.child(stepLabel);
         }
 
         Set<String> additionalSettings = dataManager.getAdditionalSettings();
         if (!additionalSettings.isEmpty()) {
-            LabelComponent stepLabel = createProgressStepLabel("Additional Settings", "pending");
+            LabelComponent stepLabel = createProgressStepLabel("Extra Settings", "pending");
             stepLabels.put("additional", stepLabel);
             progressContainer.child(stepLabel);
         }
@@ -231,7 +275,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
             case "success" -> "✅";
             case "error" -> "❌";
             case "running" -> "⏳";
-            default -> "⏸";
+            default -> "⏸️";
         };
 
         Formatting color = switch (status) {
@@ -252,10 +296,10 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
             LabelComponent stepLabel = stepLabels.get(stepKey);
             if (stepLabel != null) {
                 String stepName = switch (stepKey) {
-                    case "performance" -> "Performance Profile";
+                    case "performance" -> "Performance Settings";
                     case "resourcepacks" -> "Resource Packs";
-                    case "tabdesign" -> "Tab Design";
-                    case "additional" -> "Additional Settings";
+                    case "tabdesign" -> "Tab Menu Style";
+                    case "additional" -> "Extra Settings";
                     default -> "Unknown Step";
                 };
 
@@ -263,7 +307,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                     case "success" -> "✅";
                     case "error" -> "❌";
                     case "running" -> "⏳";
-                    default -> "⏸";
+                    default -> "⏸️";
                 };
 
                 Formatting color = switch (status) {
@@ -289,7 +333,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                 .margins(Insets.vertical(8));
 
         // Status label - initial text will be updated based on stored state
-        statusLabel = (LabelComponent) Components.label(Text.literal("Click 'Apply Configuration' to begin...")
+        statusLabel = (LabelComponent) Components.label(Text.literal("👉 Ready to begin! Click 'Apply Settings' when you're ready.")
                         .setStyle(Style.EMPTY.withItalic(Boolean.TRUE)))
                 .color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(98)).margins(Insets.of(2));
 
@@ -307,7 +351,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Apply configuration button
         applyButton = (ButtonComponent) Components.button(
-                        Text.literal("Apply Configuration"),
+                        Text.literal("Apply Settings"),
                         this::onApplyPressed
                 ).renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 130, 66))
@@ -327,34 +371,26 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                 .margins(Insets.of(5, 0, 0, 0));
 
         helpContainer.child(Components.label(
-                Text.literal("What happens next?")
+                Text.literal("ℹ️ What Happens Next?")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).color(Color.ofRgb(ACCENT_GOLD)));
 
         helpContainer.child(Components.label(
-                Text.literal("1. Performance settings applied")
-        ).color(Color.ofRgb(TEXT_WHITE)));
+                Text.literal("1. Performance settings will be adjusted")
+        ).color(Color.ofRgb(TEXT_WHITE)).horizontalSizing(Sizing.fill(95)));
 
         helpContainer.child(Components.label(
-                Text.literal("2. Resource packs activated")
-        ).color(Color.ofRgb(TEXT_WHITE)));
+                Text.literal("2. Resource packs will be enabled in order")
+        ).color(Color.ofRgb(TEXT_WHITE)).horizontalSizing(Sizing.fill(95)));
 
         helpContainer.child(Components.label(
-                Text.literal("3. Tab design configured")
-        ).color(Color.ofRgb(TEXT_WHITE)));
+                Text.literal("3. Tab menu style will be configured")
+        ).color(Color.ofRgb(TEXT_WHITE)).horizontalSizing(Sizing.fill(95)));
 
         helpContainer.child(Components.label(
-                Text.literal("4. Additional settings applied")
-        ).color(Color.ofRgb(TEXT_WHITE)));
-
-        helpContainer.child(Components.label(
-                Text.literal("5. Settings saved automatically")
-        ).color(Color.ofRgb(TEXT_WHITE)));
-
-        helpContainer.child(Components.label(
-                Text.literal("Note: Each step will show progress indicators. If something fails, you'll see exactly which step had issues!")
+                Text.literal("💡 Tip: Each step shows a progress indicator. If something fails, you'll see exactly what went wrong!")
                         .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
-        ).color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(100)).margins(Insets.of(6, 2, 2 ,2)));
+        ).color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(95)).margins(Insets.of(6, 2, 2 ,2)));
 
         return helpContainer;
     }
@@ -368,6 +404,9 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         PackCore.LOGGER.info("Starting configuration application process");
 
+        // Hide any previous warnings
+        hideWarningBanner();
+
         // Update persistent state
         dataManager.setConfigurationApplying(true);
         dataManager.setConfigurationApplied(false);
@@ -378,7 +417,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Update UI immediately on main thread
         updateApplyButtonState(true, "Applying...");
-        updateStatusLabel("⏳ Applying configuration...", Formatting.YELLOW);
+        updateStatusLabel("⏳ Please wait while we apply your settings. This may take a moment...", Formatting.YELLOW);
 
         // Apply configurations asynchronously with detailed progress
         ConfigurationApplicationService.applyAllConfigurationsWithProgress(this::updateProgressStep)
@@ -397,17 +436,17 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                             dataManager.setConfigurationApplied(false);
 
                             // Build the error message here to store it
-                            StringBuilder failureMessage = new StringBuilder("❌ Configuration failed: ");
+                            StringBuilder failureMessage = new StringBuilder();
                             if (!result.getFailedSteps().isEmpty()) {
-                                failureMessage.append("\n");
                                 for (Map.Entry<String, String> failure : result.getFailedSteps().entrySet()) {
-                                    failureMessage.append("• ").append(failure.getKey()).append(": ").append(failure.getValue()).append("\n");
+                                    failureMessage.append("❌ ").append(failure.getKey()).append(":\n   ")
+                                            .append(failure.getValue()).append("\n\n");
                                 }
-                                failureMessage.append("Check logs for detailed error information.");
                             } else if (throwable != null) {
-                                failureMessage.append(throwable.getMessage() != null ? throwable.getMessage() : "Unknown error occurred");
+                                String errorMsg = throwable.getMessage() != null ? throwable.getMessage() : "An unexpected error occurred";
+                                failureMessage.append(errorMsg);
                             } else {
-                                failureMessage.append("Unknown error occurred");
+                                failureMessage.append("An unexpected error occurred.");
                             }
 
                             dataManager.setConfigurationResult("failed", failureMessage.toString());
@@ -426,7 +465,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
     private void updateStatusLabel(String message, Formatting color) {
         if (statusLabel != null) {
-            statusLabel.text(Text.literal(message).setStyle(Style.EMPTY.withColor(color)));
+            statusLabel.text(Text.literal(message).setStyle(Style.EMPTY.withColor(color))).horizontalSizing(Sizing.fill(100));
         }
     }
 
@@ -434,8 +473,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         PackCore.LOGGER.info("Wizard configuration applied successfully!");
 
         // Update UI to success state
-        updateApplyButtonState(false, "✓ Applied Successfully");
-        updateStatusLabel("✅ Configuration applied successfully! Your settings are now active.", Formatting.GREEN);
+        updateApplyButtonState(false, "✅ All Done!");
+        updateStatusLabel("✅ Success! All your settings have been applied. Click 'Continue' to start playing!", Formatting.GREEN);
 
         // Enable continue now that configuration is applied
         updatePrimaryButtonState(true);
@@ -466,24 +505,44 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         PackCore.LOGGER.error("Failed to apply wizard configuration", throwable);
 
         // Build detailed failure message
-        StringBuilder failureMessage = new StringBuilder("❌ Configuration failed: ");
+        StringBuilder failureMessage = new StringBuilder();
+        boolean hasResourcePackFailure = false;
+        List<String> selectedPacks = dataManager.getResourcePacksOrdered();
+        boolean hasHypixelPlus = selectedPacks.stream()
+                .anyMatch(pack -> pack.equalsIgnoreCase("HypixelPlus"));
 
         if (result != null && !result.getFailedSteps().isEmpty()) {
-            failureMessage.append("\n");
             for (Map.Entry<String, String> failure : result.getFailedSteps().entrySet()) {
-                failureMessage.append("• ").append(failure.getKey()).append(": ").append(failure.getValue()).append("\n");
+                failureMessage.append("❌ ").append(failure.getKey()).append(":\n   ")
+                        .append(failure.getValue()).append("\n\n");
+
+                // Check if resource packs failed
+                if (failure.getKey().contains("Resource Pack")) {
+                    hasResourcePackFailure = true;
+                }
             }
-            failureMessage.append("Check logs for detailed error information.");
         } else if (throwable != null) {
-            failureMessage.append(throwable.getMessage() != null ? throwable.getMessage() : "Unknown error occurred");
+            String errorMsg = throwable.getMessage() != null ? throwable.getMessage() : "An unexpected error occurred";
+            failureMessage.append(errorMsg).append("\n\n");
         } else {
-            failureMessage.append("Unknown error occurred");
+            failureMessage.append("An unexpected error occurred.\n\n");
+        }
+
+        // Show warning banner if resource packs failed and HypixelPlus was selected
+        if (hasResourcePackFailure && hasHypixelPlus) {
+            showWarningBanner(
+                    "HypixelPlus Requires Special Setup",
+                    "HypixelPlus needs the JVM argument -Xss4M to work properly. " +
+                            "If the resource packs failed to apply, this is likely the cause. " +
+                            "Please add -Xss4M to your launcher's JVM arguments and restart the game."
+            );
         }
 
         // Update UI to error state - allow retry
-        updateApplyButtonState(false, "Retry Configuration");
-        updateStatusLabel(failureMessage.toString(), Formatting.RED);
+        updateApplyButtonState(false, "🔄 Retry Settings");
+        updateStatusLabel("⚠️ Some settings couldn't be applied. See details above. Click 'Retry Settings' or 'Skip' to continue.", Formatting.RED);
 
+        // Allow skipping on failure
         updatePrimaryButtonState(true);
 
         // Reset the application state to allow retry
@@ -496,14 +555,27 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     protected void onContinuePressed() {
         // Prevent continuing while configuration is being applied or has not been applied yet
         if (dataManager.isConfigurationApplying()) {
-            updateStatusLabel("⏳ Configuration is still applying. Please wait...", Formatting.YELLOW);
+            updateStatusLabel("⏳ Please wait - we're still applying your settings...", Formatting.YELLOW);
             return;
         }
 
         if (!dataManager.isConfigurationApplied()) {
-            updateStatusLabel("⚠️ Please apply configuration before continuing.", Formatting.RED);
+            updateStatusLabel("⚠️ Please apply your settings first, or click 'Skip' to configure them later. If some configurations failed, you can click 'Skip' — the ones that succeeded will be saved.", Formatting.GOLD);
             return;
         }
+
+        this.client.setScreen(new FancyMainMenuScreen());
+    }
+
+    @Override
+    protected void onSkipPressed() {
+        // Prevent continuing while configuration is being applied
+        if (dataManager.isConfigurationApplying()) {
+            updateStatusLabel("⏳ Please wait - we're still applying your settings. You can skip once it finishes.", Formatting.YELLOW);
+            return;
+        }
+
+        PackCoreConfig.haveShownWelcomeWizard = true;
 
         this.client.setScreen(new FancyMainMenuScreen());
     }
@@ -531,5 +603,10 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     @Override
     protected int getContentColumnWidthRightPercent() {
         return 38;
+    }
+
+    @Override
+    protected boolean isSkippable() {
+        return true;
     }
 }

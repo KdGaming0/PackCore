@@ -14,7 +14,7 @@
   "environment": "client",
   "entrypoints": {
     "preLaunch": [
-      "com.github.kd_gaming1.packcore.wizard.PreLaunchWizardInitializer"
+      "com.github.kd_gaming1.packcore.prelaunch.PreLaunchWizardInitializer"
     ],
     "main": [
       "com.github.kd_gaming1.packcore.PackCore"

@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.wizard.copysystem;
+package com.github.kd_gaming1.packcore.util.copysystem;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

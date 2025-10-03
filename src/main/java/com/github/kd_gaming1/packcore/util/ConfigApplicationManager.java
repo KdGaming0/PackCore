@@ -1,7 +1,8 @@
 package com.github.kd_gaming1.packcore.util;
 
-import com.github.kd_gaming1.packcore.wizard.copysystem.UnzipFiles;
+import com.github.kd_gaming1.packcore.util.copysystem.UnzipFiles;
 import com.google.gson.Gson;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,12 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
- * Simplified config application manager
- * Handles applying configs on game restart
+ * Manages config application on game restart.
+ * Handles the pending config system for in-game config switching.
  */
 public class ConfigApplicationManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigApplicationManager.class);
@@ -26,7 +25,7 @@ public class ConfigApplicationManager {
      */
     public static void scheduleConfigApplication(ConfigFileUtils.ConfigFile config) {
         try {
-            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+            Path gameDir = FabricLoader.getInstance().getGameDir();
             Path pendingFile = gameDir.resolve(PENDING_CONFIG_FILE);
 
             // Create pending config info
@@ -76,8 +75,11 @@ public class ConfigApplicationManager {
 
             LOGGER.info("Found pending config: {}", pending.configName);
 
-            // Create backup before applying
-            createBackup(gameDir);
+            // Create backup using shared utility
+            Path backup = ConfigFileOperations.createBackup(gameDir);
+            if (backup != null) {
+                ConfigFileOperations.cleanOldBackups(gameDir, 5);
+            }
 
             // Apply the config
             boolean success = applyConfig(Path.of(pending.configPath), gameDir);
@@ -106,6 +108,9 @@ public class ConfigApplicationManager {
         }
     }
 
+    /**
+     * Apply a config by extracting its ZIP file
+     */
     private static boolean applyConfig(Path configZipPath, Path gameDir) {
         try {
             if (!Files.exists(configZipPath)) {
@@ -134,69 +139,8 @@ public class ConfigApplicationManager {
         }
     }
 
-    private static void createBackup(Path gameDir) {
-        try {
-            Path backupDir = gameDir.resolve("packcore/backups");
-            Files.createDirectories(backupDir);
-
-            String timestamp = LocalDateTime.now()
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-
-            Path backupPath = backupDir.resolve("config_backup_" + timestamp);
-            Files.createDirectories(backupPath);
-
-            // Backup key configuration files and folders
-            backupIfExists(gameDir.resolve("config"), backupPath.resolve("config"));
-            backupIfExists(gameDir.resolve("options.txt"), backupPath.resolve("options.txt"));
-            backupIfExists(gameDir.resolve("servers.dat"), backupPath.resolve("servers.dat"));
-
-            // Also backup current metadata if it exists
-            Path currentMetadata = gameDir.resolve(ConfigFileUtils.METADATA_FILE);
-            if (Files.exists(currentMetadata)) {
-                Files.copy(currentMetadata, backupPath.resolve(ConfigFileUtils.METADATA_FILE),
-                        StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            LOGGER.info("Created backup at: {}", backupPath);
-
-        } catch (IOException e) {
-            LOGGER.warn("Failed to create full backup, continuing anyway", e);
-        }
-    }
-
-    private static void backupIfExists(Path source, Path target) {
-        try {
-            if (Files.exists(source)) {
-                if (Files.isDirectory(source)) {
-                    copyDirectoryRecursively(source, target);
-                } else {
-                    Files.createDirectories(target.getParent());
-                    Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.debug("Could not backup: {}", source);
-        }
-    }
-
-    private static void copyDirectoryRecursively(Path source, Path target) throws IOException {
-        Files.walk(source).forEach(sourcePath -> {
-            try {
-                Path targetPath = target.resolve(source.relativize(sourcePath));
-                if (Files.isDirectory(sourcePath)) {
-                    Files.createDirectories(targetPath);
-                } else {
-                    Files.createDirectories(targetPath.getParent());
-                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } catch (IOException e) {
-                LOGGER.debug("Failed to copy: {}", sourcePath);
-            }
-        });
-    }
-
     /**
-     * Simple data class for pending config info
+     * Data class for pending config info
      */
     private static class PendingConfig {
         String configPath;

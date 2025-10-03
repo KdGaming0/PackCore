@@ -61,7 +61,7 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
     @Override
     protected void buildContent(FlowLayout contentContainer) {
         contentContainer.surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/frame.png"), 1920, 1080));
-        contentContainer.padding(Insets.of(24, 26, 18, 18));
+        contentContainer.padding(Insets.of(24, 36, 24, 24));
 
         // Welcome header
         contentContainer.child(createWelcomeHeader());
@@ -78,7 +78,7 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
     private FlowLayout createWelcomeHeader() {
         FlowLayout header = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(6)
-                .margins(Insets.of(6, 0, 12, 12));
+                .margins(Insets.of(0, 0, 36, 36));
 
         // Create welcome text
         Text welcomeText = TextOps.concat(
@@ -125,7 +125,7 @@ public class IntroductionScreenPageFour extends BaseWizardPage {
         scrollContainer.scrollbarThiccness(6);
         scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
         scrollContainer.padding(Insets.of(8));
-        scrollContainer.margins(Insets.bottom(4));
+        scrollContainer.margins(Insets.bottom(10));
 
         return scrollContainer;
     }

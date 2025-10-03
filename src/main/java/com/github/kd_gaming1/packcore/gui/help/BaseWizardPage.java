@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.gui.help;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
+import com.github.kd_gaming1.packcore.util.ConfigFileUtils;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
@@ -41,8 +42,6 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     protected static final int STATUS_SUCCESS_BORDER = 0xFF_52C41A;
     protected static final int STATUS_WARNING_BG = 0xC0_5C3317;
     protected static final int STATUS_WARNING_BORDER = 0xFF_FAAD14;
-    protected static final int STATUS_ERROR_BG = 0xC0_5C1717;
-    protected static final int STATUS_ERROR_BORDER = 0xFF_FF4D4F;
 
     // Layout constants
     protected static final int HEADER_HEIGHT = 35;
@@ -116,7 +115,6 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     private FlowLayout createMainLayout() {
         return (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100))
-                .gap(0)
                 .padding(Insets.of(CONTENT_PADDING));
     }
 
@@ -170,7 +168,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         FlowLayout statusPanel = (FlowLayout) Containers.verticalFlow(Sizing.fill(38), Sizing.content())
                 .gap(8)
                 .surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/small_info_box.png"), 722, 338))
-                .padding(Insets.of(8))
+                .padding(Insets.of(10))
                 .verticalAlignment(VerticalAlignment.CENTER)
                 .positioning(Positioning.relative(100, 0));
 
@@ -216,7 +214,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                 .horizontalSizing(Sizing.fixed(100))
                 .verticalSizing(Sizing.fixed(20));
 
-            resetButton.tooltip(Text.literal("Reset the setup wizard and restart the game"));
+            resetButton.tooltip(Text.literal("Reset the setup wizard and close the game"));
             statusPanel.child(resetButton);
 
         return statusPanel;
@@ -251,19 +249,17 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
         // Message
         LabelComponent message = (LabelComponent) Components.label(
-                Text.literal("This will reset all configuration values to their defaults and close the game. " +
-                        "When you restart, the pre-launch setup wizard will appear again, " +
-                        "allowing you to select your preferred configuration.")
+                Text.literal("This will reset PackCore and close the game. When you reopen it, PackCore will try to apply the configs automatically again.")
         ).color(Color.ofRgb(TEXT_WHITE)).margins(Insets.of(2, 2, 2, 2));
-        message.maxWidth(310);
+        message.horizontalSizing(Sizing.fill(100));
         dialog.child(message);
 
         // Warning
         LabelComponent warning = (LabelComponent) Components.label(
-                Text.literal("Note: Any manual changes you've made will be lost.")
+                Text.literal("Note: Any manual changes you've made may be lost.")
                         .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(STATUS_WARNING_BORDER)).margins(Insets.of(2, 2, 2, 2));
-        warning.maxWidth(310);
+        warning.horizontalSizing(Sizing.fill(100));
         dialog.child(warning);
 
         // Buttons
@@ -296,39 +292,26 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     }
 
     private StatusInfo getStatusInfo() {
-        if (PackCoreConfig.haveSetupWizardShown && PackCoreConfig.haveSetupWizardCompletedSuccessfully) {
+        if (PackCoreConfig.defaultConfigSuccessfullyApplied) {
             wizardFailed = false;
             return new StatusInfo(
                     "✓",
                     "Configuration Successful",
-                    "The pre-launch setup wizard completed successfully. You can see your applied config below, if this was not the config you want please click the  button below to restart setup and try again.",
-                    "Applied configuration: " + PackCoreConfig.appliedConfigName,
+                    "PackCore has automatically applied the config below based on your screen resolution. If it's incorrect, continue the welcome wizard and open the Configuration Manager in the main menu to change it.",
+                    "Applied configuration: " + ConfigFileUtils.getCurrentConfig().getDisplayName(),
                     STATUS_SUCCESS_BG,
                     STATUS_SUCCESS_BORDER,
-                    true
-            );
-        } else if (PackCoreConfig.haveSetupWizardShown) {
-            wizardFailed = true;
-            return new StatusInfo(
-                    "⚠",
-                    "Setup Incomplete",
-                    "The pre-launch setup wizard was shown but didn't complete successfully. " +
-                            "Your mods may not be properly configured.",
-                    "Click 'Reset Setup' to restart and try the configuration again.",
-                    STATUS_WARNING_BG,
-                    STATUS_WARNING_BORDER,
-                    true
+                    false
             );
         } else {
             wizardFailed = true;
             return new StatusInfo(
                     "⚠",
-                    "Setup Failed",
-                    "The pre-launch setup wizard failed to run. This means your mod configurations " +
-                            "haven't been applied, which may cause conflicts or missing features.",
-                    "Click 'Reset Setup' to close the game and restart the setup process.",
-                    STATUS_ERROR_BG,
-                    STATUS_ERROR_BORDER,
+                    "Setup Incomplete",
+                    "Automatic config application failed. Close the game with the button below and restart to try again, or continue the welcome wizard and apply the config manually from the Configuration Manager in the main menu.",
+                    "Click 'Reset Setup' to close the game and try the automatic configuration again.",
+                    STATUS_WARNING_BG,
+                    STATUS_WARNING_BORDER,
                     true
             );
         }
@@ -338,7 +321,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         return (FlowLayout) Containers.verticalFlow(Sizing.fill(getContentColumnWidthPercent()), Sizing.expand())
                 .gap(12)
                 .surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/info_box.png"), 1142, 934))
-                .padding(Insets.of(CONTENT_PADDING + 4))
+                .padding(Insets.of(CONTENT_PADDING + 10, CONTENT_PADDING + 10, CONTENT_PADDING + 4, CONTENT_PADDING + 4))
                 .horizontalAlignment(HorizontalAlignment.CENTER)
                 .margins(Insets.of(0, 28, 0, 0));
     }
@@ -348,7 +331,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         return (FlowLayout) Containers.verticalFlow(Sizing.fill(getContentColumnWidthRightPercent()), Sizing.fill(100))
                 .gap(12)
                 .surface(UiSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/wizard/box.png"), 607, 755))
-                .padding(Insets.of(CONTENT_PADDING + 4))
+                .padding(Insets.of(CONTENT_PADDING + 10, CONTENT_PADDING + 10, CONTENT_PADDING + 4, CONTENT_PADDING + 4))
                 .horizontalAlignment(HorizontalAlignment.CENTER)
                 .positioning(Positioning.relative(100, 0))
                 .margins(Insets.of(0, 28, 0, 0));
@@ -375,9 +358,6 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
             buttonContainer.child(backButton);
         }
 
-        ButtonComponent primaryButton = createPrimaryButton();
-        buttonContainer.child(primaryButton);
-
         // Skip button for optional steps
         if (isSkippable()) {
             ButtonComponent skipButton = (ButtonComponent) Components.button(
@@ -388,6 +368,9 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                     .verticalSizing(Sizing.fixed(20));
             buttonContainer.child(skipButton);
         }
+
+        ButtonComponent primaryButton = createPrimaryButton();
+        buttonContainer.child(primaryButton);
 
         // Left side - link buttons
         FlowLayout linkButtonContainer = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.content())
@@ -489,9 +472,8 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     protected void onResetPressed() {
         // Reset values and close the game
-        PackCoreConfig.haveSetupWizardShown = false;
-        PackCoreConfig.haveSetupWizardCompletedSuccessfully = false;
-        PackCoreConfig.appliedConfigName = "";
+        PackCoreConfig.haveConfigApplied = false;
+        PackCoreConfig.defaultConfigSuccessfullyApplied = false;
         MinecraftClient.getInstance().scheduleStop();
     }
 

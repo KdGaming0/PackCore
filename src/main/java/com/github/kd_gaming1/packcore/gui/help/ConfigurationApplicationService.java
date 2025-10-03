@@ -59,16 +59,16 @@ public class ConfigurationApplicationService {
 
                     boolean performanceApplied = applyPerformanceProfile(optimizationProfile);
                     if (!performanceApplied) {
-                        String error = "Failed to apply performance profile: " + optimizationProfile;
+                        String error = "Could not apply the '" + optimizationProfile + "' performance profile. The settings may be incompatible or already active.";
                         PackCore.LOGGER.warn(error);
-                        failedSteps.put("Performance Profile", error);
+                        failedSteps.put("Performance Settings", error);
                         if (progressCallback != null) {
-                            progressCallback.updateProgress("performance", "error", "Application failed");
+                            progressCallback.updateProgress("performance", "error", "Setup failed");
                         }
                     } else {
-                        String success = "Successfully applied performance profile: " + optimizationProfile;
+                        String success = "Successfully configured performance to '" + optimizationProfile + "' profile";
                         PackCore.LOGGER.info(success);
-                        successfulSteps.put("Performance Profile", success);
+                        successfulSteps.put("Performance Settings", success);
                         if (progressCallback != null) {
                             progressCallback.updateProgress("performance", "success", null);
                         }
@@ -86,19 +86,20 @@ public class ConfigurationApplicationService {
                         boolean resourcePacksApplied = ResourcePackUtil.applyResourcePacksOrdered(resourcePacks)
                                 .exceptionally(ex -> {
                                     PackCore.LOGGER.error("Exception while applying resource packs", ex);
-                                    failedSteps.put("Resource Packs", "Exception: " + ex.getMessage());
+                                    String userFriendlyError = "Failed to enable resource packs. They may be missing or corrupted.";
+                                    failedSteps.put("Resource Packs", userFriendlyError);
                                     return false;
                                 }).join();
 
                         if (!resourcePacksApplied) {
-                            String error = "Failed to apply resource packs: " + resourcePacks;
+                            String error = "Could not enable the selected resource packs: " + String.join(", ", resourcePacks) + ". They may already be active or unavailable.";
                             PackCore.LOGGER.warn(error);
                             failedSteps.put("Resource Packs", error);
                             if (progressCallback != null) {
-                                progressCallback.updateProgress("resourcepacks", "error", "Application failed");
+                                progressCallback.updateProgress("resourcepacks", "error", "Activation failed");
                             }
                         } else {
-                            String success = "Successfully applied resource packs: " + resourcePacks;
+                            String success = "Successfully enabled " + resourcePacks.size() + " resource pack(s)";
                             PackCore.LOGGER.info(success);
                             successfulSteps.put("Resource Packs", success);
                             if (progressCallback != null) {
@@ -106,11 +107,11 @@ public class ConfigurationApplicationService {
                             }
                         }
                     } catch (Exception e) {
-                        String error = "Exception while applying resource packs: " + e.getMessage();
+                        String error = "An error occurred while trying to enable resource packs. Check that they're properly installed.";
                         PackCore.LOGGER.error(error, e);
                         failedSteps.put("Resource Packs", error);
                         if (progressCallback != null) {
-                            progressCallback.updateProgress("resourcepacks", "error", "Exception occurred");
+                            progressCallback.updateProgress("resourcepacks", "error", "Error occurred");
                         }
                     }
                 }
@@ -124,16 +125,16 @@ public class ConfigurationApplicationService {
 
                     boolean tabDesignApplied = TabDesignUtil.applyTabDesignFromWizard();
                     if (!tabDesignApplied) {
-                        String error = "Failed to apply tab design: " + tabDesign;
+                        String error = "Could not apply the '" + tabDesign + "' tab menu style. The theme may be unavailable.";
                         PackCore.LOGGER.warn(error);
-                        failedSteps.put("Tab Design", error);
+                        failedSteps.put("Tab Menu Style", error);
                         if (progressCallback != null) {
-                            progressCallback.updateProgress("tabdesign", "error", "Application failed");
+                            progressCallback.updateProgress("tabdesign", "error", "Theme unavailable");
                         }
                     } else {
-                        String success = "Successfully applied tab design: " + tabDesign;
+                        String success = "Successfully applied '" + tabDesign + "' tab menu style";
                         PackCore.LOGGER.info(success);
-                        successfulSteps.put("Tab Design", success);
+                        successfulSteps.put("Tab Menu Style", success);
                         if (progressCallback != null) {
                             progressCallback.updateProgress("tabdesign", "success", null);
                         }
@@ -149,16 +150,16 @@ public class ConfigurationApplicationService {
 
                     boolean additionalSettingsApplied = applyAdditionalSettings(additionalSettings);
                     if (!additionalSettingsApplied) {
-                        String error = "Failed to apply some additional settings: " + additionalSettings;
+                        String error = "Some extra settings could not be applied. They may conflict with existing settings.";
                         PackCore.LOGGER.warn(error);
-                        failedSteps.put("Additional Settings", error);
+                        failedSteps.put("Extra Settings", error);
                         if (progressCallback != null) {
-                            progressCallback.updateProgress("additional", "error", "Some settings failed");
+                            progressCallback.updateProgress("additional", "error", "Some failed");
                         }
                     } else {
-                        String success = "Successfully applied additional settings: " + additionalSettings;
+                        String success = "Successfully applied all extra settings";
                         PackCore.LOGGER.info(success);
-                        successfulSteps.put("Additional Settings", success);
+                        successfulSteps.put("Extra Settings", success);
                         if (progressCallback != null) {
                             progressCallback.updateProgress("additional", "success", null);
                         }
@@ -176,7 +177,7 @@ public class ConfigurationApplicationService {
 
             } catch (Exception e) {
                 PackCore.LOGGER.error("Fatal error during configuration application", e);
-                failedSteps.put("Fatal Error", "Unexpected exception: " + e.getMessage());
+                failedSteps.put("Setup Error", "An unexpected problem occurred during setup. Please try again or skip this step.");
                 return new ConfigurationResult(false, failedSteps, successfulSteps);
             }
         });
@@ -189,7 +190,7 @@ public class ConfigurationApplicationService {
                 PerformanceProfileUtil.ProfileResult result = PerformanceProfileUtil.applyPerformanceProfile(profile);
                 return result.isFullySuccessful();
             } else {
-                PackCore.LOGGER.warn("Unknown optimization profile: {}", optimizationProfile);
+                PackCore.LOGGER.warn("Unrecognized performance profile: {}", optimizationProfile);
                 return false;
             }
         } catch (Exception e) {
@@ -204,22 +205,21 @@ public class ConfigurationApplicationService {
             for (String setting : additionalSettings) {
                 boolean applied = applySingleAdditionalSetting(setting);
                 if (!applied) {
-                    PackCore.LOGGER.warn("Failed to apply additional setting: {}", setting);
+                    PackCore.LOGGER.warn("Could not apply extra setting: {}", setting);
                     allSuccessful = false;
                 } else {
-                    PackCore.LOGGER.info("Applied additional setting: {}", setting);
+                    PackCore.LOGGER.info("Successfully applied extra setting: {}", setting);
                 }
             }
             return allSuccessful;
         } catch (Exception e) {
-            PackCore.LOGGER.error("Failed to apply additional settings", e);
+            PackCore.LOGGER.error("Error while applying extra settings", e);
             return false;
         }
     }
 
     private static boolean applySingleAdditionalSetting(String setting) {
         // Implement specific setting application logic here
-        // For now, just log and return true
         PackCore.LOGGER.info("Applying additional setting: {}", setting);
 
         // Example implementations:
@@ -237,7 +237,7 @@ public class ConfigurationApplicationService {
                 return true;
             }
             default -> {
-                PackCore.LOGGER.warn("Unknown additional setting: {}", setting);
+                PackCore.LOGGER.warn("Unknown extra setting: {}", setting);
                 return false;
             }
         }

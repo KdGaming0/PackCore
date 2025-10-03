@@ -1,7 +1,7 @@
 package com.github.kd_gaming1.packcore.util;
 
 import com.github.kd_gaming1.packcore.gui.configscreen.util.FileTreeNode;
-import com.github.kd_gaming1.packcore.wizard.copysystem.ZipFiles;
+import com.github.kd_gaming1.packcore.util.copysystem.ZipFiles;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.client.MinecraftClient;
@@ -15,12 +15,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * Manages exporting configurations to ZIP files with metadata
+ */
 public class ConfigExportManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigExportManager.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
     private static final Set<String> HIDDEN_FOLDERS = Set.of(
-            "packcore", "logs", "crash-reports", "screenshots", ".git", ".minecraft", "saves", "assets", "mods"
+            "packcore", "logs", "crash-reports", "screenshots",
+            ".git", ".minecraft", "saves", "assets", "mods"
     );
+
     private static final int MAX_TREE_DEPTH = 3;
     private static final int MAX_CHILDREN_PER_NODE = 50;
 
@@ -29,7 +35,7 @@ public class ConfigExportManager {
 
     public ConfigExportManager() {
         this.gameDir = MinecraftClient.getInstance().runDirectory.toPath();
-        this.exportDir = gameDir.resolve("packcore/modpack_config/custom_configs");
+        this.exportDir = gameDir.resolve(ConfigFileUtils.CUSTOM_CONFIGS_PATH);
 
         try {
             Files.createDirectories(exportDir);
@@ -39,7 +45,7 @@ public class ConfigExportManager {
     }
 
     /**
-     * Build a file tree for UI display with limited depth to prevent performance issues
+     * Build a file tree for UI display with limited depth
      */
     public FileTreeNode buildFileTree() {
         FileTreeNode root = new FileTreeNode(gameDir, "Game Directory", true);
@@ -161,35 +167,12 @@ public class ConfigExportManager {
     }
 
     /**
-     * Calculate total size of selected paths
+     * Calculate total size of selected paths using shared utility
      */
     public long calculateSelectionSize(Set<Path> selectedPaths) {
         return selectedPaths.stream()
-                .mapToLong(this::getPathSize)
+                .mapToLong(ConfigFileOperations::calculateSize)
                 .sum();
-    }
-
-    private long getPathSize(Path path) {
-        try {
-            if (Files.isRegularFile(path)) {
-                return Files.size(path);
-            } else if (Files.isDirectory(path)) {
-                try (Stream<Path> paths = Files.walk(path)) {
-                    return paths.filter(Files::isRegularFile)
-                            .mapToLong(p -> {
-                                try {
-                                    return Files.size(p);
-                                } catch (IOException e) {
-                                    return 0L;
-                                }
-                            })
-                            .sum();
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.debug("Could not calculate size for: {}", path);
-        }
-        return 0L;
     }
 
     /**
@@ -206,7 +189,8 @@ public class ConfigExportManager {
                             String name = p.getFileName().toString().toLowerCase();
                             return name.endsWith(".jar") || name.endsWith(".zip");
                         })
-                        .map(p -> p.getFileName().toString().replaceAll("\\.(jar|zip)$", ""))
+                        .map(p -> p.getFileName().toString()
+                                .replaceAll("\\.(jar|zip)$", ""))
                         .sorted()
                         .forEach(mods::add);
             } catch (IOException e) {
@@ -228,7 +212,7 @@ public class ConfigExportManager {
         try {
             LOGGER.info("Starting export for {} selected paths", request.selectedPaths.size());
 
-            // Copy selected paths to temp directory
+            // Copy selected paths to temp directory using shared utility
             copySelectedPaths(request.selectedPaths, tempDir);
 
             // Create metadata
@@ -264,7 +248,7 @@ public class ConfigExportManager {
             return zipPath;
 
         } finally {
-            deleteDirectory(tempDir);
+            ConfigFileOperations.deleteDirectory(tempDir);
         }
     }
 
@@ -290,7 +274,8 @@ public class ConfigExportManager {
             LOGGER.debug("Copying {} to {}", selectedPath, targetPath);
 
             if (Files.isDirectory(selectedPath)) {
-                copyDirectoryRecursively(selectedPath, targetPath);
+                // Use shared utility for directory copying
+                ConfigFileOperations.copyDirectory(selectedPath, targetPath);
             } else {
                 Files.createDirectories(targetPath.getParent());
                 Files.copy(selectedPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
@@ -298,43 +283,11 @@ public class ConfigExportManager {
         }
     }
 
-    private void copyDirectoryRecursively(Path source, Path target) throws IOException {
-        try (Stream<Path> paths = Files.walk(source)) {
-            paths.forEach(sourcePath -> {
-                try {
-                    Path targetPath = target.resolve(source.relativize(sourcePath));
-                    if (Files.isDirectory(sourcePath)) {
-                        Files.createDirectories(targetPath);
-                    } else {
-                        Files.createDirectories(targetPath.getParent());
-                        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                } catch (IOException e) {
-                    LOGGER.error("Failed to copy: {}", sourcePath, e);
-                }
-            });
-        }
-    }
-
     private String generateZipFileName(String configName) {
         String sanitized = configName.replaceAll("[^a-zA-Z0-9\\-_]", "_");
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String timestamp = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         return sanitized + "_" + timestamp + ".zip";
-    }
-
-    private void deleteDirectory(Path directory) {
-        try (Stream<Path> paths = Files.walk(directory)) {
-            paths.sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.deleteIfExists(path);
-                        } catch (IOException e) {
-                            LOGGER.debug("Could not delete: {}", path);
-                        }
-                    });
-        } catch (IOException e) {
-            LOGGER.debug("Could not delete temp directory: {}", directory);
-        }
     }
 
     public void openExportFolder() {
@@ -346,7 +299,7 @@ public class ConfigExportManager {
     }
 
     /**
-     * Export request data class for cleaner API
+     * Export request data class
      */
     public static class ExportRequest {
         public final Set<Path> selectedPaths;

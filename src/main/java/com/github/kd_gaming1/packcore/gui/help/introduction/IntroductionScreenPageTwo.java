@@ -74,7 +74,7 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
     private FlowLayout createWelcomeHeader() {
         FlowLayout header = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(6)
-                .margins(Insets.of(6, 0, 12, 12));
+                .margins(Insets.of(0, 0, 36, 36));
 
         // Create welcome text
         Text welcomeText = TextOps.concat(
@@ -87,7 +87,7 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
         LabelComponent subtitle = (LabelComponent) Components.label(
                 Text.literal("The pack has two mods that change the tab list: SkyHanni and Skyblocker. You can not use both at the same time, so decide which one you like best—and select it. (Tip: Click the image)")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
-        ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
+        ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 0, 0)).sizing(Sizing.expand(), Sizing.content());
 
         header.child(welcomeTitle).child(subtitle);
 

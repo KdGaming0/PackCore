@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -14,11 +13,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Simplified config import manager
+ * Manages importing configuration ZIP files
  */
 public class ConfigImportManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigImportManager.class);
-    private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+    private static final DateTimeFormatter TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     /**
      * Open native file chooser to select config zip
@@ -26,10 +26,10 @@ public class ConfigImportManager {
     public static CompletableFuture<Path> selectConfigFile() {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // Use Swing's JFileChooser for better cross-platform support
                 JFileChooser fileChooser = new JFileChooser();
                 fileChooser.setDialogTitle("Select Config File to Import");
-                fileChooser.setFileFilter(new FileNameExtensionFilter("Config Files (*.zip)", "zip"));
+                fileChooser.setFileFilter(
+                        new FileNameExtensionFilter("Config Files (*.zip)", "zip"));
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
                 // Set initial directory to user's Downloads folder
@@ -38,14 +38,12 @@ public class ConfigImportManager {
                     fileChooser.setCurrentDirectory(downloadsPath.toFile());
                 }
 
-                // Show dialog
                 int result = fileChooser.showOpenDialog(null);
 
                 if (result == JFileChooser.APPROVE_OPTION) {
                     Path selectedFile = fileChooser.getSelectedFile().toPath();
                     LOGGER.info("Selected file: {}", selectedFile);
 
-                    // Validate it's a zip file
                     if (!selectedFile.toString().toLowerCase().endsWith(".zip")) {
                         LOGGER.warn("Selected file is not a zip: {}", selectedFile);
                         return null;
@@ -83,10 +81,13 @@ public class ConfigImportManager {
     /**
      * Import config file to custom configs directory
      */
-    public static void importConfig(Path sourceFile, boolean applyImmediately, ImportCallback callback) {
+    public static void importConfig(Path sourceFile, boolean applyImmediately,
+                                    ImportCallback callback) {
         if (callback == null) {
             callback = new ImportCallback() {
+                @Override
                 public void onProgress(String msg, int pct) {}
+                @Override
                 public void onComplete(boolean success, String msg) {}
             };
         }
@@ -123,18 +124,19 @@ public class ConfigImportManager {
                     finalCallback.onProgress("Scheduling restart...", 90);
 
                     // Create ConfigFile for application
-                    ConfigFileUtils.ConfigFile configFile = new ConfigFileUtils.ConfigFile(
-                            destination.getFileName().toString(),
-                            destination,
-                            false,
-                            metadata
-                    );
+                    ConfigFileUtils.ConfigFile configFile =
+                            new ConfigFileUtils.ConfigFile(
+                                    destination.getFileName().toString(),
+                                    destination,
+                                    false,
+                                    metadata
+                            );
 
                     // Schedule application on restart
                     ConfigApplicationManager.scheduleConfigApplication(configFile);
 
                     finalCallback.onComplete(true,
-                            "Config imported and will be applied on restart. Game will close shortly.");
+                            "Config imported and will be applied on restart.");
                 } else {
                     finalCallback.onComplete(true,
                             "Config imported successfully: " + metadata.getName());
@@ -156,7 +158,8 @@ public class ConfigImportManager {
             }
 
             // Verify it's a valid zip
-            try (java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(configPath.toFile())) {
+            try (java.util.zip.ZipFile zipFile =
+                         new java.util.zip.ZipFile(configPath.toFile())) {
                 return zipFile.entries().hasMoreElements();
             }
 
@@ -173,7 +176,8 @@ public class ConfigImportManager {
             Files.createDirectories(customConfigsDir);
 
             // Generate unique filename
-            String baseName = metadata.getName().replaceAll("[^a-zA-Z0-9\\-_]", "_");
+            String baseName = metadata.getName()
+                    .replaceAll("[^a-zA-Z0-9\\-_]", "_");
             String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
             String fileName = baseName + "_" + timestamp + ".zip";
 
@@ -207,34 +211,13 @@ public class ConfigImportManager {
             return false;
         }
 
-        String sanitizedName = configName.replaceAll("[^a-zA-Z0-9\\-_]", "_").toLowerCase();
+        String sanitizedName = configName
+                .replaceAll("[^a-zA-Z0-9\\-_]", "_")
+                .toLowerCase();
 
-        try {
-            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
-
-            // Check both official and custom directories
-            for (String relativePath : new String[]{
-                    ConfigFileUtils.OFFICIAL_CONFIGS_PATH,
-                    ConfigFileUtils.CUSTOM_CONFIGS_PATH
-            }) {
-                Path configDir = gameDir.resolve(relativePath);
-
-                if (Files.exists(configDir)) {
-                    try (var files = Files.list(configDir)) {
-                        boolean exists = files.anyMatch(path -> {
-                            String fileName = path.getFileName().toString().toLowerCase();
-                            return fileName.contains(sanitizedName) && fileName.endsWith(".zip");
-                        });
-
-                        if (exists) return true;
-                    }
-                }
-            }
-
-        } catch (IOException e) {
-            LOGGER.error("Error checking for existing configs", e);
-        }
-
-        return false;
+        return ConfigFileUtils.getAllConfigs().stream()
+                .anyMatch(config -> config.getFileName()
+                        .toLowerCase()
+                        .contains(sanitizedName));
     }
 }

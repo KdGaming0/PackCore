@@ -1,6 +1,5 @@
 package com.github.kd_gaming1.packcore;
 
-import com.github.kd_gaming1.packcore.commands.PackCoreCommands;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
 import net.fabricmc.api.ModInitializer;
@@ -21,10 +20,7 @@ public class PackCore implements ModInitializer {
 
     @Override
 	public void onInitialize() {
-		// Register commands
-		PackCoreCommands.registerCommands();
-
-		LOGGER.info("PackCore initialized!");
+        LOGGER.info("PackCore initialized!");
 
         try {
             // Load modpack info at startup

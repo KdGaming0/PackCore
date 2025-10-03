@@ -32,11 +32,8 @@ public class PackCoreFileManager {
             // Create all required directories
             createDirectories();
 
-            // Create default markdown files
+            // Create default markdown files for in-game menus
             createDefaultMarkdownFiles();
-
-            // Create language files
-            createLanguageFiles();
 
             hasInitialized = true;
             LOGGER.info("PackCore file structure initialization complete");
@@ -51,7 +48,6 @@ public class PackCoreFileManager {
      */
     private static void createDirectories() throws IOException {
         Map<String, String> directories = Map.of(
-                "packcore/lang", "Language files for wizard content",
                 "packcore/modpack_config/official_configs", "Official modpack configurations",
                 "packcore/modpack_config/custom_configs", "Custom modpack configurations",
                 "packcore/info_help", "Information and help markdown files",
@@ -79,41 +75,6 @@ public class PackCoreFileManager {
         createMarkdownFile("packcore/info_help", "Optimisation.md", getOptimisationContent());
         createMarkdownFile("packcore/info_help", "ResourcePacks.md", getResourcePacksContent());
         createMarkdownFile("packcore/info_help", "UsefulInformation.md", getUsefulInformationContent());
-    }
-
-    /**
-     * Create language files from existing system
-     */
-    //TODO Remove the choose_config_en_us no longer in use/needed
-    private static void createLanguageFiles() {
-        Map<String, String> langFiles = Map.of(
-                "welcome_en_us.md", getWizardWelcomeContent(),
-                "choose_config_en_us.md", getWizardChooseConfigContent(),
-                "finished_en_us.md", getWizardFinishedContent()
-        );
-
-        for (Map.Entry<String, String> entry : langFiles.entrySet()) {
-            createFile("packcore/lang", entry.getKey(), entry.getValue());
-        }
-    }
-
-    /**
-     * Generic file creation method
-     */
-    private static void createFile(String directory, String fileName, String content) {
-        Path filePath = RUN_DIR.resolve(directory).resolve(fileName);
-
-        if (Files.exists(filePath)) {
-            LOGGER.debug("File already exists, skipping: {}", filePath);
-            return;
-        }
-
-        try {
-            Files.writeString(filePath, content, StandardOpenOption.CREATE_NEW);
-            LOGGER.info("Created file: {}", filePath);
-        } catch (IOException e) {
-            LOGGER.error("Failed to create file: {}", filePath, e);
-        }
     }
 
     /**
@@ -158,7 +119,7 @@ public class PackCoreFileManager {
         }
     }
 
-    // Default content methods
+    // Default content methods for in-game help system
     private static String getGettingStartedContent() {
         return """
                 # Getting Started with PackCore
@@ -167,7 +128,7 @@ public class PackCoreFileManager {
                 
                 ## First Steps
                 
-                1. **Complete the Setup Wizard** - If you haven't already, run through the initial setup
+                1. **Apply a Configuration** - Use the config manager to apply optimized settings
                 2. **Check Your Keybinds** - Press `ESC > Options > Controls` to see all mod keybinds
                 3. **Explore the Interface** - Many mods add new UI elements and features
                 
@@ -198,7 +159,7 @@ public class PackCoreFileManager {
                 A: Yes, but be careful about compatibility. Check mod requirements first.
                 
                 **Q: Why is my performance poor?**
-                A: Try running the setup wizard again and choosing a lower resolution profile.
+                A: Try applying a lower resolution configuration profile.
                 
                 ## Technical Issues
                 
@@ -254,22 +215,22 @@ public class PackCoreFileManager {
 
     private static String getWelcomeContent() {
         return """
-                # 🎮 Welcome to Your Modpack Setup!
+                # 🎮 Welcome to PackCore!
                 
-                Thank you for choosing **PackCore**! This wizard will help you configure your modpack for the best possible experience.
+                Thank you for choosing **PackCore**! This modpack provides an optimized experience for your gameplay.
                 
-                ## 🚀 What This Wizard Does:
+                ## 🚀 Key Features
                 
-                - **🔍 Detects Your Setup** - Automatically identifies your screen resolution and system capabilities
-                - **💡 Smart Recommendations** - Suggests the optimal configuration for your hardware
-                - **⚙️ Easy Installation** - Applies your chosen settings with just a few clicks
-                - **🎯 Optimized Experience** - Ensures smooth gameplay tailored to your system
+                - **🔍 Automatic Configuration** - Smart config detection and application on first launch
+                - **💡 Optimized Performance** - Pre-configured settings for smooth gameplay
+                - **⚙️ Config Manager** - Import, export, and apply configurations in-game
+                - **🎯 Resolution Profiles** - Optimized settings for different screen resolutions
                 
-                ## 📋 What You'll Choose:
+                ## 📋 Getting Started
                 
-                1. **Configuration Package** - Pre-made settings optimized for different screen resolutions
-                2. **Review & Apply** - Confirm your choices and let the wizard do the work
-                3. **Ready to Play!** - Launch Minecraft with your perfectly configured modpack
+                1. **First Launch** - The mod automatically detects your screen resolution and applies the best config
+                2. **In-Game Config Manager** - Access it from the main menu or ESC menu to manage configurations
+                3. **Import/Export** - Share configurations with friends or create your own
                 
                 ---
                 
@@ -281,19 +242,29 @@ public class PackCoreFileManager {
                 - **Performance tweaks** to ensure smooth gameplay
                 - **Resource pack selections** that complement your setup
                 
-                > **First time with mods?** Don't worry! The wizard will explain everything as we go, and you'll get an in-game tutorial when you first launch Minecraft.
-                
-                ---
-                
-                **Ready to get started?** Click **Next** to begin!
+                > **Need help?** Check the other guides in this menu or join our Discord community!
                 """;
     }
 
     private static String getOptimisationContent() {
         return """
-            # ⚡ Optimisation
-
-            """;
+                # ⚡ Optimisation Tips
+                
+                Get the most out of your modpack with these optimization tips!
+                
+                ## Video Settings
+                
+                ## Performance Mods
+                
+                The modpack includes several performance-enhancing mods. Make sure they're properly configured in their respective settings.
+                
+                ## Memory Allocation
+                
+                - **Recommended:** 6-8GB for optimal performance
+                - **Minimum:** 4GB for basic gameplay
+                - Configure in your launcher settings
+                
+                """;
     }
 
     private static String getResourcePacksContent() {
@@ -334,125 +305,20 @@ public class PackCoreFileManager {
         return """
                 # ℹ️ Useful Information
                 
-                """;
-    }
-
-    // Wizard content (from existing system)
-    private static String getWizardWelcomeContent() {
-        return """
-                # 🎮 Welcome to Your Modpack Setup!
+                ## Config Management
                 
-                Thank you for choosing **PackCore**! This wizard will help you configure your modpack for the best possible experience.
+                - **Import Config:** Import configurations from zip files
+                - **Export Config:** Create and share your own configurations
+                - **Apply Config:** Switch between different configuration profiles
                 
-                ## 🚀 What This Wizard Does:
+                ## Backup & Restore
                 
-                - **🔍 Detects Your Setup** - Automatically identifies your screen resolution and system capabilities
-                - **💡 Smart Recommendations** - Suggests the optimal configuration for your hardware
-                - **⚙️ Easy Installation** - Applies your chosen settings with just a few clicks
-                - **🎯 Optimized Experience** - Ensures smooth gameplay tailored to your system
+                Backups are automatically created before applying new configurations.
+                Find them in: `packcore/backups/`
                 
-                ## 📋 What You'll Choose:
+                ## Community
                 
-                1. **Configuration Package** - Pre-made settings optimized for different screen resolutions
-                2. **Review & Apply** - Confirm your choices and let the wizard do the work
-                3. **Ready to Play!** - Launch Minecraft with your perfectly configured modpack
-                
-                ---
-                
-                ## 💡 About Configurations
-                
-                Each configuration package contains:
-                - **Optimized game settings** for your resolution
-                - **Mod interface layouts** positioned for best visibility
-                - **Performance tweaks** to ensure smooth gameplay
-                - **Resource pack selections** that complement your setup
-                
-                > **First time with mods?** Don't worry! The wizard will explain everything as we go, and you'll get an in-game tutorial when you first launch Minecraft.
-                
-                ---
-                
-                **Ready to get started?** Click **Next** to begin!
-                """;
-    }
-
-    private static String getWizardChooseConfigContent() {
-        return """
-                # 🎯 Choose Your Configuration
-                
-                Select the configuration that best matches your setup from the list on the right.
-                
-                ## 🖥️ About Configuration Types:
-                
-                - **4K Configurations** - For ultra-high resolution displays (3840x2160+)
-                - **1440p Configurations** - Perfect for QHD displays (2560x1440)  
-                - **1080p Configurations** - Optimized for Full HD displays (1920x1080)
-                - **720p Configurations** - Best for HD displays and performance-focused setups
-                
-                ## 💡 How We Choose:
-                
-                The wizard automatically detects your screen resolution and recommends the best configuration. You can see your detected resolution at the top of this page.
-                
-                ## ⚙️ What's Included:
-                
-                Each configuration contains pre-configured:
-                - Video settings optimized for your resolution
-                - Mod interface positions and scaling
-                - Performance tweaks and optimizations
-                - Resource pack selections
-                
-                > **Don't see your exact resolution?** Choose the closest match - you can fine-tune individual settings in-game later!
-                """;
-    }
-
-    private static String getWizardFinishedContent() {
-        return """
-                ## 🚀 Launch Minecraft
-                Your modpack is now ready to play!
-                
-                • Open your Minecraft launcher
-                • Select your modpack profile
-                • Click 'Play' to start your adventure
-                • Your optimized settings are already applied
-                
-                ## 🎯 In-Game Tutorial
-                Learn about your new mods and features!
-                
-                • Tutorial starts automatically on first launch
-                • Learn mod controls and keybinds
-                • Discover new gameplay mechanics
-                • Get tips for optimal performance
-                
-                ## ⚙️ Customize Further
-                Fine-tune your experience as needed!
-                
-                • Most mod interfaces can be moved and resized
-                • Adjust video settings in Options menu
-                • Check Controls for new mod keybinds
-                • All changes are saved automatically
-                
-                ## 💡 Getting Help
-                Support resources are available!
-                
-                • Press F1 in-game for mod help
-                • Check modpack documentation
-                • Visit community forums and Discord
-                • Use in-game tooltips for guidance
-                
-                ## 🔧 Troubleshooting
-                Common solutions for issues!
-                
-                • Press F3 + T to reload textures
-                • Restart Minecraft if mods act strange
-                • Check Java memory allocation
-                • Rerun this wizard by deleting config folder
-                
-                ## 📖 Advanced Tips
-                Get the most out of your modpack!
-                
-                • Explore mod configuration files
-                • Try different resource packs
-                • Join multiplayer servers with same mods
-                • Share your configurations with friends
+                Join our Discord for support, updates, and to share your configurations!
                 """;
     }
 

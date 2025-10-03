@@ -43,13 +43,6 @@ dependencies {
     modCompileOnly("maven.modrinth:sodium:mc1.21.6-0.6.13-fabric")
     modRuntimeOnly("com.terraformersmc:modmenu:${modmenu_version}")
     modCompileOnly("maven.modrinth:iris:1.9.1+1.21.7-fabric")
-
-    // Additional libraries
-    includedJars 'com.vladsch.flexmark:flexmark:0.64.8'
-    includedJars 'com.vladsch.flexmark:flexmark-util:0.64.8'
-
-    implementation 'com.vladsch.flexmark:flexmark:0.64.8'
-    implementation 'com.vladsch.flexmark:flexmark-util:0.64.8'
 }
 
 processResources {

@@ -11,9 +11,6 @@ public class PackCoreConfig extends MidnightConfig {
     public static final String ADVANCED = "advanced";
 
     // DIALOG CATEGORY
-    @Entry(category = DIALOG, name = "packcore.midnightconfig.show_install_wizard")
-    public static boolean showInstallWizard = false;
-
     @Entry(category = DIALOG, name = "packcore.midnightconfig.dialog_timeout", min = 1, max = 60)
     public static int dialogTimeoutMinutes = 10;
 
@@ -51,18 +48,10 @@ public class PackCoreConfig extends MidnightConfig {
     public static boolean haveShownWelcomeWizard = false;
 
     @Hidden
-    @Entry(category = ADVANCED, name = "packcore.midnightconfig.last_config_applied")
-    public static String lastConfigApplied = "";
-
-    @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_shown")
-    public static boolean haveSetupWizardShown = false;
+    public static boolean haveConfigApplied = false;
 
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_completed")
-    public static boolean haveSetupWizardCompletedSuccessfully = false;
-
-    @Hidden
-    @Entry(category = ADVANCED, name = "packcore.midnightconfig.applied_config_name")
-    public static String appliedConfigName = "";
+    public static boolean defaultConfigSuccessfullyApplied = false;
 }

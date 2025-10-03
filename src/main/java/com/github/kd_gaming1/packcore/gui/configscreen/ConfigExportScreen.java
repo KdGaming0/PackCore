@@ -13,7 +13,6 @@ import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
-import io.wispforest.owo.ui.util.NinePatchTexture;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -128,22 +127,10 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private FlowLayout createSidebar() {
         var sidebar = Containers.verticalFlow(Sizing.fill(35), Sizing.expand());
         sidebar.gap(8);
-        /*
         sidebar.surface(UiSurfaces.stretched(
                 Identifier.of(MOD_ID, "textures/gui/menu/notif_box.png"), 607, 755));
         sidebar.padding(Insets.of(12));
-         */
-        // Testing nine-patch
-        sidebar.surface((context, component) -> {
-            NinePatchTexture.draw(
-                    Identifier.of(MOD_ID, "notif_box"),
-                    context,
-                    component.x(),
-                    component.y(),
-                    component.width(),
-                    component.height()
-            );
-        });
+
         var scrollContent = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
         scrollContent.gap(8);
 
