@@ -12,6 +12,7 @@ import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.OverlayContainer;
 import io.wispforest.owo.ui.container.StackLayout;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
@@ -222,8 +223,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     private void showResetConfirmation() {
         // Create overlay with the dialog as the required child
-        io.wispforest.owo.ui.container.OverlayContainer<FlowLayout> overlay =
-                Containers.overlay(createConfirmDialog());
+        OverlayContainer<FlowLayout> overlay = Containers.overlay(createConfirmDialog());
 
         // Configure behavior and appearance
         overlay.closeOnClick(true);
@@ -473,6 +473,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     protected void onResetPressed() {
         // Reset values and close the game
         PackCoreConfig.defaultConfigSuccessfullyApplied = false;
+        PackCoreConfig.write(MOD_ID);
         MinecraftClient.getInstance().scheduleStop();
     }
 

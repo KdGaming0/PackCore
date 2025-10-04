@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PreLaunchWizardInitializer.class);
@@ -33,7 +35,7 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
         if (configApplied) {
             LOGGER.info("Applied pending config during pre-launch");
             PackCoreConfig.defaultConfigSuccessfullyApplied = true;
-            MidnightConfig.write("packcore");
+            PackCoreConfig.write(MOD_ID);
         }
 
         // Check if automatic config application is needed
@@ -45,7 +47,7 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
                 LOGGER.info("Config applied successfully on first launch");
                 PackCoreConfig.defaultConfigSuccessfullyApplied = true;
                 PackCoreConfig.isFirstStartup = false;
-                MidnightConfig.write("packcore");
+                PackCoreConfig.write(MOD_ID);
             } else {
                 LOGGER.warn("Failed to apply config automatically - will use defaults");
             }

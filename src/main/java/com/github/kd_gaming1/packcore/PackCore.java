@@ -1,7 +1,9 @@
 package com.github.kd_gaming1.packcore;
 
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
+import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
@@ -34,6 +36,9 @@ public class PackCore implements ModInitializer {
         } catch (Exception e) {
             LOGGER.error("Failed to load modpack info: {}", e.getMessage());
         }
+
+        // Initialize MidnightLib data for client-side access
+        MidnightConfig.init(PackCore.MOD_ID, PackCoreConfig.class);
 	}
 
     public static ModpackInfo getModpackInfo() {

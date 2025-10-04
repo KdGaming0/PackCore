@@ -20,6 +20,8 @@ import net.minecraft.util.Identifier;
 
 import java.util.*;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class IntroductionScreenPageFinal extends BaseWizardPage {
 
     private final WizardDataManager dataManager;
@@ -36,7 +38,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         5,
                         5
                 ),
-                Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
+                Identifier.of(MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
         this.dataManager = WizardDataManager.getInstance();
@@ -354,7 +356,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         Text.literal("Apply Settings"),
                         this::onApplyPressed
                 ).renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 130, 66))
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 130, 66))
                 .horizontalSizing(Sizing.fixed(130))
                 .verticalSizing(Sizing.fixed(22));
 
@@ -481,6 +483,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Mark wizard as completed
         PackCoreConfig.haveShownWelcomeWizard = true;
+        PackCoreConfig.write(MOD_ID);
 
         // Create comprehensive configuration summary
         WizardDataManager.WizardConfiguration config = dataManager.getConfiguration();
@@ -576,6 +579,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         }
 
         PackCoreConfig.haveShownWelcomeWizard = true;
+        PackCoreConfig.write(MOD_ID);
 
         this.client.setScreen(new FancyMainMenuScreen());
     }

@@ -18,9 +18,6 @@ public class PackCoreClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Initialize MidnightLib data for client-side access
-        MidnightConfig.init(PackCore.MOD_ID, PackCoreConfig.class);
-
         // Check if the Custom Menu is enabled using MidnightLib
         if (PackCoreConfig.enableCustomMenu) {
             // Register screenoOld event to replace the main menu after initialization
