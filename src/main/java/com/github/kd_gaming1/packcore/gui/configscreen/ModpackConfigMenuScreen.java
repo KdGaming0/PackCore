@@ -5,7 +5,6 @@ import com.github.kd_gaming1.packcore.gui.ui.UITheme;
 import com.github.kd_gaming1.packcore.util.ConfigApplicationManager;
 import com.github.kd_gaming1.packcore.util.ConfigFileUtils;
 import com.github.kd_gaming1.packcore.util.ConfigMetadata;
-import com.github.kd_gaming1.packcore.util.BackupManager;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;

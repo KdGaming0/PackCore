@@ -27,8 +27,8 @@ public class ConfigExportManager {
             ".git", ".minecraft", "saves", "assets", "mods"
     );
 
-    private static final int MAX_TREE_DEPTH = 3;
-    private static final int MAX_CHILDREN_PER_NODE = 50;
+    private static final int MAX_TREE_DEPTH = 10;
+    private static final int MAX_CHILDREN_PER_NODE = 100;
 
     private final Path gameDir;
     private final Path exportDir;
@@ -120,21 +120,15 @@ public class ConfigExportManager {
         switch (presetType) {
             case MODS_ONLY -> {
                 addIfExists(paths, "config");
-                addIfExists(paths, "mods");
             }
             case MINECRAFT_ONLY -> {
                 addIfExists(paths, "options.txt");
                 addIfExists(paths, "servers.dat");
-                addIfExists(paths, "resourcepacks");
-                addIfExists(paths, "shaderpacks");
             }
             case ALL_CONFIGS -> {
                 addIfExists(paths, "config");
-                addIfExists(paths, "mods");
                 addIfExists(paths, "options.txt");
                 addIfExists(paths, "servers.dat");
-                addIfExists(paths, "resourcepacks");
-                addIfExists(paths, "shaderpacks");
             }
             case CLEAR -> paths.clear();
         }

@@ -5,7 +5,6 @@ import eu.midnightdust.lib.config.MidnightConfig;
 public class PackCoreConfig extends MidnightConfig {
 
     // Category constants
-    public static final String DIALOG = "dialog";
     public static final String UI = "ui";
     public static final String CUSTOMIZATION = "customization";
     public static final String ADVANCED = "advanced";
@@ -14,9 +13,6 @@ public class PackCoreConfig extends MidnightConfig {
     // UI CATEGORY
     @Entry(category = UI, name = "packcore.midnightconfig.enable_custom_menu")
     public static boolean enableCustomMenu = true;
-
-    @Entry(category = UI, name = "packcore.midnightconfig.enable_custom_panorama")
-    public static boolean enableCustomPanorama = true;
 
     // Spacer
     @Comment(category = UI)

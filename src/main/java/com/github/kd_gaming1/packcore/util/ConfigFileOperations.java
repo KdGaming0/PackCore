@@ -13,18 +13,22 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
- * Centralized file operations for config management.
- * Reduces code duplication across config utilities.
+ * Utility class providing centralized file operations for configuration management,
+ * including backup, restore, copy, delete, and size calculation functionalities.
  */
 public class ConfigFileOperations {
+    /** Logger instance for logging operation details and errors. */
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileOperations.class);
+
+    /** Formatter for backup directory timestamps. */
     private static final DateTimeFormatter BACKUP_TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
 
     /**
-     * Create a timestamped backup of important configuration files
-     * @param gameDir The game directory
-     * @return Path to the backup directory, or null if backup failed
+     * Creates a timestamped backup of important configuration files and directories.
+     *
+     * @param gameDir The root directory of the game.
+     * @return The path to the created backup directory, or {@code null} if the backup failed.
      */
     public static Path createBackup(Path gameDir) {
         try {
@@ -60,7 +64,12 @@ public class ConfigFileOperations {
     }
 
     /**
-     * Backup a file or directory if it exists
+     * Backs up a file or directory if it exists.
+     * If the source is a directory, it is copied recursively.
+     * If the source is a file, it is copied directly.
+     *
+     * @param source The source file or directory to back up.
+     * @param target The target backup location.
      */
     private static void backupIfExists(Path source, Path target) {
         try {
@@ -79,8 +88,12 @@ public class ConfigFileOperations {
     }
 
     /**
-     * Copy a directory recursively
-     * Uses NIO Files.walkFileTree for better performance and error handling
+     * Recursively copies a directory and its contents to a target location.
+     * Uses {@link Files#walkFileTree} for efficient traversal and copying.
+     *
+     * @param source The source directory to copy.
+     * @param target The target directory.
+     * @throws IOException If an I/O error occurs during copying.
      */
     public static void copyDirectory(Path source, Path target) throws IOException {
         Files.walkFileTree(source, new SimpleFileVisitor<>() {
@@ -111,7 +124,10 @@ public class ConfigFileOperations {
     }
 
     /**
-     * Delete a directory recursively
+     * Recursively deletes a directory and all its contents.
+     * Ignores non-existent directories.
+     *
+     * @param directory The directory to delete.
      */
     public static void deleteDirectory(Path directory) {
         if (!Files.exists(directory)) {
@@ -133,7 +149,11 @@ public class ConfigFileOperations {
     }
 
     /**
-     * Calculate the size of a file or directory
+     * Calculates the total size (in bytes) of a file or directory.
+     * For directories, sums the sizes of all contained files.
+     *
+     * @param path The file or directory to measure.
+     * @return The total size in bytes, or 0 if the size could not be determined.
      */
     public static long calculateSize(Path path) {
         try {
@@ -160,7 +180,11 @@ public class ConfigFileOperations {
     }
 
     /**
-     * Clean up old backups, keeping only the most recent N backups
+     * Cleans up old backup directories, keeping only the most recent {@code keepCount} backups.
+     * Older backups are deleted.
+     *
+     * @param gameDir   The root directory of the game.
+     * @param keepCount The number of most recent backups to keep.
      */
     public static void cleanOldBackups(Path gameDir, int keepCount) {
         Path backupDir = gameDir.resolve("packcore/backups");

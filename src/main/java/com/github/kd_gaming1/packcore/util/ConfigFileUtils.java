@@ -18,19 +18,23 @@ import java.util.zip.ZipFile;
 import java.util.stream.Stream;
 
 /**
- * Simplified config file utilities for managing config zips and metadata
+ * Utility class for managing configuration files and their metadata.
+ * Handles reading, writing, and listing config zip files and their associated metadata.
  */
 public class ConfigFileUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileUtils.class);
     private static final Gson GSON = new Gson();
 
     // Standard paths and filenames
+    /** Name of the metadata file stored in config zips and game directory. */
     public static final String METADATA_FILE = "packcore_metadata.json";
+    /** Path to official config zips relative to the game directory. */
     public static final String OFFICIAL_CONFIGS_PATH = "packcore/modpack_config/official_configs";
+    /** Path to custom config zips relative to the game directory. */
     public static final String CUSTOM_CONFIGS_PATH = "packcore/modpack_config/custom_configs";
 
     /**
-     * Represents a config file with its metadata
+     * Represents a config file with its metadata.
      */
     public static class ConfigFile {
         private final String fileName;
@@ -38,6 +42,14 @@ public class ConfigFileUtils {
         private final boolean official;
         private final ConfigMetadata metadata;
 
+        /**
+         * Constructs a ConfigFile instance.
+         *
+         * @param fileName Name of the config file.
+         * @param path Path to the config file.
+         * @param official Whether the config is official.
+         * @param metadata Metadata associated with the config.
+         */
         public ConfigFile(String fileName, Path path, boolean official, ConfigMetadata metadata) {
             this.fileName = fileName;
             this.path = path;
@@ -45,11 +57,21 @@ public class ConfigFileUtils {
             this.metadata = metadata != null ? metadata : new ConfigMetadata();
         }
 
+        /** @return The file name of the config. */
         public String getFileName() { return fileName; }
+        /** @return The path to the config file. */
         public Path getPath() { return path; }
+        /** @return True if the config is official, false otherwise. */
         public boolean isOfficial() { return official; }
+        /** @return The metadata associated with the config. */
         public ConfigMetadata getMetadata() { return metadata; }
 
+        /**
+         * Gets a display name for the config, using metadata if available.
+         * Falls back to the file name without extension.
+         *
+         * @return Display name for the config.
+         */
         public String getDisplayName() {
             if (metadata != null && metadata.isValid()) {
                 return metadata.getDisplayName();
@@ -62,8 +84,9 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Get the currently applied configuration metadata
-     * @return Current config metadata or default if none applied
+     * Gets the currently applied configuration metadata.
+     *
+     * @return Current config metadata, or a default if none is applied.
      */
     public static ConfigMetadata getCurrentConfig() {
         Path gameDir = FabricLoader.getInstance().getGameDir();
@@ -83,6 +106,11 @@ public class ConfigFileUtils {
         }
     }
 
+    /**
+     * Creates a default configuration metadata instance.
+     *
+     * @return Default ConfigMetadata.
+     */
     private static ConfigMetadata createDefaultConfig() {
         return ConfigMetadata.builder()
                 .name("Default Configuration")
@@ -95,7 +123,10 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Save current config metadata to game directory
+     * Saves the current config metadata to the game directory.
+     *
+     * @param metadata The metadata to save.
+     * @throws IOException If writing fails.
      */
     public static void saveCurrentConfig(ConfigMetadata metadata) throws IOException {
         Path gameDir = FabricLoader.getInstance().getGameDir();
@@ -106,7 +137,10 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Read metadata from a zip file
+     * Reads metadata from a zip file.
+     *
+     * @param zipPath Path to the zip file.
+     * @return ConfigMetadata if found, otherwise a fallback metadata.
      */
     public static ConfigMetadata readMetadataFromZip(Path zipPath) {
         if (!Files.exists(zipPath) || !zipPath.toString().endsWith(".zip")) {
@@ -134,6 +168,12 @@ public class ConfigFileUtils {
         }
     }
 
+    /**
+     * Creates fallback metadata for a config zip if no metadata is found.
+     *
+     * @param zipPath Path to the zip file.
+     * @return Fallback ConfigMetadata.
+     */
     private static ConfigMetadata createFallbackMetadata(Path zipPath) {
         String fileName = zipPath.getFileName().toString();
         String displayName = fileName.endsWith(".zip")
@@ -150,7 +190,9 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Get all available configs (official and custom)
+     * Gets all available configs (official and custom).
+     *
+     * @return List of all ConfigFile instances.
      */
     public static List<ConfigFile> getAllConfigs() {
         List<ConfigFile> configs = new ArrayList<>();
@@ -160,19 +202,30 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Get official configs only
+     * Gets official configs only.
+     *
+     * @return List of official ConfigFile instances.
      */
     public static List<ConfigFile> getOfficialConfigs() {
         return getConfigs(OFFICIAL_CONFIGS_PATH, true);
     }
 
     /**
-     * Get custom configs only
+     * Gets custom configs only.
+     *
+     * @return List of custom ConfigFile instances.
      */
     public static List<ConfigFile> getCustomConfigs() {
         return getConfigs(CUSTOM_CONFIGS_PATH, false);
     }
 
+    /**
+     * Gets configs from a specific directory.
+     *
+     * @param relativePath Relative path to the config directory.
+     * @param official Whether the configs are official.
+     * @return List of ConfigFile instances found in the directory.
+     */
     private static List<ConfigFile> getConfigs(String relativePath, boolean official) {
         List<ConfigFile> configs = new ArrayList<>();
         Path gameDir = FabricLoader.getInstance().getGameDir();
@@ -220,7 +273,10 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Check if a config file exists
+     * Checks if a config file exists in either official or custom directories.
+     *
+     * @param fileName Name of the config file (with or without .zip extension).
+     * @return True if the config exists, false otherwise.
      */
     public static boolean configExists(String fileName) {
         if (!fileName.endsWith(".zip")) {
@@ -235,7 +291,10 @@ public class ConfigFileUtils {
     }
 
     /**
-     * Delete a config file
+     * Deletes a config file. Only custom configs can be deleted.
+     *
+     * @param config The ConfigFile to delete.
+     * @return True if deletion was successful, false otherwise.
      */
     public static boolean deleteConfig(ConfigFile config) {
         if (config == null || config.isOfficial()) {
