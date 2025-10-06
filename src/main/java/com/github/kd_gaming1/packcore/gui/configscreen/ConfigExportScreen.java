@@ -267,19 +267,29 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         populateResolutionDropdown();
         formContainer.child(createFormRow("Target Resolution:", resolutionButton));
 
-        formContainer.child(Components.label(Text.literal("Installed mods when the configs was exported:"))
-                        .color(UITheme.color(TEXT_WHITE)))
-                .horizontalSizing(Sizing.fill(90));
+        formContainer.child(Components.label(Text.literal("Installed mods when the configs was exported (Useful for people how import to know what mods the configs are for):"))
+                        .color(UITheme.color(TEXT_WHITE))
+                        .horizontalSizing(Sizing.fill(100)));
 
-        modsListContainer = Containers.verticalFlow(Sizing.fill(100), Sizing.fixed(120));
-        modsListContainer.surface(Surface.flat(ENTRY_BACKGROUND).and(Surface.outline(ENTRY_BORDER)));
-        modsListContainer.padding(Insets.of(8));
+        // Wrapper with background and padding
+        var modsListWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.fixed(125));
+        modsListWrapper.surface(Surface.flat(ENTRY_BACKGROUND).and(Surface.outline(ENTRY_BORDER)));
+        modsListWrapper.padding(Insets.of(8));
 
-        var modsScroll = Containers.verticalScroll(Sizing.fill(100), Sizing.fixed(120), modsListContainer);
-        modsScroll.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        formContainer.child(modsScroll);
+        // The actual list container (no background/padding)
+        modsListContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .padding(Insets.bottom(8));
+
+        // Scroll container for the mod list
+        var modsScroll = Containers.verticalScroll(Sizing.fill(100), Sizing.fixed(120), modsListContainer)
+                .scrollbar(ScrollContainer.Scrollbar.vanilla());
+
+        // Add scroll container to wrapper, then wrapper to form
+        modsListWrapper.child(modsScroll);
+        formContainer.child(modsListWrapper);
 
         populateModsList();
+
 
         var scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), formContainer);
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
@@ -309,7 +319,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         row.verticalAlignment(VerticalAlignment.CENTER);
         row.child(Components.label(Text.literal(label))
                 .color(UITheme.color(TEXT_WHITE))
-                .sizing(Sizing.fixed(120), Sizing.content()));
+                .sizing(Sizing.fixed(60), Sizing.content()));
         row.child(field);
         return row;
     }
