@@ -5,10 +5,10 @@ import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.configscreen.ModpackConfigMenuScreen;
 import com.github.kd_gaming1.packcore.gui.help.guide.BaseGuidePage;
-import com.github.kd_gaming1.packcore.gui.titlescreen.toast.UpdateNotificationToast;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
 import com.github.kd_gaming1.packcore.util.api.UpdateCheckResult;
+import com.github.kd_gaming1.packcore.util.notification.UpdateNotificationManager;
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.*;
@@ -46,7 +46,10 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private static ModpackInfo info = PackCore.getModpackInfo();
 
     private String ChangeLogInfoText;
-    private static final boolean updateNotificationEnabled = PackCoreConfig.showUpdateNotificationsOnTitleScreen & PackCoreConfig.enableUpdateNotifications;
+    private static final boolean updateNotificationEnabled =
+            info != null &&
+                    PackCoreConfig.showUpdateNotificationsOnTitleScreen &&
+                    PackCoreConfig.enableUpdateNotifications;
     private boolean updateAvailable;
     private String currentVersion;
     private String newVersion;
@@ -57,9 +60,6 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private boolean showChangelog = false;
     private FlowLayout mainButtonLayout;
     private FlowLayout changelogLayout;
-
-    private static long lastToastTime = 0;
-    private static final long TOAST_COOLDOWN_MS = 10_000; // 10 seconds
 
     // Cached Markdown processor
     private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
@@ -94,14 +94,16 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     @Override
     public void init() {
-        checkForUpdates();
+        UpdateCheckResult result = checkForUpdates();
 
-        long now = System.currentTimeMillis();
-        if (updateAvailable & updateNotificationEnabled && (now - lastToastTime > TOAST_COOLDOWN_MS)) {
-            MinecraftClient.getInstance().getToastManager().add(
-                    new UpdateNotificationToast(currentVersion, newVersion, modrinthName)
-            );
-            lastToastTime = now;
+        if (result.isSuccess() && result.isUpdateAvailable() && updateNotificationEnabled) {
+            if (UpdateNotificationManager.shouldShowMainMenuToast(result.getVersionNumber())) {
+                UpdateNotificationManager.showMainMenuToast(currentVersion, newVersion, modrinthName);
+            }
+        }
+
+        if (!result.isSuccess()) {
+            LOGGER.warn("Update check failed, but don't spam user: {}", result.getErrorMessage());
         }
 
         super.init();
@@ -418,13 +420,13 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
         }
     }
 
-    public void checkForUpdates() {
+    public UpdateCheckResult checkForUpdates() {
         UpdateCacheManager updateManager = PackCore.getUpdateManager();
         ModpackInfo info = PackCore.getModpackInfo();
 
         if (updateManager == null || info == null) {
             LOGGER.error("Update system not initialized properly");
-            return;
+            return UpdateCheckResult.error("Update system not initialized properly");
         }
 
         // Check if the configuration is valid
@@ -437,22 +439,25 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
             this.modrinthName = "";
             LOGGER.warn("Skipping update check - configuration not properly set up: {}",
                     info.getValidationError());
-            return;
+            return UpdateCheckResult.error("Configuration not properly set up: " + info.getValidationError());
         }
 
         UpdateCheckResult result = updateManager.checkForUpdates(info);
 
         if (!result.isSuccess()) {
             LOGGER.error("Update check failed: {}", result.getErrorMessage());
-            return;
+            return result; // Return the error result
         }
 
+        // Update instance variables
         this.updateAvailable = result.isUpdateAvailable();
         this.currentVersion = info.getVersion();
         this.newVersion = result.getVersionNumber();
         this.changelog = result.getChangelog();
         this.modrinthUrl = result.getModrinthUrl();
         this.modrinthName = info.getName();
+
+        return result; // Return the successful result
     }
 
     public static int compareVersions(String v1, String v2) {
