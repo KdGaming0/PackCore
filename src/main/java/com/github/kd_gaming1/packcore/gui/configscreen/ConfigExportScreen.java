@@ -39,13 +39,12 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private Map<String, Boolean> modsToInclude = new LinkedHashMap<>();
     private FileTreeNode rootNode;
 
-    // UI Components
     private FlowLayout treeContainer;
+    private ScrollContainer<FlowLayout> treeScrollContainer;
     private FlowLayout contentPanel;
     private LabelComponent selectionInfoLabel;
     private ButtonComponent nextButton;
 
-    // Metadata input fields
     private TextBoxComponent nameField;
     private TextAreaComponent descriptionArea;
     private TextBoxComponent versionField;
@@ -53,10 +52,11 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent resolutionButton;
     private FlowLayout modsListContainer;
 
-    // UI State
     private boolean showingMetadata = false;
     private String selectedResolution;
     private String currentResolution;
+
+    private Map<Path, FlowLayout> nodeRowCache = new HashMap<>();
 
     @Override
     protected @NotNull OwoUIAdapter createAdapter() {
@@ -75,7 +75,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         rootComponent.child(createHeader());
         rootComponent.child(createMainContent());
 
-        // Initialize file tree
         rootNode = exportManager.buildFileTree();
         refreshFileTree();
         scanMods();
@@ -228,10 +227,10 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 .color(UITheme.color(ACCENT_GOLD)));
 
         treeContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
-        var scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), treeContainer);
-        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
+        treeScrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), treeContainer);
+        treeScrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
 
-        contentPanel.child(scrollContainer);
+        contentPanel.child(treeScrollContainer);
         refreshFileTree();
     }
 
@@ -247,12 +246,10 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         var formContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
         formContainer.gap(8);
 
-        // Name field
         nameField = Components.textBox(Sizing.fill(70), "");
         nameField.setPlaceholder(Text.literal("Enter configuration name"));
         formContainer.child(createFormRow("Name*:", nameField));
 
-        // Description area
         descriptionArea = PlaceholderTextAreaComponent.create(
                 Sizing.fill(70),
                 Sizing.fixed(80),
@@ -260,20 +257,16 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         );
         formContainer.child(createFormRow("Description:", descriptionArea));
 
-        // Version field
         versionField = Components.textBox(Sizing.fixed(120), DEFAULT_VERSION);
         formContainer.child(createFormRow("Version:", versionField));
 
-        // Author field (pre-filled)
         authorField = Components.textBox(Sizing.fill(70),
                 MinecraftClient.getInstance().getSession().getUsername());
         formContainer.child(createFormRow("Author:", authorField));
 
-        // Resolution dropdown
         populateResolutionDropdown();
         formContainer.child(createFormRow("Target Resolution:", resolutionButton));
 
-        // Mods list
         formContainer.child(Components.label(Text.literal("Installed mods when the configs was exported:"))
                         .color(UITheme.color(TEXT_WHITE)))
                 .horizontalSizing(Sizing.fill(90));
@@ -292,7 +285,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
         contentPanel.child(scrollContainer);
 
-        // Action buttons
         var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
                 .gap(8);
         buttonRow.margins(Insets.top(6));
@@ -323,7 +315,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void populateResolutionDropdown() {
-        // Create a button that shows the current selection and opens a dropdown when clicked
         resolutionButton = (ButtonComponent) Components.button(
                         Text.literal(currentResolution),
                         btn -> openResolutionDropdown(btn)
@@ -341,20 +332,17 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 "1600x900", "1440x900", currentResolution
         );
 
-        // Remove duplicates while preserving order
         var uniqueResolutions = commonResolutions.stream()
                 .distinct()
                 .collect(Collectors.toList());
 
-        // Create and open the dropdown menu
         DropdownComponent.openContextMenu(
-                        this, // screen
-                        this.uiAdapter.rootComponent, // root component
-                        (root, dropdown) -> root.child(dropdown), // mount function
-                        button.x(), // mouse x (button position)
-                        button.y() + button.height(), // mouse y (below button)
+                        this,
+                        this.uiAdapter.rootComponent,
+                        (root, dropdown) -> root.child(dropdown),
+                        button.x(),
+                        button.y() + button.height(),
                         dropdown -> {
-                            // Add resolution options
                             for (String resolution : uniqueResolutions) {
                                 dropdown.button(Text.literal(resolution), selectedDropdown -> {
                                     selectedResolution = resolution;
@@ -364,7 +352,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                                 });
                             }
 
-                            // Add divider and custom resolution option
                             dropdown.divider();
                             dropdown.button(Text.literal("Custom..."), selectedDropdown -> {
                                 openCustomResolutionDialog();
@@ -376,7 +363,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void openCustomResolutionDialog() {
-        // Create a simple dialog for custom resolution input
         var dialogContainer = Containers.verticalFlow(Sizing.fixed(300), Sizing.content());
         dialogContainer.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
         dialogContainer.padding(Insets.of(16));
@@ -402,7 +388,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
         buttonRow.child(Components.button(Text.literal("OK"), btn -> {
             String customRes = customResolutionField.getText().trim();
-            if (customRes.matches("\\d+x\\d+")) { // Basic validation
+            if (customRes.matches("\\d+x\\d+")) {
                 selectedResolution = customRes;
                 currentResolution = customRes;
                 resolutionButton.setMessage(Text.literal(customRes));
@@ -417,8 +403,32 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private void refreshFileTree() {
         if (treeContainer == null || rootNode == null) return;
 
+        nodeRowCache.clear();
         treeContainer.clearChildren();
         addTreeNode(rootNode, 0);
+    }
+
+    private void updateNodeVisuals(FileTreeNode node) {
+        FlowLayout nodeRow = nodeRowCache.get(node.getPath());
+        if (nodeRow == null) return;
+
+        boolean isSelected = selectedPaths.contains(node.getPath());
+
+        if (nodeRow.children().size() >= 3) {
+            Component labelComponent = nodeRow.children().get(2);
+            if (labelComponent instanceof LabelComponent label) {
+                String icon = node.isDirectory() ? "📁" : "📄";
+                label.text(Text.literal(icon + " " + node.getName()));
+                label.color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE));
+            }
+        }
+
+        if (nodeRow.children().size() >= 2) {
+            Component checkboxComponent = nodeRow.children().get(1);
+            if (checkboxComponent instanceof CheckboxComponent checkbox) {
+                checkbox.checked(isSelected);
+            }
+        }
     }
 
     private void addTreeNode(FileTreeNode node, int depth) {
@@ -429,7 +439,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         nodeRow.padding(Insets.left(depth * 16));
         nodeRow.verticalAlignment(VerticalAlignment.CENTER);
 
-        // Expand/collapse button for directories
         if (node.isDirectory() && !node.getChildren().isEmpty()) {
             nodeRow.child(Components.button(
                             Text.literal(node.isExpanded() ? "▼" : "▶"),
@@ -446,20 +455,18 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
             nodeRow.child(placeholder);
         }
 
-        // Selection checkbox
         boolean isSelected = selectedPaths.contains(node.getPath());
         nodeRow.child(Components.checkbox(Text.empty())
                 .checked(isSelected)
-                .onChanged(checked -> toggleSelection(node, checked)));
+                .onChanged(checked -> toggleSelectionWithoutRefresh(node, checked)));
 
-        // Node label
         String icon = node.isDirectory() ? "📁" : "📄";
         nodeRow.child(Components.label(Text.literal(icon + " " + node.getName()))
                 .color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE)));
 
+        nodeRowCache.put(node.getPath(), nodeRow);
         treeContainer.child(nodeRow);
 
-        // Add children if expanded
         if (node.isDirectory() && node.isExpanded()) {
             for (FileTreeNode child : node.getChildren()) {
                 addTreeNode(child, depth + 1);
@@ -470,13 +477,11 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private void toggleSelection(FileTreeNode node, boolean selected) {
         if (selected) {
             selectedPaths.add(node.getPath());
-            // Also select all descendants for directories
             if (node.isDirectory()) {
                 addDescendants(node);
             }
         } else {
             selectedPaths.remove(node.getPath());
-            // Also deselect all descendants
             if (node.isDirectory()) {
                 removeDescendants(node);
             }
@@ -484,6 +489,35 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
         updateSelectionInfo();
         refreshFileTree();
+    }
+
+    private void toggleSelectionWithoutRefresh(FileTreeNode node, boolean selected) {
+        if (selected) {
+            selectedPaths.add(node.getPath());
+            if (node.isDirectory()) {
+                addDescendants(node);
+            }
+        } else {
+            selectedPaths.remove(node.getPath());
+            if (node.isDirectory()) {
+                removeDescendants(node);
+            }
+        }
+
+        updateAllNodeVisuals(rootNode);
+        updateSelectionInfo();
+    }
+
+    private void updateAllNodeVisuals(FileTreeNode node) {
+        if (node.isHidden()) return;
+
+        updateNodeVisuals(node);
+
+        if (node.isDirectory() && node.isExpanded()) {
+            for (FileTreeNode child : node.getChildren()) {
+                updateAllNodeVisuals(child);
+            }
+        }
     }
 
     private void addDescendants(FileTreeNode node) {
@@ -531,24 +565,18 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void applyPreset(PresetType preset) {
-        // Clear current selection
         selectedPaths.clear();
 
-        // Get preset paths from the export manager
         Set<Path> presetPaths = exportManager.getPresetPaths(preset);
 
-        // For each preset path, use the proper selection logic
         for (Path path : presetPaths) {
-            // Find the corresponding tree node
             FileTreeNode node = findNodeByPath(rootNode, path);
             if (node != null) {
-                // Use the same logic as manual selection
                 selectedPaths.add(node.getPath());
                 if (node.isDirectory()) {
                     addDescendants(node);
                 }
 
-                // Expand nodes for selected paths
                 expandToPath(rootNode, path);
             }
         }
@@ -557,15 +585,11 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         refreshFileTree();
     }
 
-    /**
-     * Find a tree node by its path recursively
-     */
     private FileTreeNode findNodeByPath(FileTreeNode currentNode, Path targetPath) {
         if (currentNode.getPath().equals(targetPath)) {
             return currentNode;
         }
 
-        // Search in children
         for (FileTreeNode child : currentNode.getChildren()) {
             FileTreeNode result = findNodeByPath(child, targetPath);
             if (result != null) {
@@ -597,7 +621,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         List<String> mods = exportManager.scanInstalledMods();
         modsToInclude.clear();
         for (String mod : mods) {
-            modsToInclude.put(mod, true);  // Include all by default
+            modsToInclude.put(mod, true);
         }
     }
 
@@ -637,7 +661,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                     descriptionArea.getText().trim(),
                     versionField.getText().trim(),
                     authorField.getText().trim(),
-                    selectedResolution, // Use selectedResolution instead of currentResolution
+                    selectedResolution,
                     includedMods
             );
 
@@ -653,7 +677,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void showError(String message) {
-        // You could show a popup here, for now just log
         LOGGER.error(message);
     }
 }
