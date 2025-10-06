@@ -1,10 +1,12 @@
 package com.github.kd_gaming1.packcore;
 
+import com.github.kd_gaming1.packcore.commands.PackCoreCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPage;
 import com.github.kd_gaming1.packcore.gui.titlescreen.fancy.FancyMainMenuScreen;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.gui.screen.TitleScreen;
 import org.slf4j.Logger;
@@ -18,6 +20,11 @@ public class PackCoreClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            PackCoreCommand.registerCommands(dispatcher);
+        });
+
         // Check if the Custom Menu is enabled using MidnightLib
         if (PackCoreConfig.enableCustomMenu) {
             // Register screenoOld event to replace the main menu after initialization
