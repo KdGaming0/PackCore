@@ -3,8 +3,8 @@ package com.github.kd_gaming1.packcore.gui.help.guide;
 import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.help.guide.util.GuideInfo;
 import com.github.kd_gaming1.packcore.gui.ui.UITheme;
+import com.github.kd_gaming1.packcore.lavendermd.CustomLavenderCompiler;
 import io.wispforest.lavendermd.MarkdownProcessor;
-import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
@@ -28,7 +28,7 @@ public class GuideViewerScreen extends BaseOwoScreen<FlowLayout> {
 
     private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
             new MarkdownProcessor<>(
-                    OwoUICompiler::new,
+                    CustomLavenderCompiler::new,
                     new BasicFormattingFeature(),
                     new ColorFeature(),
                     new LinkFeature(),

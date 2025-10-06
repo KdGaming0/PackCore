@@ -3,10 +3,10 @@ package com.github.kd_gaming1.packcore.gui.help.introduction;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.help.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.help.WizardNavigator;
+import com.github.kd_gaming1.packcore.lavendermd.CustomLavenderCompiler;
 import com.github.kd_gaming1.packcore.util.MarkdownFileUtil;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import io.wispforest.lavendermd.MarkdownProcessor;
-import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.component.Components;
@@ -27,7 +27,7 @@ public class IntroductionScreenPage extends BaseWizardPage {
 
     private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
             new MarkdownProcessor<>(
-                    OwoUICompiler::new,
+                    CustomLavenderCompiler::new,
                     new BasicFormattingFeature(),
                     new ColorFeature(),
                     new LinkFeature(),
