@@ -14,15 +14,42 @@ repositories {
     maven("https://api.modrinth.com/maven")
 }
 
+toolkitMultiversion {
+    moveBuildsToRootProject.set(true)
+}
+
+val mcVersion = project.properties["minecraft.version"] as String
+
+val midnightlibVersion = when (mcVersion) {
+    "1.21.8" -> project.properties["midnightlib_version_1_21_8"]
+    "1.21.5" -> project.properties["midnightlib_version_1_21_5"]
+    else -> project.properties["midnightlib_version_1_21_5"]
+}
+val modmenuVersion = when (mcVersion) {
+    "1.21.8" -> project.properties["modmenu_version_1_21_8"]
+    "1.21.5" -> project.properties["modmenu_version_1_21_5"]
+    else -> project.properties["modmenu_version_1_21_5"]
+}
+val owoVersion = when (mcVersion) {
+    "1.21.8" -> project.properties["owo_version_1_21_8"]
+    "1.21.5" -> project.properties["owo_version_1_21_5"]
+    else -> project.properties["owo_version_1_21_5"]
+}
+val lavenderMdVersion = when (mcVersion) {
+    "1.21.8" -> project.properties["lavender_md_version_1_21_8"]
+    "1.21.5" -> project.properties["lavender_md_version_1_21_5"]
+    else -> project.properties["lavender_md_version_1_21_5"]
+}
+
 dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-api:${mcData.dependencies.fabric.fabricApiVersion}")
 
-    modImplementation("io.wispforest:owo-lib:${project.properties["owo_version"]}")
-    modImplementation(include("maven.modrinth:midnightlib:${project.properties["midnightlib_version"]}")!!)
-    modImplementation(include("io.wispforest.lavender-md:core:${project.properties["lavender_md_version"]}")!!)
-    modImplementation(include("io.wispforest.lavender-md:owo-ui:${project.properties["lavender_md_version"]}")!!)
+    modImplementation("io.wispforest:owo-lib:$owoVersion")
+    modImplementation(include("maven.modrinth:midnightlib:$midnightlibVersion")!!)
+    modImplementation(include("io.wispforest.lavender-md:core:$lavenderMdVersion")!!)
+    modImplementation(include("io.wispforest.lavender-md:owo-ui:$lavenderMdVersion")!!)
 
     modCompileOnly("maven.modrinth:sodium:mc1.21.6-0.6.13-fabric")
     modCompileOnly("maven.modrinth:iris:1.9.1+1.21.7-fabric")
-    modRuntimeOnly("com.terraformersmc:modmenu:${project.properties["modmenu_version"]}")
+    modRuntimeOnly("com.terraformersmc:modmenu:$modmenuVersion")
 }
