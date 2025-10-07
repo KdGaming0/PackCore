@@ -449,10 +449,14 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         nodeRow.padding(Insets.left(depth * 16));
         nodeRow.verticalAlignment(VerticalAlignment.CENTER);
 
-        if (node.isDirectory() && !node.getChildren().isEmpty()) {
+        if (node.isDirectory() && (!node.getChildren().isEmpty() || node.hasUnloadedChildren())) {
             nodeRow.child(Components.button(
                             Text.literal(node.isExpanded() ? "▼" : "▶"),
                             btn -> {
+                                if (!node.isExpanded() && !node.isChildrenLoaded()) {
+                                    // Load children on-demand
+                                    exportManager.loadNodeChildren(node);
+                                }
                                 node.setExpanded(!node.isExpanded());
                                 refreshFileTree();
                             })

@@ -24,7 +24,12 @@ public class ConfigExportManager {
 
     private static final Set<String> HIDDEN_FOLDERS = Set.of(
             "packcore", "logs", "crash-reports", "screenshots",
-            ".git", ".minecraft", "saves", "assets", "mods"
+            ".git", ".minecraft", "saves", "assets", "mods", ".firmament"
+    );
+
+    private static final Set<String> EXCLUDED_CONFIG_SUBFOLDERS = Set.of(
+            "firmament/profiles", "skyhanni/backup", "skyhanni/repo",
+            "skyblocker/item-repo", "skyocean/data"
     );
 
     private static final int MAX_TREE_DEPTH = 10;
@@ -80,30 +85,76 @@ public class ConfigExportManager {
             return node;
         }
 
-        // Only explore directories up to max depth
-        if (isDirectory && depth < MAX_TREE_DEPTH) {
-            try (Stream<Path> children = Files.list(path)) {
-                children.filter(Files::exists)
-                        .filter(child -> !isHidden(child))
-                        .sorted(comparePaths())
-                        .limit(MAX_CHILDREN_PER_NODE)
-                        .forEach(childPath -> {
-                            FileTreeNode childNode = createNode(childPath, depth + 1);
-                            if (childNode != null && !childNode.isHidden()) {
-                                node.addChild(childNode);
-                            }
-                        });
-            } catch (IOException e) {
-                LOGGER.debug("Could not list directory: {}", path);
-            }
+        // For directories, don't load children immediately if depth > 2
+        // This implements lazy loading for deeper directories
+        if (isDirectory && depth < 2) {
+            loadDirectoryChildren(node, depth);
+        } else if (isDirectory) {
+            // Mark that this directory has children but don't load them yet
+            node.setHasUnloadedChildren(true);
         }
 
         return node;
     }
 
+    private void loadDirectoryChildren(FileTreeNode node, int depth) {
+        try (Stream<Path> children = Files.list(node.getPath())) {
+            children.filter(Files::exists)
+                    .filter(child -> !isHidden(child))
+                    .sorted(comparePaths())
+                    .limit(MAX_CHILDREN_PER_NODE)
+                    .forEach(childPath -> {
+                        FileTreeNode childNode = createNode(childPath, depth + 1);
+                        if (childNode != null && !childNode.isHidden()) {
+                            node.addChild(childNode);
+                        }
+                    });
+        } catch (IOException e) {
+            LOGGER.debug("Could not list directory: {}", node.getPath());
+        }
+    }
+
+    /**
+     * Load children for a directory node on-demand (when expanded)
+     */
+    public void loadNodeChildren(FileTreeNode node) {
+        if (!node.isDirectory() || node.isChildrenLoaded()) {
+            return;
+        }
+
+        try (Stream<Path> children = Files.list(node.getPath())) {
+            children.filter(Files::exists)
+                    .filter(child -> !isHidden(child))
+                    .sorted(comparePaths())
+                    .limit(MAX_CHILDREN_PER_NODE)
+                    .forEach(childPath -> {
+                        FileTreeNode childNode = createNode(childPath, 999); // Use high depth to prevent recursive loading
+                        if (childNode != null && !childNode.isHidden()) {
+                            node.addChild(childNode);
+                        }
+                    });
+
+            node.setChildrenLoaded(true);
+            node.setHasUnloadedChildren(false);
+        } catch (IOException e) {
+            LOGGER.debug("Could not list directory: {}", node.getPath());
+        }
+    }
+
     private boolean isHidden(Path path) {
         String name = path.getFileName().toString().toLowerCase();
-        return HIDDEN_FOLDERS.contains(name) || name.startsWith(".");
+
+        // Check basic hidden folders
+        if (HIDDEN_FOLDERS.contains(name) || name.startsWith(".")) {
+            return true;
+        }
+
+        // Check config subfolder exclusions
+        Path relativePath = gameDir.relativize(path);
+        String relativePathStr = relativePath.toString().replace("\\", "/");
+
+        return EXCLUDED_CONFIG_SUBFOLDERS.stream()
+                .anyMatch(excluded -> relativePathStr.equals(excluded) || relativePathStr.startsWith(excluded + "/"));
     }
 
     private Comparator<Path> comparePaths() {

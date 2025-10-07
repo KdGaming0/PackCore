@@ -11,6 +11,8 @@ public class FileTreeNode {
     private boolean expanded = false;
     private boolean hidden = false;
     private List<FileTreeNode> children = new ArrayList<>();
+    private boolean childrenLoaded = false;
+    private boolean hasUnloadedChildren = false;
 
     public FileTreeNode(Path path, String name, boolean isDirectory) {
         this.path = path;
@@ -27,4 +29,8 @@ public class FileTreeNode {
     public void setHidden(boolean hidden) { this.hidden = hidden; }
     public List<FileTreeNode> getChildren() { return children; }
     public void addChild(FileTreeNode child) { this.children.add(child); }
+    public boolean isChildrenLoaded() { return childrenLoaded; }
+    public void setChildrenLoaded(boolean loaded) { this.childrenLoaded = loaded; }
+    public boolean hasUnloadedChildren() { return hasUnloadedChildren; }
+    public void setHasUnloadedChildren(boolean hasChildren) { this.hasUnloadedChildren = hasChildren; }
 }
