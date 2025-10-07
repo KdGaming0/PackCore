@@ -268,8 +268,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         formContainer.child(createFormRow("Target Resolution:", resolutionButton));
 
         formContainer.child(Components.label(Text.literal("Installed mods when the configs was exported (Useful for people how import to know what mods the configs are for):"))
-                        .color(UITheme.color(TEXT_WHITE))
-                        .horizontalSizing(Sizing.fill(100)));
+                .color(UITheme.color(TEXT_WHITE))
+                .horizontalSizing(Sizing.fill(100)));
 
         // Wrapper with background and padding
         var modsListWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.fixed(125));
@@ -305,7 +305,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 60))
                 .sizing(Sizing.fixed(90), Sizing.fixed(20)));
 
-        buttonRow.child(Components.button(Text.literal("Export"), btn -> performExport())
+        buttonRow.child(Components.button(Text.literal("Export"), btn -> showExportWarningDialog())
                 .renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 60))
                 .sizing(Sizing.fixed(90), Sizing.fixed(20)));
@@ -410,6 +410,61 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         this.uiAdapter.rootComponent.child(dialogContainer);
     }
 
+    private void showExportWarningDialog() {
+        var dialogContainer = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
+        dialogContainer.surface(Surface.flat(DARK_PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
+        dialogContainer.padding(Insets.of(16));
+        dialogContainer.positioning(Positioning.absolute(
+                (this.width - 400) / 2,
+                (this.height - 200) / 2
+        )).zIndex(10);
+
+        // Title
+        dialogContainer.child(Components.label(Text.literal("Export Warning"))
+                .color(UITheme.color(ACCENT_GOLD))
+                .margins(Insets.bottom(8)));
+
+        // Warning message
+        var warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        warningText.gap(4);
+
+        warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
+                .color(UITheme.color(TEXT_WHITE))
+                .margins(Insets.bottom(4)));
+
+        warningText.child(Components.label(Text.literal("• The export process might cause the game to appear unresponsive"))
+                .color(UITheme.color(TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• Your system may ask you to close the process"))
+                .color(UITheme.color(TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• Please wait - the export is still running in the background"))
+                .color(UITheme.color(TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• Do not force close the application during export"))
+                .color(UITheme.color(TEXT_WHITE))
+                .margins(Insets.bottom(8)));
+
+        dialogContainer.child(warningText);
+
+        // Buttons
+        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonRow.gap(8);
+        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        buttonRow.child(Components.button(Text.literal("Cancel"), btn -> {
+            this.uiAdapter.rootComponent.removeChild(dialogContainer);
+        }).sizing(Sizing.fixed(80), Sizing.fixed(20)));
+
+        buttonRow.child(Components.button(Text.literal("Continue Export"), btn -> {
+            this.uiAdapter.rootComponent.removeChild(dialogContainer);
+            performExport();
+        }).sizing(Sizing.fixed(120), Sizing.fixed(20)));
+
+        dialogContainer.child(buttonRow);
+        this.uiAdapter.rootComponent.child(dialogContainer);
+    }
+
     private void refreshFileTree() {
         if (treeContainer == null || rootNode == null) return;
 
@@ -449,14 +504,10 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         nodeRow.padding(Insets.left(depth * 16));
         nodeRow.verticalAlignment(VerticalAlignment.CENTER);
 
-        if (node.isDirectory() && (!node.getChildren().isEmpty() || node.hasUnloadedChildren())) {
+        if (node.isDirectory() && !node.getChildren().isEmpty()) {
             nodeRow.child(Components.button(
                             Text.literal(node.isExpanded() ? "▼" : "▶"),
                             btn -> {
-                                if (!node.isExpanded() && !node.isChildrenLoaded()) {
-                                    // Load children on-demand
-                                    exportManager.loadNodeChildren(node);
-                                }
                                 node.setExpanded(!node.isExpanded());
                                 refreshFileTree();
                             })

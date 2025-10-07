@@ -212,8 +212,9 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         entry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
         entry.padding(Insets.of(6));
 
-        // Backup name
-        entry.child(Components.label(Text.literal(backup.configName))
+        // Backup title (updated to use title field)
+        String displayTitle = backup.title != null && !backup.title.isEmpty() ? backup.title : backup.configName;
+        entry.child(Components.label(Text.literal(displayTitle))
                 .color(UITheme.color(UITheme.TEXT_WHITE)));
 
         // Metadata badges
@@ -299,11 +300,14 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         infoPanel.horizontalAlignment(HorizontalAlignment.LEFT);
         infoPanel.verticalAlignment(VerticalAlignment.TOP);
 
-        // Header
+        // Header - use title if available, otherwise configName
         int guiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
         int padding = guiScale <= 2 ? 6 : 0;
 
-        infoPanel.child(Components.label(Text.literal(selectedBackup.configName)
+        String headerText = selectedBackup.title != null && !selectedBackup.title.isEmpty()
+                ? selectedBackup.title : selectedBackup.configName;
+
+        infoPanel.child(Components.label(Text.literal(headerText)
                         .setStyle(Style.EMPTY.withBold(true)))
                 .color(UITheme.color(UITheme.ACCENT_GOLD))
                 .margins(Insets.of(padding, 0, 0, 0)));
@@ -315,6 +319,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         infoBox.padding(Insets.of(8));
 
         infoBox.child(createInfoRow("Type:", selectedBackup.type.getDisplayName()));
+        infoBox.child(createInfoRow("Config:", selectedBackup.configName));
         infoBox.child(createInfoRow("Version:", selectedBackup.configVersion));
         infoBox.child(createInfoRow("Created:", formatTimestamp(selectedBackup.timestamp)));
         infoBox.child(createInfoRow("Size:", formatSize(selectedBackup.sizeBytes)));
@@ -322,8 +327,8 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
 
         infoPanel.child(infoBox);
 
-        // Description
-        if (selectedBackup.description != null && !selectedBackup.description.isEmpty()) {
+        // Description - only show if not null/empty
+        if (selectedBackup.description != null && !selectedBackup.description.trim().isEmpty()) {
             infoPanel.child(Components.label(Text.literal("Description:")
                             .setStyle(Style.EMPTY.withBold(true)))
                     .color(UITheme.color(UITheme.ACCENT_GOLD)));
@@ -401,7 +406,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void showCreateBackupDialog() {
-        var popup = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
+        var popup = Containers.verticalFlow(Sizing.fixed(450), Sizing.content());
         popup.gap(12);
         popup.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
         popup.padding(Insets.of(20));
@@ -410,11 +415,18 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                         .setStyle(Style.EMPTY.withBold(true)))
                 .color(UITheme.color(UITheme.ACCENT_GOLD)));
 
-        popup.child(Components.label(Text.literal("Enter a description for this backup:"))
+        popup.child(Components.label(Text.literal("Title:*"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        var titleField = Components.textBox(Sizing.fill(95), "");
+        titleField.setPlaceholder(Text.literal("Enter backup title"));
+        popup.child(titleField);
+
+        popup.child(Components.label(Text.literal("Description (optional):"))
                 .color(UITheme.color(UITheme.TEXT_WHITE)));
 
         var descriptionField = Components.textBox(Sizing.fill(95), "");
-        descriptionField.setPlaceholder(Text.literal("e.g., Before testing new mods"));
+        descriptionField.setPlaceholder(Text.literal("Additional details about this backup"));
         popup.child(descriptionField);
 
         var buttons = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
@@ -422,14 +434,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         buttons.horizontalAlignment(HorizontalAlignment.CENTER);
 
         buttons.child(Components.button(Text.literal("Create"), btn -> {
-                    String description = descriptionField.getText().trim();
-                    if (description.isEmpty()) {
-                        description = "Manual backup - " + java.time.LocalDateTime.now().format(
-                                java.time.format.DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
-                    }
-                    BackupManager.createManualBackup(description);
-                    closeOverlay();
-                    refreshBackupsList();
+                    showCreateBackupWarningDialog(titleField.getText().trim(), descriptionField.getText().trim());
                 }).renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .sizing(Sizing.fixed(100), Sizing.fixed(20)));
@@ -442,6 +447,74 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         popup.child(buttons);
 
         showOverlay(popup);
+    }
+
+    private void showCreateBackupWarningDialog(String title, String description) {
+        if (title.isEmpty()) {
+            title = "Manual backup - " + java.time.LocalDateTime.now().format(
+                    java.time.format.DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
+        }
+
+        final String finalTitle = title;
+        final String finalDescription = description.isEmpty() ? null : description;
+
+        closeOverlay(); // Close the input dialog
+
+        var popup = Containers.verticalFlow(Sizing.fixed(450), Sizing.content());
+        popup.gap(12);
+        popup.surface(Surface.flat(UITheme.DARK_PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
+        popup.padding(Insets.of(20));
+
+        // Title
+        popup.child(Components.label(Text.literal("Backup Warning"))
+                .color(UITheme.color(UITheme.ACCENT_GOLD))
+                .margins(Insets.bottom(8)));
+
+        // Warning message (copied from export screen)
+        var warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        warningText.gap(4);
+
+        warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(4)));
+
+        warningText.child(Components.label(Text.literal("• The backup process might cause the game to appear unresponsive"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• Your system may ask you to close the process"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• Please wait - the backup is still running in the background"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• Do not force close the application during backup"))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(8)));
+
+        popup.child(warningText);
+
+        // Buttons
+        var buttons = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttons.gap(12);
+        buttons.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        buttons.child(Components.button(Text.literal("Cancel"), btn -> {
+            closeOverlay();
+        }).sizing(Sizing.fixed(80), Sizing.fixed(20)));
+
+        buttons.child(Components.button(Text.literal("Continue Backup"), btn -> {
+            closeOverlay();
+            performCreateBackup(finalTitle, finalDescription);
+        }).sizing(Sizing.fixed(120), Sizing.fixed(20)));
+
+        popup.child(buttons);
+
+        showOverlay(popup);
+    }
+
+    private void performCreateBackup(String title, String description) {
+        BackupManager.createManualBackup(title, description);
+        refreshBackupsList();
     }
 
     private void showRestoreConfirmation() {
@@ -560,7 +633,8 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
 
             if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.sendMessage(
-                        Text.literal("Backup restored: " + selectedBackup.configName), false);
+                        Text.literal("Backup restored: " +
+                                (selectedBackup.title != null ? selectedBackup.title : selectedBackup.configName)), false);
             }
 
             refreshBackupsList();

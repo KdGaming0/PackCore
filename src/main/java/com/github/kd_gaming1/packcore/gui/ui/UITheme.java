@@ -9,6 +9,7 @@ public final class UITheme {
 
     // Colors
     public static final int PANEL_BACKGROUND = 0xC0_1A1A1A;
+    public static final int DARK_PANEL_BACKGROUND = 0xFF_2A2A2A;
     public static final int ACCENT_GOLD = 0xFF_FFD700;
     public static final int TEXT_WHITE = 0xFFFFFF;
     public static final int TEXT_SECONDARY = 0xB9BBBE;

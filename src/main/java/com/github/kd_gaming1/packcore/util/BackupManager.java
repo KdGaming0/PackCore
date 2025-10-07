@@ -38,6 +38,12 @@ public class BackupManager {
             "packcore/current_config.json"
     );
 
+    // Excluded config subfolders (copied from ConfigExportManager)
+    private static final Set<String> EXCLUDED_CONFIG_SUBFOLDERS = Set.of(
+            "firmament/profiles", "skyhanni/backup", "skyhanni/repo",
+            "skyblocker/item-repo", "skyocean/data"
+    );
+
     public enum BackupType {
         AUTO("Auto"),
         MANUAL("Manual");
@@ -60,23 +66,27 @@ public class BackupManager {
         public final String configName;
         public final String configVersion;
         public final long sizeBytes;
+        public final String title;
         public final String description;
 
+        // Constructor with title and description
         public BackupInfo(String backupId, String timestamp, BackupType type,
-                          String configName, String configVersion, long sizeBytes, String description) {
+                          String configName, String configVersion, long sizeBytes,
+                          String title, String description) {
             this.backupId = backupId;
             this.timestamp = timestamp;
             this.type = type;
             this.configName = configName;
             this.configVersion = configVersion;
             this.sizeBytes = sizeBytes;
+            this.title = title;
             this.description = description;
         }
 
         public String getDisplayName() {
             return String.format("[%s] %s - %s",
                     type.getDisplayName(),
-                    configName != null ? configName : "Unknown Config",
+                    title != null ? title : (configName != null ? configName : "Unknown Config"),
                     formatTimestamp());
         }
 
@@ -100,23 +110,23 @@ public class BackupManager {
         }
 
         ConfigMetadata currentConfig = ConfigFileUtils.getCurrentConfig();
-        String description = "Automatic backup before applying: " +
+        String title = "Auto backup before applying: " +
                 (currentConfig != null ? currentConfig.getName() : "Unknown Config");
 
-        return createBackup(BackupType.AUTO, description);
+        return createBackup(BackupType.AUTO, title, null);
     }
 
     /**
      * Create a manual backup
      */
-    public static Path createManualBackup(String description) {
-        return createBackup(BackupType.MANUAL, description);
+    public static Path createManualBackup(String title, String description) {
+        return createBackup(BackupType.MANUAL, title, description);
     }
 
     /**
      * Create a backup with metadata
      */
-    private static Path createBackup(BackupType type, String description) {
+    private static Path createBackup(BackupType type, String title, String description) {
         try {
             Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
             Path backupsDir = gameDir.resolve(BACKUPS_DIR);
@@ -145,7 +155,8 @@ public class BackupManager {
                         currentConfig != null ? currentConfig.getName() : "Unknown",
                         currentConfig != null ? currentConfig.getVersion() : "1.0.0",
                         calculateDirectorySize(tempDir),
-                        description != null ? description : "Manual backup"
+                        title != null ? title : "Manual backup",
+                        description
                 );
 
                 // Write backup metadata
@@ -174,7 +185,7 @@ public class BackupManager {
     }
 
     /**
-     * Copy config-related files to backup directory
+     * Copy config-related files to backup directory, excluding specified subfolders
      */
     private static void copyConfigFiles(Path gameDir, Path backupDir) throws IOException {
         for (String configPath : CONFIG_PATHS) {
@@ -183,12 +194,46 @@ public class BackupManager {
                 Path targetPath = backupDir.resolve(configPath);
 
                 if (Files.isDirectory(sourcePath)) {
-                    ConfigFileOperations.copyDirectory(sourcePath, targetPath);
+                    copyDirectoryWithExclusions(sourcePath, targetPath);
                 } else {
                     Files.createDirectories(targetPath.getParent());
                     Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
+        }
+    }
+
+    /**
+     * Copy directory while excluding specified subfolders
+     */
+    private static void copyDirectoryWithExclusions(Path source, Path target) throws IOException {
+        Files.createDirectories(target);
+
+        try (Stream<Path> paths = Files.walk(source)) {
+            paths.forEach(sourcePath -> {
+                try {
+                    Path relativePath = source.relativize(sourcePath);
+                    String relativePathStr = relativePath.toString().replace("\\", "/");
+
+                    // Check if this path should be excluded
+                    for (String excludedFolder : EXCLUDED_CONFIG_SUBFOLDERS) {
+                        if (relativePathStr.startsWith(excludedFolder)) {
+                            return; // Skip this path
+                        }
+                    }
+
+                    Path targetPath = target.resolve(relativePath);
+
+                    if (Files.isDirectory(sourcePath)) {
+                        Files.createDirectories(targetPath);
+                    } else {
+                        Files.createDirectories(targetPath.getParent());
+                        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to copy file during backup: {}", sourcePath, e);
+                }
+            });
         }
     }
 
@@ -278,7 +323,8 @@ public class BackupManager {
                     "Legacy Config",
                     "Unknown",
                     size,
-                    "Legacy backup (no metadata)"
+                    "Legacy backup (no metadata)",
+                    null
             );
 
         } catch (IOException e) {
