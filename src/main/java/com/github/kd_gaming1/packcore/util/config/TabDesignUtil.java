@@ -110,7 +110,11 @@ public class TabDesignUtil {
         String command = "shconfig set config.gui.compactTabList.enabled " + enable;
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
         if (player == null) return;
+        //#if MC >= 1.21.6
+        //$$ player.networkHandler.sendChatCommand(command);
+        //#else
         player.networkHandler.sendCommand(command);
+        //#endif
         PackCore.LOGGER.info("Executed SkyHanni command: /{}", command);
     }
 }

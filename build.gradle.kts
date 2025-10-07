@@ -1,3 +1,5 @@
+import dev.deftu.gradle.utils.version.MinecraftVersions
+
 plugins {
     java
     id("dev.deftu.gradle.multiversion")
@@ -18,26 +20,26 @@ toolkitMultiversion {
     moveBuildsToRootProject.set(true)
 }
 
-val mcVersion = project.properties["minecraft.version"] as String
+val mcVersion = mcData.version
 
 val midnightlibVersion = when (mcVersion) {
-    "1.21.8" -> project.properties["midnightlib_version_1_21_8"]
-    "1.21.5" -> project.properties["midnightlib_version_1_21_5"]
+    MinecraftVersions.VERSION_1_21_8 -> project.properties["midnightlib_version_1_21_8"]
+    MinecraftVersions.VERSION_1_21_5 -> project.properties["midnightlib_version_1_21_5"]
     else -> project.properties["midnightlib_version_1_21_5"]
 }
 val modmenuVersion = when (mcVersion) {
-    "1.21.8" -> project.properties["modmenu_version_1_21_8"]
-    "1.21.5" -> project.properties["modmenu_version_1_21_5"]
+    MinecraftVersions.VERSION_1_21_8 -> project.properties["modmenu_version_1_21_8"]
+    MinecraftVersions.VERSION_1_21_5 -> project.properties["modmenu_version_1_21_5"]
     else -> project.properties["modmenu_version_1_21_5"]
 }
 val owoVersion = when (mcVersion) {
-    "1.21.8" -> project.properties["owo_version_1_21_8"]
-    "1.21.5" -> project.properties["owo_version_1_21_5"]
+    MinecraftVersions.VERSION_1_21_8 -> project.properties["owo_version_1_21_8"]
+    MinecraftVersions.VERSION_1_21_5 -> project.properties["owo_version_1_21_5"]
     else -> project.properties["owo_version_1_21_5"]
 }
 val lavenderMdVersion = when (mcVersion) {
-    "1.21.8" -> project.properties["lavender_md_version_1_21_8"]
-    "1.21.5" -> project.properties["lavender_md_version_1_21_5"]
+    MinecraftVersions.VERSION_1_21_8 -> project.properties["lavender_md_version_1_21_8"]
+    MinecraftVersions.VERSION_1_21_5 -> project.properties["lavender_md_version_1_21_5"]
     else -> project.properties["lavender_md_version_1_21_5"]
 }
 
