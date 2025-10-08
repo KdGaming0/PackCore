@@ -4,6 +4,10 @@ import io.wispforest.owo.ui.core.Surface;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.Identifier;
 
+//#if MC >= 1.21.6
+//$$ import net.minecraft.client.gl.RenderPipelines;
+//#endif
+
 /**
  * Enhanced Surface implementations for texture rendering with different scaling modes.
  *
@@ -46,7 +50,11 @@ public final class UiSurfaces {
             int drawY = cy + (ch - scaledHeight) / 2;
 
             context.drawTexture(
+                    //#if MC >= 1.21.6
+                    //$$ RenderPipelines.GUI_TEXTURED,
+                    //#else
                     RenderLayer::getGuiTextured,
+                    //#endif
                     texture,
                     drawX, drawY,
                     0f, 0f,
@@ -86,7 +94,11 @@ public final class UiSurfaces {
             int drawY = cy + (ch - scaledHeight) / 2;
 
             context.drawTexture(
+                    //#if MC >= 1.21.6
+                    //$$ RenderPipelines.GUI_TEXTURED,
+                    //#else
                     RenderLayer::getGuiTextured,
+                    //#endif
                     texture,
                     drawX, drawY,
                     0f, 0f,
@@ -109,7 +121,11 @@ public final class UiSurfaces {
             if (component.width() <= 0 || component.height() <= 0) return;
 
             context.drawTexture(
+                    //#if MC >= 1.21.6
+                    //$$ RenderPipelines.GUI_TEXTURED,
+                    //#else
                     RenderLayer::getGuiTextured,
+                    //#endif
                     texture,
                     component.x(), component.y(),
                     0f, 0f,
@@ -145,7 +161,11 @@ public final class UiSurfaces {
 
                     // Draw partial texture region for edge tiles
                     context.drawTexture(
+                            //#if MC >= 1.21.6
+                            //$$ RenderPipelines.GUI_TEXTURED,
+                            //#else
                             RenderLayer::getGuiTextured,
+                            //#endif
                             texture,
                             x, y,
                             0f, 0f,
@@ -182,7 +202,11 @@ public final class UiSurfaces {
                     int drawWidth = Math.min(tileWidth, endX - x);
 
                     context.drawTexture(
+                            //#if MC >= 1.21.6
+                            //$$ RenderPipelines.GUI_TEXTURED,
+                            //#else
                             RenderLayer::getGuiTextured,
+                            //#endif
                             texture,
                             x, y,
                             0f, 0f,
