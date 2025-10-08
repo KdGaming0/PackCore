@@ -6,14 +6,17 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
- * Manages importing configuration ZIP files
+ * Manages importing configuration ZIP files with validation
  */
 public class ConfigImportManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigImportManager.class);
@@ -21,16 +24,50 @@ public class ConfigImportManager {
             DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     /**
-     * Open native file chooser to select config zip
+     * Validation result with details
+     */
+    public static class ValidationResult {
+        public final boolean isValid;
+        public final String errorMessage;
+
+        public ValidationResult(boolean isValid, String errorMessage) {
+            this.isValid = isValid;
+            this.errorMessage = errorMessage;
+        }
+
+        public static ValidationResult valid() {
+            return new ValidationResult(true, null);
+        }
+
+        public static ValidationResult invalid(String message) {
+            return new ValidationResult(false, message);
+        }
+    }
+
+    /**
+     * Open native file chooser to select config zip with foreground focus
      */
     public static CompletableFuture<Path> selectConfigFile() {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                // Show warning about file dialog
+                MinecraftClient.getInstance().execute(() -> {
+                    if (MinecraftClient.getInstance().player != null) {
+                        MinecraftClient.getInstance().player.sendMessage(
+                                net.minecraft.text.Text.literal(
+                                        "§eFile browser opening... It may appear behind Minecraft. Check your taskbar!"),
+                                false
+                        );
+                    }
+                });
+
+                // Create file chooser with better configuration
                 JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setDialogTitle("Select Config File to Import");
+                fileChooser.setDialogTitle("Select Config File to Import (.zip with metadata)");
                 fileChooser.setFileFilter(
                         new FileNameExtensionFilter("Config Files (*.zip)", "zip"));
                 fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fileChooser.setMultiSelectionEnabled(false);
 
                 // Set initial directory to user's Downloads folder
                 Path downloadsPath = Paths.get(System.getProperty("user.home"), "Downloads");
@@ -38,7 +75,9 @@ public class ConfigImportManager {
                     fileChooser.setCurrentDirectory(downloadsPath.toFile());
                 }
 
-                int result = fileChooser.showOpenDialog(null);
+                // Force dialog to front (platform-specific workarounds)
+                JDialog dialog = createForegroundDialog(fileChooser);
+                int result = fileChooser.showOpenDialog(dialog);
 
                 if (result == JFileChooser.APPROVE_OPTION) {
                     Path selectedFile = fileChooser.getSelectedFile().toPath();
@@ -46,6 +85,8 @@ public class ConfigImportManager {
 
                     if (!selectedFile.toString().toLowerCase().endsWith(".zip")) {
                         LOGGER.warn("Selected file is not a zip: {}", selectedFile);
+                        showErrorDialog("Invalid File",
+                                "Please select a .zip file containing a valid configuration.");
                         return null;
                     }
 
@@ -56,13 +97,53 @@ public class ConfigImportManager {
 
             } catch (Exception e) {
                 LOGGER.error("Error opening file dialog", e);
+                showErrorDialog("Error", "Failed to open file browser: " + e.getMessage());
                 return null;
             }
         });
     }
 
     /**
-     * Preview config metadata without importing
+     * Creates a dialog that attempts to stay in foreground
+     */
+    private static JDialog createForegroundDialog(JFileChooser fileChooser) {
+        JDialog dialog = new JDialog((Frame) null, "Select Config File", false);
+        dialog.setAlwaysOnTop(true);
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        // Platform-specific workarounds for bringing to front
+        SwingUtilities.invokeLater(() -> {
+            dialog.toFront();
+            dialog.setVisible(true);
+            dialog.requestFocus();
+
+            // Additional workaround for some systems
+            dialog.setAlwaysOnTop(false);
+            dialog.toFront();
+            dialog.requestFocus();
+            dialog.setAlwaysOnTop(true);
+        });
+
+        return dialog;
+    }
+
+    /**
+     * Shows an error dialog to the user
+     */
+    private static void showErrorDialog(String title, String message) {
+        SwingUtilities.invokeLater(() -> {
+            JOptionPane optionPane = new JOptionPane(
+                    message,
+                    JOptionPane.ERROR_MESSAGE
+            );
+            JDialog dialog = optionPane.createDialog(title);
+            dialog.setAlwaysOnTop(true);
+            dialog.setVisible(true);
+        });
+    }
+
+    /**
+     * Preview config metadata without importing - includes validation
      */
     public static ConfigMetadata previewConfig(Path configPath) {
         if (configPath == null || !Files.exists(configPath)) {
@@ -75,7 +156,84 @@ public class ConfigImportManager {
             return null;
         }
 
+        // Validate before reading metadata
+        ValidationResult validation = validateConfigZip(configPath);
+        if (!validation.isValid) {
+            LOGGER.error("Config validation failed: {}", validation.errorMessage);
+            showErrorDialog("Invalid Config", validation.errorMessage);
+            return null;
+        }
+
         return ConfigFileUtils.readMetadataFromZip(configPath);
+    }
+
+    /**
+     * Validates that a ZIP file is a valid config:
+     * - Must contain packcore_metadata.json
+     * - Must NOT contain any .jar files
+     */
+    public static ValidationResult validateConfigZip(Path zipPath) {
+        if (zipPath == null || !Files.exists(zipPath)) {
+            return ValidationResult.invalid("File does not exist");
+        }
+
+        if (!zipPath.toString().toLowerCase().endsWith(".zip")) {
+            return ValidationResult.invalid("File must be a .zip file");
+        }
+
+        try {
+            if (Files.size(zipPath) == 0) {
+                return ValidationResult.invalid("File is empty");
+            }
+        } catch (IOException e) {
+            return ValidationResult.invalid("Cannot read file size");
+        }
+
+        try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+            boolean hasMetadata = false;
+            boolean hasJarFiles = false;
+
+            var entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                String entryName = entry.getName();
+
+                // Check for metadata file
+                if (entryName.equals(ConfigFileUtils.METADATA_FILE) ||
+                        entryName.endsWith("/" + ConfigFileUtils.METADATA_FILE)) {
+                    hasMetadata = true;
+                }
+
+                // Check for .jar files (forbidden)
+                if (entryName.toLowerCase().endsWith(".jar")) {
+                    hasJarFiles = true;
+                    LOGGER.warn("Found .jar file in config: {}", entryName);
+                }
+            }
+
+            if (!hasMetadata) {
+                return ValidationResult.invalid(
+                        "Invalid config file: Missing packcore_metadata.json\n\n" +
+                                "This ZIP must contain configuration metadata to be imported."
+                );
+            }
+
+            if (hasJarFiles) {
+                return ValidationResult.invalid(
+                        "Invalid config file: Contains .jar files\n\n" +
+                                "Configuration files should not contain mod .jar files.\n" +
+                                "Please use config files only."
+                );
+            }
+
+            return ValidationResult.valid();
+
+        } catch (IOException e) {
+            LOGGER.error("Failed to validate config zip", e);
+            return ValidationResult.invalid(
+                    "Cannot read ZIP file: " + e.getMessage()
+            );
+        }
     }
 
     /**
@@ -98,15 +256,18 @@ public class ConfigImportManager {
             try {
                 finalCallback.onProgress("Validating file...", 10);
 
-                if (!validateConfigFile(sourceFile)) {
-                    finalCallback.onComplete(false, "Invalid config file format");
+                // Perform comprehensive validation
+                ValidationResult validation = validateConfigZip(sourceFile);
+                if (!validation.isValid) {
+                    finalCallback.onComplete(false, validation.errorMessage);
                     return;
                 }
 
                 finalCallback.onProgress("Reading metadata...", 30);
-                ConfigMetadata metadata = previewConfig(sourceFile);
-                if (metadata == null) {
-                    finalCallback.onComplete(false, "Could not read config metadata");
+                ConfigMetadata metadata = ConfigFileUtils.readMetadataFromZip(sourceFile);
+                if (metadata == null || !metadata.isValid()) {
+                    finalCallback.onComplete(false,
+                            "Could not read config metadata or metadata is invalid");
                     return;
                 }
 
@@ -147,26 +308,6 @@ public class ConfigImportManager {
                 finalCallback.onComplete(false, "Import failed: " + e.getMessage());
             }
         });
-    }
-
-    private static boolean validateConfigFile(Path configPath) {
-        try {
-            if (!Files.exists(configPath) ||
-                    !configPath.toString().toLowerCase().endsWith(".zip") ||
-                    Files.size(configPath) == 0) {
-                return false;
-            }
-
-            // Verify it's a valid zip
-            try (java.util.zip.ZipFile zipFile =
-                         new java.util.zip.ZipFile(configPath.toFile())) {
-                return zipFile.entries().hasMoreElements();
-            }
-
-        } catch (IOException e) {
-            LOGGER.error("Failed to validate config file", e);
-            return false;
-        }
     }
 
     private static Path copyToCustomConfigs(Path sourceFile, ConfigMetadata metadata) {
