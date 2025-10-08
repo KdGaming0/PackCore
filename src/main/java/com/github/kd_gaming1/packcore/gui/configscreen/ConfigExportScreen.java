@@ -955,9 +955,11 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                         }
                     }
 
-                    // Return to main menu
-                    shutdownExecutor();
-                    MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
+                    // Return to main menu only if not in background
+                    if (!exportInBackground) {
+                        shutdownExecutor();
+                        MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
+                    }
                 });
             } catch (Exception e) {
                 LOGGER.error("Failed to export configuration", e);
