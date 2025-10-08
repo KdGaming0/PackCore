@@ -7,6 +7,7 @@ import com.github.kd_gaming1.packcore.gui.configscreen.util.FileTreeNode;
 import com.github.kd_gaming1.packcore.util.ConfigExportManager;
 import com.github.kd_gaming1.packcore.util.ConfigExportManager.ExportRequest;
 import com.github.kd_gaming1.packcore.util.ConfigExportManager.PresetType;
+import com.github.kd_gaming1.packcore.util.ExportCompletionNotifier;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
@@ -17,6 +18,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ import static com.github.kd_gaming1.packcore.gui.ui.UITheme.*;
 public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final String DEFAULT_VERSION = "1.0.0";
-    private static final ScheduledExecutorService ASYNC_EXECUTOR = Executors.newScheduledThreadPool(2);
+    private ScheduledExecutorService asyncExecutor;
 
     private ConfigExportManager exportManager;
     private Set<Path> selectedPaths = ConcurrentHashMap.newKeySet();
@@ -68,6 +70,10 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private FlowLayout exportProgressDialog;
     private LabelComponent exportProgressLabel;
 
+    private volatile boolean exportInBackground = false;
+    private volatile String currentExportName = "";
+
+
     @Override
     protected @NotNull OwoUIAdapter createAdapter() {
         return OwoUIAdapter.create(this, Containers::verticalFlow);
@@ -75,6 +81,9 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     @Override
     protected void build(FlowLayout rootComponent) {
+        // Create a new executor for each screen instance
+        asyncExecutor = Executors.newScheduledThreadPool(2);
+
         exportManager = new ConfigExportManager();
         detectCurrentResolution();
 
@@ -85,11 +94,11 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         rootComponent.child(createHeader());
         rootComponent.child(createMainContent());
 
-        // Load initial tree asynchronously
+        // Load initial tree asynchronously with the new executor
         CompletableFuture.runAsync(() -> {
             rootNode = exportManager.buildFileTree();
             scanMods();
-        }, ASYNC_EXECUTOR).thenRun(() -> {
+        }, asyncExecutor).thenRun(() -> {
             MinecraftClient.getInstance().execute(() -> {
                 if (treeContainer != null) {
                     displayInitialTree();
@@ -135,7 +144,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent createBackButton() {
         return (ButtonComponent) Components.button(Text.literal("Back"),
                         btn -> {
-                            ASYNC_EXECUTOR.shutdown();
+                            shutdownExecutor();
                             MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
                         })
                 .renderer(ButtonComponent.Renderer.texture(
@@ -336,7 +345,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
             CompletableFuture.runAsync(() -> {
                 exportManager.loadNodeChildren(node);
-            }, ASYNC_EXECUTOR).thenRun(() -> {
+            }, asyncExecutor).thenRun(() -> { // Changed from ASYNC_EXECUTOR
                 MinecraftClient.getInstance().execute(() -> {
                     node.setExpanded(true);
                     updateNodeExpansion(node);
@@ -481,13 +490,14 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                     removeDescendantsAsync(node);
                 }
             }
-        }, ASYNC_EXECUTOR).thenRun(() -> {
+        }, asyncExecutor).thenRun(() -> { // Changed from ASYNC_EXECUTOR
             MinecraftClient.getInstance().execute(() -> {
                 updateNodeVisualsRecursive(node);
                 updateSelectionInfo();
             });
         });
     }
+
 
     private void addDescendantsAsync(FileTreeNode node) {
         for (FileTreeNode child : node.getChildren()) {
@@ -527,7 +537,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
             int count = selectedPaths.size();
             long size = exportManager.calculateSelectionSize(selectedPaths);
             return new SelectionInfo(count, size);
-        }, ASYNC_EXECUTOR).thenAccept(info -> {
+        }, asyncExecutor).thenAccept(info -> { // Changed from ASYNC_EXECUTOR
             MinecraftClient.getInstance().execute(() -> {
                 String sizeText = formatSize(info.size);
                 selectionInfoLabel.text(Text.literal(
@@ -535,7 +545,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 updateNextButton();
             });
         });
-
     }
 
     private record SelectionInfo(int count, long size) {}
@@ -570,7 +579,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 }
             }
             return presetPaths;
-        }, ASYNC_EXECUTOR).thenAccept(paths -> {
+        }, asyncExecutor).thenAccept(paths -> { // Changed from ASYNC_EXECUTOR
             MinecraftClient.getInstance().execute(() -> {
                 // Update all checkboxes
                 nodeCheckboxCache.forEach((node, checkbox) -> {
@@ -579,7 +588,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 updateSelectionInfo();
             });
         });
-
     }
 
     private FileTreeNode findNodeByPath(FileTreeNode currentNode, Path targetPath) {
@@ -843,27 +851,48 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void showExportProgressDialog() {
-        exportProgressDialog = Containers.verticalFlow(Sizing.fixed(300), Sizing.content());
-        exportProgressDialog.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
+        exportProgressDialog = Containers.verticalFlow(Sizing.fixed(350), Sizing.content());
+        exportProgressDialog.surface(Surface.flat(DARK_PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
         exportProgressDialog.padding(Insets.of(16));
         exportProgressDialog.positioning(Positioning.absolute(
-                (this.width - 300) / 2,
-                (this.height - 100) / 2
+                (this.width - 350) / 2,
+                (this.height - 150) / 2
         )).zIndex(15);
 
+        // Title
         exportProgressDialog.child(Components.label(Text.literal("Exporting Configuration"))
-                .color(UITheme.color(ACCENT_GOLD)));
+                .color(UITheme.color(ACCENT_GOLD))
+                .margins(Insets.bottom(8)));
 
-        exportProgressLabel = Components.label(Text.literal("Preparing export..."))
-                .color(UITheme.color(TEXT_WHITE));
+        // Progress label
+        exportProgressLabel = (LabelComponent) Components.label(Text.literal("Preparing export..."))
+                .color(UITheme.color(TEXT_WHITE))
+                .margins(Insets.bottom(12));
         exportProgressDialog.child(exportProgressLabel);
+
+        // Button row
+        FlowLayout buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonRow.gap(8);
+        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        // Continue in background button
+        ButtonComponent backgroundButton = (ButtonComponent) Components.button(
+                Text.literal("Continue in Background"),
+                btn -> {
+                    exportInBackground = true;
+                    closeExportProgressDialog();
+                }
+        ).horizontalSizing(Sizing.content());
+
+        buttonRow.child(backgroundButton);
+        exportProgressDialog.child(buttonRow);
 
         this.uiAdapter.rootComponent.child(exportProgressDialog);
     }
 
     private void updateExportProgress(String message) {
         MinecraftClient.getInstance().execute(() -> {
-            if (exportProgressLabel != null) {
+            if (exportProgressLabel != null && !exportInBackground) {
                 exportProgressLabel.text(Text.literal(message));
             }
         });
@@ -886,6 +915,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
             return;
         }
 
+        currentExportName = name;
+        exportInBackground = false;
         showExportProgressDialog();
 
         List<String> includedMods = modsToInclude.entrySet().stream()
@@ -908,12 +939,24 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                 updateExportProgress("Copying files...");
                 Path exportedPath = exportManager.exportConfigAsync(request, this::updateExportProgress);
 
-                updateExportProgress("Opening export folder...");
-                exportManager.openExportFolder();
-
                 MinecraftClient.getInstance().execute(() -> {
+                    // Close progress dialog if still open
                     closeExportProgressDialog();
-                    ASYNC_EXECUTOR.shutdown();
+
+                    // Notify completion
+                    ExportCompletionNotifier.notifyExportComplete(currentExportName, exportedPath);
+
+                    // If still on the export screen, auto-open folder
+                    if (MinecraftClient.getInstance().currentScreen == this) {
+                        try {
+                            Util.getOperatingSystem().open(exportedPath.getParent().toFile());
+                        } catch (Exception e) {
+                            LOGGER.warn("Failed to auto-open export folder", e);
+                        }
+                    }
+
+                    // Return to main menu
+                    shutdownExecutor();
                     MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
                 });
             } catch (Exception e) {
@@ -923,7 +966,21 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
                     showError("Export failed: " + e.getMessage());
                 });
             }
-        }, ASYNC_EXECUTOR);
+        }, asyncExecutor); // Changed from ASYNC_EXECUTOR
+    }
+
+    private void shutdownExecutor() {
+        if (asyncExecutor != null && !asyncExecutor.isShutdown()) {
+            asyncExecutor.shutdown();
+            try {
+                if (!asyncExecutor.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                    asyncExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                asyncExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private void showError(String message) {
@@ -933,7 +990,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     @Override
     public void close() {
-        ASYNC_EXECUTOR.shutdownNow();
+        shutdownExecutor();
         super.close();
     }
+
 }
