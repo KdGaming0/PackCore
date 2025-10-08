@@ -24,6 +24,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
@@ -33,9 +37,10 @@ import static com.github.kd_gaming1.packcore.gui.ui.UITheme.*;
 public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final String DEFAULT_VERSION = "1.0.0";
+    private static final ScheduledExecutorService ASYNC_EXECUTOR = Executors.newScheduledThreadPool(2);
 
     private ConfigExportManager exportManager;
-    private Set<Path> selectedPaths = new HashSet<>();
+    private Set<Path> selectedPaths = ConcurrentHashMap.newKeySet();
     private Map<String, Boolean> modsToInclude = new LinkedHashMap<>();
     private FileTreeNode rootNode;
 
@@ -56,7 +61,12 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private String selectedResolution;
     private String currentResolution;
 
-    private Map<Path, FlowLayout> nodeRowCache = new HashMap<>();
+    private Map<FileTreeNode, FlowLayout> nodeRowCache = new ConcurrentHashMap<>();
+    private Map<FileTreeNode, CheckboxComponent> nodeCheckboxCache = new ConcurrentHashMap<>();
+    private volatile boolean isLoading = false;
+    private FlowLayout loadingIndicator;
+    private FlowLayout exportProgressDialog;
+    private LabelComponent exportProgressLabel;
 
     @Override
     protected @NotNull OwoUIAdapter createAdapter() {
@@ -75,9 +85,24 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         rootComponent.child(createHeader());
         rootComponent.child(createMainContent());
 
-        rootNode = exportManager.buildFileTree();
-        refreshFileTree();
-        scanMods();
+        // Load initial tree asynchronously
+        CompletableFuture.runAsync(() -> {
+            rootNode = exportManager.buildFileTree();
+            scanMods();
+        }, ASYNC_EXECUTOR).thenRun(() -> {
+            MinecraftClient.getInstance().execute(() -> {
+                if (treeContainer != null) {
+                    displayInitialTree();
+                }
+            });
+        });
+    }
+
+    private FlowLayout createLoadingIndicator() {
+        var loading = Containers.horizontalFlow(Sizing.content(), Sizing.content());
+        loading.child(Components.label(Text.literal("Loading..."))
+                .color(UITheme.color(TEXT_SECONDARY)));
+        return loading;
     }
 
     private void detectCurrentResolution() {
@@ -109,7 +134,10 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createBackButton() {
         return (ButtonComponent) Components.button(Text.literal("Back"),
-                        btn -> MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen()))
+                        btn -> {
+                            ASYNC_EXECUTOR.shutdown();
+                            MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
+                        })
                 .renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 90, 57))
                 .sizing(Sizing.fixed(90), Sizing.fixed(19));
@@ -231,7 +259,350 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         treeScrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
 
         contentPanel.child(treeScrollContainer);
-        refreshFileTree();
+
+        loadingIndicator = createLoadingIndicator();
+        if (rootNode == null) {
+            treeContainer.child(loadingIndicator);
+        } else {
+            displayInitialTree();
+        }
+    }
+
+    private void displayInitialTree() {
+        if (treeContainer == null || rootNode == null) return;
+
+        treeContainer.clearChildren();
+        nodeRowCache.clear();
+        nodeCheckboxCache.clear();
+
+        for (FileTreeNode child : rootNode.getChildren()) {
+            addTreeNodeOptimized(child, 0);
+        }
+    }
+
+    private void addTreeNodeOptimized(FileTreeNode node, int depth) {
+        if (node.isHidden() || depth > 10) return;
+
+        var nodeRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        nodeRow.gap(4);
+        nodeRow.padding(Insets.left(depth * 16));
+        nodeRow.verticalAlignment(VerticalAlignment.CENTER);
+
+        // Expand/collapse button for directories
+        if (node.isDirectory() && (!node.getChildren().isEmpty() || node.hasUnloadedChildren())) {
+            nodeRow.child(Components.button(
+                            Text.literal(node.isExpanded() ? "▼" : "▶"),
+                            btn -> toggleNodeExpansion(node))
+                    .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_GOLD, ENTRY_BORDER))
+                    .sizing(Sizing.fixed(16), Sizing.fixed(16)));
+        } else {
+            var placeholder = Components.box(Sizing.fixed(16), Sizing.fixed(16));
+            placeholder.fill(true);
+            placeholder.color(Color.ofArgb(0x00000000));
+            nodeRow.child(placeholder);
+        }
+
+        // Checkbox
+        boolean isSelected = selectedPaths.contains(node.getPath());
+        var checkbox = Components.checkbox(Text.empty())
+                .checked(isSelected)
+                .onChanged(checked -> toggleSelectionAsync(node, checked));
+        nodeRow.child(checkbox);
+        nodeCheckboxCache.put(node, checkbox);
+
+        // Label
+        String icon = node.isDirectory() ? "📁" : "📄";
+        nodeRow.child(Components.label(Text.literal(icon + " " + node.getName()))
+                .color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE)));
+
+        nodeRowCache.put(node, nodeRow);
+        treeContainer.child(nodeRow);
+
+        // Add expanded children
+        if (node.isDirectory() && node.isExpanded() && node.isChildrenLoaded()) {
+            for (FileTreeNode child : node.getChildren()) {
+                addTreeNodeOptimized(child, depth + 1);
+            }
+        }
+    }
+
+    private void toggleNodeExpansion(FileTreeNode node) {
+        if (isLoading) return;
+
+        if (!node.isExpanded() && !node.isChildrenLoaded()) {
+            // Load children asynchronously
+            isLoading = true;
+            showLoadingForNode(node);
+
+            CompletableFuture.runAsync(() -> {
+                exportManager.loadNodeChildren(node);
+            }, ASYNC_EXECUTOR).thenRun(() -> {
+                MinecraftClient.getInstance().execute(() -> {
+                    node.setExpanded(true);
+                    updateNodeExpansion(node);
+                    isLoading = false;
+                });
+            });
+        } else {
+            node.setExpanded(!node.isExpanded());
+            updateNodeExpansion(node);
+        }
+    }
+
+    private void showLoadingForNode(FileTreeNode node) {
+        FlowLayout nodeRow = nodeRowCache.get(node);
+        if (nodeRow != null && nodeRow.children().size() > 0) {
+            Component firstChild = nodeRow.children().get(0);
+            if (firstChild instanceof ButtonComponent btn) {
+                btn.setMessage(Text.literal("⏳"));
+            }
+        }
+    }
+
+    private void updateNodeExpansion(FileTreeNode node) {
+        // Find the node's row in the tree
+        int nodeIndex = -1;
+        for (int i = 0; i < treeContainer.children().size(); i++) {
+            if (treeContainer.children().get(i) == nodeRowCache.get(node)) {
+                nodeIndex = i;
+                break;
+            }
+        }
+
+        if (nodeIndex == -1) return;
+
+        // Update expand button
+        FlowLayout nodeRow = nodeRowCache.get(node);
+        if (nodeRow != null && nodeRow.children().size() > 0) {
+            Component firstChild = nodeRow.children().get(0);
+            if (firstChild instanceof ButtonComponent btn) {
+                btn.setMessage(Text.literal(node.isExpanded() ? "▼" : "▶"));
+            }
+        }
+
+        if (node.isExpanded()) {
+            // Add children after this node
+            int depth = calculateDepth(node);
+            int insertIndex = nodeIndex + 1;
+            for (FileTreeNode child : node.getChildren()) {
+                if (!nodeRowCache.containsKey(child)) {
+                    createNodeRow(child, depth + 1, insertIndex++);
+                }
+            }
+        } else {
+            // Remove children
+            removeChildrenFromTree(node);
+        }
+    }
+
+    private void createNodeRow(FileTreeNode node, int depth, int insertIndex) {
+        if (node.isHidden()) return;
+
+        var nodeRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        nodeRow.gap(4);
+        nodeRow.padding(Insets.left(depth * 16));
+        nodeRow.verticalAlignment(VerticalAlignment.CENTER);
+
+        // Expand/collapse button
+        if (node.isDirectory() && (!node.getChildren().isEmpty() || node.hasUnloadedChildren())) {
+            nodeRow.child(Components.button(
+                            Text.literal(node.isExpanded() ? "▼" : "▶"),
+                            btn -> toggleNodeExpansion(node))
+                    .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_GOLD, ENTRY_BORDER))
+                    .sizing(Sizing.fixed(16), Sizing.fixed(16)));
+        } else {
+            var placeholder = Components.box(Sizing.fixed(16), Sizing.fixed(16));
+            placeholder.fill(true);
+            placeholder.color(Color.ofArgb(0x00000000));
+            nodeRow.child(placeholder);
+        }
+
+        // Checkbox
+        boolean isSelected = selectedPaths.contains(node.getPath());
+        var checkbox = Components.checkbox(Text.empty())
+                .checked(isSelected)
+                .onChanged(checked -> toggleSelectionAsync(node, checked));
+        nodeRow.child(checkbox);
+        nodeCheckboxCache.put(node, checkbox);
+
+        // Label
+        String icon = node.isDirectory() ? "📁" : "📄";
+        nodeRow.child(Components.label(Text.literal(icon + " " + node.getName()))
+                .color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE)));
+
+        nodeRowCache.put(node, nodeRow);
+
+        // Insert at specific index
+        List<Component> children = new ArrayList<>(treeContainer.children());
+        children.add(Math.min(insertIndex, children.size()), nodeRow);
+        treeContainer.clearChildren();
+        children.forEach(treeContainer::child);
+
+        // Recursively add expanded children
+        if (node.isDirectory() && node.isExpanded() && node.isChildrenLoaded()) {
+            int childIndex = insertIndex + 1;
+            for (FileTreeNode child : node.getChildren()) {
+                createNodeRow(child, depth + 1, childIndex++);
+            }
+        }
+    }
+
+    private void removeChildrenFromTree(FileTreeNode node) {
+        for (FileTreeNode child : node.getChildren()) {
+            FlowLayout childRow = nodeRowCache.remove(child);
+            nodeCheckboxCache.remove(child);
+            if (childRow != null) {
+                treeContainer.removeChild(childRow);
+            }
+            if (child.isDirectory()) {
+                removeChildrenFromTree(child);
+            }
+        }
+    }
+
+    private int calculateDepth(FileTreeNode node) {
+        FlowLayout nodeRow = nodeRowCache.get(node);
+        if (nodeRow == null) return 0;
+
+        Insets padding = nodeRow.padding().get();
+        return padding.left() / 16;
+    }
+
+    private void toggleSelectionAsync(FileTreeNode node, boolean selected) {
+        CompletableFuture.runAsync(() -> {
+            if (selected) {
+                selectedPaths.add(node.getPath());
+                if (node.isDirectory()) {
+                    addDescendantsAsync(node);
+                }
+            } else {
+                selectedPaths.remove(node.getPath());
+                if (node.isDirectory()) {
+                    removeDescendantsAsync(node);
+                }
+            }
+        }, ASYNC_EXECUTOR).thenRun(() -> {
+            MinecraftClient.getInstance().execute(() -> {
+                updateNodeVisualsRecursive(node);
+                updateSelectionInfo();
+            });
+        });
+    }
+
+    private void addDescendantsAsync(FileTreeNode node) {
+        for (FileTreeNode child : node.getChildren()) {
+            selectedPaths.add(child.getPath());
+            if (child.isDirectory()) {
+                addDescendantsAsync(child);
+            }
+        }
+    }
+
+    private void removeDescendantsAsync(FileTreeNode node) {
+        for (FileTreeNode child : node.getChildren()) {
+            selectedPaths.remove(child.getPath());
+            if (child.isDirectory()) {
+                removeDescendantsAsync(child);
+            }
+        }
+    }
+
+    private void updateNodeVisualsRecursive(FileTreeNode node) {
+        // Update checkbox
+        CheckboxComponent checkbox = nodeCheckboxCache.get(node);
+        if (checkbox != null) {
+            checkbox.checked(selectedPaths.contains(node.getPath()));
+        }
+
+        // Update children if expanded
+        if (node.isDirectory() && node.isExpanded()) {
+            for (FileTreeNode child : node.getChildren()) {
+                updateNodeVisualsRecursive(child);
+            }
+        }
+    }
+
+    private void updateSelectionInfo() {
+        CompletableFuture.supplyAsync(() -> {
+            int count = selectedPaths.size();
+            long size = exportManager.calculateSelectionSize(selectedPaths);
+            return new SelectionInfo(count, size);
+        }, ASYNC_EXECUTOR).thenAccept(info -> {
+            MinecraftClient.getInstance().execute(() -> {
+                String sizeText = formatSize(info.size);
+                selectionInfoLabel.text(Text.literal(
+                        info.count + " item" + (info.count != 1 ? "s" : "") + " selected\nSize: " + sizeText));
+                updateNextButton();
+            });
+        });
+
+    }
+
+    private record SelectionInfo(int count, long size) {}
+
+    private String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024) + " KB";
+        return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
+    }
+
+    private void updateNextButton() {
+        nextButton.active(!selectedPaths.isEmpty() && !showingMetadata);
+        if (showingMetadata) {
+            nextButton.setMessage(Text.literal("Currently editing..."));
+        } else {
+            nextButton.setMessage(Text.literal("Next: Add Details"));
+        }
+    }
+
+    private void applyPreset(PresetType preset) {
+        CompletableFuture.supplyAsync(() -> {
+            Set<Path> presetPaths = exportManager.getPresetPaths(preset);
+            selectedPaths.clear();
+
+            for (Path path : presetPaths) {
+                FileTreeNode node = findNodeByPath(rootNode, path);
+                if (node != null) {
+                    selectedPaths.add(node.getPath());
+                    if (node.isDirectory()) {
+                        addDescendantsAsync(node);
+                    }
+                }
+            }
+            return presetPaths;
+        }, ASYNC_EXECUTOR).thenAccept(paths -> {
+            MinecraftClient.getInstance().execute(() -> {
+                // Update all checkboxes
+                nodeCheckboxCache.forEach((node, checkbox) -> {
+                    checkbox.checked(selectedPaths.contains(node.getPath()));
+                });
+                updateSelectionInfo();
+            });
+        });
+
+    }
+
+    private FileTreeNode findNodeByPath(FileTreeNode currentNode, Path targetPath) {
+        if (currentNode.getPath().equals(targetPath)) {
+            return currentNode;
+        }
+
+        for (FileTreeNode child : currentNode.getChildren()) {
+            FileTreeNode result = findNodeByPath(child, targetPath);
+            if (result != null) {
+                return result;
+            }
+        }
+
+        return null;
+    }
+
+    private void scanMods() {
+        List<String> mods = exportManager.scanInstalledMods();
+        modsToInclude.clear();
+        for (String mod : mods) {
+            modsToInclude.put(mod, true);
+        }
     }
 
     private void showMetadataView() {
@@ -267,29 +638,24 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         populateResolutionDropdown();
         formContainer.child(createFormRow("Target Resolution:", resolutionButton));
 
-        formContainer.child(Components.label(Text.literal("Installed mods when the configs was exported (Useful for people how import to know what mods the configs are for):"))
+        formContainer.child(Components.label(Text.literal("Installed mods when the configs was exported:"))
                 .color(UITheme.color(TEXT_WHITE))
                 .horizontalSizing(Sizing.fill(100)));
 
-        // Wrapper with background and padding
         var modsListWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.fixed(125));
         modsListWrapper.surface(Surface.flat(ENTRY_BACKGROUND).and(Surface.outline(ENTRY_BORDER)));
         modsListWrapper.padding(Insets.of(8));
 
-        // The actual list container (no background/padding)
         modsListContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .padding(Insets.bottom(8));
 
-        // Scroll container for the mod list
         var modsScroll = Containers.verticalScroll(Sizing.fill(100), Sizing.fixed(120), modsListContainer)
                 .scrollbar(ScrollContainer.Scrollbar.vanilla());
 
-        // Add scroll container to wrapper, then wrapper to form
         modsListWrapper.child(modsScroll);
         formContainer.child(modsListWrapper);
 
         populateModsList();
-
 
         var scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), formContainer);
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
@@ -327,8 +693,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private void populateResolutionDropdown() {
         resolutionButton = (ButtonComponent) Components.button(
                         Text.literal(currentResolution),
-                        btn -> openResolutionDropdown(btn)
-                )
+                        btn -> openResolutionDropdown(btn))
                 .renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 120, 60))
                 .sizing(Sizing.fixed(120), Sizing.fixed(20));
@@ -338,8 +703,9 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     private void openResolutionDropdown(ButtonComponent button) {
         var commonResolutions = List.of(
-                "1920x1080", "2560x1440", "3840x2160", "1280x720", "1366x768",
-                "1600x900", "1440x900", currentResolution
+                "1280×720", "1920×1080", "1920×1200",
+                "2560×1440", "2560×1080", "3440×1440", "3840×2160",
+                currentResolution
         );
 
         var uniqueResolutions = commonResolutions.stream()
@@ -410,290 +776,6 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         this.uiAdapter.rootComponent.child(dialogContainer);
     }
 
-    private void showExportWarningDialog() {
-        var dialogContainer = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
-        dialogContainer.surface(Surface.flat(DARK_PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        dialogContainer.padding(Insets.of(16));
-        dialogContainer.positioning(Positioning.absolute(
-                (this.width - 400) / 2,
-                (this.height - 200) / 2
-        )).zIndex(10);
-
-        // Title
-        dialogContainer.child(Components.label(Text.literal("Export Warning"))
-                .color(UITheme.color(ACCENT_GOLD))
-                .margins(Insets.bottom(8)));
-
-        // Warning message
-        var warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        warningText.gap(4);
-
-        warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
-                .color(UITheme.color(TEXT_WHITE))
-                .margins(Insets.bottom(4)));
-
-        warningText.child(Components.label(Text.literal("• The export process might cause the game to appear unresponsive"))
-                .color(UITheme.color(TEXT_WHITE)));
-
-        warningText.child(Components.label(Text.literal("• Your system may ask you to close the process"))
-                .color(UITheme.color(TEXT_WHITE)));
-
-        warningText.child(Components.label(Text.literal("• Please wait - the export is still running in the background"))
-                .color(UITheme.color(TEXT_WHITE)));
-
-        warningText.child(Components.label(Text.literal("• Do not force close the application during export"))
-                .color(UITheme.color(TEXT_WHITE))
-                .margins(Insets.bottom(8)));
-
-        dialogContainer.child(warningText);
-
-        // Buttons
-        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        buttonRow.gap(8);
-        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
-
-        buttonRow.child(Components.button(Text.literal("Cancel"), btn -> {
-            this.uiAdapter.rootComponent.removeChild(dialogContainer);
-        }).sizing(Sizing.fixed(80), Sizing.fixed(20)));
-
-        buttonRow.child(Components.button(Text.literal("Continue Export"), btn -> {
-            this.uiAdapter.rootComponent.removeChild(dialogContainer);
-            performExport();
-        }).sizing(Sizing.fixed(120), Sizing.fixed(20)));
-
-        dialogContainer.child(buttonRow);
-        this.uiAdapter.rootComponent.child(dialogContainer);
-    }
-
-    private void refreshFileTree() {
-        if (treeContainer == null || rootNode == null) return;
-
-        nodeRowCache.clear();
-        treeContainer.clearChildren();
-        addTreeNode(rootNode, 0);
-    }
-
-    private void updateNodeVisuals(FileTreeNode node) {
-        FlowLayout nodeRow = nodeRowCache.get(node.getPath());
-        if (nodeRow == null) return;
-
-        boolean isSelected = selectedPaths.contains(node.getPath());
-
-        if (nodeRow.children().size() >= 3) {
-            Component labelComponent = nodeRow.children().get(2);
-            if (labelComponent instanceof LabelComponent label) {
-                String icon = node.isDirectory() ? "📁" : "📄";
-                label.text(Text.literal(icon + " " + node.getName()));
-                label.color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE));
-            }
-        }
-
-        if (nodeRow.children().size() >= 2) {
-            Component checkboxComponent = nodeRow.children().get(1);
-            if (checkboxComponent instanceof CheckboxComponent checkbox) {
-                checkbox.checked(isSelected);
-            }
-        }
-    }
-
-    private void addTreeNode(FileTreeNode node, int depth) {
-        if (node.isHidden()) return;
-
-        var nodeRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        nodeRow.gap(4);
-        nodeRow.padding(Insets.left(depth * 16));
-        nodeRow.verticalAlignment(VerticalAlignment.CENTER);
-
-        if (node.isDirectory() && (!node.getChildren().isEmpty() || node.hasUnloadedChildren())) {
-            nodeRow.child(Components.button(
-                            Text.literal(node.isExpanded() ? "▼" : "▶"),
-                            btn -> {
-                                // If expanding and children aren't loaded yet, load them first
-                                if (!node.isExpanded() && !node.isChildrenLoaded()) {
-                                    exportManager.loadNodeChildren(node);
-                                }
-                                node.setExpanded(!node.isExpanded());
-                                refreshFileTree();
-                            })
-                    .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_GOLD, ENTRY_BORDER))
-                    .sizing(Sizing.fixed(16), Sizing.fixed(16)));
-        } else {
-            var placeholder = Components.box(Sizing.fixed(16), Sizing.fixed(16));
-            placeholder.fill(true);
-            placeholder.color(Color.ofArgb(0x00000000));
-            nodeRow.child(placeholder);
-        }
-
-        boolean isSelected = selectedPaths.contains(node.getPath());
-        nodeRow.child(Components.checkbox(Text.empty())
-                .checked(isSelected)
-                .onChanged(checked -> toggleSelectionWithoutRefresh(node, checked)));
-
-        String icon = node.isDirectory() ? "📁" : "📄";
-        nodeRow.child(Components.label(Text.literal(icon + " " + node.getName()))
-                .color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE)));
-
-        nodeRowCache.put(node.getPath(), nodeRow);
-        treeContainer.child(nodeRow);
-
-        if (node.isDirectory() && node.isExpanded()) {
-            for (FileTreeNode child : node.getChildren()) {
-                addTreeNode(child, depth + 1);
-            }
-        }
-    }
-
-    private void toggleSelection(FileTreeNode node, boolean selected) {
-        if (selected) {
-            selectedPaths.add(node.getPath());
-            if (node.isDirectory()) {
-                addDescendants(node);
-            }
-        } else {
-            selectedPaths.remove(node.getPath());
-            if (node.isDirectory()) {
-                removeDescendants(node);
-            }
-        }
-
-        updateSelectionInfo();
-        refreshFileTree();
-    }
-
-    private void toggleSelectionWithoutRefresh(FileTreeNode node, boolean selected) {
-        if (selected) {
-            selectedPaths.add(node.getPath());
-            if (node.isDirectory()) {
-                addDescendants(node);
-            }
-        } else {
-            selectedPaths.remove(node.getPath());
-            if (node.isDirectory()) {
-                removeDescendants(node);
-            }
-        }
-
-        updateAllNodeVisuals(rootNode);
-        updateSelectionInfo();
-    }
-
-    private void updateAllNodeVisuals(FileTreeNode node) {
-        if (node.isHidden()) return;
-
-        updateNodeVisuals(node);
-
-        if (node.isDirectory() && node.isExpanded()) {
-            for (FileTreeNode child : node.getChildren()) {
-                updateAllNodeVisuals(child);
-            }
-        }
-    }
-
-    private void addDescendants(FileTreeNode node) {
-        for (FileTreeNode child : node.getChildren()) {
-            selectedPaths.add(child.getPath());
-            if (child.isDirectory()) {
-                addDescendants(child);
-            }
-        }
-    }
-
-    private void removeDescendants(FileTreeNode node) {
-        for (FileTreeNode child : node.getChildren()) {
-            selectedPaths.remove(child.getPath());
-            if (child.isDirectory()) {
-                removeDescendants(child);
-            }
-        }
-    }
-
-    private void updateSelectionInfo() {
-        int count = selectedPaths.size();
-        long size = exportManager.calculateSelectionSize(selectedPaths);
-
-        String sizeText = formatSize(size);
-        selectionInfoLabel.text(Text.literal(
-                count + " item" + (count != 1 ? "s" : "") + " selected\nSize: " + sizeText));
-
-        updateNextButton();
-    }
-
-    private String formatSize(long bytes) {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return (bytes / 1024) + " KB";
-        return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
-    }
-
-    private void updateNextButton() {
-        nextButton.active(!selectedPaths.isEmpty() && !showingMetadata);
-        if (showingMetadata) {
-            nextButton.setMessage(Text.literal("Currently editing..."));
-        } else {
-            nextButton.setMessage(Text.literal("Next: Add Details"));
-        }
-    }
-
-    private void applyPreset(PresetType preset) {
-        selectedPaths.clear();
-
-        Set<Path> presetPaths = exportManager.getPresetPaths(preset);
-
-        for (Path path : presetPaths) {
-            FileTreeNode node = findNodeByPath(rootNode, path);
-            if (node != null) {
-                selectedPaths.add(node.getPath());
-                if (node.isDirectory()) {
-                    addDescendants(node);
-                }
-
-                expandToPath(rootNode, path);
-            }
-        }
-
-        updateSelectionInfo();
-        refreshFileTree();
-    }
-
-    private FileTreeNode findNodeByPath(FileTreeNode currentNode, Path targetPath) {
-        if (currentNode.getPath().equals(targetPath)) {
-            return currentNode;
-        }
-
-        for (FileTreeNode child : currentNode.getChildren()) {
-            FileTreeNode result = findNodeByPath(child, targetPath);
-            if (result != null) {
-                return result;
-            }
-        }
-
-        return null;
-    }
-
-    private boolean expandToPath(FileTreeNode node, Path target) {
-        if (node.getPath().equals(target)) {
-            return true;
-        }
-
-        if (target.startsWith(node.getPath()) && node.isDirectory()) {
-            for (FileTreeNode child : node.getChildren()) {
-                if (expandToPath(child, target)) {
-                    node.setExpanded(true);
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private void scanMods() {
-        List<String> mods = exportManager.scanInstalledMods();
-        modsToInclude.clear();
-        for (String mod : mods) {
-            modsToInclude.put(mod, true);
-        }
-    }
-
     private void populateModsList() {
         modsListContainer.clearChildren();
 
@@ -711,41 +793,147 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         }
     }
 
-    private void performExport() {
-        try {
-            String name = nameField.getText().trim();
-            if (name.isEmpty()) {
-                showError("Configuration name is required!");
-                return;
+    private void showExportWarningDialog() {
+        var dialogContainer = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
+        dialogContainer.surface(Surface.flat(DARK_PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
+        dialogContainer.padding(Insets.of(16));
+        dialogContainer.positioning(Positioning.absolute(
+                (this.width - 400) / 2,
+                (this.height - 200) / 2
+        )).zIndex(10);
+
+        dialogContainer.child(Components.label(Text.literal("Export Warning"))
+                .color(UITheme.color(ACCENT_GOLD))
+                .margins(Insets.bottom(8)));
+
+        var warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        warningText.gap(4);
+
+        warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
+                .color(UITheme.color(TEXT_WHITE))
+                .margins(Insets.bottom(4)));
+
+        warningText.child(Components.label(Text.literal("• The export will run in the background"))
+                .color(UITheme.color(TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• A progress indicator will show the status"))
+                .color(UITheme.color(TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• You can continue using the interface"))
+                .color(UITheme.color(TEXT_WHITE))
+                .margins(Insets.bottom(8)));
+
+        dialogContainer.child(warningText);
+
+        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonRow.gap(8);
+        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        buttonRow.child(Components.button(Text.literal("Cancel"), btn -> {
+            this.uiAdapter.rootComponent.removeChild(dialogContainer);
+        }).sizing(Sizing.fixed(80), Sizing.fixed(20)));
+
+        buttonRow.child(Components.button(Text.literal("Continue Export"), btn -> {
+            this.uiAdapter.rootComponent.removeChild(dialogContainer);
+            performAsyncExport();
+        }).sizing(Sizing.fixed(120), Sizing.fixed(20)));
+
+        dialogContainer.child(buttonRow);
+        this.uiAdapter.rootComponent.child(dialogContainer);
+    }
+
+    private void showExportProgressDialog() {
+        exportProgressDialog = Containers.verticalFlow(Sizing.fixed(300), Sizing.content());
+        exportProgressDialog.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
+        exportProgressDialog.padding(Insets.of(16));
+        exportProgressDialog.positioning(Positioning.absolute(
+                (this.width - 300) / 2,
+                (this.height - 100) / 2
+        )).zIndex(15);
+
+        exportProgressDialog.child(Components.label(Text.literal("Exporting Configuration"))
+                .color(UITheme.color(ACCENT_GOLD)));
+
+        exportProgressLabel = Components.label(Text.literal("Preparing export..."))
+                .color(UITheme.color(TEXT_WHITE));
+        exportProgressDialog.child(exportProgressLabel);
+
+        this.uiAdapter.rootComponent.child(exportProgressDialog);
+    }
+
+    private void updateExportProgress(String message) {
+        MinecraftClient.getInstance().execute(() -> {
+            if (exportProgressLabel != null) {
+                exportProgressLabel.text(Text.literal(message));
             }
+        });
+    }
 
-            List<String> includedMods = modsToInclude.entrySet().stream()
-                    .filter(Map.Entry::getValue)
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toList());
+    private void closeExportProgressDialog() {
+        MinecraftClient.getInstance().execute(() -> {
+            if (exportProgressDialog != null) {
+                this.uiAdapter.rootComponent.removeChild(exportProgressDialog);
+                exportProgressDialog = null;
+                exportProgressLabel = null;
+            }
+        });
+    }
 
-            ExportRequest request = new ExportRequest(
-                    selectedPaths,
-                    name,
-                    descriptionArea.getText().trim(),
-                    versionField.getText().trim(),
-                    authorField.getText().trim(),
-                    selectedResolution,
-                    includedMods
-            );
-
-            Path exportedPath = exportManager.exportConfig(request);
-            exportManager.openExportFolder();
-
-            MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
-
-        } catch (IOException e) {
-            LOGGER.error("Failed to export configuration", e);
-            showError("Export failed: " + e.getMessage());
+    private void performAsyncExport() {
+        String name = nameField.getText().trim();
+        if (name.isEmpty()) {
+            showError("Configuration name is required!");
+            return;
         }
+
+        showExportProgressDialog();
+
+        List<String> includedMods = modsToInclude.entrySet().stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        ExportRequest request = new ExportRequest(
+                new HashSet<>(selectedPaths),
+                name,
+                descriptionArea.getText().trim(),
+                versionField.getText().trim(),
+                authorField.getText().trim(),
+                selectedResolution,
+                includedMods
+        );
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                updateExportProgress("Copying files...");
+                Path exportedPath = exportManager.exportConfigAsync(request, this::updateExportProgress);
+
+                updateExportProgress("Opening export folder...");
+                exportManager.openExportFolder();
+
+                MinecraftClient.getInstance().execute(() -> {
+                    closeExportProgressDialog();
+                    ASYNC_EXECUTOR.shutdown();
+                    MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen());
+                });
+            } catch (Exception e) {
+                LOGGER.error("Failed to export configuration", e);
+                MinecraftClient.getInstance().execute(() -> {
+                    closeExportProgressDialog();
+                    showError("Export failed: " + e.getMessage());
+                });
+            }
+        }, ASYNC_EXECUTOR);
     }
 
     private void showError(String message) {
         LOGGER.error(message);
+        // You can add a visual error dialog here if needed
+    }
+
+    @Override
+    public void close() {
+        ASYNC_EXECUTOR.shutdownNow();
+        super.close();
     }
 }
