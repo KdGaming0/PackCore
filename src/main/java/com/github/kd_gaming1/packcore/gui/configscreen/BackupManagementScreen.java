@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.configscreen;
 
 import com.github.kd_gaming1.packcore.gui.util.UiSurfaces;
 import com.github.kd_gaming1.packcore.gui.ui.UITheme;
+import com.github.kd_gaming1.packcore.util.BackupCompletionNotifier;
 import com.github.kd_gaming1.packcore.util.BackupManager;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.*;
@@ -14,10 +15,12 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +43,11 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
     private LabelComponent progressLabel = null;
 
     private Map<BackupManager.BackupInfo, FlowLayout> entryComponents = new HashMap<>();
+
+    // Background operation tracking
+    private volatile boolean operationInBackground = false;
+    private volatile String currentOperationName = "";
+    private volatile boolean isRestoreOperation = false;
 
     @Override
     protected @NotNull OwoUIAdapter createAdapter() {
@@ -103,7 +111,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         int padding = guiScale <= 2 ? 16 : 8;
 
         var infoLabel = Components.label(
-                        Text.literal("Manage your configuration backups. Auto backups are created before applying new configs, and you can create manual backups anytime."))
+                        Text.literal("Manage your configuration backups. Auto backups are created before applying new configs."))
                 .color(UITheme.color(UITheme.TEXT_WHITE))
                 .sizing(Sizing.fill(95), Sizing.content());
 
@@ -156,7 +164,6 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         sidebarContent.clearChildren();
         entryComponents.clear();
 
-        // Load backups asynchronously
         showLoadingInSidebar();
 
         BackupManager.getBackupsAsync().thenAccept(allBackups -> {
@@ -346,8 +353,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                 .color(UITheme.color(UITheme.STATUS_WARNING_BORDER)));
 
         warningBox.child(Components.label(Text.literal(
-                        "Restoring a backup will replace your current configuration files. " +
-                                "An auto-backup will be created before restoring."))
+                        "Restoring will replace current files. An auto-backup will be created first."))
                 .color(UITheme.color(UITheme.TEXT_WHITE))
                 .sizing(Sizing.fill(95), Sizing.content()));
 
@@ -447,21 +453,87 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void performCreateBackup(String title, String description) {
-        showProgressDialog("Creating Backup", "Preparing backup...");
-
         String finalTitle = title != null ? title : "Manual backup - " +
                 java.time.LocalDateTime.now().format(
                         java.time.format.DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
 
-        BackupManager.createManualBackupAsync(finalTitle, description, this::updateProgress)
+        currentOperationName = finalTitle;
+        operationInBackground = false;
+        isRestoreOperation = false;
+
+        showBackupWarningDialog(finalTitle, description);
+    }
+
+    private void showBackupWarningDialog(String title, String description) {
+        var dialogContainer = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
+        dialogContainer.surface(Surface.flat(UITheme.DARK_PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
+        dialogContainer.padding(Insets.of(16));
+        dialogContainer.positioning(Positioning.absolute(
+                (this.width - 400) / 2,
+                (this.height - 200) / 2
+        )).zIndex(10);
+
+        dialogContainer.child(Components.label(Text.literal("Backup Notice"))
+                .color(UITheme.color(UITheme.ACCENT_GOLD))
+                .margins(Insets.bottom(8)));
+
+        var warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        warningText.gap(4);
+
+        warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(4)));
+
+        warningText.child(Components.label(Text.literal("• The backup will run in the background"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• A progress indicator will show the status"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• You can continue using the interface"))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(8)));
+
+        dialogContainer.child(warningText);
+
+        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonRow.gap(8);
+        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        buttonRow.child(Components.button(Text.literal("Cancel"), btn -> {
+            rootComponent.removeChild(dialogContainer);
+        }).sizing(Sizing.fixed(80), Sizing.fixed(20)));
+
+        buttonRow.child(Components.button(Text.literal("Continue"), btn -> {
+            rootComponent.removeChild(dialogContainer);
+            executeBackupCreation(title, description);
+        }).sizing(Sizing.fixed(120), Sizing.fixed(20)));
+
+        dialogContainer.child(buttonRow);
+        rootComponent.child(dialogContainer);
+    }
+
+    private void executeBackupCreation(String title, String description) {
+        operationInBackground = false;
+        showProgressDialog("Creating Backup", "Preparing backup...");
+
+        BackupManager.createManualBackupAsync(title, description, this::updateProgress)
                 .thenAccept(backupPath -> {
                     MinecraftClient.getInstance().execute(() -> {
                         closeProgressDialog();
                         refreshBackupsList();
 
-                        if (MinecraftClient.getInstance().player != null) {
-                            MinecraftClient.getInstance().player.sendMessage(
-                                    Text.literal("Backup created successfully!"), false);
+                        // Notify user of completion
+                        BackupCompletionNotifier.notifyBackupComplete(
+                                currentOperationName, backupPath, false);
+
+                        // Auto-open folder if still on screen
+                        if (MinecraftClient.getInstance().currentScreen == this) {
+                            try {
+                                Util.getOperatingSystem().open(backupPath.getParent().toFile());
+                            } catch (Exception e) {
+                                LOGGER.warn("Failed to auto-open backup folder", e);
+                            }
                         }
                     });
                 })
@@ -469,11 +541,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                     MinecraftClient.getInstance().execute(() -> {
                         closeProgressDialog();
                         LOGGER.error("Failed to create backup", throwable);
-
-                        if (MinecraftClient.getInstance().player != null) {
-                            MinecraftClient.getInstance().player.sendMessage(
-                                    Text.literal("Failed to create backup: " + throwable.getMessage()), false);
-                        }
+                        showErrorDialog("Backup failed: " + throwable.getMessage());
                     });
                     return null;
                 });
@@ -532,7 +600,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
 
         buttons.child(Components.button(Text.literal("Restore"), btn -> {
                     closeOverlay();
-                    performRestore();
+                    showRestoreWarningDialog();
                 }).renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .sizing(Sizing.fixed(100), Sizing.fixed(20)));
@@ -547,8 +615,61 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         showOverlay(popup);
     }
 
+    private void showRestoreWarningDialog() {
+        var dialogContainer = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
+        dialogContainer.surface(Surface.flat(UITheme.DARK_PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
+        dialogContainer.padding(Insets.of(16));
+        dialogContainer.positioning(Positioning.absolute(
+                (this.width - 400) / 2,
+                (this.height - 200) / 2
+        )).zIndex(10);
+
+        dialogContainer.child(Components.label(Text.literal("Restore Notice"))
+                .color(UITheme.color(UITheme.ACCENT_GOLD))
+                .margins(Insets.bottom(8)));
+
+        var warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        warningText.gap(4);
+
+        warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(4)));
+
+        warningText.child(Components.label(Text.literal("• The restore will run in the background"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• A progress indicator will show the status"))
+                .color(UITheme.color(UITheme.TEXT_WHITE)));
+
+        warningText.child(Components.label(Text.literal("• You can continue using the interface"))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(8)));
+
+        dialogContainer.child(warningText);
+
+        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonRow.gap(8);
+        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        buttonRow.child(Components.button(Text.literal("Cancel"), btn -> {
+            rootComponent.removeChild(dialogContainer);
+        }).sizing(Sizing.fixed(80), Sizing.fixed(20)));
+
+        buttonRow.child(Components.button(Text.literal("Continue Restore"), btn -> {
+            rootComponent.removeChild(dialogContainer);
+            performRestore();
+        }).sizing(Sizing.fixed(120), Sizing.fixed(20)));
+
+        dialogContainer.child(buttonRow);
+        rootComponent.child(dialogContainer);
+    }
+
     private void performRestore() {
         if (selectedBackup == null) return;
+
+        currentOperationName = selectedBackup.getDisplayName();
+        operationInBackground = false;
+        isRestoreOperation = true;
 
         showProgressDialog("Restoring Backup", "Preparing restore...");
 
@@ -558,16 +679,18 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                         closeProgressDialog();
 
                         if (success) {
-                            if (MinecraftClient.getInstance().player != null) {
-                                MinecraftClient.getInstance().player.sendMessage(
-                                        Text.literal("Backup restored successfully!"), false);
-                            }
                             refreshBackupsList();
+
+                            // Get backup path for notification
+                            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+                            Path backupsDir = gameDir.resolve("packcore/backups");
+                            Path backupPath = backupsDir.resolve(selectedBackup.backupId + ".zip");
+
+                            // Notify user of completion
+                            BackupCompletionNotifier.notifyBackupComplete(
+                                    currentOperationName, backupPath, true);
                         } else {
-                            if (MinecraftClient.getInstance().player != null) {
-                                MinecraftClient.getInstance().player.sendMessage(
-                                        Text.literal("Failed to restore backup!"), false);
-                            }
+                            showErrorDialog("Failed to restore backup!");
                         }
                     });
                 })
@@ -575,11 +698,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                     MinecraftClient.getInstance().execute(() -> {
                         closeProgressDialog();
                         LOGGER.error("Failed to restore backup", throwable);
-
-                        if (MinecraftClient.getInstance().player != null) {
-                            MinecraftClient.getInstance().player.sendMessage(
-                                    Text.literal("Failed to restore backup: " + throwable.getMessage()), false);
-                        }
+                        showErrorDialog("Restore failed: " + throwable.getMessage());
                     });
                     return null;
                 });
@@ -633,34 +752,53 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
             selectedBackup = null;
             refreshBackupsList();
         } else {
-            LOGGER.error("Failed to delete backup");
+            showErrorDialog("Failed to delete backup");
         }
     }
 
     private void showProgressDialog(String title, String message) {
         progressDialog = Containers.verticalFlow(Sizing.fixed(350), Sizing.content());
-        progressDialog.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
+        progressDialog.surface(Surface.flat(UITheme.DARK_PANEL_BACKGROUND).and(Surface.outline(UITheme.ACCENT_GOLD)));
         progressDialog.padding(Insets.of(16));
         progressDialog.positioning(Positioning.absolute(
                 (this.width - 350) / 2,
-                (this.height - 100) / 2
+                (this.height - 150) / 2
         ));
         progressDialog.zIndex(20);
 
         progressDialog.child(Components.label(Text.literal(title)
                         .setStyle(Style.EMPTY.withBold(true)))
-                .color(UITheme.color(UITheme.ACCENT_GOLD)));
+                .color(UITheme.color(UITheme.ACCENT_GOLD))
+                .margins(Insets.bottom(8)));
 
-        progressLabel = Components.label(Text.literal(message))
-                .color(UITheme.color(UITheme.TEXT_WHITE));
+        progressLabel = (LabelComponent) Components.label(Text.literal(message))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(12));
         progressDialog.child(progressLabel);
+
+        // Button row
+        FlowLayout buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        buttonRow.gap(8);
+        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+
+        // Continue in background button
+        ButtonComponent backgroundButton = (ButtonComponent) Components.button(
+                Text.literal("Continue in Background"),
+                btn -> {
+                    operationInBackground = true;
+                    closeProgressDialog();
+                }
+        ).horizontalSizing(Sizing.content());
+
+        buttonRow.child(backgroundButton);
+        progressDialog.child(buttonRow);
 
         rootComponent.child(progressDialog);
     }
 
     private void updateProgress(String message) {
         MinecraftClient.getInstance().execute(() -> {
-            if (progressLabel != null) {
+            if (progressLabel != null && !operationInBackground) {
                 progressLabel.text(Text.literal(message));
             }
         });
@@ -672,6 +810,34 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
             progressDialog = null;
             progressLabel = null;
         }
+    }
+
+    private void showErrorDialog(String message) {
+        var errorDialog = Containers.verticalFlow(Sizing.fixed(350), Sizing.content());
+        errorDialog.surface(Surface.flat(UITheme.DARK_PANEL_BACKGROUND)
+                .and(Surface.outline(UITheme.STATUS_ERROR_BORDER)));
+        errorDialog.padding(Insets.of(16));
+        errorDialog.positioning(Positioning.absolute(
+                (this.width - 350) / 2,
+                (this.height - 120) / 2
+        ));
+        errorDialog.zIndex(20);
+
+        errorDialog.child(Components.label(Text.literal("Error")
+                        .setStyle(Style.EMPTY.withBold(true)))
+                .color(UITheme.color(UITheme.STATUS_ERROR_BORDER))
+                .margins(Insets.bottom(8)));
+
+        errorDialog.child(Components.label(Text.literal(message))
+                .color(UITheme.color(UITheme.TEXT_WHITE))
+                .margins(Insets.bottom(12)));
+
+        errorDialog.child(Components.button(Text.literal("OK"), btn -> {
+                    rootComponent.removeChild(errorDialog);
+                }).sizing(Sizing.fixed(80), Sizing.fixed(20))
+                .horizontalSizing(Sizing.content()));
+
+        rootComponent.child(errorDialog);
     }
 
     private void showOverlay(FlowLayout popup) {
