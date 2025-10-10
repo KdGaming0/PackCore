@@ -8,12 +8,30 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility for applying the selected Tab Design (SkyHanni or Skyblocker)
  * by changing the config of the respective mod at runtime.
  */
 public class TabDesignUtil {
+
+    // Track whether we've already applied SkyHanni config to prevent re-application
+    private static final AtomicBoolean skyhanniConfigApplied = new AtomicBoolean(false);
+
+    // Store the pending enable state
+    private static volatile Boolean pendingSkyHanniState = null;
+
+    // Register the join listener once on class initialization
+    static {
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, clientPlayNetworkHandler) -> {
+            // Only execute if we have a pending state and haven't applied yet
+            if (pendingSkyHanniState != null && skyhanniConfigApplied.compareAndSet(false, true)) {
+                boolean enable = pendingSkyHanniState;
+                scheduleDelayedCommand(enable);
+            }
+        });
+    }
 
     public static boolean applyTabDesignFromWizard() {
         String tabDesign = WizardDataManager.getInstance().getTabDesign();
@@ -36,6 +54,11 @@ public class TabDesignUtil {
         }
 
         return false;
+    }
+
+    public static void resetSkyHanniState() {
+        skyhanniConfigApplied.set(false);
+        pendingSkyHanniState = null;
     }
 
     private static boolean isModLoaded(String modId) {
@@ -76,27 +99,21 @@ public class TabDesignUtil {
         }
     }
 
+    // ===== SkyHanni (using command) =====
+
     private static boolean enableSkyHanniTabList(boolean enable) {
-        //TODO find out how to do reflection so there is no delay in applying the config
         try {
             MinecraftClient client = MinecraftClient.getInstance();
 
-            // If player is already in a world, run immediately
+            // If player is already in a world, run with delay
             if (client.player != null) {
-                executeSkyHanniCommand(enable);
+                scheduleDelayedCommand(enable);
+                skyhanniConfigApplied.set(true);
                 return true;
             }
 
-            // Otherwise, queue command for when world is joined
-            ClientPlayConnectionEvents.JOIN.register((handler, sender, clientPlayNetworkHandler) -> {
-                try {
-                    executeSkyHanniCommand(enable);
-                    PackCore.LOGGER.info("Executed SkyHanni command after join");
-                } catch (Exception e) {
-                    PackCore.LOGGER.warn("Failed to execute SkyHanni command after join", e);
-                }
-            });
-
+            // Otherwise, set pending state and wait for join event
+            pendingSkyHanniState = enable;
             PackCore.LOGGER.info("Queued SkyHanni command to run on world join");
             return true;
 
@@ -104,6 +121,29 @@ public class TabDesignUtil {
             PackCore.LOGGER.warn("Could not queue SkyHanni config command", e);
             return false;
         }
+    }
+
+    private static void scheduleDelayedCommand(boolean enable) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        // Schedule command execution after a delay
+        new Thread(() -> {
+            try {
+                Thread.sleep(2000); // Wait 2 seconds for full initialization
+                client.execute(() -> {
+                    try {
+                        executeSkyHanniCommand(enable);
+                        PackCore.LOGGER.info("Executed SkyHanni command after delay");
+                    } catch (Exception e) {
+                        PackCore.LOGGER.warn("Failed to execute SkyHanni command", e);
+                        skyhanniConfigApplied.set(false);
+                    }
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                skyhanniConfigApplied.set(false);
+            }
+        }, "SkyHanni-Config-Delay").start();
     }
 
     private static void executeSkyHanniCommand(boolean enable) {
