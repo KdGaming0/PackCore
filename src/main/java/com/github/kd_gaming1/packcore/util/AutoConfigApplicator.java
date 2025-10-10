@@ -139,14 +139,27 @@ public class AutoConfigApplicator {
 
         LOGGER.debug("Finding best match for resolution: {}", detectedResolution);
 
-        return configs.stream()
-                .sorted(createConfigComparator(detectedResolution))
-                .peek(config -> LOGGER.debug("Evaluating: {} - resolution: {}, official: {}",
-                        config.getDisplayName(),
-                        config.getMetadata().getTargetResolution(),
-                        config.isOfficial()))
-                .findFirst()
+        // LOG ALL AVAILABLE CONFIGS
+        LOGGER.info("Available configs:");
+        for (ConfigFileUtils.ConfigFile config : configs) {
+            LOGGER.info("  - {} | Resolution: {} | Official: {}",
+                    config.getDisplayName(),
+                    config.getMetadata().getTargetResolution(),
+                    config.isOfficial());
+        }
+
+        ConfigFileUtils.ConfigFile selected = configs.stream()
+                .min(createConfigComparator(detectedResolution))
                 .orElse(null);
+
+        if (selected != null) {
+            LOGGER.info("Best match selected: {} (distance: {})",
+                    selected.getDisplayName(),
+                    getResolutionDistance(detectedResolution,
+                            selected.getMetadata().getTargetResolution()));
+        }
+
+        return selected;
     }
 
     private static Comparator<ConfigFileUtils.ConfigFile> createConfigComparator(String targetResolution) {
@@ -164,11 +177,15 @@ public class AutoConfigApplicator {
     /**
      * Calculate distance between two resolutions (lower is better)
      */
+    /**
+     * Calculate distance between two resolutions (lower is better)
+     */
     private static int getResolutionDistance(String target, String candidate) {
         if (candidate == null) return 999;
 
-        String candidateLower = candidate.toLowerCase();
-        String targetLower = target.toLowerCase();
+        // Normalize both to standard format (e.g., "1440p", "4k")
+        String candidateLower = normalizeResolution(candidate).toLowerCase();
+        String targetLower = normalizeResolution(target).toLowerCase();
 
         // Exact match is best
         if (candidateLower.equals(targetLower)) return 0;
@@ -181,5 +198,38 @@ public class AutoConfigApplicator {
         int candidatePriority = RESOLUTION_PRIORITY.getOrDefault(candidateLower, 0);
 
         return Math.abs(targetPriority - candidatePriority);
+    }
+
+    /**
+     * Normalize resolution strings to standard format
+     * Converts "1920x1080" → "1080p", "2560x1440" → "1440p", etc.
+     */
+    private static String normalizeResolution(String resolution) {
+        if (resolution == null) return "any";
+
+        String lower = resolution.toLowerCase().trim();
+
+        // Already in standard format
+        if (lower.equals("4k") || lower.equals("1440p") ||
+                lower.equals("1080p") || lower.equals("720p") ||
+                lower.equals("any")) {
+            return lower;
+        }
+
+        // Parse WIDTHxHEIGHT format
+        if (lower.contains("x")) {
+            try {
+                String[] parts = lower.split("x");
+                if (parts.length == 2) {
+                    int width = Integer.parseInt(parts[0].trim());
+                    int height = Integer.parseInt(parts[1].trim());
+                    return categorizeResolution(width, height);
+                }
+            } catch (NumberFormatException e) {
+                LOGGER.warn("Could not parse resolution: {}", resolution);
+            }
+        }
+
+        return "any";
     }
 }
