@@ -2,6 +2,9 @@ package com.github.kd_gaming1.packcore.util.config;
 
 import net.caffeinemc.mods.sodium.client.SodiumClientMod;
 import net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions;
+//#if MC >= 1.21.8
+//$$ import net.caffeinemc.mods.sodium.client.render.chunk.DeferMode;
+//#endif
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +66,13 @@ public class SodiumIntegration {
         // Performance profile settings from sodium-options.json
 
         // Quality settings
+        //#if MC >= 1.21.8
+        //$$ options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.FAST;
+        //$$ options.quality.leavesQuality = SodiumGameOptions.LeavesQuality.FAST;
+        //#else
         options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.FAST;
         options.quality.leavesQuality = SodiumGameOptions.GraphicsQuality.FAST;
+        //#endif
         options.quality.enableVignette = true;
 
         // Advanced settings
@@ -74,7 +82,11 @@ public class SodiumIntegration {
 
         // Performance settings
         options.performance.chunkBuilderThreads = 0; // 0 = auto
+        //#if MC >= 1.21.8
+        //$$ options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
+        //#else
         options.performance.alwaysDeferChunkUpdates = true;
+        //#endif
         options.performance.animateOnlyVisibleTextures = true;
         options.performance.useEntityCulling = true;
         options.performance.useFogOcclusion = true;
@@ -88,8 +100,13 @@ public class SodiumIntegration {
         // Balanced profile settings from sodium-options.json
 
         // Quality settings
+        //#if MC >= 1.21.8
+        //$$ options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.DEFAULT;
+        //$$ options.quality.leavesQuality = SodiumGameOptions.LeavesQuality.DEFAULT;
+        //#else
         options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.DEFAULT;
         options.quality.leavesQuality = SodiumGameOptions.GraphicsQuality.DEFAULT;
+        //#endif
         options.quality.enableVignette = true;
 
         // Advanced settings
@@ -99,7 +116,11 @@ public class SodiumIntegration {
 
         // Performance settings
         options.performance.chunkBuilderThreads = 0; // 0 = auto
+        //#if MC >= 1.21.8
+        //$$ options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
+        //#else
         options.performance.alwaysDeferChunkUpdates = true;
+        //#endif
         options.performance.animateOnlyVisibleTextures = true;
         options.performance.useEntityCulling = true;
         options.performance.useFogOcclusion = true;
@@ -113,8 +134,13 @@ public class SodiumIntegration {
         // Quality profile settings from sodium-options.json
 
         // Quality settings
+        //#if MC >= 1.21.8
+        //$$ options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.FANCY;
+        //$$ options.quality.leavesQuality = SodiumGameOptions.LeavesQuality.FANCY;
+        //#else
         options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.FANCY;
         options.quality.leavesQuality = SodiumGameOptions.GraphicsQuality.FANCY;
+        //#endif
         options.quality.enableVignette = true;
 
         // Advanced settings
@@ -124,7 +150,11 @@ public class SodiumIntegration {
 
         // Performance settings
         options.performance.chunkBuilderThreads = 0; // 0 = auto
+        //#if MC >= 1.21.8
+        //$$ options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
+        //#else
         options.performance.alwaysDeferChunkUpdates = true;
+        //#endif
         options.performance.animateOnlyVisibleTextures = true;
         options.performance.useEntityCulling = true;
         options.performance.useFogOcclusion = true;
