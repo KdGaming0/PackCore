@@ -30,6 +30,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     private FlowLayout progressContainer;
     private FlowLayout warningBanner;
     private Map<String, LabelComponent> stepLabels = new LinkedHashMap<>();
+    private boolean shouldShowSkipButton = false;
 
     public IntroductionScreenPageFinal() {
         super(
@@ -434,6 +435,9 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                             dataManager.setConfigurationResult("success", "");
                             onConfigurationApplied();
                         } else {
+                            // Enable skip button
+                            shouldShowSkipButton = true;
+
                             // Don't set configurationApplied to true on failure
                             dataManager.setConfigurationApplied(false);
 
@@ -475,7 +479,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         PackCore.LOGGER.info("Wizard configuration applied successfully!");
 
         // Update UI to success state
-        updateApplyButtonState(false, "✅ All Done!");
+        updateApplyButtonState(true, "✅ All Done!");
         updateStatusLabel("✅ Success! All your settings have been applied. Click 'Continue' to start playing!", Formatting.GREEN);
 
         // Enable continue now that configuration is applied
@@ -543,7 +547,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Update UI to error state - allow retry
         updateApplyButtonState(false, "🔄 Retry Settings");
-        updateStatusLabel("⚠️ Some settings couldn't be applied. See details above. Click 'Retry Settings' or 'Skip' to continue.", Formatting.RED);
+        updateStatusLabel("⚠️ Some settings couldn't be applied. See details above. Click 'Retry Settings' or 'Skip' to 'Finish'.", Formatting.RED);
 
         // Allow skipping on failure
         updatePrimaryButtonState(true);
@@ -611,6 +615,6 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
     @Override
     protected boolean isSkippable() {
-        return true;
+        return shouldShowSkipButton;
     }
 }
