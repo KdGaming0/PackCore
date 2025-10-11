@@ -14,6 +14,7 @@ plugins {
 repositories {
     maven("https://maven.wispforest.io/releases/")
     maven("https://api.modrinth.com/maven")
+    maven ("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
 }
 
 toolkitMultiversion {
@@ -64,4 +65,5 @@ dependencies {
     modCompileOnly("maven.modrinth:sodium:$sodiumVersion")
     modCompileOnly("maven.modrinth:iris:$irisVersion")
     modRuntimeOnly("com.terraformersmc:modmenu:$modmenuVersion")
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
 }
