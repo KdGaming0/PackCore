@@ -39,12 +39,10 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = CUSTOMIZATION, name = "packcore.midnightconfig.show_update_notifications_title")
     public static boolean showUpdateNotificationsOnTitleScreen = true;
 
-    // ADVANCED CATEGORY (Hidden options)
-    @Hidden
+    // ADVANCED CATEGORY
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.first_startup")
     public static boolean isFirstStartup = true;
 
-    @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.welcome_wizard_shown")
     public static boolean haveShownWelcomeWizard = false;
 

@@ -1,26 +1,21 @@
 {
   "packcore.midnightconfig.title": "PackCore Configuration",
 
-  "packcore.midnightconfig.category.dialog": "Dialog & Wizards",
   "packcore.midnightconfig.category.ui": "User Interface",
+  "packcore.midnightconfig.category.backup": "Backup Settings",
   "packcore.midnightconfig.category.customization": "Customization",
   "packcore.midnightconfig.category.advanced": "Advanced Settings",
 
-  "packcore.midnightconfig.show_install_wizard": "Show Pre-Launch Install Wizard",
-  "packcore.midnightconfig.dialog_timeout": "Dialog Timeout (Minutes)",
-
   "packcore.midnightconfig.enable_custom_menu": "Enable Custom Menu",
-  "packcore.midnightconfig.enable_custom_panorama": "Enable Custom Panorama",
+
+  "packcore.midnightconfig.enable_auto_backups": "Enable Auto Backups",
+  "packcore.midnightconfig.max_backups": "Maximum Backups",
 
   "packcore.midnightconfig.server_address": "Server Address For Quick Join Button",
-  "packcore.midnightconfig.override_vanilla_panorama": "Override Vanilla Panorama",
   "packcore.midnightconfig.enable_update_notifications": "Enable Update Notifications",
   "packcore.midnightconfig.show_update_notifications_title": "Show Update Notifications On Title Screen",
 
-  "packcore.midnightconfig.first_startup": "First Startup",
-  "packcore.midnightconfig.welcome_wizard_shown": "Welcome Wizard Shown",
-  "packcore.midnightconfig.last_config_applied": "Last Config Applied",
-  "packcore.midnightconfig.setup_wizard_shown": "Setup Wizard Shown",
-  "packcore.midnightconfig.setup_wizard_completed": "Setup Wizard Completed",
-  "packcore.midnightconfig.applied_config_name": "Applied Config Name"
+  "packcore.midnightconfig.first_startup": "First Startup Tracker",
+  "packcore.midnightconfig.welcome_wizard_shown": "Welcome Wizard Shown Tracker",
+  "packcore.midnightconfig.setup_wizard_completed": "Setup Wizard Completed Tracker"
 }
