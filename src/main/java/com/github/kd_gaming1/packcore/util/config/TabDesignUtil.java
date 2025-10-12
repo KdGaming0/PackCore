@@ -157,4 +157,65 @@ public class TabDesignUtil {
         //#endif
         PackCore.LOGGER.info("Executed SkyHanni command: /{}", command);
     }
+
+    /**
+     * Availability information for tab design mods
+     */
+    public static class TabDesignAvailability {
+        private final boolean skyhanniAvailable;
+        private final boolean skyblockerAvailable;
+
+        public TabDesignAvailability(boolean skyhanniAvailable, boolean skyblockerAvailable) {
+            this.skyhanniAvailable = skyhanniAvailable;
+            this.skyblockerAvailable = skyblockerAvailable;
+        }
+
+        public boolean isSkyHanniAvailable() {
+            return skyhanniAvailable;
+        }
+
+        public boolean isSkyblockerAvailable() {
+            return skyblockerAvailable;
+        }
+    }
+
+    /**
+     * Get the availability of tab design mods
+     */
+    public static TabDesignAvailability getAvailability() {
+        return new TabDesignAvailability(
+                isModLoaded("skyhanni"),
+                isModLoaded("skyblocker")
+        );
+    }
+
+    /**
+     * Apply a specific tab design by name
+     * @param design "skyhanni" or "skyblocker"
+     * @return true if successfully applied
+     */
+    public static boolean applyTabDesign(String design) {
+        if (design == null || design.isEmpty()) {
+            return false;
+        }
+
+        boolean skyblockerPresent = isModLoaded("skyblocker");
+        boolean skyhanniPresent = isModLoaded("skyhanni");
+
+        if ("skyblocker".equalsIgnoreCase(design) && skyblockerPresent) {
+            boolean changed = enableSkyblockerTabList(true);
+            if (skyhanniPresent) {
+                enableSkyHanniTabList(false);
+            }
+            return changed;
+        } else if ("skyhanni".equalsIgnoreCase(design) && skyhanniPresent) {
+            boolean changed = enableSkyHanniTabList(true);
+            if (skyblockerPresent) {
+                enableSkyblockerTabList(false);
+            }
+            return changed;
+        }
+
+        return false;
+    }
 }
