@@ -628,7 +628,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Additional note
         LabelComponent note = (LabelComponent) Components.label(
-                Text.literal("You can configure these manually later with /packcore [performance|resourcepack|tabdesign].")
+                Text.literal("You can configure these manually later with /packcore [performance|tabdesign].")
                         .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
         ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2));
         note.horizontalSizing(Sizing.fill(100));
@@ -690,7 +690,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                 PackCoreConfig.haveShownWelcomeWizard = true;
                 PackCoreConfig.write(MOD_ID);
             } else {
-                updateStatusLabel("⚠️ Please apply your settings first, or click 'Skip' to configure them manually later with /packcore [performance|resourcepack|tabdesign].", Formatting.GOLD);
+                updateStatusLabel("⚠️ Please apply your settings first, or click 'Skip' to configure them manually later with /packcore [performance|tabdesign].", Formatting.GOLD);
                 return;
             }
         }
