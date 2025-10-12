@@ -357,10 +357,18 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
                 .gap(4)
                 .horizontalAlignment(HorizontalAlignment.LEFT);
 
+        //#if MC >= 1.21.8
+        //$$ LabelComponent versionLabel = Components.label(Text.literal("Pack Version: " + currentVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.BLACK);
+        //#else
         LabelComponent versionLabel = Components.label(Text.literal("Pack Version: " + currentVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.ofArgb(0x030100));
+        //#endif
         mainLayout.child(versionLabel);
         if (updateAvailable) {
+            //#if MC >= 1.21.8
+            //$$ LabelComponent updateAvailableLabel = Components.label(Text.literal("Update Available: " + newVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.BLACK);
+            //#else
             LabelComponent updateAvailableLabel = Components.label(Text.literal("Update Available: " + newVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.ofArgb(0x030100));
+            //#endif
             mainLayout.child(updateAvailableLabel);
         }
 
