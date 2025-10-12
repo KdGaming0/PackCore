@@ -11,6 +11,7 @@ import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.OverlayContainer;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
@@ -30,7 +31,10 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     private FlowLayout progressContainer;
     private FlowLayout warningBanner;
     private Map<String, LabelComponent> stepLabels = new LinkedHashMap<>();
-    private boolean shouldShowSkipButton = false;
+
+    private io.wispforest.owo.ui.container.StackLayout getRootComponent() {
+        return uiAdapter.rootComponent;
+    }
 
     public IntroductionScreenPageFinal() {
         super(
@@ -435,9 +439,6 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                             dataManager.setConfigurationResult("success", "");
                             onConfigurationApplied();
                         } else {
-                            // Enable skip button
-                            shouldShowSkipButton = true;
-
                             // Don't set configurationApplied to true on failure
                             dataManager.setConfigurationApplied(false);
 
@@ -547,7 +548,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Update UI to error state - allow retry
         updateApplyButtonState(false, "🔄 Retry Settings");
-        updateStatusLabel("⚠️ Some settings couldn't be applied. See details above. Click 'Retry Settings' or 'Skip' to 'Finish'.", Formatting.RED);
+        updateStatusLabel("⚠️ Some settings couldn't be applied. See details above. Click 'Retry Settings' or 'Finish' to ignore the failure and continue.", Formatting.RED);
 
         // Allow skipping on failure
         updatePrimaryButtonState(true);
@@ -558,17 +559,140 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         dataManager.setConfigurationResult("failed", failureMessage.toString());
     }
 
+    private void showSkipConfirmation() {
+        // Create overlay with the dialog as the required child
+        OverlayContainer<FlowLayout> overlay = Containers.overlay(createSkipConfirmDialog());
+
+        // Configure behavior and appearance
+        overlay.closeOnClick(true);
+        overlay.surface(Surface.flat(0x80_000000));
+        overlay.zIndex(10);
+
+        // Add to root overlay stack
+        getRootComponent().child(overlay);
+    }
+
+    private FlowLayout createSkipConfirmDialog() {
+        FlowLayout dialog = (FlowLayout) Containers.verticalFlow(Sizing.fixed(400), Sizing.content())
+                .gap(15)
+                .surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(STATUS_WARNING_BORDER)))
+                .padding(Insets.of(20))
+                .positioning(Positioning.relative(50, 50));
+
+        // Title
+        dialog.child(Components.label(
+                Text.literal("⚠️ Skip Configuration?")
+                        .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+        ).color(Color.ofRgb(STATUS_WARNING_BORDER)).margins(Insets.of(2)));
+
+        // Message
+        LabelComponent message = (LabelComponent) Components.label(
+                Text.literal("You haven't applied your configuration yet. If you skip now, none of your selected settings will be saved.")
+        ).color(Color.ofRgb(TEXT_WHITE)).margins(Insets.of(2));
+        message.horizontalSizing(Sizing.fill(100));
+        dialog.child(message);
+
+        // Impact details
+        FlowLayout impactSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(4)
+                .surface(Surface.flat(0x20_FF8C00))
+                .padding(Insets.of(8))
+                .margins(Insets.vertical(4));
+
+        impactSection.child(Components.label(
+                Text.literal("This means:").setStyle(Style.EMPTY.withBold(Boolean.TRUE))
+        ).color(Color.ofRgb(TEXT_WHITE)));
+
+        String optimizationProfile = dataManager.getOptimizationProfile();
+        if (!optimizationProfile.isEmpty()) {
+            impactSection.child(Components.label(
+                    Text.literal("• Performance settings won't be changed")
+            ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.left(8)));
+        }
+
+        List<String> resourcePacks = dataManager.getResourcePacksOrdered();
+        if (!resourcePacks.isEmpty()) {
+            impactSection.child(Components.label(
+                    Text.literal("• Resource packs won't be enabled")
+            ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.left(8)));
+        }
+
+        String tabDesign = dataManager.getTabDesign();
+        if (!tabDesign.isEmpty()) {
+            impactSection.child(Components.label(
+                    Text.literal("• Tab menu style won't be applied")
+            ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.left(8)));
+        }
+
+        dialog.child(impactSection);
+
+        // Additional note
+        LabelComponent note = (LabelComponent) Components.label(
+                Text.literal("You can configure these manually later with /packcore [performance|resourcepack|tabdesign].")
+                        .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
+        ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2));
+        note.horizontalSizing(Sizing.fill(100));
+        dialog.child(note);
+
+        // Buttons
+        FlowLayout buttons = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(10)
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .margins(Insets.top(8));
+
+        ButtonComponent cancelButton = (ButtonComponent) Components.button(
+                        Text.literal("Go Back"),
+                        button -> {
+                            // Remove the overlay (last child)
+                            getRootComponent().removeChild(getRootComponent().children().get(getRootComponent().children().size() - 1));
+                        }
+                ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                .horizontalSizing(Sizing.fixed(100))
+                .verticalSizing(Sizing.fixed(20));
+
+        ButtonComponent confirmButton = (ButtonComponent) Components.button(
+                        Text.literal("Skip Anyway"),
+                        button -> {
+                            // Remove the overlay first
+                            getRootComponent().removeChild(getRootComponent().children().get(getRootComponent().children().size() - 1));
+                            // Then proceed with skip
+                            proceedWithSkip();
+                        }
+                ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 120, 60))
+                .horizontalSizing(Sizing.fixed(120))
+                .verticalSizing(Sizing.fixed(20));
+
+        buttons.child(cancelButton);
+        buttons.child(confirmButton);
+        dialog.child(buttons);
+
+        return dialog;
+    }
+
+    private void proceedWithSkip() {
+        PackCoreConfig.haveShownWelcomeWizard = true;
+        PackCoreConfig.write(MOD_ID);
+        this.client.setScreen(new FancyMainMenuScreen());
+    }
+
     @Override
     protected void onContinuePressed() {
-        // Prevent continuing while configuration is being applied or has not been applied yet
         if (dataManager.isConfigurationApplying()) {
             updateStatusLabel("⏳ Please wait - we're still applying your settings...", Formatting.YELLOW);
             return;
         }
 
+        // Allow continuing if applied OR if user accepts partial failure
         if (!dataManager.isConfigurationApplied()) {
-            updateStatusLabel("⚠️ Please apply your settings first, or click 'Skip' to configure them later. If some configurations failed, you can click 'Skip' — the ones that succeeded will be saved.", Formatting.GOLD);
-            return;
+            String result = dataManager.getConfigurationResult();
+            if ("failed".equals(result)) {
+                // Partial success - mark as completed since user wants to proceed
+                PackCoreConfig.haveShownWelcomeWizard = true;
+                PackCoreConfig.write(MOD_ID);
+            } else {
+                updateStatusLabel("⚠️ Please apply your settings first, or click 'Skip' to configure them manually later with /packcore [performance|resourcepack|tabdesign].", Formatting.GOLD);
+                return;
+            }
         }
 
         this.client.setScreen(new FancyMainMenuScreen());
@@ -582,10 +706,18 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
             return;
         }
 
-        PackCoreConfig.haveShownWelcomeWizard = true;
-        PackCoreConfig.write(MOD_ID);
+        // If configuration hasn't been applied yet, show confirmation
+        if (!dataManager.isConfigurationApplied()) {
+            String result = dataManager.getConfigurationResult();
+            // Only skip confirmation if there was a failure (user might want to skip failed steps)
+            if (!"failed".equals(result)) {
+                showSkipConfirmation();
+                return;
+            }
+        }
 
-        this.client.setScreen(new FancyMainMenuScreen());
+        // If configuration was applied or failed, proceed directly
+        proceedWithSkip();
     }
 
     @Override
@@ -615,6 +747,6 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
     @Override
     protected boolean isSkippable() {
-        return shouldShowSkipButton;
+        return true;
     }
 }
