@@ -9,22 +9,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Automatically applies the best matching configuration based on screen resolution.
- * Used during first launch or when explicitly requested.
+ * Uses actual pixel-based distance calculation to find the closest matching config.
  */
 public class AutoConfigApplicator {
     private static final Logger LOGGER = LoggerFactory.getLogger(AutoConfigApplicator.class);
-
-    private static final Map<String, Integer> RESOLUTION_PRIORITY = Map.of(
-            "4k", 4,
-            "1440p", 3,
-            "1080p", 2,
-            "720p", 1,
-            "any", 0
-    );
 
     /**
      * Detect screen resolution and apply the best matching config
@@ -35,8 +26,13 @@ public class AutoConfigApplicator {
         LOGGER.info("Starting automatic config application...");
 
         // Detect screen resolution
-        String detectedResolution = detectResolution();
-        LOGGER.info("Detected screen resolution: {}", detectedResolution);
+        Dimension screenSize = detectResolution();
+        if (screenSize == null) {
+            LOGGER.error("Failed to detect screen resolution");
+            return false;
+        }
+
+        LOGGER.info("Detected screen resolution: {}x{}", screenSize.width, screenSize.height);
 
         // Get all available configs
         List<ConfigFileUtils.ConfigFile> allConfigs = ConfigFileUtils.getAllConfigs();
@@ -49,7 +45,7 @@ public class AutoConfigApplicator {
         LOGGER.info("Found {} available configs", allConfigs.size());
 
         // Find best match
-        ConfigFileUtils.ConfigFile bestMatch = findBestMatch(detectedResolution, allConfigs);
+        ConfigFileUtils.ConfigFile bestMatch = findBestMatch(screenSize, allConfigs);
 
         if (bestMatch == null) {
             LOGGER.error("Could not find suitable config to apply");
@@ -105,47 +101,40 @@ public class AutoConfigApplicator {
     }
 
     /**
-     * Detect the current screen resolution category
+     * Detect the current screen resolution
+     * @return Dimension with screen width and height, or null if detection fails
      */
-    private static String detectResolution() {
+    private static Dimension detectResolution() {
         try {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
             Dimension screenSize = toolkit.getScreenSize();
-            int width = screenSize.width;
-            int height = screenSize.height;
-
-            LOGGER.debug("Screen dimensions: {}x{}", width, height);
-
-            return categorizeResolution(width, height);
+            LOGGER.debug("Screen dimensions: {}x{}", screenSize.width, screenSize.height);
+            return screenSize;
         } catch (Exception e) {
-            LOGGER.error("Failed to detect resolution, defaulting to 1080p", e);
-            return "1080p";
+            LOGGER.error("Failed to detect resolution", e);
+            return null;
         }
-    }
-
-    private static String categorizeResolution(int width, int height) {
-        if (height >= 2160) return "4k";
-        else if (height >= 1440) return "1440p";
-        else if (height >= 1080) return "1080p";
-        else return "720p";
     }
 
     /**
      * Find the best matching config for the detected resolution
+     * Uses actual pixel distance calculation
      */
     private static ConfigFileUtils.ConfigFile findBestMatch(
-            String detectedResolution,
+            Dimension detectedResolution,
             List<ConfigFileUtils.ConfigFile> configs) {
 
-        LOGGER.debug("Finding best match for resolution: {}", detectedResolution);
-
-        // LOG ALL AVAILABLE CONFIGS
         LOGGER.info("Available configs:");
         for (ConfigFileUtils.ConfigFile config : configs) {
-            LOGGER.info("  - {} | Resolution: {} | Official: {}",
+            String targetRes = config.getMetadata().getTargetResolution();
+            Dimension configRes = parseResolution(targetRes);
+            double distance = calculateDistance(detectedResolution, configRes);
+
+            LOGGER.info("  - {} | Resolution: {} | Official: {} | Distance: {}",
                     config.getDisplayName(),
-                    config.getMetadata().getTargetResolution(),
-                    config.isOfficial());
+                    targetRes,
+                    config.isOfficial(),
+                    configRes != null ? String.format("%.0f", distance) : "N/A");
         }
 
         ConfigFileUtils.ConfigFile selected = configs.stream()
@@ -153,83 +142,84 @@ public class AutoConfigApplicator {
                 .orElse(null);
 
         if (selected != null) {
-            LOGGER.info("Best match selected: {} (distance: {})",
-                    selected.getDisplayName(),
-                    getResolutionDistance(detectedResolution,
-                            selected.getMetadata().getTargetResolution()));
+            Dimension selectedRes = parseResolution(selected.getMetadata().getTargetResolution());
+            double distance = calculateDistance(detectedResolution, selectedRes);
+            LOGGER.info("Best match selected: {} (distance: {:.0f} pixels)",
+                    selected.getDisplayName(), distance);
         }
 
         return selected;
     }
 
-    private static Comparator<ConfigFileUtils.ConfigFile> createConfigComparator(String targetResolution) {
+    /**
+     * Creates a comparator that prioritizes configs by:
+     * 1. Official status (official configs first)
+     * 2. Pixel distance from target resolution (closer is better)
+     * 3. Name (alphabetically for consistency)
+     */
+    private static Comparator<ConfigFileUtils.ConfigFile> createConfigComparator(Dimension targetResolution) {
         return Comparator
                 // Prioritize official configs
                 .comparing((ConfigFileUtils.ConfigFile c) -> !c.isOfficial())
-                // Then by how close the resolution matches
-                .thenComparing(c -> getResolutionDistance(
-                        targetResolution,
-                        c.getMetadata().getTargetResolution()))
+                // Then by how close the resolution matches (pixel distance)
+                .thenComparing(c -> {
+                    Dimension configRes = parseResolution(c.getMetadata().getTargetResolution());
+                    return calculateDistance(targetResolution, configRes);
+                })
                 // Then by name for consistency
                 .thenComparing(c -> c.getDisplayName());
     }
 
     /**
-     * Calculate distance between two resolutions (lower is better)
+     * Calculate Euclidean distance between two resolutions in pixels
+     * @param target The target resolution
+     * @param candidate The candidate resolution
+     * @return Distance in pixels, or Double.MAX_VALUE if either is null
      */
-    /**
-     * Calculate distance between two resolutions (lower is better)
-     */
-    private static int getResolutionDistance(String target, String candidate) {
-        if (candidate == null) return 999;
+    private static double calculateDistance(Dimension target, Dimension candidate) {
+        if (target == null || candidate == null) {
+            return Double.MAX_VALUE;
+        }
 
-        // Normalize both to standard format (e.g., "1440p", "4k")
-        String candidateLower = normalizeResolution(candidate).toLowerCase();
-        String targetLower = normalizeResolution(target).toLowerCase();
+        double widthDiff = target.width - candidate.width;
+        double heightDiff = target.height - candidate.height;
 
-        // Exact match is best
-        if (candidateLower.equals(targetLower)) return 0;
-
-        // "any" is acceptable but not preferred
-        if (candidateLower.equals("any")) return 10;
-
-        // Calculate distance based on priority
-        int targetPriority = RESOLUTION_PRIORITY.getOrDefault(targetLower, 0);
-        int candidatePriority = RESOLUTION_PRIORITY.getOrDefault(candidateLower, 0);
-
-        return Math.abs(targetPriority - candidatePriority);
+        return Math.sqrt(widthDiff * widthDiff + heightDiff * heightDiff);
     }
 
     /**
-     * Normalize resolution strings to standard format
-     * Converts "1920x1080" → "1080p", "2560x1440" → "1440p", etc.
+     * Parse resolution strings to extract width and height
+     * Handles formats like "1920x1080", "2560×1440", "1920 x 1080", etc.
+     * Supports both 'x' and '×' (multiplication sign) as separators
+     *
+     * @param resolution Resolution string to parse
+     * @return Dimension with width and height, or null if parsing fails
      */
-    private static String normalizeResolution(String resolution) {
-        if (resolution == null) return "any";
-
-        String lower = resolution.toLowerCase().trim();
-
-        // Already in standard format
-        if (lower.equals("4k") || lower.equals("1440p") ||
-                lower.equals("1080p") || lower.equals("720p") ||
-                lower.equals("any")) {
-            return lower;
+    private static Dimension parseResolution(String resolution) {
+        if (resolution == null || resolution.trim().isEmpty()) {
+            return null;
         }
 
-        // Parse WIDTHxHEIGHT format
-        if (lower.contains("x")) {
+        String cleaned = resolution.trim().toLowerCase();
+
+        // Replace multiplication sign (×) with regular x for consistent parsing
+        cleaned = cleaned.replace('×', 'x');
+
+        // Match pattern: digits, optional whitespace, x, optional whitespace, digits
+        // Example: "1920x1080", "1920 x 1080", "2560x1440"
+        if (cleaned.matches("\\d+\\s*x\\s*\\d+")) {
+            String[] parts = cleaned.split("x");
             try {
-                String[] parts = lower.split("x");
-                if (parts.length == 2) {
-                    int width = Integer.parseInt(parts[0].trim());
-                    int height = Integer.parseInt(parts[1].trim());
-                    return categorizeResolution(width, height);
-                }
+                int width = Integer.parseInt(parts[0].trim());
+                int height = Integer.parseInt(parts[1].trim());
+                return new Dimension(width, height);
             } catch (NumberFormatException e) {
-                LOGGER.warn("Could not parse resolution: {}", resolution);
+                LOGGER.warn("Could not parse resolution numbers: {}", resolution);
+                return null;
             }
         }
 
-        return "any";
+        LOGGER.warn("Resolution format not recognized: {}", resolution);
+        return null;
     }
 }
