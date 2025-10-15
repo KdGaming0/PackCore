@@ -160,8 +160,8 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
                 TextOps.withColor(profile.title, ACCENT_GOLD).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).margins(Insets.of(2, 2, 2, 2));
         LabelComponent infoText = (LabelComponent) Components.label(
-                TextOps.withColor(profile.description, TEXT_WHITE).setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
-        ).horizontalSizing(Sizing.fill(100))
+                        TextOps.withColor(profile.description, TEXT_WHITE).setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
+                ).horizontalSizing(Sizing.fill(100))
                 .margins(Insets.of(2, 2, 2, 2));
 
         box.child(infoTitle).child(infoText);

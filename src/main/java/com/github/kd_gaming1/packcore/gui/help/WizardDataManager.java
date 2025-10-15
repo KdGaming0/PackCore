@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.gui.help;
 
 import com.github.kd_gaming1.packcore.PackCore;
+
 import java.util.*;
 
 /**
@@ -139,16 +140,16 @@ public class WizardDataManager {
 
         @Override
         public List<String> resourcePacksOrdered() {
-                return new ArrayList<>(resourcePacksOrdered);
-            }
-
-            // For compatibility with existing code
-            public Set<String> getAdditionalSettings() {
-                return new HashSet<>();
-            }
-
-            public Map<String, Object> getCustomSettings() {
-                return new HashMap<>();
-            }
+            return new ArrayList<>(resourcePacksOrdered);
         }
+
+        // For compatibility with existing code
+        public Set<String> getAdditionalSettings() {
+            return new HashSet<>();
+        }
+
+        public Map<String, Object> getCustomSettings() {
+            return new HashMap<>();
+        }
+    }
 }

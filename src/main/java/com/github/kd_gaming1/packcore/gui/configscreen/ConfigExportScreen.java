@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -42,8 +41,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private ScheduledExecutorService asyncExecutor;
 
     private ConfigExportManager exportManager;
-    private Set<Path> selectedPaths = ConcurrentHashMap.newKeySet();
-    private Map<String, Boolean> modsToInclude = new LinkedHashMap<>();
+    private final Set<Path> selectedPaths = ConcurrentHashMap.newKeySet();
+    private final Map<String, Boolean> modsToInclude = new LinkedHashMap<>();
     private FileTreeNode rootNode;
 
     private FlowLayout treeContainer;
@@ -63,8 +62,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private String selectedResolution;
     private String currentResolution;
 
-    private Map<FileTreeNode, FlowLayout> nodeRowCache = new ConcurrentHashMap<>();
-    private Map<FileTreeNode, CheckboxComponent> nodeCheckboxCache = new ConcurrentHashMap<>();
+    private final Map<FileTreeNode, FlowLayout> nodeRowCache = new ConcurrentHashMap<>();
+    private final Map<FileTreeNode, CheckboxComponent> nodeCheckboxCache = new ConcurrentHashMap<>();
     private volatile boolean isLoading = false;
     private FlowLayout loadingIndicator;
     private FlowLayout exportProgressDialog;
@@ -75,7 +74,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
 
     @Override
-    protected @NotNull OwoUIAdapter createAdapter() {
+    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
         return OwoUIAdapter.create(this, Containers::verticalFlow);
     }
 
@@ -98,13 +97,11 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         CompletableFuture.runAsync(() -> {
             rootNode = exportManager.buildFileTree();
             scanMods();
-        }, asyncExecutor).thenRun(() -> {
-            MinecraftClient.getInstance().execute(() -> {
-                if (treeContainer != null) {
-                    displayInitialTree();
-                }
-            });
-        });
+        }, asyncExecutor).thenRun(() -> MinecraftClient.getInstance().execute(() -> {
+            if (treeContainer != null) {
+                displayInitialTree();
+            }
+        }));
     }
 
     private FlowLayout createLoadingIndicator() {
@@ -343,9 +340,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
             isLoading = true;
             showLoadingForNode(node);
 
-            CompletableFuture.runAsync(() -> {
-                exportManager.loadNodeChildren(node);
-            }, asyncExecutor).thenRun(() -> { // Changed from ASYNC_EXECUTOR
+            CompletableFuture.runAsync(() -> exportManager.loadNodeChildren(node), asyncExecutor).thenRun(() -> { // Changed from ASYNC_EXECUTOR
                 MinecraftClient.getInstance().execute(() -> {
                     node.setExpanded(true);
                     updateNodeExpansion(node);
@@ -360,8 +355,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
     private void showLoadingForNode(FileTreeNode node) {
         FlowLayout nodeRow = nodeRowCache.get(node);
-        if (nodeRow != null && nodeRow.children().size() > 0) {
-            Component firstChild = nodeRow.children().get(0);
+        if (nodeRow != null && !nodeRow.children().isEmpty()) {
+            Component firstChild = nodeRow.children().getFirst();
             if (firstChild instanceof ButtonComponent btn) {
                 btn.setMessage(Text.literal("⏳"));
             }
@@ -382,8 +377,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
         // Update expand button
         FlowLayout nodeRow = nodeRowCache.get(node);
-        if (nodeRow != null && nodeRow.children().size() > 0) {
-            Component firstChild = nodeRow.children().get(0);
+        if (nodeRow != null && !nodeRow.children().isEmpty()) {
+            Component firstChild = nodeRow.children().getFirst();
             if (firstChild instanceof ButtonComponent btn) {
                 btn.setMessage(Text.literal(node.isExpanded() ? "▼" : "▶"));
             }
@@ -582,9 +577,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         }, asyncExecutor).thenAccept(paths -> { // Changed from ASYNC_EXECUTOR
             MinecraftClient.getInstance().execute(() -> {
                 // Update all checkboxes
-                nodeCheckboxCache.forEach((node, checkbox) -> {
-                    checkbox.checked(selectedPaths.contains(node.getPath()));
-                });
+                nodeCheckboxCache.forEach((node, checkbox) -> checkbox.checked(selectedPaths.contains(node.getPath())));
                 updateSelectionInfo();
             });
         });
@@ -766,9 +759,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         buttonRow.gap(8);
         buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        buttonRow.child(Components.button(Text.literal("Cancel"), btn -> {
-            this.uiAdapter.rootComponent.removeChild(dialogContainer);
-        }).sizing(Sizing.fixed(60), Sizing.fixed(20)));
+        buttonRow.child(Components.button(Text.literal("Cancel"), btn ->
+                this.uiAdapter.rootComponent.removeChild(dialogContainer)).sizing(Sizing.fixed(60), Sizing.fixed(20)));
 
         buttonRow.child(Components.button(Text.literal("OK"), btn -> {
             String customRes = customResolutionField.getText().trim();
@@ -837,9 +829,8 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
         buttonRow.gap(8);
         buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        buttonRow.child(Components.button(Text.literal("Cancel"), btn -> {
-            this.uiAdapter.rootComponent.removeChild(dialogContainer);
-        }).sizing(Sizing.fixed(80), Sizing.fixed(20)));
+        buttonRow.child(Components.button(Text.literal("Cancel"), btn ->
+                this.uiAdapter.rootComponent.removeChild(dialogContainer)).sizing(Sizing.fixed(80), Sizing.fixed(20)));
 
         buttonRow.child(Components.button(Text.literal("Continue Export"), btn -> {
             this.uiAdapter.rootComponent.removeChild(dialogContainer);

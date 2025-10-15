@@ -75,45 +75,25 @@ public class BackupManager {
         }
     }
 
-    public static class BackupInfo {
-        public final String backupId;
-        public final String timestamp;
-        public final BackupType type;
-        public final String configName;
-        public final String configVersion;
-        public final long sizeBytes;
-        public final String title;
-        public final String description;
-
-        public BackupInfo(String backupId, String timestamp, BackupType type,
-                          String configName, String configVersion, long sizeBytes,
-                          String title, String description) {
-            this.backupId = backupId;
-            this.timestamp = timestamp;
-            this.type = type;
-            this.configName = configName;
-            this.configVersion = configVersion;
-            this.sizeBytes = sizeBytes;
-            this.title = title;
-            this.description = description;
-        }
+    public record BackupInfo(String backupId, String timestamp, BackupType type, String configName,
+                             String configVersion, long sizeBytes, String title, String description) {
 
         public String getDisplayName() {
-            return String.format("[%s] %s - %s",
-                    type.getDisplayName(),
-                    title != null ? title : (configName != null ? configName : "Unknown Config"),
-                    formatTimestamp());
-        }
+                return String.format("[%s] %s - %s",
+                        type.getDisplayName(),
+                        title != null ? title : (configName != null ? configName : "Unknown Config"),
+                        formatTimestamp());
+            }
 
-        private String formatTimestamp() {
-            try {
-                LocalDateTime dateTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                return dateTime.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
-            } catch (Exception e) {
-                return timestamp;
+            private String formatTimestamp() {
+                try {
+                    LocalDateTime dateTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    return dateTime.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
+                } catch (Exception e) {
+                    return timestamp;
+                }
             }
         }
-    }
 
     /**
      * Create an automatic backup before config changes (async)
@@ -136,7 +116,8 @@ public class BackupManager {
      */
     public static Path createAutoBackup() {
         try {
-            return createAutoBackupAsync(msg -> {}).get();
+            return createAutoBackupAsync(msg -> {
+            }).get();
         } catch (Exception e) {
             LOGGER.error("Failed to create auto backup", e);
             return null;
@@ -295,7 +276,7 @@ public class BackupManager {
                 // Collect all paths first to avoid holding streams open
                 List<Path> pathsToCopy;
                 try (Stream<Path> paths = Files.walk(source)) {
-                    pathsToCopy = paths.collect(Collectors.toList());
+                    pathsToCopy = paths.toList();
                 }
 
                 // Process in batches for better performance
@@ -489,7 +470,8 @@ public class BackupManager {
                 progressCallback.accept("Creating safety backup...");
 
                 // Create a backup of current state before restoring
-                createAutoBackupAsync(msg -> {}).join();
+                createAutoBackupAsync(msg -> {
+                }).join();
 
                 progressCallback.accept("Extracting backup...");
 
@@ -535,7 +517,8 @@ public class BackupManager {
      */
     public static boolean restoreBackup(BackupInfo backupInfo) {
         try {
-            return restoreBackupAsync(backupInfo, msg -> {}).get();
+            return restoreBackupAsync(backupInfo, msg -> {
+            }).get();
         } catch (Exception e) {
             LOGGER.error("Failed to restore backup", e);
             return false;

@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +18,14 @@ import java.util.stream.Stream;
  * including backup, restore, copy, delete, and size calculation functionalities.
  */
 public class ConfigFileOperations {
-    /** Logger instance for logging operation details and errors. */
+    /**
+     * Logger instance for logging operation details and errors.
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileOperations.class);
 
-    /** Formatter for backup directory timestamps. */
+    /**
+     * Formatter for backup directory timestamps.
+     */
     private static final DateTimeFormatter BACKUP_TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
 
@@ -98,7 +103,7 @@ public class ConfigFileOperations {
     public static void copyDirectory(Path source, Path target) throws IOException {
         Files.walkFileTree(source, new SimpleFileVisitor<>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+            public @NotNull FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
                     throws IOException {
                 Path targetDir = target.resolve(source.relativize(dir));
                 Files.createDirectories(targetDir);
@@ -106,7 +111,7 @@ public class ConfigFileOperations {
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+            public @NotNull FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     throws IOException {
                 Path targetFile = target.resolve(source.relativize(file));
                 Files.copy(file, targetFile,
@@ -116,7 +121,7 @@ public class ConfigFileOperations {
             }
 
             @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) {
+            public @NotNull FileVisitResult visitFileFailed(Path file, IOException exc) {
                 LOGGER.warn("Failed to copy file: {} - {}", file, exc.getMessage());
                 return FileVisitResult.CONTINUE;
             }

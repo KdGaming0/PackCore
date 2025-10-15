@@ -43,7 +43,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
     private FlowLayout progressDialog = null;
     private LabelComponent progressLabel = null;
 
-    private Map<BackupManager.BackupInfo, FlowLayout> entryComponents = new HashMap<>();
+    private final Map<BackupManager.BackupInfo, FlowLayout> entryComponents = new HashMap<>();
 
     // Background operation tracking
     private volatile boolean operationInBackground = false;
@@ -176,11 +176,11 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
             sidebarContent.clearChildren();
 
             List<BackupManager.BackupInfo> manualBackups = allBackups.stream()
-                    .filter(b -> b.type == BackupManager.BackupType.MANUAL)
+                    .filter(b -> b.type() == BackupManager.BackupType.MANUAL)
                     .toList();
 
             List<BackupManager.BackupInfo> autoBackups = allBackups.stream()
-                    .filter(b -> b.type == BackupManager.BackupType.AUTO)
+                    .filter(b -> b.type() == BackupManager.BackupType.AUTO)
                     .toList();
 
             sidebarContent.child(createBackupSection("Manual Backups", manualBackups, true));
@@ -231,18 +231,18 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         entry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
         entry.padding(Insets.of(6));
 
-        String displayTitle = backup.title != null && !backup.title.isEmpty() ? backup.title : backup.configName;
+        String displayTitle = backup.title() != null && !backup.title().isEmpty() ? backup.title() : backup.configName();
         entry.child(Components.label(Text.literal(displayTitle))
                 .color(UITheme.color(UITheme.TEXT_WHITE)));
 
         var badges = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         badges.gap(4);
 
-        badges.child(Components.label(Text.literal(backup.type.getDisplayName()))
-                .color(UITheme.color(backup.type == BackupManager.BackupType.MANUAL ?
+        badges.child(Components.label(Text.literal(backup.type().getDisplayName()))
+                .color(UITheme.color(backup.type() == BackupManager.BackupType.MANUAL ?
                         UITheme.STATUS_SUCCESS_BORDER : UITheme.STATUS_WARNING_BORDER)));
 
-        badges.child(Components.label(Text.literal("v" + backup.configVersion))
+        badges.child(Components.label(Text.literal("v" + backup.configVersion()))
                 .color(UITheme.color(UITheme.TEXT_SECONDARY)));
 
         entry.child(badges);
@@ -314,8 +314,8 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         int guiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
         int padding = guiScale <= 2 ? 6 : 0;
 
-        String headerText = selectedBackup.title != null && !selectedBackup.title.isEmpty()
-                ? selectedBackup.title : selectedBackup.configName;
+        String headerText = selectedBackup.title() != null && !selectedBackup.title().isEmpty()
+                ? selectedBackup.title() : selectedBackup.configName();
 
         infoPanel.child(Components.label(Text.literal(headerText)
                         .setStyle(Style.EMPTY.withBold(true)))
@@ -327,21 +327,21 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
         infoBox.surface(Surface.flat(UITheme.PANEL_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
         infoBox.padding(Insets.of(8));
 
-        infoBox.child(createInfoRow("Type:", selectedBackup.type.getDisplayName()));
-        infoBox.child(createInfoRow("Config:", selectedBackup.configName));
-        infoBox.child(createInfoRow("Version:", selectedBackup.configVersion));
-        infoBox.child(createInfoRow("Created:", formatTimestamp(selectedBackup.timestamp)));
-        infoBox.child(createInfoRow("Size:", formatSize(selectedBackup.sizeBytes)));
-        infoBox.child(createInfoRow("Backup ID:", selectedBackup.backupId));
+        infoBox.child(createInfoRow("Type:", selectedBackup.type().getDisplayName()));
+        infoBox.child(createInfoRow("Config:", selectedBackup.configName()));
+        infoBox.child(createInfoRow("Version:", selectedBackup.configVersion()));
+        infoBox.child(createInfoRow("Created:", formatTimestamp(selectedBackup.timestamp())));
+        infoBox.child(createInfoRow("Size:", formatSize(selectedBackup.sizeBytes())));
+        infoBox.child(createInfoRow("Backup ID:", selectedBackup.backupId()));
 
         infoPanel.child(infoBox);
 
-        if (selectedBackup.description != null && !selectedBackup.description.trim().isEmpty()) {
+        if (selectedBackup.description() != null && !selectedBackup.description().trim().isEmpty()) {
             infoPanel.child(Components.label(Text.literal("Description:")
                             .setStyle(Style.EMPTY.withBold(true)))
                     .color(UITheme.color(UITheme.ACCENT_GOLD)));
 
-            infoPanel.child(Components.label(Text.literal(selectedBackup.description))
+            infoPanel.child(Components.label(Text.literal(selectedBackup.description()))
                     .color(UITheme.color(UITheme.TEXT_WHITE))
                     .sizing(Sizing.fill(95), Sizing.content()));
         }
@@ -373,7 +373,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .sizing(Sizing.fixed(100), Sizing.fixed(20)));
 
-        if (selectedBackup.type == BackupManager.BackupType.MANUAL) {
+        if (selectedBackup.type() == BackupManager.BackupType.MANUAL) {
             buttonPanel.child(Components.button(Text.literal("Delete"),
                             btn -> showDeleteConfirmation())
                     .renderer(ButtonComponent.Renderer.texture(
@@ -675,7 +675,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                         // Get backup path for notification
                         Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
                         Path backupsDir = gameDir.resolve("packcore/backups");
-                        Path backupPath = backupsDir.resolve(selectedBackup.backupId + ".zip");
+                        Path backupPath = backupsDir.resolve(selectedBackup.backupId() + ".zip");
 
                         // Notify user of completion
                         BackupCompletionNotifier.notifyBackupComplete(

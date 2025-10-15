@@ -81,7 +81,7 @@ public class BaseGuidePage extends BaseOwoScreen<FlowLayout> {
                 .margins(Insets.of(0, 0, 2, 0)));
 
         // Create the container for guide entries
-        guideListContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(98), Sizing.content())
+        guideListContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content())
                 .gap(4);
 
         ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), guideListContainer)

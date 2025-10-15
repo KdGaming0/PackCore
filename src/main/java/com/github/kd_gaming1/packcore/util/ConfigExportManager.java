@@ -100,9 +100,7 @@ public class ConfigExportManager {
             // Just check if it has children without loading them
             try (Stream<Path> children = Files.list(path)) {
                 boolean hasChildren = children
-                        .filter(child -> !isHidden(child))
-                        .findAny()
-                        .isPresent();
+                        .anyMatch(child -> !isHidden(child));
                 node.setHasUnloadedChildren(hasChildren);
             } catch (IOException e) {
                 LOGGER.debug("Could not check directory: {}", path);
@@ -342,7 +340,8 @@ public class ConfigExportManager {
      * Export configuration synchronously (fallback method)
      */
     public Path exportConfig(ExportRequest request) throws IOException {
-        return exportConfigAsync(request, message -> {});
+        return exportConfigAsync(request, message -> {
+        });
     }
 
     private void validateExportRequest(ExportRequest request) {
@@ -409,27 +408,20 @@ public class ConfigExportManager {
     }
 
     /**
-     * Export request data class
-     */
-    public static class ExportRequest {
-        public final Set<Path> selectedPaths;
-        public final String name;
-        public final String description;
-        public final String version;
-        public final String author;
-        public final String targetResolution;
-        public final List<String> includedMods;
-
-        public ExportRequest(Set<Path> selectedPaths, String name, String description,
-                             String version, String author, String targetResolution,
-                             List<String> includedMods) {
-            this.selectedPaths = selectedPaths;
-            this.name = name;
-            this.description = description;
-            this.version = version;
-            this.author = author;
-            this.targetResolution = targetResolution;
-            this.includedMods = includedMods != null ? includedMods : new ArrayList<>();
+         * Export request data class
+         */
+        public record ExportRequest(Set<Path> selectedPaths, String name, String description, String version, String author,
+                                    String targetResolution, List<String> includedMods) {
+            public ExportRequest(Set<Path> selectedPaths, String name, String description,
+                                 String version, String author, String targetResolution,
+                                 List<String> includedMods) {
+                this.selectedPaths = selectedPaths;
+                this.name = name;
+                this.description = description;
+                this.version = version;
+                this.author = author;
+                this.targetResolution = targetResolution;
+                this.includedMods = includedMods != null ? includedMods : new ArrayList<>();
+            }
         }
-    }
 }

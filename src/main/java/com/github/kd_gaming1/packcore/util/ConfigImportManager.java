@@ -24,25 +24,18 @@ public class ConfigImportManager {
             DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     /**
-     * Validation result with details
-     */
-    public static class ValidationResult {
-        public final boolean isValid;
-        public final String errorMessage;
-
-        public ValidationResult(boolean isValid, String errorMessage) {
-            this.isValid = isValid;
-            this.errorMessage = errorMessage;
-        }
+         * Validation result with details
+         */
+        public record ValidationResult(boolean isValid, String errorMessage) {
 
         public static ValidationResult valid() {
-            return new ValidationResult(true, null);
-        }
+                return new ValidationResult(true, null);
+            }
 
-        public static ValidationResult invalid(String message) {
-            return new ValidationResult(false, message);
+            public static ValidationResult invalid(String message) {
+                return new ValidationResult(false, message);
+            }
         }
-    }
 
     /**
      * Open native file chooser to select config zip with foreground focus
@@ -357,7 +350,7 @@ public class ConfigImportManager {
                 .toLowerCase();
 
         return ConfigFileUtils.getAllConfigs().stream()
-                .anyMatch(config -> config.getFileName()
+                .anyMatch(config -> config.fileName()
                         .toLowerCase()
                         .contains(sanitizedName));
     }

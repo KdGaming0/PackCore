@@ -26,62 +26,86 @@ public class ConfigFileUtils {
     private static final Gson GSON = new Gson();
 
     // Standard paths and filenames
-    /** Name of the metadata file stored in config zips and game directory. */
+    /**
+     * Name of the metadata file stored in config zips and game directory.
+     */
     public static final String METADATA_FILE = "packcore_metadata.json";
-    /** Path to official config zips relative to the game directory. */
+    /**
+     * Path to official config zips relative to the game directory.
+     */
     public static final String OFFICIAL_CONFIGS_PATH = "packcore/modpack_config/official_configs";
-    /** Path to custom config zips relative to the game directory. */
+    /**
+     * Path to custom config zips relative to the game directory.
+     */
     public static final String CUSTOM_CONFIGS_PATH = "packcore/modpack_config/custom_configs";
 
     /**
-     * Represents a config file with its metadata.
-     */
-    public static class ConfigFile {
-        private final String fileName;
-        private final Path path;
-        private final boolean official;
-        private final ConfigMetadata metadata;
-
-        /**
-         * Constructs a ConfigFile instance.
-         *
-         * @param fileName Name of the config file.
-         * @param path Path to the config file.
-         * @param official Whether the config is official.
-         * @param metadata Metadata associated with the config.
+         * Represents a config file with its metadata.
          */
-        public ConfigFile(String fileName, Path path, boolean official, ConfigMetadata metadata) {
-            this.fileName = fileName;
-            this.path = path;
-            this.official = official;
-            this.metadata = metadata != null ? metadata : new ConfigMetadata();
-        }
-
-        /** @return The file name of the config. */
-        public String getFileName() { return fileName; }
-        /** @return The path to the config file. */
-        public Path getPath() { return path; }
-        /** @return True if the config is official, false otherwise. */
-        public boolean isOfficial() { return official; }
-        /** @return The metadata associated with the config. */
-        public ConfigMetadata getMetadata() { return metadata; }
-
-        /**
-         * Gets a display name for the config, using metadata if available.
-         * Falls back to the file name without extension.
-         *
-         * @return Display name for the config.
-         */
-        public String getDisplayName() {
-            if (metadata != null && metadata.isValid()) {
-                return metadata.getDisplayName();
+        public record ConfigFile(String fileName, Path path, boolean official, ConfigMetadata metadata) {
+            /**
+             * Constructs a ConfigFile instance.
+             *
+             * @param fileName Name of the config file.
+             * @param path     Path to the config file.
+             * @param official Whether the config is official.
+             * @param metadata Metadata associated with the config.
+             */
+            public ConfigFile(String fileName, Path path, boolean official, ConfigMetadata metadata) {
+                this.fileName = fileName;
+                this.path = path;
+                this.official = official;
+                this.metadata = metadata != null ? metadata : new ConfigMetadata();
             }
-            // Fallback to filename without extension
-            return fileName.endsWith(".zip")
-                    ? fileName.substring(0, fileName.length() - 4)
-                    : fileName;
+
+            /**
+             * @return The file name of the config.
+             */
+            @Override
+            public String fileName() {
+                return fileName;
+            }
+
+            /**
+             * @return The path to the config file.
+             */
+            @Override
+            public Path path() {
+                return path;
+            }
+
+            /**
+             * @return True if the config is official, false otherwise.
+             */
+            @Override
+            public boolean official() {
+                return official;
+            }
+
+            /**
+             * @return The metadata associated with the config.
+             */
+            @Override
+            public ConfigMetadata metadata() {
+                return metadata;
+            }
+
+            /**
+             * Gets a display name for the config, using metadata if available.
+             * Falls back to the file name without extension.
+             *
+             * @return Display name for the config.
+             */
+            public String getDisplayName() {
+                if (metadata != null && metadata.isValid()) {
+                    return metadata.getDisplayName();
+                }
+                // Fallback to filename without extension
+                return fileName.endsWith(".zip")
+                        ? fileName.substring(0, fileName.length() - 4)
+                        : fileName;
+            }
         }
-    }
 
     /**
      * Gets the currently applied configuration metadata.
@@ -223,7 +247,7 @@ public class ConfigFileUtils {
      * Gets configs from a specific directory.
      *
      * @param relativePath Relative path to the config directory.
-     * @param official Whether the configs are official.
+     * @param official     Whether the configs are official.
      * @return List of ConfigFile instances found in the directory.
      */
     private static List<ConfigFile> getConfigs(String relativePath, boolean official) {
@@ -297,16 +321,16 @@ public class ConfigFileUtils {
      * @return True if deletion was successful, false otherwise.
      */
     public static boolean deleteConfig(ConfigFile config) {
-        if (config == null || config.isOfficial()) {
+        if (config == null || config.official()) {
             return false;  // Don't delete official configs
         }
 
         try {
-            Files.deleteIfExists(config.getPath());
-            LOGGER.info("Deleted config: {}", config.getPath());
+            Files.deleteIfExists(config.path());
+            LOGGER.info("Deleted config: {}", config.path());
             return true;
         } catch (IOException e) {
-            LOGGER.error("Failed to delete config: {}", config.getPath(), e);
+            LOGGER.error("Failed to delete config: {}", config.path(), e);
             return false;
         }
     }

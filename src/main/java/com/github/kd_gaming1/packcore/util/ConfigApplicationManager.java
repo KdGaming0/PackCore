@@ -30,9 +30,9 @@ public class ConfigApplicationManager {
 
             // Create pending config info
             PendingConfig pending = new PendingConfig(
-                    config.getPath().toString(),
+                    config.path().toString(),
                     config.getDisplayName(),
-                    config.getMetadata()
+                    config.metadata()
             );
 
             // Write to file
@@ -53,6 +53,7 @@ public class ConfigApplicationManager {
 
     /**
      * Check and apply pending config during pre-launch
+     *
      * @return true if a config was applied
      */
     public static boolean checkAndApplyPendingConfig(Path gameDir) {

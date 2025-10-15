@@ -43,7 +43,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private final Identifier backgroundTexture = Identifier.of(MOD_ID, "textures/gui/title/main_menu_background.png");
 
-    private static ModpackInfo info = PackCore.getModpackInfo();
+    private static final ModpackInfo info = PackCore.getModpackInfo();
 
     private String ChangeLogInfoText;
     private static final boolean updateNotificationEnabled =
@@ -409,7 +409,6 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
                 .verticalSizing(Sizing.fixed(22))
                 .tooltip(Text.literal("Modpack Settings import/export your config"));
     }
-
 
 
     private void toggleChangelog() {

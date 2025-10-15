@@ -30,7 +30,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     private ButtonComponent applyButton;
     private FlowLayout progressContainer;
     private FlowLayout warningBanner;
-    private Map<String, LabelComponent> stepLabels = new LinkedHashMap<>();
+    private final Map<String, LabelComponent> stepLabels = new LinkedHashMap<>();
 
     private io.wispforest.owo.ui.container.StackLayout getRootComponent() {
         return uiAdapter.rootComponent;
@@ -397,7 +397,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         helpContainer.child(Components.label(
                 Text.literal("💡 Tip: Each step shows a progress indicator. If something fails, you'll see exactly what went wrong!")
                         .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
-        ).color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(95)).margins(Insets.of(6, 2, 2 ,2)));
+        ).color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(95)).margins(Insets.of(6, 2, 2, 2)));
 
         return helpContainer;
     }

@@ -191,6 +191,7 @@ public class TabDesignUtil {
 
     /**
      * Apply a specific tab design by name
+     *
      * @param design "skyhanni" or "skyblocker"
      * @return true if successfully applied
      */

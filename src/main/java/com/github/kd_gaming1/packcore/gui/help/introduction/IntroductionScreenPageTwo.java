@@ -20,7 +20,7 @@ import net.minecraft.util.Identifier;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
-public class IntroductionScreenPageTwo extends BaseWizardPage{
+public class IntroductionScreenPageTwo extends BaseWizardPage {
     private final ModpackInfo modpackInfo;
 
     // UI state fields
@@ -133,7 +133,7 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
         // Store reference for selection border updates
         this.classicImageContainer = classicImageContainer;
 
-        classicImageContainer.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
+        classicImageContainer.mouseDown().subscribe((mouseX, mouseY, button) -> {
             selectDesign("SkyHanni");
             return true;
         });
@@ -161,7 +161,7 @@ public class IntroductionScreenPageTwo extends BaseWizardPage{
         // Store reference for selection border updates
         this.modernImageContainer = modernImageContainer;
 
-        modernImageContainer.mouseDown().subscribe((MouseDown) (mouseX, mouseY, button) -> {
+        modernImageContainer.mouseDown().subscribe((mouseX, mouseY, button) -> {
             selectDesign("Skyblocker");
             return true;
         });
