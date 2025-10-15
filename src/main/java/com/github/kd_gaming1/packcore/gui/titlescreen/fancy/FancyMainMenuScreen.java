@@ -438,7 +438,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
         }
 
         // Check if the configuration is valid
-        if (!info.isConfigurationValid()) {
+        if (info.isConfigurationValid()) {
             this.updateAvailable = false;
             this.currentVersion = "";
             this.newVersion = "";

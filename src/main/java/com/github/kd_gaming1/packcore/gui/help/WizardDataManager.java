@@ -135,38 +135,20 @@ public class WizardDataManager {
 
     // ===== Data Class =====
 
-    public static class WizardConfiguration {
-        private final String optimizationProfile;
-        private final List<String> resourcePacksOrdered;
-        private final String tabDesign;
+    public record WizardConfiguration(String optimizationProfile, List<String> resourcePacksOrdered, String tabDesign) {
 
-        public WizardConfiguration(String optimizationProfile,
-                                   List<String> resourcePacksOrdered,
-                                   String tabDesign) {
-            this.optimizationProfile = optimizationProfile;
-            this.resourcePacksOrdered = resourcePacksOrdered;
-            this.tabDesign = tabDesign;
-        }
+        @Override
+        public List<String> resourcePacksOrdered() {
+                return new ArrayList<>(resourcePacksOrdered);
+            }
 
-        public String getOptimizationProfile() {
-            return optimizationProfile;
-        }
+            // For compatibility with existing code
+            public Set<String> getAdditionalSettings() {
+                return new HashSet<>();
+            }
 
-        public List<String> getResourcePacksOrdered() {
-            return new ArrayList<>(resourcePacksOrdered);
+            public Map<String, Object> getCustomSettings() {
+                return new HashMap<>();
+            }
         }
-
-        public String getTabDesign() {
-            return tabDesign;
-        }
-
-        // For compatibility with existing code
-        public Set<String> getAdditionalSettings() {
-            return new HashSet<>();
-        }
-
-        public Map<String, Object> getCustomSettings() {
-            return new HashMap<>();
-        }
-    }
 }

@@ -434,7 +434,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         // Update persistent state first
                         dataManager.setConfigurationApplying(false);
 
-                        if (result.isOverallSuccess() && throwable == null) {
+                        if (result.overallSuccess() && throwable == null) {
                             dataManager.setConfigurationApplied(true);
                             dataManager.setConfigurationResult("success", "");
                             onConfigurationApplied();
@@ -444,8 +444,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
                             // Build the error message here to store it
                             StringBuilder failureMessage = new StringBuilder();
-                            if (!result.getFailedSteps().isEmpty()) {
-                                for (Map.Entry<String, String> failure : result.getFailedSteps().entrySet()) {
+                            if (!result.failedSteps().isEmpty()) {
+                                for (Map.Entry<String, String> failure : result.failedSteps().entrySet()) {
                                     failureMessage.append("❌ ").append(failure.getKey()).append(":\n   ")
                                             .append(failure.getValue()).append("\n\n");
                                 }
@@ -494,18 +494,18 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         WizardDataManager.WizardConfiguration config = dataManager.getConfiguration();
         StringBuilder configSummary = new StringBuilder();
 
-        if (!config.getOptimizationProfile().isEmpty()) {
-            configSummary.append("Performance: ").append(config.getOptimizationProfile());
+        if (!config.optimizationProfile().isEmpty()) {
+            configSummary.append("Performance: ").append(config.optimizationProfile());
         }
 
-        if (!config.getResourcePacksOrdered().isEmpty()) {
+        if (!config.resourcePacksOrdered().isEmpty()) {
             if (!configSummary.isEmpty()) configSummary.append(", ");
-            configSummary.append("Packs: ").append(String.join(", ", config.getResourcePacksOrdered()));
+            configSummary.append("Packs: ").append(String.join(", ", config.resourcePacksOrdered()));
         }
 
-        if (!config.getTabDesign().isEmpty()) {
+        if (!config.tabDesign().isEmpty()) {
             if (!configSummary.isEmpty()) configSummary.append(", ");
-            configSummary.append("Tab: ").append(config.getTabDesign());
+            configSummary.append("Tab: ").append(config.tabDesign());
         }
     }
 
@@ -519,8 +519,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         boolean hasHypixelPlus = selectedPacks.stream()
                 .anyMatch(pack -> pack.equalsIgnoreCase("HypixelPlus"));
 
-        if (result != null && !result.getFailedSteps().isEmpty()) {
-            for (Map.Entry<String, String> failure : result.getFailedSteps().entrySet()) {
+        if (result != null && !result.failedSteps().isEmpty()) {
+            for (Map.Entry<String, String> failure : result.failedSteps().entrySet()) {
                 failureMessage.append("❌ ").append(failure.getKey()).append(":\n   ")
                         .append(failure.getValue()).append("\n\n");
 

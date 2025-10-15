@@ -701,7 +701,7 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
     private void populateResolutionDropdown() {
         resolutionButton = (ButtonComponent) Components.button(
                         Text.literal(currentResolution),
-                        btn -> openResolutionDropdown(btn))
+                        this::openResolutionDropdown)
                 .renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 120, 60))
                 .sizing(Sizing.fixed(120), Sizing.fixed(20));
@@ -718,12 +718,12 @@ public class ConfigExportScreen extends BaseOwoScreen<FlowLayout> {
 
         var uniqueResolutions = commonResolutions.stream()
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         DropdownComponent.openContextMenu(
                         this,
                         this.uiAdapter.rootComponent,
-                        (root, dropdown) -> root.child(dropdown),
+                        FlowLayout::child,
                         button.x(),
                         button.y() + button.height(),
                         dropdown -> {

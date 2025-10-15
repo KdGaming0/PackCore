@@ -37,10 +37,10 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
     private OverlayContainer<FlowLayout> confirmationPopup = null;
 
     // FIX: Store entry components to update their surfaces
-    private Map<ConfigFileUtils.ConfigFile, FlowLayout> entryComponents = new HashMap<>();
+    private final Map<ConfigFileUtils.ConfigFile, FlowLayout> entryComponents = new HashMap<>();
 
     @Override
-    protected @NotNull OwoUIAdapter createAdapter() {
+    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
         return OwoUIAdapter.create(this, Containers::verticalFlow);
     }
 
@@ -372,6 +372,11 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private FlowLayout createInfoRow(String label, String value) {
+        return getHorizontalFlowLayout(label, value);
+    }
+
+    @NotNull
+    static FlowLayout getHorizontalFlowLayout(String label, String value) {
         var row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         row.gap(8);
         row.child(Components.label(Text.literal(label))

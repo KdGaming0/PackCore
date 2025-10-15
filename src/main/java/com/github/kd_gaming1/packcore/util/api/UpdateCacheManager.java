@@ -29,7 +29,7 @@ public class UpdateCacheManager {
     // Main method - this is what other classes call
     public UpdateCheckResult checkForUpdates(ModpackInfo modpackInfo) {
         // Validate configuration first
-        if (!modpackInfo.isConfigurationValid()) {
+        if (modpackInfo.isConfigurationValid()) {
             String error = modpackInfo.getValidationError();
             PackCore.LOGGER.error("Invalid modpack configuration: {}", error);
             return UpdateCheckResult.error("Configuration error: " + error);

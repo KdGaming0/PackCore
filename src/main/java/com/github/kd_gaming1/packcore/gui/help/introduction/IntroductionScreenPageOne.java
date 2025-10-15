@@ -20,10 +20,13 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPageThree.getFlowLayoutScrollContainer;
 
 public class IntroductionScreenPageOne extends BaseWizardPage {
     private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
@@ -102,12 +105,17 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
                 Text.literal(modpackInfo.getName()).setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
         );
 
+        return getFlowLayout(header, welcomeText, Color.ofRgb(TEXT_SECONDARY));
+    }
+
+    @NotNull
+    static FlowLayout getFlowLayout(FlowLayout header, Text welcomeText, Color color) {
         LabelComponent welcomeTitle = Components.label(welcomeText);
 
         LabelComponent subtitle = (LabelComponent) Components.label(
                 Text.literal("Please read the information below carefully before continuing. Need help? Click the discord button at the bottom.")
                         .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
-        ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
+        ).color(color).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
 
         header.child(welcomeTitle).child(subtitle);
 
@@ -123,20 +131,7 @@ public class IntroductionScreenPageOne extends BaseWizardPage {
                 MARKDOWN_PROCESSOR::process
         ).horizontalSizing(Sizing.fill(98));
 
-        markdownWrapper.child(markdownComponent);
-
-        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
-                Sizing.fill(100),
-                Sizing.expand(),
-                markdownWrapper
-        );
-
-        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        scrollContainer.scrollbarThiccness(6);
-        scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
-        scrollContainer.padding(Insets.of(8));
-
-        return scrollContainer;
+        return getFlowLayoutScrollContainer(markdownWrapper, markdownComponent);
     }
 
     private FlowLayout createHeader() {

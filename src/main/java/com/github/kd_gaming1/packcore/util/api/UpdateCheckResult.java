@@ -54,7 +54,7 @@ public class UpdateCheckResult {
             return null;
         }
 
-        if (!info.isConfigurationValid()) {
+        if (info.isConfigurationValid()) {
             LOGGER.warn("Configuration is invalid, cannot create URL for changelog: {}",
                     info.getValidationError());
             return null;
