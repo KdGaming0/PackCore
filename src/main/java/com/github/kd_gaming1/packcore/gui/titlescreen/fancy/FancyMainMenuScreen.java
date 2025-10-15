@@ -216,7 +216,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
                         
                         ---
                         
-                        Need help **updating**? Click the button bellow.
+                        Need help **updating**? Click the button below.
                         """,
                 MARKDOWN_PROCESSOR::process
         );
