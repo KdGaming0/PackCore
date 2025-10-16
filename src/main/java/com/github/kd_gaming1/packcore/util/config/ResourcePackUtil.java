@@ -22,7 +22,7 @@ public class ResourcePackUtil {
     private static final Map<String, String> PACK_KEYWORDS = Map.of(
             "HypixelPlus", "hypixel",
             "FurfSkyOverlay", "overlay",
-            "FurfSkyFull", "furfsky",
+            "FurfSkyFull", "full",
             "SkyBlockDarkUI", "skyblock dark ui",
             "Defrosted", "defrosted",
             "Looshy", "looshy"
@@ -149,6 +149,8 @@ public class ResourcePackUtil {
         return found;
     }
 
+
+
     private static String[] getKeywordsForPack(String key) {
         String[] keywords = MULTI_PACK_KEYWORDS.get(key);
         if (keywords == null) {
@@ -169,17 +171,22 @@ public class ResourcePackUtil {
             String id = stripMinecraftColors(profile.getId().toLowerCase());
             String desc = stripMinecraftColors(profile.getDescription().getString().toLowerCase());
 
-            for (String keyword : keywords) {
-                String kw = keyword.toLowerCase();
-                int score = getMatchScore(id, name, desc, kw);
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMatch = profile;
+            int totalScore = 0;
+            int matched = 0;
+            for (String kw : keywords) {
+                int score = getMatchScore(id, name, desc, kw.toLowerCase());
+                if (score > 0) {
+                    totalScore += score;
+                    matched++;
                 }
             }
-        }
+            totalScore += matched > 1 ? matched * 2 : 0;
 
+            if (totalScore > bestScore) {
+                bestScore = totalScore;
+                bestMatch = profile;
+            }
+        }
         return bestMatch;
     }
 
