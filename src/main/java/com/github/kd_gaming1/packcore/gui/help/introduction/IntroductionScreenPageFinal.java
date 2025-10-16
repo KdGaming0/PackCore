@@ -159,7 +159,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Tab design
         String tabDesign = dataManager.getTabDesign();
-        summaryContainer.child(createSummaryItem("🖼️ Tab Menu Style:",
+        summaryContainer.child(createSummaryItem("🖼 Tab Menu Style:",
                 tabDesign.isEmpty() ? "Default (no changes)" : tabDesign));
 
         return summaryContainer;
@@ -201,7 +201,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
             // Warning title
             warningBanner.child(Components.label(
-                    Text.literal("⚠️ " + title)
+                    Text.literal("⚠ " + title)
                             .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
             ).color(Color.ofRgb(0xFFA500)));
 
@@ -228,7 +228,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Progress title
         progressContainer.child(Components.label(
-                Text.literal("⚙️ Applying Your Settings:")
+                Text.literal("⚙ Applying Your Settings:")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).color(Color.ofRgb(ACCENT_GOLD)));
 
@@ -281,7 +281,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
             case "success" -> "✅";
             case "error" -> "❌";
             case "running" -> "⏳";
-            default -> "⏸️";
+            default -> "⏸";
         };
 
         Formatting color = switch (status) {
@@ -313,7 +313,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                     case "success" -> "✅";
                     case "error" -> "❌";
                     case "running" -> "⏳";
-                    default -> "⏸️";
+                    default -> "⏸";
                 };
 
                 Formatting color = switch (status) {
@@ -377,7 +377,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                 .margins(Insets.of(5, 0, 0, 0));
 
         helpContainer.child(Components.label(
-                Text.literal("ℹ️ What Happens Next?")
+                Text.literal("ℹ What Happens Next?")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).color(Color.ofRgb(ACCENT_GOLD)));
 
@@ -547,7 +547,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Update UI to error state - allow retry
         updateApplyButtonState(false, "🔄 Retry Settings");
-        updateStatusLabel("⚠️ Some settings couldn't be applied. See details above. Click 'Retry Settings' or 'Finish' to ignore the failure and continue.", Formatting.RED);
+        updateStatusLabel("⚠ Some settings couldn't be applied. See details above. Click 'Retry Settings' or 'Finish' to ignore the failure and continue.", Formatting.RED);
 
         // Allow skipping on failure
         updatePrimaryButtonState(true);
@@ -580,7 +580,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
         // Title
         dialog.child(Components.label(
-                Text.literal("⚠️ Skip Configuration?")
+                Text.literal("⚠ Skip Configuration?")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
         ).color(Color.ofRgb(STATUS_WARNING_BORDER)).margins(Insets.of(2)));
 
@@ -689,7 +689,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                 PackCoreConfig.haveShownWelcomeWizard = true;
                 PackCoreConfig.write(MOD_ID);
             } else {
-                updateStatusLabel("⚠️ Please apply your settings first, or click 'Skip' to configure them manually later with /packcore [performance|tabdesign].", Formatting.GOLD);
+                updateStatusLabel("⚠ Please apply your settings first, or click 'Skip' to configure them manually later with /packcore [performance|tabdesign].", Formatting.GOLD);
                 return;
             }
         }

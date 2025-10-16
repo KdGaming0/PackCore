@@ -223,7 +223,7 @@ public class PackCoreFileManager {
                 
                 - **🔍 Automatic Configuration** - Smart config detection and application on first launch
                 - **💡 Optimized Performance** - Pre-configured settings for smooth gameplay
-                - **⚙️ Config Manager** - Import, export, and apply configurations in-game
+                - **⚙ Config Manager** - Import, export, and apply configurations in-game
                 - **🎯 Resolution Profiles** - Optimized settings for different screen resolutions
                 
                 ## 📋 Getting Started
@@ -303,7 +303,7 @@ public class PackCoreFileManager {
 
     private static String getUsefulInformationContent() {
         return """
-                # ℹ️ Useful Information
+                # ℹ Useful Information
                 
                 ## Config Management
                 
