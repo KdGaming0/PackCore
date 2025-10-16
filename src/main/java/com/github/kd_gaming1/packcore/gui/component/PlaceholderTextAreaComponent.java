@@ -1,7 +1,6 @@
 package com.github.kd_gaming1.packcore.gui.component;
 
 import io.wispforest.owo.ui.component.TextAreaComponent;
-import io.wispforest.owo.ui.core.OwoUIDrawContext;
 import io.wispforest.owo.ui.core.Sizing;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;

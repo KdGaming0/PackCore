@@ -84,7 +84,7 @@ public class PackCoreCommand {
             try {
                 client.setScreen(new BaseGuidePage());
             } catch (Exception e) {
-                PackCore.LOGGER.error("Failed to open guide: " + e.getMessage());
+                PackCore.LOGGER.error("Failed to open guide: {}", e.getMessage());
             }
         });
 
@@ -109,7 +109,7 @@ public class PackCoreCommand {
             try {
                 client.setScreen(new ModpackConfigMenuScreen());
             } catch (Exception e) {
-                PackCore.LOGGER.error("Failed to open config: " + e.getMessage());
+                PackCore.LOGGER.error("Failed to open config: {}", e.getMessage());
             }
         });
 
@@ -183,10 +183,9 @@ public class PackCoreCommand {
                 });
 
             } catch (Exception e) {
-                MinecraftClient.getInstance().execute(() -> {
-                    context.getSource().sendError(Text.literal("✗ Failed to apply performance profile: " + e.getMessage())
-                            .formatted(Formatting.RED));
-                });
+                MinecraftClient.getInstance().execute(() ->
+                        context.getSource().sendError(Text.literal("✗ Failed to apply performance profile: " + e.getMessage())
+                                .formatted(Formatting.RED)));
             }
         });
 
@@ -204,10 +203,10 @@ public class PackCoreCommand {
                 .formatted(Formatting.YELLOW));
         context.getSource().sendFeedback(Text.literal("  • Minecraft: ✓")
                 .formatted(Formatting.GREEN));
-        context.getSource().sendFeedback(Text.literal("  • Sodium: " + (availability.isSodiumAvailable() ? "✓" : "✗"))
-                .formatted(availability.isSodiumAvailable() ? Formatting.GREEN : Formatting.RED));
-        context.getSource().sendFeedback(Text.literal("  • Iris/Shaders: " + (availability.isIrisAvailable() ? "✓" : "✗"))
-                .formatted(availability.isIrisAvailable() ? Formatting.GREEN : Formatting.RED));
+        context.getSource().sendFeedback(Text.literal("  • Sodium: " + (availability.sodiumAvailable() ? "✓" : "✗"))
+                .formatted(availability.sodiumAvailable() ? Formatting.GREEN : Formatting.RED));
+        context.getSource().sendFeedback(Text.literal("  • Iris/Shaders: " + (availability.irisAvailable() ? "✓" : "✗"))
+                .formatted(availability.irisAvailable() ? Formatting.GREEN : Formatting.RED));
 
         context.getSource().sendFeedback(Text.literal(""));
 
@@ -284,10 +283,9 @@ public class PackCoreCommand {
                 });
 
             } catch (Exception e) {
-                MinecraftClient.getInstance().execute(() -> {
-                    context.getSource().sendError(Text.literal("✗ Failed to apply tab design: " + e.getMessage())
-                            .formatted(Formatting.RED));
-                });
+                MinecraftClient.getInstance().execute(() ->
+                        context.getSource().sendError(Text.literal("✗ Failed to apply tab design: " + e.getMessage())
+                                .formatted(Formatting.RED)));
             }
         });
 

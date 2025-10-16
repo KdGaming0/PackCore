@@ -19,6 +19,7 @@ public class AutoConfigApplicator {
 
     /**
      * Detect screen resolution and apply the best matching config
+     *
      * @param gameDir The game directory
      * @return true if a config was successfully applied
      */
@@ -53,7 +54,7 @@ public class AutoConfigApplicator {
         }
 
         LOGGER.info("Selected config: {} ({})", bestMatch.getDisplayName(),
-                bestMatch.isOfficial() ? "Official" : "Custom");
+                bestMatch.official() ? "Official" : "Custom");
 
         // Apply the config using shared logic
         return applyConfigDirect(bestMatch, gameDir);
@@ -79,7 +80,7 @@ public class AutoConfigApplicator {
             // Extract config using existing UnzipFiles utility
             UnzipFiles unzipper = new UnzipFiles();
             unzipper.unzip(
-                    config.getPath().toString(),
+                    config.path().toString(),
                     gameDir.toString(),
                     (bytesProcessed, totalBytes, percentage) -> {
                         if (percentage % 25 == 0) {
@@ -89,7 +90,7 @@ public class AutoConfigApplicator {
             );
 
             // Save metadata using ConfigFileUtils
-            ConfigFileUtils.saveCurrentConfig(config.getMetadata());
+            ConfigFileUtils.saveCurrentConfig(config.metadata());
 
             LOGGER.info("Config applied successfully: {}", config.getDisplayName());
             return true;
@@ -102,6 +103,7 @@ public class AutoConfigApplicator {
 
     /**
      * Detect the current screen resolution
+     *
      * @return Dimension with screen width and height, or null if detection fails
      */
     private static Dimension detectResolution() {
@@ -126,14 +128,14 @@ public class AutoConfigApplicator {
 
         LOGGER.info("Available configs:");
         for (ConfigFileUtils.ConfigFile config : configs) {
-            String targetRes = config.getMetadata().getTargetResolution();
+            String targetRes = config.metadata().getTargetResolution();
             Dimension configRes = parseResolution(targetRes);
             double distance = calculateDistance(detectedResolution, configRes);
 
             LOGGER.info("  - {} | Resolution: {} | Official: {} | Distance: {}",
                     config.getDisplayName(),
                     targetRes,
-                    config.isOfficial(),
+                    config.official(),
                     configRes != null ? String.format("%.0f", distance) : "N/A");
         }
 
@@ -142,10 +144,10 @@ public class AutoConfigApplicator {
                 .orElse(null);
 
         if (selected != null) {
-            Dimension selectedRes = parseResolution(selected.getMetadata().getTargetResolution());
+            Dimension selectedRes = parseResolution(selected.metadata().getTargetResolution());
             double distance = calculateDistance(detectedResolution, selectedRes);
-            LOGGER.info("Best match selected: {} (distance: {:.0f} pixels)",
-                    selected.getDisplayName(), distance);
+            LOGGER.info("Best match selected: {} (distance: {} pixels)",
+                    selected.getDisplayName(), String.format("%.0f", distance));
         }
 
         return selected;
@@ -160,19 +162,20 @@ public class AutoConfigApplicator {
     private static Comparator<ConfigFileUtils.ConfigFile> createConfigComparator(Dimension targetResolution) {
         return Comparator
                 // Prioritize official configs
-                .comparing((ConfigFileUtils.ConfigFile c) -> !c.isOfficial())
+                .comparing((ConfigFileUtils.ConfigFile c) -> !c.official())
                 // Then by how close the resolution matches (pixel distance)
                 .thenComparing(c -> {
-                    Dimension configRes = parseResolution(c.getMetadata().getTargetResolution());
+                    Dimension configRes = parseResolution(c.metadata().getTargetResolution());
                     return calculateDistance(targetResolution, configRes);
                 })
                 // Then by name for consistency
-                .thenComparing(c -> c.getDisplayName());
+                .thenComparing(ConfigFileUtils.ConfigFile::getDisplayName);
     }
 
     /**
      * Calculate Euclidean distance between two resolutions in pixels
-     * @param target The target resolution
+     *
+     * @param target    The target resolution
      * @param candidate The candidate resolution
      * @return Distance in pixels, or Double.MAX_VALUE if either is null
      */

@@ -18,11 +18,13 @@ import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPageOne.getFlowLayout;
 
 public class IntroductionScreenPageThree extends BaseWizardPage {
     private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
@@ -102,16 +104,7 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
                 Text.literal(modpackInfo.getName()).setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
         );
 
-        LabelComponent welcomeTitle = Components.label(welcomeText);
-
-        LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("Please read the information below carefully before continuing. Need help? Click the discord button at the bottom.")
-                        .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
-        ).color(Color.ofRgb(TEXT_SECONDARY)).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
-
-        header.child(welcomeTitle).child(subtitle);
-
-        return header;
+        return getFlowLayout(header, welcomeText, Color.ofRgb(TEXT_SECONDARY));
     }
 
     private ScrollContainer<FlowLayout> createMarkdownSection() {
@@ -123,6 +116,11 @@ public class IntroductionScreenPageThree extends BaseWizardPage {
                 MARKDOWN_PROCESSOR::process
         ).horizontalSizing(Sizing.fill(96));
 
+        return getFlowLayoutScrollContainer(markdownWrapper, markdownComponent);
+    }
+
+    @NotNull
+    public static ScrollContainer<FlowLayout> getFlowLayoutScrollContainer(FlowLayout markdownWrapper, Component markdownComponent) {
         markdownWrapper.child(markdownComponent);
 
         ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(

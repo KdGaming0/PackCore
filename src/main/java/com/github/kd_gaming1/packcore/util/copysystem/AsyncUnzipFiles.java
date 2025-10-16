@@ -7,6 +7,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,7 +26,7 @@ public class AsyncUnzipFiles {
     private static final int BUFFER_SIZE = 16384; // Larger buffer for better performance
     private static final ExecutorService UNZIP_EXECUTOR = Executors.newCachedThreadPool(r -> {
         Thread thread = new Thread(r);
-        thread.setName("AsyncUnzip-" + thread.getId());
+        thread.setName("AsyncUnzip-" + thread.threadId());
         thread.setDaemon(true);
         return thread;
     });
@@ -200,12 +202,13 @@ public class AsyncUnzipFiles {
                 throw new IOException("Entry not found in zip: " + entryName);
             }
 
+            Path destFile = Path.of(destPath).getParent();
+
             if (entry.isDirectory()) {
-                Files.createDirectories(Path.of(destPath));
+                Files.createDirectories(destFile);
                 return;
             }
 
-            Path destFile = Path.of(destPath);
             Files.createDirectories(destFile.getParent());
 
             long totalSize = entry.getSize();
@@ -253,9 +256,9 @@ public class AsyncUnzipFiles {
     /**
      * List all entries in a zip file without extracting
      */
-    public CompletableFuture<java.util.List<String>> listEntriesAsync(String zipFilePath) {
+    public CompletableFuture<List<String>> listEntriesAsync(String zipFilePath) {
         return CompletableFuture.supplyAsync(() -> {
-            java.util.List<String> entries = new java.util.ArrayList<>();
+            List<String> entries = new ArrayList<>();
 
             try (ZipFile zipFile = new ZipFile(zipFilePath)) {
                 var enumeration = zipFile.entries();

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+import static com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPageThree.getFlowLayoutScrollContainer;
 
 public class GuideViewerScreen extends BaseOwoScreen<FlowLayout> {
 
@@ -108,22 +109,7 @@ public class GuideViewerScreen extends BaseOwoScreen<FlowLayout> {
         );
 
         // Add the markdown component to our wrapper FlowLayout
-        markdownWrapper.child(markdownComponent);
-
-        // Create the ScrollContainer
-        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
-                Sizing.fill(100),
-                Sizing.expand(),
-                markdownWrapper
-        );
-
-        // Configure the scroll container
-        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        scrollContainer.scrollbarThiccness(6);
-        scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
-        scrollContainer.padding(Insets.of(8));
-
-        return scrollContainer;
+        return getFlowLayoutScrollContainer(markdownWrapper, markdownComponent);
     }
 
     @Override

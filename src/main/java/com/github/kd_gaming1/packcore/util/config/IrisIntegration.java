@@ -23,6 +23,7 @@ public class IrisIntegration {
 
     /**
      * Set a shader pack by finding the first pack that starts with the given name and ends with .zip
+     *
      * @param shaderPackPrefix The prefix to search for (e.g., "ComplementaryUnbound")
      * @return true if successful
      */
@@ -71,6 +72,7 @@ public class IrisIntegration {
 
     /**
      * Disable shaders
+     *
      * @return true if successful
      */
     public static boolean disableShaders() {
@@ -113,6 +115,7 @@ public class IrisIntegration {
 
     /**
      * Find a shader pack that starts with the given prefix and ends with .zip
+     *
      * @param prefix The prefix to search for
      * @return The full shader pack filename, or null if not found
      */

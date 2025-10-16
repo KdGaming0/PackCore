@@ -105,10 +105,10 @@ public class ModpackInfo {
     }
 
     public boolean isConfigurationValid() {
-        return !modrinthProjectId.equals("YOUR_PROJECT_ID_FROM_MODRINTH_URL") &&
-                !modrinthProjectId.trim().isEmpty() &&
-                !modName.equals("YOUR_MODPACK_NAME_HERE") &&
-                !author.equals("YOUR_NAME_HERE");
+        return modrinthProjectId.equals("YOUR_PROJECT_ID_FROM_MODRINTH_URL") ||
+                modrinthProjectId.trim().isEmpty() ||
+                modName.equals("YOUR_MODPACK_NAME_HERE") ||
+                author.equals("YOUR_NAME_HERE");
     }
 
     public String getValidationError() {

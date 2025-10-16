@@ -75,45 +75,25 @@ public class BackupManager {
         }
     }
 
-    public static class BackupInfo {
-        public final String backupId;
-        public final String timestamp;
-        public final BackupType type;
-        public final String configName;
-        public final String configVersion;
-        public final long sizeBytes;
-        public final String title;
-        public final String description;
-
-        public BackupInfo(String backupId, String timestamp, BackupType type,
-                          String configName, String configVersion, long sizeBytes,
-                          String title, String description) {
-            this.backupId = backupId;
-            this.timestamp = timestamp;
-            this.type = type;
-            this.configName = configName;
-            this.configVersion = configVersion;
-            this.sizeBytes = sizeBytes;
-            this.title = title;
-            this.description = description;
-        }
+    public record BackupInfo(String backupId, String timestamp, BackupType type, String configName,
+                             String configVersion, long sizeBytes, String title, String description) {
 
         public String getDisplayName() {
-            return String.format("[%s] %s - %s",
-                    type.getDisplayName(),
-                    title != null ? title : (configName != null ? configName : "Unknown Config"),
-                    formatTimestamp());
-        }
+                return String.format("[%s] %s - %s",
+                        type.getDisplayName(),
+                        title != null ? title : (configName != null ? configName : "Unknown Config"),
+                        formatTimestamp());
+            }
 
-        private String formatTimestamp() {
-            try {
-                LocalDateTime dateTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                return dateTime.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
-            } catch (Exception e) {
-                return timestamp;
+            private String formatTimestamp() {
+                try {
+                    LocalDateTime dateTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    return dateTime.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm"));
+                } catch (Exception e) {
+                    return timestamp;
+                }
             }
         }
-    }
 
     /**
      * Create an automatic backup before config changes (async)
@@ -136,7 +116,8 @@ public class BackupManager {
      */
     public static Path createAutoBackup() {
         try {
-            return createAutoBackupAsync(msg -> {}).get();
+            return createAutoBackupAsync(msg -> {
+            }).get();
         } catch (Exception e) {
             LOGGER.error("Failed to create auto backup", e);
             return null;
@@ -147,9 +128,7 @@ public class BackupManager {
      * Create a manual backup (async with progress)
      */
     public static void createManualBackup(String title, String description) {
-        createManualBackupAsync(title, description, msg -> {
-            LOGGER.info("Backup progress: {}", msg);
-        });
+        createManualBackupAsync(title, description, msg -> LOGGER.info("Backup progress: {}", msg));
     }
 
     /**
@@ -217,9 +196,7 @@ public class BackupManager {
                     // Create ZIP asynchronously
                     AsyncZipFiles zipFiles = new AsyncZipFiles();
                     zipFiles.zipDirectoryAsync(tempDir.toFile(), backupZip.toString(),
-                            (bytesProcessed, totalBytes, percentage) -> {
-                                progressCallback.accept(String.format("Zipping: %d%%", percentage));
-                            }).join();
+                            (bytesProcessed, totalBytes, percentage) -> progressCallback.accept(String.format("Zipping: %d%%", percentage))).join();
 
                     LOGGER.info("Created {} backup: {}", type.getDisplayName().toLowerCase(), backupZip);
 
@@ -295,7 +272,7 @@ public class BackupManager {
                 // Collect all paths first to avoid holding streams open
                 List<Path> pathsToCopy;
                 try (Stream<Path> paths = Files.walk(source)) {
-                    pathsToCopy = paths.collect(Collectors.toList());
+                    pathsToCopy = paths.toList();
                 }
 
                 // Process in batches for better performance
@@ -489,7 +466,8 @@ public class BackupManager {
                 progressCallback.accept("Creating safety backup...");
 
                 // Create a backup of current state before restoring
-                createAutoBackupAsync(msg -> {}).join();
+                createAutoBackupAsync(msg -> {
+                }).join();
 
                 progressCallback.accept("Extracting backup...");
 
@@ -498,9 +476,8 @@ public class BackupManager {
                 try {
                     var unzipper = new com.github.kd_gaming1.packcore.util.copysystem.AsyncUnzipFiles();
                     unzipper.unzipAsync(backupZip.toString(), tempDir.toString(),
-                            (bytesProcessed, totalBytes, percentage) -> {
-                                progressCallback.accept(String.format("Extracting: %d%%", percentage));
-                            }).join();
+                            (bytesProcessed, totalBytes, percentage) ->
+                                    progressCallback.accept(String.format("Extracting: %d%%", percentage))).join();
 
                     progressCallback.accept("Restoring files...");
 
@@ -535,7 +512,8 @@ public class BackupManager {
      */
     public static boolean restoreBackup(BackupInfo backupInfo) {
         try {
-            return restoreBackupAsync(backupInfo, msg -> {}).get();
+            return restoreBackupAsync(backupInfo, msg -> {
+            }).get();
         } catch (Exception e) {
             LOGGER.error("Failed to restore backup", e);
             return false;
@@ -556,7 +534,7 @@ public class BackupManager {
                     pathsToRestore = paths
                             .filter(path -> !path.equals(sourceDir))
                             .filter(path -> !path.getFileName().toString().equals(METADATA_FILE))
-                            .collect(Collectors.toList());
+                            .toList();
                 }
 
                 int total = pathsToRestore.size();
@@ -629,7 +607,7 @@ public class BackupManager {
             // Separate auto and manual backups
             List<BackupInfo> autoBackups = backups.stream()
                     .filter(backup -> backup.type == BackupType.AUTO)
-                    .collect(Collectors.toList());
+                    .toList();
 
             // Only clean up auto backups, keep manual backups
             if (autoBackups.size() > PackCoreConfig.maxBackups) {

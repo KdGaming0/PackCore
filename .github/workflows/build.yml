@@ -12,17 +12,27 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
+
       - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
-      - name: wizard jdk
+
+      - name: setup jdk
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'microsoft'
+          java-version: '24'
+          distribution: 'temurin'
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
+
       - name: build
         run: ./gradlew build
+
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:

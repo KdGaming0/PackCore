@@ -37,10 +37,10 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
     private OverlayContainer<FlowLayout> confirmationPopup = null;
 
     // FIX: Store entry components to update their surfaces
-    private Map<ConfigFileUtils.ConfigFile, FlowLayout> entryComponents = new HashMap<>();
+    private final Map<ConfigFileUtils.ConfigFile, FlowLayout> entryComponents = new HashMap<>();
 
     @Override
-    protected @NotNull OwoUIAdapter createAdapter() {
+    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
         return OwoUIAdapter.create(this, Containers::verticalFlow);
     }
 
@@ -192,7 +192,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         entry.surface(Surface.flat(UITheme.ENTRY_BACKGROUND).and(Surface.outline(UITheme.ENTRY_BORDER)));
         entry.padding(Insets.of(6));
 
-        String version = "v" + config.getMetadata().getVersion();
+        String version = "v" + config.metadata().getVersion();
         String configName = config.getDisplayName().endsWith(version)
                 ? config.getDisplayName().replaceAll(version, "")
                 : config.getDisplayName();
@@ -204,8 +204,8 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         var badges = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         badges.gap(4);
 
-        badges.child(Components.label(Text.literal(config.isOfficial() ? "Official" : "Custom"))
-                .color(UITheme.color(config.isOfficial() ?
+        badges.child(Components.label(Text.literal(config.official() ? "Official" : "Custom"))
+                .color(UITheme.color(config.official() ?
                         UITheme.STATUS_SUCCESS_BORDER : UITheme.STATUS_WARNING_BORDER)));
 
         badges.child(Components.label(Text.literal(version))
@@ -283,7 +283,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
         infoPanel.horizontalAlignment(HorizontalAlignment.LEFT);
         infoPanel.verticalAlignment(VerticalAlignment.TOP);
 
-        ConfigMetadata meta = selectedConfig.getMetadata();
+        ConfigMetadata meta = selectedConfig.metadata();
 
         // Header
         int guiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
@@ -360,7 +360,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
                 .sizing(Sizing.fixed(100), Sizing.fixed(20)));
 
         // Delete button for custom configs only
-        if (!selectedConfig.isOfficial()) {
+        if (!selectedConfig.official()) {
             buttonPanel.child(Components.button(Text.literal("Delete"),
                             btn -> deleteConfig())
                     .renderer(ButtonComponent.Renderer.texture(
@@ -372,6 +372,11 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private FlowLayout createInfoRow(String label, String value) {
+        return getHorizontalFlowLayout(label, value);
+    }
+
+    @NotNull
+    static FlowLayout getHorizontalFlowLayout(String label, String value) {
         var row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         row.gap(8);
         row.child(Components.label(Text.literal(label))
@@ -454,7 +459,7 @@ public class ModpackConfigMenuScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void deleteConfig() {
-        if (selectedConfig == null || selectedConfig.isOfficial()) return;
+        if (selectedConfig == null || selectedConfig.official()) return;
 
         if (ConfigFileUtils.deleteConfig(selectedConfig)) {
             selectedConfig = null;

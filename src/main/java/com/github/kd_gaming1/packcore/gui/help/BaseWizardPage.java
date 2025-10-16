@@ -58,7 +58,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
     private final Identifier backgroundTexture;
     private final WizardPageInfo pageInfo;
 
-    private static ModpackInfo info = PackCore.getModpackInfo();
+    private static final ModpackInfo info = PackCore.getModpackInfo();
 
     protected BaseWizardPage(@NotNull WizardPageInfo pageInfo, @Nullable Identifier backgroundTexture) {
         super(pageInfo.title());
@@ -174,7 +174,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                 .positioning(Positioning.relative(100, 0));
 
         // Main message section
-        FlowLayout messageSection = (FlowLayout) Containers.verticalFlow(Sizing.expand(), Sizing.content())
+        FlowLayout messageSection = Containers.verticalFlow(Sizing.expand(), Sizing.content())
                 .gap(4);
 
         // Status header with icon
@@ -210,13 +210,13 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
         // Reset button
         ButtonComponent resetButton = (ButtonComponent) Components.button(Text.literal("Reset Setup"),
-                    button -> showResetConfirmation()
-            ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                        button -> showResetConfirmation()
+                ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .horizontalSizing(Sizing.fixed(100))
                 .verticalSizing(Sizing.fixed(20));
 
-            resetButton.tooltip(Text.literal("Reset the setup wizard and close the game"));
-            statusPanel.child(resetButton);
+        resetButton.tooltip(Text.literal("Reset the setup wizard and close the game"));
+        statusPanel.child(resetButton);
 
         return statusPanel;
     }
@@ -268,19 +268,19 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                 .horizontalAlignment(HorizontalAlignment.CENTER);
 
         ButtonComponent cancelButton = (ButtonComponent) Components.button(
-                Text.literal("Cancel"),
-                button -> {
-                    // Remove the overlay
-                    confirmOverlay.removeChild(confirmOverlay.children().get(confirmOverlay.children().size() - 1));
-                }
-        ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                        Text.literal("Cancel"),
+                        button -> {
+                            // Remove the overlay
+                            confirmOverlay.removeChild(confirmOverlay.children().getLast());
+                        }
+                ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .horizontalSizing(Sizing.fixed(100))
-                .verticalSizing(Sizing.fixed(20));;
+                .verticalSizing(Sizing.fixed(20));
 
         ButtonComponent confirmButton = (ButtonComponent) Components.button(
-                Text.literal("Reset & Exit"),
-                button -> onResetPressed()
-        ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
+                        Text.literal("Reset & Exit"),
+                        button -> onResetPressed()
+                ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .horizontalSizing(Sizing.fixed(100))
                 .verticalSizing(Sizing.fixed(20));
 
@@ -350,9 +350,9 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
         if (hasPreviousPage()) {
             ButtonComponent backButton = (ButtonComponent) Components.button(
-                    Text.literal("Back"),
-                    button -> onBackPressed()
-            ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 100, 60))
+                            Text.literal("Back"),
+                            button -> onBackPressed()
+                    ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 100, 60))
                     .horizontalSizing(Sizing.fixed(100))
                     .verticalSizing(Sizing.fixed(20));
             buttonContainer.child(backButton);
@@ -361,9 +361,9 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         // Skip button for optional steps
         if (isSkippable()) {
             ButtonComponent skipButton = (ButtonComponent) Components.button(
-                    Text.literal("Skip"),
-                    button -> onSkipPressed()
-            ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/continue.png"), 0, 0, 100, 60))
+                            Text.literal("Skip"),
+                            button -> onSkipPressed()
+                    ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/continue.png"), 0, 0, 100, 60))
                     .horizontalSizing(Sizing.fixed(100))
                     .verticalSizing(Sizing.fixed(20));
             buttonContainer.child(skipButton);
@@ -378,20 +378,16 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                 .margins(Insets.of(0, 0, 4, 0));
 
         ButtonComponent discord = (ButtonComponent) Components.button(
-                Text.empty(),
-                button -> {
-                    Util.getOperatingSystem().open(info.getDiscord());
-                }
-        )
+                        Text.empty(),
+                        button -> Util.getOperatingSystem().open(info.getDiscord())
+                )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/discord_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
                 .verticalSizing(Sizing.fixed(22));
 
         ButtonComponent modrinth = (ButtonComponent) Components.button(
                         Text.empty(),
-                        button -> {
-                            Util.getOperatingSystem().open(info.getWebsite());
-                        }
+                        button -> Util.getOperatingSystem().open(info.getWebsite())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/modrinth_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -399,9 +395,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
         ButtonComponent github = (ButtonComponent) Components.button(
                         Text.empty(),
-                        button -> {
-                            Util.getOperatingSystem().open(info.getIssueTracker());
-                        }
+                        button -> Util.getOperatingSystem().open(info.getIssueTracker())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/github_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -449,6 +443,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
      * Build the main content for this wizard page.
      */
     protected abstract void buildContent(FlowLayout contentContainer);
+
     protected abstract void buildContentRight(FlowLayout contentContainerRight);
 
     /**
@@ -507,25 +502,8 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
 
     // Helper classes
 
-    private static class StatusInfo {
-        final String icon;
-        final String title;
-        final String message;
-        final String additionalInfo;
-        final int backgroundColor;
-        final int borderColor;
-        final boolean showResetButton;
-
-        StatusInfo(String icon, String title, String message, String additionalInfo,
-                   int backgroundColor, int borderColor, boolean showResetButton) {
-            this.icon = icon;
-            this.title = title;
-            this.message = message;
-            this.additionalInfo = additionalInfo;
-            this.backgroundColor = backgroundColor;
-            this.borderColor = borderColor;
-            this.showResetButton = showResetButton;
-        }
+    private record StatusInfo(String icon, String title, String message, String additionalInfo, int backgroundColor,
+                              int borderColor, boolean showResetButton) {
     }
 
     public record WizardPageInfo(

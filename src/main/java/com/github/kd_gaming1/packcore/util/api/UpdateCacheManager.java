@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.util.api;
 
 import com.github.kd_gaming1.packcore.PackCore;
+import com.github.kd_gaming1.packcore.gui.titlescreen.fancy.FancyMainMenuScreen;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 
 import java.time.Instant;
@@ -29,7 +30,7 @@ public class UpdateCacheManager {
     // Main method - this is what other classes call
     public UpdateCheckResult checkForUpdates(ModpackInfo modpackInfo) {
         // Validate configuration first
-        if (!modpackInfo.isConfigurationValid()) {
+        if (modpackInfo.isConfigurationValid()) {
             String error = modpackInfo.getValidationError();
             PackCore.LOGGER.error("Invalid modpack configuration: {}", error);
             return UpdateCheckResult.error("Configuration error: " + error);
@@ -111,20 +112,6 @@ public class UpdateCacheManager {
     }
 
     private int compareVersions(String v1, String v2) {
-        String[] parts1 = v1.replaceAll("[^0-9.]", "").split("\\.");
-        String[] parts2 = v2.replaceAll("[^0-9.]", "").split("\\.");
-
-        int maxLength = Math.max(parts1.length, parts2.length);
-
-        for (int i = 0; i < maxLength; i++) {
-            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-
-            if (p1 != p2) {
-                return p1 - p2;
-            }
-        }
-
-        return 0;
+        return FancyMainMenuScreen.compareVersions(v1, v2);
     }
 }

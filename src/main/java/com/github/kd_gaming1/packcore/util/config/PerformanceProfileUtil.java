@@ -19,6 +19,7 @@ public class PerformanceProfileUtil {
 
     /**
      * Applies a performance profile to all available systems (Sodium + Vanilla + Iris)
+     *
      * @param profile The performance profile to apply
      * @return ProfileResult indicating what was applied and any failures
      */
@@ -67,6 +68,7 @@ public class PerformanceProfileUtil {
 
     /**
      * Restores default settings for all available systems
+     *
      * @return ProfileResult indicating what was restored
      */
     public static ProfileResult restoreDefaults() {
@@ -82,6 +84,7 @@ public class PerformanceProfileUtil {
 
     /**
      * Gets information about available performance systems
+     *
      * @return SystemAvailability indicating what systems are present
      */
     public static SystemAvailability getSystemAvailability() {
@@ -159,21 +162,10 @@ public class PerformanceProfileUtil {
 
     /**
      * Information about what performance systems are available
-     */
-    public static class SystemAvailability {
-        private final boolean sodiumAvailable;
-        private final boolean vanillaAvailable;
-        private final boolean irisAvailable;
-
-        public SystemAvailability(boolean sodiumAvailable, boolean vanillaAvailable, boolean irisAvailable) {
-            this.sodiumAvailable = sodiumAvailable;
-            this.vanillaAvailable = vanillaAvailable;
-            this.irisAvailable = irisAvailable;
-        }
-
-        public boolean isSodiumAvailable() { return sodiumAvailable; }
-        public boolean isVanillaAvailable() { return vanillaAvailable; }
-        public boolean isIrisAvailable() { return irisAvailable; }
-        public boolean hasAnySystem() { return sodiumAvailable || vanillaAvailable || irisAvailable; }
+     * */
+    public record SystemAvailability(boolean sodiumAvailable, boolean vanillaAvailable, boolean irisAvailable) {
+    public boolean hasAnySystem() {
+        return sodiumAvailable || vanillaAvailable || irisAvailable;
+    }
     }
 }

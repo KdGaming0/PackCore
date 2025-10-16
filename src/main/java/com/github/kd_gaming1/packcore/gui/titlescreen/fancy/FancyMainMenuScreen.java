@@ -43,7 +43,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private final Identifier backgroundTexture = Identifier.of(MOD_ID, "textures/gui/title/main_menu_background.png");
 
-    private static ModpackInfo info = PackCore.getModpackInfo();
+    private static final ModpackInfo info = PackCore.getModpackInfo();
 
     private String ChangeLogInfoText;
     private static final boolean updateNotificationEnabled =
@@ -216,7 +216,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
                         
                         ---
                         
-                        Need help **updating**? Click the button bellow.
+                        Need help **updating**? Click the button below.
                         """,
                 MARKDOWN_PROCESSOR::process
         );
@@ -317,9 +317,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent createDiscordButton() {
         return (ButtonComponent) Components.button(
                         Text.empty(),
-                        button -> {
-                            Util.getOperatingSystem().open(info.getDiscord());
-                        }
+                        button -> Util.getOperatingSystem().open(info.getDiscord())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/discord_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -330,9 +328,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent createModrinthButton() {
         return (ButtonComponent) Components.button(
                         Text.empty(),
-                        button -> {
-                            Util.getOperatingSystem().open(info.getWebsite());
-                        }
+                        button -> Util.getOperatingSystem().open(info.getWebsite())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/modrinth_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -342,9 +338,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createGitHubButton() {
         return (ButtonComponent) Components.button(
-                        Text.empty(), button -> {
-                            Util.getOperatingSystem().open(info.getIssueTracker());
-                        }
+                        Text.empty(), button -> Util.getOperatingSystem().open(info.getIssueTracker())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/github_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -388,9 +382,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createHelpUpdateButton() {
         return (ButtonComponent) Components.button(
-                        Text.empty(), button -> {
-                            this.client.setScreen(new BaseGuidePage());
-                        }
+                        Text.empty(), button -> this.client.setScreen(new BaseGuidePage())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/guide_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -400,16 +392,13 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createModpackButton() {
         return (ButtonComponent) Components.button(
-                        Text.empty(), button -> {
-                            this.client.setScreen(new ModpackConfigMenuScreen());
-                        }
+                        Text.empty(), button -> this.client.setScreen(new ModpackConfigMenuScreen())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/settings_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
                 .verticalSizing(Sizing.fixed(22))
                 .tooltip(Text.literal("Modpack Settings import/export your config"));
     }
-
 
 
     private void toggleChangelog() {
@@ -438,7 +427,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
         }
 
         // Check if the configuration is valid
-        if (!info.isConfigurationValid()) {
+        if (info.isConfigurationValid()) {
             this.updateAvailable = false;
             this.currentVersion = "";
             this.newVersion = "";

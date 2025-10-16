@@ -20,24 +20,12 @@ public class ConfigurationApplicationService {
         void updateProgress(String stepKey, String status, String errorMessage);
     }
 
-    public static class ConfigurationResult {
-        private final boolean overallSuccess;
-        private final Map<String, String> failedSteps;
-        private final Map<String, String> successfulSteps;
-
-        public ConfigurationResult(boolean overallSuccess, Map<String, String> failedSteps, Map<String, String> successfulSteps) {
-            this.overallSuccess = overallSuccess;
-            this.failedSteps = failedSteps;
-            this.successfulSteps = successfulSteps;
-        }
-
-        public boolean isOverallSuccess() { return overallSuccess; }
-        public Map<String, String> getFailedSteps() { return failedSteps; }
-        public Map<String, String> getSuccessfulSteps() { return successfulSteps; }
+    public record ConfigurationResult(boolean overallSuccess, Map<String, String> failedSteps,
+                                      Map<String, String> successfulSteps) {
     }
 
     public static CompletableFuture<Boolean> applyAllConfigurations() {
-        return applyAllConfigurationsWithProgress(null).thenApply(ConfigurationResult::isOverallSuccess);
+        return applyAllConfigurationsWithProgress(null).thenApply(ConfigurationResult::overallSuccess);
     }
 
     public static CompletableFuture<ConfigurationResult> applyAllConfigurationsWithProgress(ProgressCallback progressCallback) {
@@ -194,7 +182,7 @@ public class ConfigurationApplicationService {
                 return false;
             }
         } catch (Exception e) {
-            PackCore.LOGGER.error("Failed to apply performance profile: " + optimizationProfile, e);
+            PackCore.LOGGER.error("Failed to apply performance profile: {}", optimizationProfile, e);
             return false;
         }
     }

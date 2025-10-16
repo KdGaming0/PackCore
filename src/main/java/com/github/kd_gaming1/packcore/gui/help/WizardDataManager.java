@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.gui.help;
 
 import com.github.kd_gaming1.packcore.PackCore;
+
 import java.util.*;
 
 /**
@@ -135,29 +136,11 @@ public class WizardDataManager {
 
     // ===== Data Class =====
 
-    public static class WizardConfiguration {
-        private final String optimizationProfile;
-        private final List<String> resourcePacksOrdered;
-        private final String tabDesign;
+    public record WizardConfiguration(String optimizationProfile, List<String> resourcePacksOrdered, String tabDesign) {
 
-        public WizardConfiguration(String optimizationProfile,
-                                   List<String> resourcePacksOrdered,
-                                   String tabDesign) {
-            this.optimizationProfile = optimizationProfile;
-            this.resourcePacksOrdered = resourcePacksOrdered;
-            this.tabDesign = tabDesign;
-        }
-
-        public String getOptimizationProfile() {
-            return optimizationProfile;
-        }
-
-        public List<String> getResourcePacksOrdered() {
+        @Override
+        public List<String> resourcePacksOrdered() {
             return new ArrayList<>(resourcePacksOrdered);
-        }
-
-        public String getTabDesign() {
-            return tabDesign;
         }
 
         // For compatibility with existing code

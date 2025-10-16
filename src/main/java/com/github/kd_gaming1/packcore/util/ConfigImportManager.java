@@ -24,25 +24,18 @@ public class ConfigImportManager {
             DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     /**
-     * Validation result with details
-     */
-    public static class ValidationResult {
-        public final boolean isValid;
-        public final String errorMessage;
-
-        public ValidationResult(boolean isValid, String errorMessage) {
-            this.isValid = isValid;
-            this.errorMessage = errorMessage;
-        }
+         * Validation result with details
+         */
+        public record ValidationResult(boolean isValid, String errorMessage) {
 
         public static ValidationResult valid() {
-            return new ValidationResult(true, null);
-        }
+                return new ValidationResult(true, null);
+            }
 
-        public static ValidationResult invalid(String message) {
-            return new ValidationResult(false, message);
+            public static ValidationResult invalid(String message) {
+                return new ValidationResult(false, message);
+            }
         }
-    }
 
     /**
      * Open native file chooser to select config zip with foreground focus
@@ -213,16 +206,20 @@ public class ConfigImportManager {
 
             if (!hasMetadata) {
                 return ValidationResult.invalid(
-                        "Invalid config file: Missing packcore_metadata.json\n\n" +
-                                "This ZIP must contain configuration metadata to be imported."
+                        """
+                                Invalid config file: Missing packcore_metadata.json
+                                
+                                This ZIP must contain configuration metadata to be imported."""
                 );
             }
 
             if (hasJarFiles) {
                 return ValidationResult.invalid(
-                        "Invalid config file: Contains .jar files\n\n" +
-                                "Configuration files should not contain mod .jar files.\n" +
-                                "Please use config files only."
+                        """
+                                Invalid config file: Contains .jar files
+                                
+                                Configuration files should not contain mod .jar files.
+                                Please use config files only."""
                 );
             }
 
@@ -357,7 +354,7 @@ public class ConfigImportManager {
                 .toLowerCase();
 
         return ConfigFileUtils.getAllConfigs().stream()
-                .anyMatch(config -> config.getFileName()
+                .anyMatch(config -> config.fileName()
                         .toLowerCase()
                         .contains(sanitizedName));
     }

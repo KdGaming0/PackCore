@@ -10,7 +10,7 @@ public class FileTreeNode {
     private final boolean isDirectory;
     private boolean expanded = false;
     private boolean hidden = false;
-    private List<FileTreeNode> children = new ArrayList<>();
+    private final List<FileTreeNode> children = new ArrayList<>();
     private boolean childrenLoaded = false;
     private boolean hasUnloadedChildren = false;
 

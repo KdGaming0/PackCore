@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.help.guide.util;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import net.fabricmc.loader.api.FabricLoader;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -66,7 +67,7 @@ public class GuideUtil {
         }
 
         // Extract title (first line, remove markdown heading syntax)
-        String title = lines.get(0).replaceFirst("^#+\\s*", "").trim();
+        String title = lines.getFirst().replaceFirst("^#+\\s*", "").trim();
 
         if (title.isEmpty()) {
             title = filePath.getFileName().toString().replace(".md", "");
@@ -86,10 +87,10 @@ public class GuideUtil {
             }
 
             // Remove markdown formatting for cleaner preview
-            String cleanLine = line.replaceAll("^[>\\-\\*\\+]\\s*", "") // Remove blockquote and list markers
+            String cleanLine = line.replaceAll("^[>\\-*+]\\s*", "") // Remove blockquote and list markers
                     .replaceAll("\\*\\*(.*?)\\*\\*", "$1") // Remove bold
                     .replaceAll("\\*(.*?)\\*", "$1")       // Remove italic
-                    .replaceAll("\\[([^\\]]+)\\]\\([^\\)]+\\)", "$1") // Remove links, keep text
+                    .replaceAll("\\[([^]]+)]\\([^)]+\\)", "$1") // Remove links, keep text
                     .replaceAll("`([^`]+)`", "$1");        // Remove inline code
 
             if (!cleanLine.isEmpty()) {
@@ -101,6 +102,12 @@ public class GuideUtil {
             }
         }
 
+        String preview = getString(previewBuilder, currentLine, maxLines);
+
+        return new GuideInfo(title, preview, filePath);
+    }
+
+    private static @NotNull String getString(StringBuilder previewBuilder, int currentLine, int maxLines) {
         String preview = previewBuilder.toString();
 
         // Truncate if too long and add ellipsis
@@ -115,21 +122,20 @@ public class GuideUtil {
             // If we hit the line limit, add ellipsis even if under character limit
             preview += "...";
         }
-
-        return new GuideInfo(title, preview, filePath);
+        return preview;
     }
 
     /**
      * Loads the full content of a guide (with caching)
      */
-    public static String loadGuideContent(GuideInfo guide) {
+    public static void loadGuideContent(GuideInfo guide) {
         String fileName = guide.getFilePath().getFileName().toString();
 
         // Check cache first
         String cachedContent = CONTENT_CACHE.get(fileName);
         if (cachedContent != null) {
             guide.setFullContent(cachedContent);
-            return cachedContent;
+            return;
         }
 
         // Load from file
@@ -137,10 +143,8 @@ public class GuideUtil {
             String content = Files.readString(guide.getFilePath());
             CONTENT_CACHE.put(fileName, content);
             guide.setFullContent(content);
-            return content;
         } catch (IOException e) {
             PackCore.LOGGER.error("Failed to load guide content: {}", guide.getFilePath(), e);
-            return "# Error\n\nFailed to load guide content.";
         }
     }
 

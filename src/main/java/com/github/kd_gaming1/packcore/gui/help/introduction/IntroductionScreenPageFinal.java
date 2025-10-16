@@ -30,7 +30,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     private ButtonComponent applyButton;
     private FlowLayout progressContainer;
     private FlowLayout warningBanner;
-    private Map<String, LabelComponent> stepLabels = new LinkedHashMap<>();
+    private final Map<String, LabelComponent> stepLabels = new LinkedHashMap<>();
 
     private io.wispforest.owo.ui.container.StackLayout getRootComponent() {
         return uiAdapter.rootComponent;
@@ -216,9 +216,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     }
 
     private void hideWarningBanner() {
-        MinecraftClient.getInstance().execute(() -> {
-            warningBanner.positioning(Positioning.absolute(0, -1000));
-        });
+        MinecraftClient.getInstance().execute(() ->
+                warningBanner.positioning(Positioning.absolute(0, -1000)));
     }
 
     private FlowLayout createProgressSection() {
@@ -397,7 +396,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         helpContainer.child(Components.label(
                 Text.literal("💡 Tip: Each step shows a progress indicator. If something fails, you'll see exactly what went wrong!")
                         .setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
-        ).color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(95)).margins(Insets.of(6, 2, 2 ,2)));
+        ).color(Color.ofRgb(TEXT_SECONDARY)).horizontalSizing(Sizing.fill(95)).margins(Insets.of(6, 2, 2, 2)));
 
         return helpContainer;
     }
@@ -434,7 +433,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         // Update persistent state first
                         dataManager.setConfigurationApplying(false);
 
-                        if (result.isOverallSuccess() && throwable == null) {
+                        if (result.overallSuccess() && throwable == null) {
                             dataManager.setConfigurationApplied(true);
                             dataManager.setConfigurationResult("success", "");
                             onConfigurationApplied();
@@ -444,8 +443,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
                             // Build the error message here to store it
                             StringBuilder failureMessage = new StringBuilder();
-                            if (!result.getFailedSteps().isEmpty()) {
-                                for (Map.Entry<String, String> failure : result.getFailedSteps().entrySet()) {
+                            if (!result.failedSteps().isEmpty()) {
+                                for (Map.Entry<String, String> failure : result.failedSteps().entrySet()) {
                                     failureMessage.append("❌ ").append(failure.getKey()).append(":\n   ")
                                             .append(failure.getValue()).append("\n\n");
                                 }
@@ -494,18 +493,18 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         WizardDataManager.WizardConfiguration config = dataManager.getConfiguration();
         StringBuilder configSummary = new StringBuilder();
 
-        if (!config.getOptimizationProfile().isEmpty()) {
-            configSummary.append("Performance: ").append(config.getOptimizationProfile());
+        if (!config.optimizationProfile().isEmpty()) {
+            configSummary.append("Performance: ").append(config.optimizationProfile());
         }
 
-        if (!config.getResourcePacksOrdered().isEmpty()) {
+        if (!config.resourcePacksOrdered().isEmpty()) {
             if (!configSummary.isEmpty()) configSummary.append(", ");
-            configSummary.append("Packs: ").append(String.join(", ", config.getResourcePacksOrdered()));
+            configSummary.append("Packs: ").append(String.join(", ", config.resourcePacksOrdered()));
         }
 
-        if (!config.getTabDesign().isEmpty()) {
+        if (!config.tabDesign().isEmpty()) {
             if (!configSummary.isEmpty()) configSummary.append(", ");
-            configSummary.append("Tab: ").append(config.getTabDesign());
+            configSummary.append("Tab: ").append(config.tabDesign());
         }
     }
 
@@ -519,8 +518,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
         boolean hasHypixelPlus = selectedPacks.stream()
                 .anyMatch(pack -> pack.equalsIgnoreCase("HypixelPlus"));
 
-        if (result != null && !result.getFailedSteps().isEmpty()) {
-            for (Map.Entry<String, String> failure : result.getFailedSteps().entrySet()) {
+        if (result != null && !result.failedSteps().isEmpty()) {
+            for (Map.Entry<String, String> failure : result.failedSteps().entrySet()) {
                 failureMessage.append("❌ ").append(failure.getKey()).append(":\n   ")
                         .append(failure.getValue()).append("\n\n");
 
@@ -644,7 +643,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         Text.literal("Go Back"),
                         button -> {
                             // Remove the overlay (last child)
-                            getRootComponent().removeChild(getRootComponent().children().get(getRootComponent().children().size() - 1));
+                            getRootComponent().removeChild(getRootComponent().children().getLast());
                         }
                 ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .horizontalSizing(Sizing.fixed(100))
@@ -654,7 +653,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         Text.literal("Skip Anyway"),
                         button -> {
                             // Remove the overlay first
-                            getRootComponent().removeChild(getRootComponent().children().get(getRootComponent().children().size() - 1));
+                            getRootComponent().removeChild(getRootComponent().children().getLast());
                             // Then proceed with skip
                             proceedWithSkip();
                         }
@@ -737,7 +736,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
     @Override
     protected int getContentColumnWidthPercent() {
-        return 60;
+        return super.getContentColumnWidthPercent();
     }
 
     @Override

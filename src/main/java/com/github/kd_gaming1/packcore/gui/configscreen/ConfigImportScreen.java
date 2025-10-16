@@ -21,9 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.concurrent.Flow;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 import static com.github.kd_gaming1.packcore.PackCore.getModpackInfo;
+import static com.github.kd_gaming1.packcore.gui.configscreen.BackupManagementScreen.getFlowLayout;
+import static com.github.kd_gaming1.packcore.gui.configscreen.ModpackConfigMenuScreen.getHorizontalFlowLayout;
 
 /**
  * Simplified import screen with clean metadata display
@@ -45,7 +48,7 @@ public class ConfigImportScreen extends BaseOwoScreen<FlowLayout> {
     private OverlayContainer<FlowLayout> currentOverlay = null; // Store current overlay reference
 
     @Override
-    protected @NotNull OwoUIAdapter createAdapter() {
+    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
         return OwoUIAdapter.create(this, Containers::verticalFlow);
     }
 
@@ -75,16 +78,7 @@ public class ConfigImportScreen extends BaseOwoScreen<FlowLayout> {
                                 .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
                 .color(UITheme.color(UITheme.TEXT_WHITE)));
 
-        var backContainer = Containers.horizontalFlow(Sizing.expand(), Sizing.content());
-        backContainer.horizontalAlignment(HorizontalAlignment.RIGHT);
-        backContainer.child(Components.button(Text.literal("Back"),
-                        btn -> MinecraftClient.getInstance().setScreen(new ModpackConfigMenuScreen()))
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 90, 57))
-                .sizing(Sizing.fixed(90), Sizing.fixed(19)));
-        header.child(backContainer);
-
-        return header;
+        return getFlowLayout(header);
     }
 
     private FlowLayout createContent() {
@@ -325,14 +319,7 @@ public class ConfigImportScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private FlowLayout createInfoRow(String label, String value) {
-        var row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        row.gap(8);
-        row.child(Components.label(Text.literal(label))
-                .color(UITheme.color(UITheme.TEXT_SECONDARY))
-                .sizing(Sizing.fixed(80), Sizing.content()));
-        row.child(Components.label(Text.literal(value))
-                .color(UITheme.color(UITheme.TEXT_WHITE)));
-        return row;
+        return getHorizontalFlowLayout(label, value);
     }
 
     private String formatDate(String isoDate) {
