@@ -23,7 +23,7 @@ public class AsyncZipFiles {
     private static final int BUFFER_SIZE = 16384; // Larger buffer for better performance
     private static final ExecutorService ZIP_EXECUTOR = Executors.newCachedThreadPool(r -> {
         Thread thread = new Thread(r);
-        thread.setName("AsyncZip-" + thread.getId());
+        thread.setName("AsyncZip-" + thread.threadId());
         thread.setDaemon(true);
         return thread;
     });
@@ -80,7 +80,7 @@ public class AsyncZipFiles {
             byte[] buffer = new byte[BUFFER_SIZE];
 
             // Walk the directory tree and add entries
-            Files.walkFileTree(basePath, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(basePath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
                         throws IOException {

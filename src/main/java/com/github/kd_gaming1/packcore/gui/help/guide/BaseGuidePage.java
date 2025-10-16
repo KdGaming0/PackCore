@@ -141,14 +141,12 @@ public class BaseGuidePage extends BaseOwoScreen<FlowLayout> {
 
     private void setupGuideEntryInteraction(FlowLayout entry, GuideInfo guide) {
         // Mouse enter - highlight effect
-        entry.mouseEnter().subscribe(() -> {
-            entry.surface(Surface.flat(0x40_FFFFFF).and(Surface.outline(0x40_FFFFFF)));
-        });
+        entry.mouseEnter().subscribe(() ->
+                entry.surface(Surface.flat(0x40_FFFFFF).and(Surface.outline(0x40_FFFFFF))));
 
         // Mouse leave - remove highlight
-        entry.mouseLeave().subscribe(() -> {
-            entry.surface(Surface.flat(0x30_000000).and(Surface.outline(0x20_FFFFFF)));
-        });
+        entry.mouseLeave().subscribe(() ->
+                entry.surface(Surface.flat(0x30_000000).and(Surface.outline(0x20_FFFFFF))));
 
         // Click - open guide
         entry.mouseDown().subscribe((mouseX, mouseY, button) -> {

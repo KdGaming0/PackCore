@@ -62,24 +62,28 @@ public class ConfigExportManager {
         root.setExpanded(true);
 
         try (Stream<Path> entries = Files.list(gameDir)) {
-            List<Path> sortedEntries = entries
-                    .filter(Files::exists)
-                    .filter(path -> !isHidden(path))
-                    .sorted(comparePaths())
-                    .limit(MAX_CHILDREN_PER_NODE)
-                    .toList();
-
-            for (Path path : sortedEntries) {
-                FileTreeNode node = createLazyNode(path);
-                if (node != null && !node.isHidden()) {
-                    root.addChild(node);
-                }
-            }
+            sortEntries(root, entries);
         } catch (IOException e) {
             LOGGER.error("Failed to build file tree", e);
         }
 
         return root;
+    }
+
+    private void sortEntries(FileTreeNode root, Stream<Path> entries) {
+        List<Path> sortedEntries = entries
+                .filter(Files::exists)
+                .filter(path -> !isHidden(path))
+                .sorted(comparePaths())
+                .limit(MAX_CHILDREN_PER_NODE)
+                .toList();
+
+        for (Path path : sortedEntries) {
+            FileTreeNode node = createLazyNode(path);
+            if (!node.isHidden()) {
+                root.addChild(node);
+            }
+        }
     }
 
     /**
@@ -119,19 +123,7 @@ public class ConfigExportManager {
         }
 
         try (Stream<Path> children = Files.list(node.getPath())) {
-            List<Path> sortedChildren = children
-                    .filter(Files::exists)
-                    .filter(child -> !isHidden(child))
-                    .sorted(comparePaths())
-                    .limit(MAX_CHILDREN_PER_NODE)
-                    .toList();
-
-            for (Path childPath : sortedChildren) {
-                FileTreeNode childNode = createLazyNode(childPath);
-                if (childNode != null && !childNode.isHidden()) {
-                    node.addChild(childNode);
-                }
-            }
+            sortEntries(node, children);
 
             node.setChildrenLoaded(true);
             node.setHasUnloadedChildren(false);
@@ -166,9 +158,7 @@ public class ConfigExportManager {
         Set<Path> paths = new HashSet<>();
 
         switch (presetType) {
-            case MODS_ONLY -> {
-                addIfExists(paths, "config");
-            }
+            case MODS_ONLY -> addIfExists(paths, "config");
             case MINECRAFT_ONLY -> {
                 addIfExists(paths, "options.txt");
                 addIfExists(paths, "servers.dat");
@@ -312,9 +302,7 @@ public class ConfigExportManager {
             CompletableFuture<Void> zipFuture = zipFiles.zipDirectoryAsync(
                     tempDir.toFile(),
                     zipPath.toString(),
-                    (bytesProcessed, totalBytes, percentage) -> {
-                        progressCallback.accept(String.format("Zipping: %d%%", percentage));
-                    }
+                    (bytesProcessed, totalBytes, percentage) -> progressCallback.accept(String.format("Zipping: %d%%", percentage))
             );
 
             // Wait for zipping to complete
@@ -354,9 +342,9 @@ public class ConfigExportManager {
     }
 
     private void copySelectedPathsAsync(Set<Path> selectedPaths, Path targetDir,
-                                        Consumer<String> progressCallback) throws IOException {
+                                        Consumer<String> progressCallback) {
         int total = selectedPaths.size();
-        int processed = 0;
+        int processed;
 
         // Process in batches for better performance
         List<Path> pathList = new ArrayList<>(selectedPaths);

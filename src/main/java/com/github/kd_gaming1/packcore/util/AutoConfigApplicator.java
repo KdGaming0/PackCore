@@ -146,8 +146,8 @@ public class AutoConfigApplicator {
         if (selected != null) {
             Dimension selectedRes = parseResolution(selected.metadata().getTargetResolution());
             double distance = calculateDistance(detectedResolution, selectedRes);
-            LOGGER.info("Best match selected: {} (distance: {:.0f} pixels)",
-                    selected.getDisplayName(), distance);
+            LOGGER.info("Best match selected: {} (distance: {} pixels)",
+                    selected.getDisplayName(), String.format("%.0f", distance));
         }
 
         return selected;
@@ -169,7 +169,7 @@ public class AutoConfigApplicator {
                     return calculateDistance(targetResolution, configRes);
                 })
                 // Then by name for consistency
-                .thenComparing(c -> c.getDisplayName());
+                .thenComparing(ConfigFileUtils.ConfigFile::getDisplayName);
     }
 
     /**

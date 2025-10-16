@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.help.guide.util;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import net.fabricmc.loader.api.FabricLoader;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -101,6 +102,12 @@ public class GuideUtil {
             }
         }
 
+        String preview = getString(previewBuilder, currentLine, maxLines);
+
+        return new GuideInfo(title, preview, filePath);
+    }
+
+    private static @NotNull String getString(StringBuilder previewBuilder, int currentLine, int maxLines) {
         String preview = previewBuilder.toString();
 
         // Truncate if too long and add ellipsis
@@ -115,8 +122,7 @@ public class GuideUtil {
             // If we hit the line limit, add ellipsis even if under character limit
             preview += "...";
         }
-
-        return new GuideInfo(title, preview, filePath);
+        return preview;
     }
 
     /**

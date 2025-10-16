@@ -128,9 +128,7 @@ public class BackupManager {
      * Create a manual backup (async with progress)
      */
     public static void createManualBackup(String title, String description) {
-        createManualBackupAsync(title, description, msg -> {
-            LOGGER.info("Backup progress: {}", msg);
-        });
+        createManualBackupAsync(title, description, msg -> LOGGER.info("Backup progress: {}", msg));
     }
 
     /**
@@ -198,9 +196,7 @@ public class BackupManager {
                     // Create ZIP asynchronously
                     AsyncZipFiles zipFiles = new AsyncZipFiles();
                     zipFiles.zipDirectoryAsync(tempDir.toFile(), backupZip.toString(),
-                            (bytesProcessed, totalBytes, percentage) -> {
-                                progressCallback.accept(String.format("Zipping: %d%%", percentage));
-                            }).join();
+                            (bytesProcessed, totalBytes, percentage) -> progressCallback.accept(String.format("Zipping: %d%%", percentage))).join();
 
                     LOGGER.info("Created {} backup: {}", type.getDisplayName().toLowerCase(), backupZip);
 
@@ -480,9 +476,8 @@ public class BackupManager {
                 try {
                     var unzipper = new com.github.kd_gaming1.packcore.util.copysystem.AsyncUnzipFiles();
                     unzipper.unzipAsync(backupZip.toString(), tempDir.toString(),
-                            (bytesProcessed, totalBytes, percentage) -> {
-                                progressCallback.accept(String.format("Extracting: %d%%", percentage));
-                            }).join();
+                            (bytesProcessed, totalBytes, percentage) ->
+                                    progressCallback.accept(String.format("Extracting: %d%%", percentage))).join();
 
                     progressCallback.accept("Restoring files...");
 
@@ -539,7 +534,7 @@ public class BackupManager {
                     pathsToRestore = paths
                             .filter(path -> !path.equals(sourceDir))
                             .filter(path -> !path.getFileName().toString().equals(METADATA_FILE))
-                            .collect(Collectors.toList());
+                            .toList();
                 }
 
                 int total = pathsToRestore.size();
@@ -612,7 +607,7 @@ public class BackupManager {
             // Separate auto and manual backups
             List<BackupInfo> autoBackups = backups.stream()
                     .filter(backup -> backup.type == BackupType.AUTO)
-                    .collect(Collectors.toList());
+                    .toList();
 
             // Only clean up auto backups, keep manual backups
             if (autoBackups.size() > PackCoreConfig.maxBackups) {

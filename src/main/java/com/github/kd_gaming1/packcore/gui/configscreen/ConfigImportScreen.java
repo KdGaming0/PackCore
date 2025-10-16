@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.concurrent.Flow;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 import static com.github.kd_gaming1.packcore.PackCore.getModpackInfo;
@@ -47,7 +48,7 @@ public class ConfigImportScreen extends BaseOwoScreen<FlowLayout> {
     private OverlayContainer<FlowLayout> currentOverlay = null; // Store current overlay reference
 
     @Override
-    protected @NotNull OwoUIAdapter createAdapter() {
+    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
         return OwoUIAdapter.create(this, Containers::verticalFlow);
     }
 

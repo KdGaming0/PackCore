@@ -206,16 +206,20 @@ public class ConfigImportManager {
 
             if (!hasMetadata) {
                 return ValidationResult.invalid(
-                        "Invalid config file: Missing packcore_metadata.json\n\n" +
-                                "This ZIP must contain configuration metadata to be imported."
+                        """
+                                Invalid config file: Missing packcore_metadata.json
+                                
+                                This ZIP must contain configuration metadata to be imported."""
                 );
             }
 
             if (hasJarFiles) {
                 return ValidationResult.invalid(
-                        "Invalid config file: Contains .jar files\n\n" +
-                                "Configuration files should not contain mod .jar files.\n" +
-                                "Please use config files only."
+                        """
+                                Invalid config file: Contains .jar files
+                                
+                                Configuration files should not contain mod .jar files.
+                                Please use config files only."""
                 );
             }
 

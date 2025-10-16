@@ -216,9 +216,8 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
     }
 
     private void hideWarningBanner() {
-        MinecraftClient.getInstance().execute(() -> {
-            warningBanner.positioning(Positioning.absolute(0, -1000));
-        });
+        MinecraftClient.getInstance().execute(() ->
+                warningBanner.positioning(Positioning.absolute(0, -1000)));
     }
 
     private FlowLayout createProgressSection() {
@@ -644,7 +643,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         Text.literal("Go Back"),
                         button -> {
                             // Remove the overlay (last child)
-                            getRootComponent().removeChild(getRootComponent().children().get(getRootComponent().children().size() - 1));
+                            getRootComponent().removeChild(getRootComponent().children().getLast());
                         }
                 ).renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 100, 60))
                 .horizontalSizing(Sizing.fixed(100))
@@ -654,7 +653,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
                         Text.literal("Skip Anyway"),
                         button -> {
                             // Remove the overlay first
-                            getRootComponent().removeChild(getRootComponent().children().get(getRootComponent().children().size() - 1));
+                            getRootComponent().removeChild(getRootComponent().children().getLast());
                             // Then proceed with skip
                             proceedWithSkip();
                         }
@@ -737,7 +736,7 @@ public class IntroductionScreenPageFinal extends BaseWizardPage {
 
     @Override
     protected int getContentColumnWidthPercent() {
-        return 60;
+        return super.getContentColumnWidthPercent();
     }
 
     @Override

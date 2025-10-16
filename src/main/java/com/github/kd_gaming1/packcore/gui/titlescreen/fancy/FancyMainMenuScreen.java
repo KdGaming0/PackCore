@@ -317,9 +317,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent createDiscordButton() {
         return (ButtonComponent) Components.button(
                         Text.empty(),
-                        button -> {
-                            Util.getOperatingSystem().open(info.getDiscord());
-                        }
+                        button -> Util.getOperatingSystem().open(info.getDiscord())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/discord_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -330,9 +328,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent createModrinthButton() {
         return (ButtonComponent) Components.button(
                         Text.empty(),
-                        button -> {
-                            Util.getOperatingSystem().open(info.getWebsite());
-                        }
+                        button -> Util.getOperatingSystem().open(info.getWebsite())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/modrinth_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -342,9 +338,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createGitHubButton() {
         return (ButtonComponent) Components.button(
-                        Text.empty(), button -> {
-                            Util.getOperatingSystem().open(info.getIssueTracker());
-                        }
+                        Text.empty(), button -> Util.getOperatingSystem().open(info.getIssueTracker())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/github_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -388,9 +382,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createHelpUpdateButton() {
         return (ButtonComponent) Components.button(
-                        Text.empty(), button -> {
-                            this.client.setScreen(new BaseGuidePage());
-                        }
+                        Text.empty(), button -> this.client.setScreen(new BaseGuidePage())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/guide_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))
@@ -400,9 +392,7 @@ public class FancyMainMenuScreen extends BaseOwoScreen<FlowLayout> {
 
     private ButtonComponent createModpackButton() {
         return (ButtonComponent) Components.button(
-                        Text.empty(), button -> {
-                            this.client.setScreen(new ModpackConfigMenuScreen());
-                        }
+                        Text.empty(), button -> this.client.setScreen(new ModpackConfigMenuScreen())
                 )
                 .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/settings_icon.png"), 0, 0, 22, 22))
                 .horizontalSizing(Sizing.fixed(22))

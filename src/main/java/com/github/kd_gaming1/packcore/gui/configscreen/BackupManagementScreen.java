@@ -822,9 +822,7 @@ public class BackupManagementScreen extends BaseOwoScreen<FlowLayout> {
                 .color(UITheme.color(UITheme.TEXT_WHITE))
                 .margins(Insets.bottom(12)));
 
-        errorDialog.child(Components.button(Text.literal("OK"), btn -> {
-                    rootComponent.removeChild(errorDialog);
-                }).sizing(Sizing.fixed(80), Sizing.fixed(20))
+        errorDialog.child(Components.button(Text.literal("OK"), btn -> rootComponent.removeChild(errorDialog)).sizing(Sizing.fixed(80), Sizing.fixed(20))
                 .horizontalSizing(Sizing.content()));
 
         rootComponent.child(errorDialog);
