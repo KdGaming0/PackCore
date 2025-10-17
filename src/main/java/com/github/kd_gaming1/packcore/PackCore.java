@@ -4,6 +4,7 @@ import com.github.kd_gaming1.packcore.commands.PackCoreCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPage;
 import com.github.kd_gaming1.packcore.gui.titlescreen.fancy.FancyMainMenuScreen;
+import com.github.kd_gaming1.packcore.util.config.BobbyConfigModifier;
 import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
 import eu.midnightdust.lib.config.MidnightConfig;
@@ -52,6 +53,12 @@ public class PackCore implements ClientModInitializer {
                     );
                 }
             });
+        }
+
+        if (!PackCoreConfig.haveSetBobbyConfig) {
+            BobbyConfigModifier.enableDynamicMultiWorld();
+            PackCoreConfig.haveSetBobbyConfig = true;
+            PackCoreConfig.write(MOD_ID);
         }
     }
 

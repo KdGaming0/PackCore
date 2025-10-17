@@ -46,6 +46,9 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.welcome_wizard_shown")
     public static boolean haveShownWelcomeWizard = false;
 
+    @Entry(category = ADVANCED, name = "packcore.midnightconfig.have_set_bobby_config")
+    public static boolean haveSetBobbyConfig = false;
+
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_completed")
     public static boolean defaultConfigSuccessfullyApplied = false;

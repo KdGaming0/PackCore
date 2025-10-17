@@ -15,7 +15,8 @@
   "packcore.midnightconfig.enable_update_notifications": "Enable Update Notifications",
   "packcore.midnightconfig.show_update_notifications_title": "Show Update Notifications On Title Screen",
 
-  "packcore.midnightconfig.first_startup": "First Startup Tracker",
-  "packcore.midnightconfig.welcome_wizard_shown": "Welcome Wizard Shown Tracker",
-  "packcore.midnightconfig.setup_wizard_completed": "Setup Wizard Completed Tracker"
+  "packcore.midnightconfig.first_startup": "First Startup - Tracker",
+  "packcore.midnightconfig.welcome_wizard_shown": "Welcome Wizard Shown - Tracker",
+  "packcore.midnightconfig.have_set_bobby_config": "Have Set Bobby Config - Tracker",
+  "packcore.midnightconfig.setup_wizard_completed": "Setup Wizard Completed - Tracker"
 }
