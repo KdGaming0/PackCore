@@ -6,12 +6,18 @@ import com.github.kd_gaming1.packcore.ui.screen.wizard.pages.WelcomeWizardPage;
 import com.github.kd_gaming1.packcore.ui.screen.title.SBEStyledTitleScreen;
 import com.github.kd_gaming1.packcore.integration.bobby.BobbyConfigModifier;
 import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
+import com.github.kd_gaming1.packcore.util.HypixelEventUtil;
 import com.github.kd_gaming1.packcore.util.update.modrinth.UpdateCache;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.hypixel.modapi.HypixelModAPI;
+import net.hypixel.modapi.packet.ClientboundHypixelPacket;
+import net.hypixel.modapi.packet.HypixelPacket;
+import net.hypixel.modapi.packet.impl.clientbound.ClientboundHelloPacket;
 import net.minecraft.client.gui.screen.TitleScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +35,12 @@ public class PackCore implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         LOGGER.info("PackCore initialized!");
+
+        HypixelEventUtil.init();
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            HypixelEventUtil.reset();
+        });
 
         try {
             modpackInfo = ModpackInfo.loadFromFile(packcoreDir);
