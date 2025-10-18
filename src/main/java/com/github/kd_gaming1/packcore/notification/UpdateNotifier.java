@@ -69,14 +69,13 @@ public class UpdateNotifier {
             Text updateMessage = Text.literal("[" + modpackName + "] ")
                     .formatted(Formatting.GOLD, Formatting.BOLD)
                     .append(Text.literal("Update available! ").formatted(Formatting.YELLOW))
-                    .append(Text.literal(currentVersion + " → " + newVersion).formatted(Formatting.WHITE))
-                    .append(Text.literal(" [Click to view]").formatted(Formatting.AQUA, Formatting.UNDERLINE)
+                    .append(Text.literal(currentVersion + " → " + newVersion + " ").formatted(Formatting.WHITE))
+                    .append(Text.literal("[Click to view]").formatted(Formatting.AQUA, Formatting.UNDERLINE)
                             .styled(style -> style.withClickEvent(clickEvent)));
 
             player.sendMessage(updateMessage, false);
         } catch (IllegalArgumentException e) {
-            // Handle invalid URL gracefully
-            PackCore.LOGGER.error("Invalid Modrinth URL: " + modrinthUrl, e);
+            PackCore.LOGGER.error("Invalid Modrinth URL: {}", modrinthUrl, e);
         }
     }
 
