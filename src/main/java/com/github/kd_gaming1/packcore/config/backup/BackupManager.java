@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.config.backup;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.util.GsonUtils;
 import com.github.kd_gaming1.packcore.util.io.file.FileUtils;
 import com.github.kd_gaming1.packcore.util.io.zip.UnzipAsyncTask;
 import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
@@ -30,7 +31,7 @@ import java.util.stream.Stream;
  */
 public class BackupManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(BackupManager.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = GsonUtils.GSON;
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     private static final String BACKUPS_DIR = "packcore/backups";

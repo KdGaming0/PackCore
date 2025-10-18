@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.modpack;
 
+import com.github.kd_gaming1.packcore.util.GsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
@@ -49,7 +50,7 @@ public class ModpackInfo {
 
     // File handling
     private static final String CONFIG_FILE_NAME = "modpack-info.json";
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson gson = GsonUtils.GSON;
 
     // File save location
     private static final Path runDir = FabricLoader.getInstance().getGameDir();
