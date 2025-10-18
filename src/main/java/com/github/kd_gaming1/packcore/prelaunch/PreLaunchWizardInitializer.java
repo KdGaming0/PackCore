@@ -1,9 +1,9 @@
 package com.github.kd_gaming1.packcore.prelaunch;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.util.AutoConfigApplicator;
-import com.github.kd_gaming1.packcore.util.ConfigApplicationManager;
-import com.github.kd_gaming1.packcore.util.PackCoreFileManager;
+import com.github.kd_gaming1.packcore.config.apply.ConfigAutoApplier;
+import com.github.kd_gaming1.packcore.config.apply.ConfigApplyService;
+import com.github.kd_gaming1.packcore.util.io.file.FileLayoutInitializer;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
@@ -29,10 +29,10 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
         Path runDir = FabricLoader.getInstance().getGameDir();
 
         // Always create necessary directories and files
-        PackCoreFileManager.initializeFileStructure();
+        FileLayoutInitializer.initializeFileStructure();
 
         // CHECK FOR PENDING CONFIG APPLICATION FIRST
-        boolean configApplied = ConfigApplicationManager.checkAndApplyPendingConfig(runDir);
+        boolean configApplied = ConfigApplyService.checkAndApplyPendingConfig(runDir);
         if (configApplied) {
             LOGGER.info("Applied pending config during pre-launch");
             PackCoreConfig.defaultConfigSuccessfullyApplied = true;
@@ -47,7 +47,7 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
             PackCoreConfig.write(MOD_ID);
         } else if (shouldApplyConfigAutomatically()) {
             LOGGER.info("First launch detected - applying config automatically...");
-            boolean success = AutoConfigApplicator.applyBestMatchingConfig(runDir);
+            boolean success = ConfigAutoApplier.applyBestMatchingConfig(runDir);
 
             if (success) {
                 LOGGER.info("Config applied successfully on first launch");

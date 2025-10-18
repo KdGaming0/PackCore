@@ -1,12 +1,12 @@
 package com.github.kd_gaming1.packcore;
 
-import com.github.kd_gaming1.packcore.commands.PackCoreCommand;
+import com.github.kd_gaming1.packcore.command.PackCoreCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.gui.help.introduction.IntroductionScreenPage;
-import com.github.kd_gaming1.packcore.gui.titlescreen.fancy.FancyMainMenuScreen;
-import com.github.kd_gaming1.packcore.util.config.BobbyConfigModifier;
-import com.github.kd_gaming1.packcore.util.modpack.ModpackInfo;
-import com.github.kd_gaming1.packcore.util.api.UpdateCacheManager;
+import com.github.kd_gaming1.packcore.ui.screen.wizard.pages.WelcomeWizardPage;
+import com.github.kd_gaming1.packcore.ui.screen.title.SBEStyledTitleScreen;
+import com.github.kd_gaming1.packcore.integration.bobby.BobbyConfigModifier;
+import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
+import com.github.kd_gaming1.packcore.util.update.modrinth.UpdateCache;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -23,7 +23,7 @@ public class PackCore implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static ModpackInfo modpackInfo;
-    private static UpdateCacheManager updateManager;
+    private static UpdateCache updateManager;
     private static final Path packcoreDir = FabricLoader.getInstance().getGameDir().resolve("packcore");
 
     @Override
@@ -32,7 +32,7 @@ public class PackCore implements ClientModInitializer {
 
         try {
             modpackInfo = ModpackInfo.loadFromFile(packcoreDir);
-            updateManager = new UpdateCacheManager();
+            updateManager = new UpdateCache();
 
             LOGGER.info("Loaded modpack info for: {}", modpackInfo.getName());
         } catch (Exception e) {
@@ -48,8 +48,8 @@ public class PackCore implements ClientModInitializer {
             ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
                 if (screen instanceof TitleScreen) {
                     client.execute(() -> client.setScreen(PackCoreConfig.haveShownWelcomeWizard
-                            ? new FancyMainMenuScreen()
-                            : new IntroductionScreenPage())
+                            ? new SBEStyledTitleScreen()
+                            : new WelcomeWizardPage())
                     );
                 }
             });
@@ -66,7 +66,7 @@ public class PackCore implements ClientModInitializer {
         return modpackInfo;
     }
 
-    public static UpdateCacheManager getUpdateManager() {
+    public static UpdateCache getUpdateManager() {
         return updateManager;
     }
 }
