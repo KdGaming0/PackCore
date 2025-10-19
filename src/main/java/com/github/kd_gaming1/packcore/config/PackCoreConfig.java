@@ -9,6 +9,7 @@ public class PackCoreConfig extends MidnightConfig {
     public static final String CUSTOMIZATION = "customization";
     public static final String ADVANCED = "advanced";
     public static final String BACKUP = "backup";
+    public static final String SCAMSHIELD  = "scamshield";
 
     // UI CATEGORY
     @Entry(category = UI, name = "packcore.midnightconfig.enable_custom_menu")
@@ -52,4 +53,41 @@ public class PackCoreConfig extends MidnightConfig {
     @Hidden
     @Entry(category = ADVANCED, name = "packcore.midnightconfig.setup_wizard_completed")
     public static boolean defaultConfigSuccessfullyApplied = false;
+
+    // SCAMSHIELD CATEGORY
+    @Entry(category = SCAMSHIELD , name = "packcore.midnightconfig.enable_scamshield")
+    public static boolean enableScamShield = true;
+
+    @Entry(category = SCAMSHIELD , name = "packcore.midnightconfig.enable_scamshield_debugging")
+    public static boolean enableScamShieldDebugging = false;
+
+    @Comment(category = SCAMSHIELD)
+    public static Comment scamshieldSpacer1;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_trigger_threshold", min = 50, max = 500)
+    public static int scamShieldTriggerThreshold = 100;
+
+    @Comment(category = SCAMSHIELD)
+    public static Comment scamshieldSpacer2;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_show_notifications")
+    public static boolean scamShieldShowNotifications = true;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_notification_cooldown", min = 0, max = 60)
+    public static int scamShieldNotificationCooldownSeconds = 5;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_max_recent_detections", min = 5, max = 50)
+    public static int scamShieldMaxRecentDetections = 10;
+
+    @Comment(category = SCAMSHIELD)
+    public static Comment scamshieldSpacer3;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_max_history_size", min = 10, max = 1000)
+    public static int scamShieldMaxHistorySize = 100;
+
+    @Comment(category = SCAMSHIELD)
+    public static Comment scamshieldSpacer4;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_regex_timeout_ms", min = 50, max = 500)
+    public static int scamShieldRegexTimeoutMs = 100;
 }

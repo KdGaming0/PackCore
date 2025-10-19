@@ -1,0 +1,88 @@
+{
+  "patterns": [
+    {
+      "id": "discord_verify_urgent",
+      "regex": "(verify|link|connect).*(discord|account).*(urgent|now|asap|immediately)",
+      "weight": 80,
+      "category": "DISCORD_VERIFY",
+      "enabled": true
+    },
+    {
+      "id": "discord_verify_generic",
+      "regex": "(verify|link).*(discord|account)",
+      "weight": 50,
+      "category": "DISCORD_VERIFY",
+      "enabled": true
+    },
+    {
+      "id": "verification_required",
+      "regex": "(verification|verifying).*(required|needed|mandatory)",
+      "weight": 60,
+      "category": "DISCORD_VERIFY",
+      "enabled": true
+    },
+    {
+      "id": "suspicious_link",
+      "regex": "(http|https|www\\.|bit\\.ly|discord\\.gg|discord\\.com)",
+      "weight": 40,
+      "category": "SUSPICIOUS_LINK",
+      "enabled": true
+    },
+    {
+      "id": "disguised_link",
+      "regex": "(discоrd|discοrd|dis cord)",
+      "weight": 70,
+      "category": "SUSPICIOUS_LINK",
+      "enabled": true
+    },
+    {
+      "id": "account_banned",
+      "regex": "(account|you).*(banned|suspended|locked|terminated)",
+      "weight": 65,
+      "category": "FAKE_THREAT",
+      "enabled": true
+    },
+    {
+      "id": "action_required",
+      "regex": "(action|steps?).*(required|needed|must take)",
+      "weight": 45,
+      "category": "FAKE_THREAT",
+      "enabled": true
+    },
+    {
+      "id": "free_items",
+      "regex": "(free|giveaway).*(coins?|items?|rank|vip|mvp)",
+      "weight": 35,
+      "category": "FAKE_REWARD",
+      "enabled": true
+    },
+    {
+      "id": "admin_impersonation",
+      "regex": "(admin|staff|moderator|hypixel).*(giving|offering|selected)",
+      "weight": 75,
+      "category": "IMPERSONATION",
+      "enabled": true
+    },
+    {
+      "id": "microsoft_login",
+      "regex": "(microsoft|mojang).*(login|sign in|authenticate)",
+      "weight": 70,
+      "category": "ACCOUNT_THEFT",
+      "enabled": true
+    },
+    {
+      "id": "time_pressure",
+      "regex": "(limited time|expires?|hurry|quick|fast|within \\d+ (hours?|minutes?|days?))",
+      "weight": 30,
+      "category": "URGENCY",
+      "enabled": true
+    },
+    {
+      "id": "personal_info_request",
+      "regex": "(send|give|provide|enter).*(password|email|code|token)",
+      "weight": 90,
+      "category": "PHISHING",
+      "enabled": true
+    }
+  ]
+}
