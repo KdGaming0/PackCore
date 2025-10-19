@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.config.export;
 
+import com.github.kd_gaming1.packcore.util.GsonUtils;
 import com.github.kd_gaming1.packcore.util.io.file.FileUtils;
 import com.github.kd_gaming1.packcore.ui.component.tree.FileTreeNode;
 import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
  */
 public class ConfigExportService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigExportService.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = GsonUtils.GSON;
 
     private static final Set<String> HIDDEN_FOLDERS = Set.of(
             "packcore", "logs", "crash-reports", "screenshots",

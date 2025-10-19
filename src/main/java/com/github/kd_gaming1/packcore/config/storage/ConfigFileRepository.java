@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.config.storage;
 
 import com.github.kd_gaming1.packcore.config.model.ConfigMetadata;
+import com.github.kd_gaming1.packcore.util.GsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import net.fabricmc.loader.api.FabricLoader;
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
  */
 public class ConfigFileRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileRepository.class);
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = GsonUtils.GSON;
 
     // Standard paths and filenames
     /**

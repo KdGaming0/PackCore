@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.config.apply;
 import com.github.kd_gaming1.packcore.config.backup.BackupManager;
 import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
 import com.github.kd_gaming1.packcore.config.model.ConfigMetadata;
+import com.github.kd_gaming1.packcore.util.GsonUtils;
 import com.github.kd_gaming1.packcore.util.io.zip.UnzipService;
 import com.google.gson.Gson;
 import net.fabricmc.loader.api.FabricLoader;
@@ -21,7 +22,7 @@ import java.nio.file.*;
 public class ConfigApplyService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigApplyService.class);
     private static final String PENDING_CONFIG_FILE = "packcore_pending_config.json";
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = GsonUtils.GSON;
 
     /**
      * Schedule a config to be applied on next game start
