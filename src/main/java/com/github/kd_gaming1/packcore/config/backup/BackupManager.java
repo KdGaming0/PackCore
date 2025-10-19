@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Enhanced backup manager with async operations and progress reporting
@@ -394,8 +396,8 @@ public class BackupManager {
      * Read backup metadata from ZIP file
      */
     private static BackupInfo readBackupMetadata(Path backupZip) {
-        try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(backupZip.toFile())) {
-            java.util.zip.ZipEntry metadataEntry = zip.getEntry(METADATA_FILE);
+        try (ZipFile zip = new ZipFile(backupZip.toFile())) {
+            ZipEntry metadataEntry = zip.getEntry(METADATA_FILE);
             if (metadataEntry == null) {
                 return createLegacyBackupInfo(backupZip);
             }
