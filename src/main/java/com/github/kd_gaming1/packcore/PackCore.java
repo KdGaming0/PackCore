@@ -2,10 +2,10 @@ package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.command.PackCoreCommand;
 import com.github.kd_gaming1.packcore.command.ScamShieldCommands;
-import com.github.kd_gaming1.packcore.command.ScamShieldTestCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
+import com.github.kd_gaming1.packcore.scamshield.tracker.UserSuspicionTracker;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.pages.WelcomeWizardPage;
 import com.github.kd_gaming1.packcore.ui.screen.title.SBEStyledTitleScreen;
 import com.github.kd_gaming1.packcore.integration.bobby.BobbyConfigModifier;
@@ -42,10 +42,10 @@ public class PackCore implements ClientModInitializer {
 
         HypixelEventUtil.init();
 
-        // Initialize ScamDetector (loads patterns and starts file watching)
+        // Initialize ScamDetector
         scamDetector = ScamDetector.getInstance();
-        LOGGER.info("ScamShield initialized with {} patterns",
-                scamDetector.getPatterns().size());
+        LOGGER.info("[ScamShield] ScamShield initialized with {} scam types",
+                scamDetector.getScamTypes().size());
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             HypixelEventUtil.reset();
@@ -65,6 +65,7 @@ public class PackCore implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             scamDetector.shutdown();
             ScamShieldChatHandler.getInstance().shutdown();
+            UserSuspicionTracker.getInstance().shutdown();
         });
 
         try {
@@ -81,7 +82,6 @@ public class PackCore implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             PackCoreCommand.registerCommands(dispatcher);
             ScamShieldCommands.register(dispatcher);
-            ScamShieldTestCommand.register(dispatcher);
         });
 
         if (PackCoreConfig.enableCustomMenu) {

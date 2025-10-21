@@ -1,0 +1,107 @@
+{
+  "id": "discord_verify_scam",
+  "name": "Discord Verification Scam",
+  "description": "Detects scams that try to get victims to 'verify' via Discord, often leading to account theft",
+  "base_score": 35,
+  "pattern_groups": {
+    "discord_mention": {
+      "description": "References to Discord",
+      "score": 20,
+      "phrases": [
+        "discord",
+        "add me on discord",
+        "add me friend on discord",
+        "join my discord",
+        "discord server",
+        "dm me on discord",
+        "my discord is"
+      ]
+    },
+    "verification_request": {
+      "description": "Asking for verification",
+      "score": 30,
+      "phrases": [
+        "verify",
+        "verification",
+        "verify your account",
+        "need to verify",
+        "verification required",
+        "must verify",
+        "verify your email",
+        "verify account",
+        "account verification"
+      ]
+    },
+    "credential_fishing": {
+      "description": "Asking for sensitive information",
+      "score": 40,
+      "phrases": [
+        "send code",
+        "enter code",
+        "email code",
+        "verification code",
+        "minecraft email",
+        "mojang account",
+        "microsoft account",
+        "your password",
+        "enter email",
+        "enter password",
+        "inbox",
+        "check your email"
+      ]
+    },
+    "urgency_verification": {
+      "description": "Creating urgency around verification",
+      "score": 15,
+      "phrases": [
+        "verify now",
+        "quick verify",
+        "must verify first",
+        "required to verify",
+        "verify immediately",
+        "verification needed"
+      ]
+    },
+    "technical_excuse": {
+      "description": "Fake technical issues to justify moving off-platform",
+      "score": 25,
+      "phrases": [
+        "my dm doesn't work",
+        "dm not working",
+        "can't dm",
+        "join the server",
+        "my account is limited",
+        "password rules changed",
+        "security check required",
+        "system maintenance"
+      ]
+    }
+  },
+  "combination_rules": [
+    {
+      "description": "Discord + Verification = classic scam pattern",
+      "requires": ["discord_mention", "verification_request"],
+      "bonus": 50
+    },
+    {
+      "description": "Verification + Credentials = account theft attempt",
+      "requires": ["verification_request", "credential_fishing"],
+      "bonus": 60
+    },
+    {
+      "description": "Discord + Credentials = direct phishing",
+      "requires": ["discord_mention", "credential_fishing"],
+      "bonus": 55
+    },
+    {
+      "description": "Full phishing sequence",
+      "requires": ["discord_mention", "verification_request", "credential_fishing"],
+      "bonus": 80
+    },
+    {
+      "description": "Technical excuse with verification",
+      "requires": ["technical_excuse", "verification_request"],
+      "bonus": 40
+    }
+  ]
+}

@@ -1,0 +1,488 @@
+{
+  "version": "3.0.0",
+  "description": "Enhanced with real Hypixel scam patterns from documentation",
+  "tactics": {
+    "urgency": {
+      "description": "Creates time pressure to force quick decisions",
+      "baseScore": 15,
+      "combinationBonus": 10,
+      "patterns": [
+        {
+          "description": "Time pressure words",
+          "weight": 1.0,
+          "phrases": [
+            "quick",
+            "quickly",
+            "hurry",
+            "fast",
+            "now",
+            "right now",
+            "asap",
+            "immediately",
+            "urgent",
+            "before it's too late",
+            "limited time",
+            "expires",
+            "ending soon",
+            "must win",
+            "must do"
+          ]
+        },
+        {
+          "description": "All caps urgency (from PDF)",
+          "weight": 1.3,
+          "phrases": [
+            "omg",
+            "omg help",
+            "help!!",
+            "urgent!",
+            "now!!"
+          ]
+        }
+      ]
+    },
+    "scarcity": {
+      "description": "Creates false scarcity to increase perceived value",
+      "baseScore": 15,
+      "combinationBonus": 10,
+      "patterns": [
+        {
+          "description": "Limited availability",
+          "weight": 1.0,
+          "phrases": [
+            "limited",
+            "only you",
+            "exclusive",
+            "rare opportunity",
+            "last chance",
+            "one time offer",
+            "won't last",
+            "running out",
+            "spots filling up",
+            "only a few left",
+            "first come first serve"
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "description": "Claims authority or official status to gain trust",
+      "baseScore": 25,
+      "combinationBonus": 15,
+      "patterns": [
+        {
+          "description": "Staff/Admin claims",
+          "weight": 1.5,
+          "phrases": [
+            "i'm staff",
+            "i'm admin",
+            "i'm mod",
+            "i'm a moderator",
+            "official",
+            "hypixel team",
+            "hypixel staff",
+            "authorized",
+            "verified account",
+            "staff giveaway",
+            "official giveaway"
+          ]
+        },
+        {
+          "description": "YouTuber impersonation (from PDF)",
+          "weight": 1.4,
+          "phrases": [
+            "i'm a youtuber",
+            "famous youtuber",
+            "youtuber giveaway",
+            "check my channel"
+          ]
+        }
+      ]
+    },
+    "trust_building": {
+      "description": "Attempts to build false trust and rapport",
+      "baseScore": 12,
+      "combinationBonus": 8,
+      "patterns": [
+        {
+          "description": "Trust appeals",
+          "weight": 1.0,
+          "phrases": [
+            "trust me",
+            "i promise",
+            "i swear",
+            "i'll help you",
+            "you can trust",
+            "i'm legit",
+            "not a scam",
+            "100% real",
+            "guaranteed",
+            "legit giveaway",
+            "real giveaway"
+          ]
+        },
+        {
+          "description": "Casual friendly language (from PDF)",
+          "weight": 0.7,
+          "phrases": [
+            "hey",
+            "yo",
+            "pls",
+            "plz",
+            "lol"
+          ]
+        }
+      ]
+    },
+    "credential_fishing": {
+      "description": "Attempts to obtain sensitive account information",
+      "baseScore": 40,
+      "combinationBonus": 20,
+      "patterns": [
+        {
+          "description": "Direct credential requests",
+          "weight": 2.0,
+          "phrases": [
+            "send code",
+            "enter code",
+            "your code",
+            "verification code",
+            "email code",
+            "password",
+            "your password",
+            "minecraft email",
+            "mojang email",
+            "microsoft account",
+            "account email",
+            "paste the code",
+            "enter your email",
+            "sign in with microsoft"
+          ]
+        },
+        {
+          "description": "Indirect credential fishing",
+          "weight": 1.5,
+          "phrases": [
+            "check your email",
+            "look in inbox",
+            "open email",
+            "link your account",
+            "connect account",
+            "sign in to",
+            "log in to",
+            "verify your email",
+            "verify your account"
+          ]
+        }
+      ]
+    },
+    "reciprocity": {
+      "description": "Offers something to create obligation",
+      "baseScore": 10,
+      "combinationBonus": 8,
+      "patterns": [
+        {
+          "description": "Gift/Favor language",
+          "weight": 1.0,
+          "phrases": [
+            "i'll give you",
+            "i'll pay you",
+            "reward you",
+            "in return",
+            "you'll get",
+            "i'll send you",
+            "free for you",
+            "pay you 10%",
+            "give you coins"
+          ]
+        }
+      ]
+    },
+    "social_proof": {
+      "description": "Claims others are doing it to pressure conformity",
+      "baseScore": 10,
+      "combinationBonus": 5,
+      "patterns": [
+        {
+          "description": "Popularity claims",
+          "weight": 1.0,
+          "phrases": [
+            "everyone is doing",
+            "tons of people",
+            "so many people",
+            "all my friends",
+            "everyone got",
+            "others already have",
+            "join everyone",
+            "everyone knows"
+          ]
+        }
+      ]
+    },
+    "wealth_inquiry": {
+      "description": "Asks about victim's wealth to gauge scam potential",
+      "baseScore": 25,
+      "combinationBonus": 15,
+      "patterns": [
+        {
+          "description": "Direct wealth questions (from PDF)",
+          "weight": 1.3,
+          "phrases": [
+            "how many coins do you have",
+            "how many coins",
+            "how much money",
+            "what's your net worth",
+            "how rich are you",
+            "show me your balance",
+            "what's in your purse",
+            "purse at",
+            "show me your purse"
+          ]
+        },
+        {
+          "description": "Item value inquiries",
+          "weight": 1.1,
+          "phrases": [
+            "show me your items",
+            "what's your most expensive",
+            "flex your items",
+            "show your inventory",
+            "what items do you have",
+            "show me your stack"
+          ]
+        }
+      ]
+    },
+    "fake_accident": {
+      "description": "Pretends to make mistakes to lure victims (from PDF)",
+      "baseScore": 30,
+      "combinationBonus": 15,
+      "patterns": [
+        {
+          "description": "Fake mistakes",
+          "weight": 1.5,
+          "phrases": [
+            "accidentally put",
+            "by mistake",
+            "by accident",
+            "wrong price",
+            "how do i get it back",
+            "help get back",
+            "listed wrong",
+            "wrong bin",
+            "put it for too cheap"
+          ]
+        },
+        {
+          "description": "Panic language",
+          "weight": 1.3,
+          "phrases": [
+            "omg help",
+            "help!!",
+            "someone help",
+            "need help quick"
+          ]
+        }
+      ]
+    },
+    "technical_excuse": {
+      "description": "Claims technical issues to justify suspicious requests",
+      "baseScore": 20,
+      "combinationBonus": 12,
+      "patterns": [
+        {
+          "description": "Technical glitches (from PDF)",
+          "weight": 1.2,
+          "phrases": [
+            "my dm doesn't work",
+            "dm not working",
+            "can't dm",
+            "my account is limited",
+            "password rules changed",
+            "security check required",
+            "system maintenance",
+            "join the server",
+            "can't message you",
+            "chat broken"
+          ]
+        },
+        {
+          "description": "Verification excuses",
+          "weight": 1.1,
+          "phrases": [
+            "we need to verify",
+            "must verify",
+            "verify first",
+            "they changed",
+            "new rules",
+            "updated security"
+          ]
+        }
+      ]
+    },
+    "quitting_claim": {
+      "description": "Claims to be quitting the game (island theft tactic from PDF)",
+      "baseScore": 20,
+      "combinationBonus": 15,
+      "patterns": [
+        {
+          "description": "Quitting announcements",
+          "weight": 1.3,
+          "phrases": [
+            "i'm quitting",
+            "im quitting",
+            "quitting skyblock",
+            "leaving skyblock",
+            "quitting hypixel",
+            "done with skyblock",
+            "leaving hypixel",
+            "quitting sb",
+            "quitting the game",
+            "giving away everything",
+            "don't need anymore"
+          ]
+        },
+        {
+          "description": "Giveaway because quitting",
+          "weight": 1.2,
+          "phrases": [
+            "quitting giveaway",
+            "leaving so",
+            "since i'm quitting",
+            "all my goodies"
+          ]
+        }
+      ]
+    },
+    "tournament_bait": {
+      "description": "Fake tournaments or competitions (from PDF)",
+      "baseScore": 25,
+      "combinationBonus": 10,
+      "patterns": [
+        {
+          "description": "Tournament/competition language",
+          "weight": 1.2,
+          "phrases": [
+            "tournament",
+            "competition",
+            "duel me for",
+            "must win",
+            "whoever bids",
+            "highest bidder",
+            "win a",
+            "register for",
+            "sign up for tournament"
+          ]
+        }
+      ]
+    },
+    "crafting_help": {
+      "description": "Pretends to need or offer crafting help (from PDF)",
+      "baseScore": 15,
+      "combinationBonus": 10,
+      "patterns": [
+        {
+          "description": "Recipe/crafting requests",
+          "weight": 1.0,
+          "phrases": [
+            "don't have recipe",
+            "recipe unlocked",
+            "help me craft",
+            "can someone craft",
+            "give me materials",
+            "give me the mats",
+            "need help crafting",
+            "materials to craft",
+            "need coins for collat",
+            "collateral first"
+          ]
+        }
+      ]
+    },
+    "trade_manipulation": {
+      "description": "Manipulates trades with false justifications (from PDF)",
+      "baseScore": 20,
+      "combinationBonus": 12,
+      "patterns": [
+        {
+          "description": "Unbalanced trade justification",
+          "weight": 1.2,
+          "phrases": [
+            "offering more than",
+            "worth more than",
+            "i'm overpaying",
+            "better deal",
+            "fair trade",
+            "more than what your",
+            "my item is worth more"
+          ]
+        },
+        {
+          "description": "Flex/show requests",
+          "weight": 1.1,
+          "phrases": [
+            "flex your",
+            "show me your",
+            "flex me your",
+            "show your most expensive",
+            "put your item",
+            "place your item"
+          ]
+        }
+      ]
+    },
+    "discord_transition": {
+      "description": "Moves conversation to Discord (from PDF)",
+      "baseScore": 20,
+      "combinationBonus": 15,
+      "patterns": [
+        {
+          "description": "Discord requests",
+          "weight": 1.3,
+          "phrases": [
+            "add me friend on discord",
+            "add me on discord",
+            "my discord is",
+            "discord.gg",
+            "join my discord",
+            "go to discord",
+            "dm me on discord",
+            "join the server",
+            "voice chat",
+            "vc"
+          ]
+        },
+        {
+          "description": "Can't do it in-game excuse",
+          "weight": 1.2,
+          "phrases": [
+            "can't do it here",
+            "need discord for",
+            "works better on discord",
+            "discord only",
+            "join for vc"
+          ]
+        }
+      ]
+    },
+    "multiple_punctuation": {
+      "description": "Excessive punctuation to create urgency (from PDF pattern)",
+      "baseScore": 5,
+      "combinationBonus": 5,
+      "patterns": [
+        {
+          "description": "Multiple exclamation/question marks",
+          "weight": 0.8,
+          "phrases": [
+            "!!",
+            "!!!",
+            "!?",
+            "??",
+            "???",
+            "?!?"
+          ]
+        }
+      ]
+    }
+  }
+}

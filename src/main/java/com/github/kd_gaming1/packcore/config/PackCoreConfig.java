@@ -90,4 +90,19 @@ public class PackCoreConfig extends MidnightConfig {
 
     @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_regex_timeout_ms", min = 50, max = 500)
     public static int scamShieldRegexTimeoutMs = 100;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_cache_size", min = 50, max = 500)
+    public static int scamShieldCacheSize = 100;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_cache_ttl_seconds", min = 10, max = 300)
+    public static int scamShieldCacheTTLSeconds = 30;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_conversation_timeout_minutes", min = 5, max = 60)
+    public static int scamShieldConversationTimeoutMinutes = 15;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_max_messages_per_user", min = 10, max = 100)
+    public static int scamShieldMaxMessagesPerUser = 30;
+
+    @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_max_progression_bonus", min = 50, max = 200)
+    public static int scamShieldMaxProgressionBonus = 150;
 }

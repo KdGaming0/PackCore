@@ -1,168 +1,320 @@
 package com.github.kd_gaming1.packcore.command;
 
 import com.github.kd_gaming1.packcore.PackCore;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldWhitelist;
-import com.github.kd_gaming1.packcore.scamshield.detector.PatternStats;
-import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
-import com.github.kd_gaming1.packcore.scamshield.detector.ScamPattern;
+import com.github.kd_gaming1.packcore.scamshield.debug.ScamShieldDebugger;
+import com.github.kd_gaming1.packcore.scamshield.detector.DetectionResult;
+import com.github.kd_gaming1.packcore.scamshield.storage.DetectionStats;
+import com.github.kd_gaming1.packcore.scamshield.storage.ScamShieldDataManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
 
-import java.util.Map;
-
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 /**
- * Commands for managing ScamShield.
+ * Commands for ScamShield system.
+ *
+ * Available commands:
+ * /scamshield toggle - Enable/disable ScamShield
+ * /scamshield reload - Reload pattern files
+ * /scamshield stats - View detection statistics
+ * /scamshield clear - Clear detection history
+ * /scamshield test <message> - Test a single message
+ * /scamshield debug - Run full debug test suite
+ * /scamshield whitelist add <player> - Add player to whitelist
+ * /scamshield whitelist remove <player> - Remove player from whitelist
+ * /scamshield whitelist list - List whitelisted players
  */
 public class ScamShieldCommands {
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
-        dispatcher.register(ClientCommandManager.literal("scamshield")
-                .then(ClientCommandManager.literal("reload")
-                        .executes(ScamShieldCommands::reloadPatterns))
-
-                .then(ClientCommandManager.literal("stats")
-                        .executes(ScamShieldCommands::showStats))
-                        .then(ClientCommandManager.literal("reset")
-                                .executes(ScamShieldCommands::resetStats))
-
-                .then(ClientCommandManager.literal("whitelist")
-                        .then(ClientCommandManager.literal("add")
-                                .then(argument("player", StringArgumentType.word())
-                                        .executes(ScamShieldCommands::addWhitelist)))
-                        .then(ClientCommandManager.literal("remove")
-                                .then(argument("player", StringArgumentType.word())
-                                        .executes(ScamShieldCommands::removeWhitelist)))
-                        .then(ClientCommandManager.literal("list")
-                                .executes(ScamShieldCommands::listWhitelist))
-                        .then(ClientCommandManager.literal("clear")
-                                .executes(ScamShieldCommands::clearWhitelist)))
+        dispatcher.register(
+                literal("scamshield")
+                        .then(literal("toggle")
+                                .executes(ScamShieldCommands::toggleScamShield)
+                        )
+                        .then(literal("reload")
+                                .executes(ScamShieldCommands::reloadPatterns)
+                        )
+                        .then(literal("stats")
+                                .executes(ScamShieldCommands::showStats)
+                        )
+                        .then(literal("clear")
+                                .executes(ScamShieldCommands::clearHistory)
+                        )
+                        .then(literal("test")
+                                .then(argument("message", StringArgumentType.greedyString())
+                                        .executes(ScamShieldCommands::testMessage)
+                                )
+                        )
+                        .then(literal("debug")
+                                .executes(ScamShieldCommands::runDebugTests)
+                        )
+                        .then(literal("whitelist")
+                                .then(literal("add")
+                                        .then(argument("player", StringArgumentType.word())
+                                                .executes(ScamShieldCommands::whitelistAdd)
+                                        )
+                                )
+                                .then(literal("remove")
+                                        .then(argument("player", StringArgumentType.word())
+                                                .executes(ScamShieldCommands::whitelistRemove)
+                                        )
+                                )
+                                .then(literal("list")
+                                        .executes(ScamShieldCommands::whitelistList)
+                                )
+                                .then(literal("clear")
+                                        .executes(ScamShieldCommands::whitelistClear)
+                                )
+                        )
         );
     }
 
-    private static int reloadPatterns(CommandContext<FabricClientCommandSource> ctx) {
-        PackCore.getScamDetector().reloadPatterns();
-        ctx.getSource().sendFeedback(Text.literal("§a[ScamShield] Patterns reloaded successfully!"));
+    private static int toggleScamShield(CommandContext<FabricClientCommandSource> context) {
+        PackCoreConfig.enableScamShield = !PackCoreConfig.enableScamShield;
+        PackCoreConfig.write(PackCore.MOD_ID);
+
+        String status = PackCoreConfig.enableScamShield ? "§aenabled" : "§cdisabled";
+        context.getSource().sendFeedback(
+                Text.literal("§e[ScamShield] §7System " + status)
+        );
         return 1;
     }
 
-    private static int showStats(CommandContext<FabricClientCommandSource> ctx) {
-        Map<String, PatternStats> stats = PackCore.getScamDetector().getPatternStats();
+    private static int reloadPatterns(CommandContext<FabricClientCommandSource> context) {
+        context.getSource().sendFeedback(
+                Text.literal("§e[ScamShield] §7Reloading pattern files...")
+        );
 
-        ctx.getSource().sendFeedback(Text.literal("§e§l[ScamShield Statistics]"));
-        ctx.getSource().sendFeedback(Text.literal("§7Total patterns: §f" + stats.size()));
+        try {
+            PackCore.getScamDetector().reloadScamTypes();
+            context.getSource().sendFeedback(
+                    Text.literal("§a[ScamShield] ✓ Pattern files reloaded successfully!")
+            );
+            return 1;
+        } catch (Exception e) {
+            context.getSource().sendError(
+                    Text.literal("§c[ScamShield] Failed to reload patterns: " + e.getMessage())
+            );
+            return 0;
+        }
+    }
 
-        long totalMatches = stats.values().stream().mapToLong(PatternStats::getMatchCount).sum();
-        long totalTimeouts = stats.values().stream().mapToLong(PatternStats::getTimeoutCount).sum();
+    private static int showStats(CommandContext<FabricClientCommandSource> context) {
+        DetectionStats stats = ScamShieldDataManager.getInstance().getStats();
 
-        ctx.getSource().sendFeedback(Text.literal("§7Total matches: §f" + totalMatches));
-        ctx.getSource().sendFeedback(Text.literal("§7Total timeouts: §c" + totalTimeouts));
+        context.getSource().sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        context.getSource().sendFeedback(Text.literal("§e[ScamShield Statistics]"));
+        context.getSource().sendFeedback(Text.literal(""));
+        context.getSource().sendFeedback(
+                Text.literal("§7Total Detections: §f" + stats.getTotalDetections())
+        );
+        context.getSource().sendFeedback(
+                Text.literal("§7Unique Scammers: §f" + stats.getUniqueSenders())
+        );
 
-        // Show top 5 most-matched patterns with more detail
-        ctx.getSource().sendFeedback(Text.literal("\n§e§lTop 5 Most Matched Patterns:"));
-        stats.entrySet().stream()
-                .sorted((a, b) -> Long.compare(b.getValue().getMatchCount(), a.getValue().getMatchCount()))
-                .limit(5)
-                .forEach(entry -> {
-                    PatternStats stat = entry.getValue();
-                    String timeSinceFirst = stat.getFirstMatchTimestamp() > 0
-                            ? formatDuration(System.currentTimeMillis() - stat.getFirstMatchTimestamp())
-                            : "never";
+        if (!stats.getCategoryCounts().isEmpty()) {
+            context.getSource().sendFeedback(Text.literal(""));
+            context.getSource().sendFeedback(Text.literal("§7Detections by Category:"));
+            stats.getCategoryCounts().forEach((category, count) -> {
+                context.getSource().sendFeedback(
+                        Text.literal("§7  • §e" + category + "§7: §f" + count)
+                );
+            });
+        }
 
-                    ctx.getSource().sendFeedback(Text.literal(String.format(
-                            "§7  %s: §f%d matches §7(first: %s ago)",
-                            entry.getKey(), stat.getMatchCount(), timeSinceFirst
-                    )));
+        context.getSource().sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        return 1;
+    }
+
+    private static int clearHistory(CommandContext<FabricClientCommandSource> context) {
+        context.getSource().sendFeedback(
+                Text.literal("§e[ScamShield] §7Clearing detection history...")
+        );
+
+        ScamShieldDataManager.getInstance().clearHistoryAsync().thenRun(() -> {
+            context.getSource().sendFeedback(
+                    Text.literal("§a[ScamShield] ✓ History cleared!")
+            );
+        });
+
+        return 1;
+    }
+
+    private static int testMessage(CommandContext<FabricClientCommandSource> context) {
+        String message = StringArgumentType.getString(context, "message");
+        FabricClientCommandSource source = context.getSource();
+
+        source.sendFeedback(Text.literal("§e[ScamShield] §7Testing message..."));
+        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+
+        try {
+            DetectionResult result = PackCore.getScamDetector().analyze(message, "TestUser");
+
+            source.sendFeedback(Text.literal("§7Message: §f" + message));
+            source.sendFeedback(Text.literal(""));
+
+            if (result.isTriggered()) {
+                source.sendFeedback(Text.literal("§c§l⚠ SCAM DETECTED"));
+                source.sendFeedback(
+                        Text.literal("§7Category: §e" + result.getPrimaryCategory().getDisplayName())
+                );
+            } else {
+                source.sendFeedback(Text.literal("§a✓ No scam detected"));
+            }
+
+            source.sendFeedback(Text.literal(""));
+            source.sendFeedback(Text.literal("§7Score Breakdown:"));
+            source.sendFeedback(Text.literal("§7  Total: §f" + result.getTotalScore()));
+            source.sendFeedback(Text.literal("§7  ScamType: §f" + result.getScamTypeScore()));
+            source.sendFeedback(Text.literal("§7  Progression: §f" + result.getProgressionScore()));
+
+            if (!result.getScamTypeContributions().isEmpty()) {
+                source.sendFeedback(Text.literal(""));
+                source.sendFeedback(Text.literal("§7Detected Patterns:"));
+                result.getScamTypeContributions().forEach((type, score) -> {
+                    source.sendFeedback(Text.literal("§7  • §e" + type + "§7: §f" + score + " points"));
                 });
+            }
 
-        // Show patterns with timeouts (potential problems)
-        long patternsWithTimeouts = stats.values().stream()
-                .filter(s -> s.getTimeoutCount() > 0)
-                .count();
+            source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
 
-        if (patternsWithTimeouts > 0) {
-            ctx.getSource().sendFeedback(Text.literal("\n§c§lWarning: " + patternsWithTimeouts +
-                    " pattern(s) have timeouts!"));
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("§c[ScamShield] Error: " + e.getMessage()));
+            PackCore.LOGGER.error("[ScamShield] Test command error", e);
+            return 0;
         }
+    }
+
+    private static int runDebugTests(CommandContext<FabricClientCommandSource> context) {
+        FabricClientCommandSource source = context.getSource();
+
+        source.sendFeedback(Text.literal("§e[ScamShield] §7Running debug test suite..."));
+        source.sendFeedback(Text.literal("§7This will take about 30 seconds..."));
+        source.sendFeedback(Text.literal("§7Check console/logs for detailed output!"));
+        source.sendFeedback(Text.literal(""));
+
+        // Run tests asynchronously to avoid blocking
+        new Thread(() -> {
+            try {
+                ScamShieldDebugger debugger = new ScamShieldDebugger();
+                ScamShieldDebugger.DebugReport report = debugger.runTests();
+
+                // Send summary to chat
+                source.sendFeedback(Text.literal(""));
+                source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+                source.sendFeedback(Text.literal("§e[Debug Test Summary]"));
+                source.sendFeedback(Text.literal(""));
+                source.sendFeedback(
+                        Text.literal("§7Total Tests: §f" + report.getTotalTests())
+                );
+                source.sendFeedback(
+                        Text.literal("§a✓ Passed: §f" + report.getPassedTests())
+                );
+                source.sendFeedback(
+                        Text.literal("§c✗ Failed: §f" + report.getFailedTests())
+                );
+                source.sendFeedback(
+                        Text.literal("§7Pass Rate: §f" + report.getPassRate() + "%")
+                );
+
+                if (report.getPassRate() >= 90) {
+                    source.sendFeedback(Text.literal(""));
+                    source.sendFeedback(Text.literal("§a§l✓ EXCELLENT PERFORMANCE!"));
+                } else if (report.getPassRate() >= 75) {
+                    source.sendFeedback(Text.literal(""));
+                    source.sendFeedback(Text.literal("§e⚠ GOOD - Some improvements needed"));
+                } else {
+                    source.sendFeedback(Text.literal(""));
+                    source.sendFeedback(Text.literal("§c✗ NEEDS IMPROVEMENT"));
+                    source.sendFeedback(Text.literal("§7Check console for failed tests"));
+                }
+
+                source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+
+            } catch (Exception e) {
+                source.sendError(Text.literal("§c[ScamShield] Debug test failed: " + e.getMessage()));
+                PackCore.LOGGER.error("[ScamShield] Debug test error", e);
+            }
+        }, "ScamShield-Debug").start();
 
         return 1;
     }
 
-    private static int resetStats(CommandContext<FabricClientCommandSource> ctx) {
-        ScamDetector detector = PackCore.getScamDetector();
+    private static int whitelistAdd(CommandContext<FabricClientCommandSource> context) {
+        String player = StringArgumentType.getString(context, "player");
+        FabricClientCommandSource source = context.getSource();
 
-        // Reset all pattern statistics
-        for (ScamPattern pattern : detector.getPatterns()) {
-            pattern.getStats().reset();
-        }
-
-        // Save the reset stats
-        detector.saveStats();
-
-        ctx.getSource().sendFeedback(Text.literal("§a[ScamShield] All statistics have been reset"));
-        return 1;
-    }
-
-    private static int addWhitelist(CommandContext<FabricClientCommandSource> ctx) {
-        String player = StringArgumentType.getString(ctx, "player");
         boolean added = ScamShieldWhitelist.getInstance().add(player);
 
         if (added) {
-            ctx.getSource().sendFeedback(Text.literal("§a[ScamShield] Added §f" + player + "§a to whitelist"));
+            source.sendFeedback(
+                    Text.literal("§a[ScamShield] ✓ Added §f" + player + "§a to whitelist")
+            );
+            return 1;
         } else {
-            ctx.getSource().sendFeedback(Text.literal("§c[ScamShield] Player already whitelisted"));
+            source.sendError(
+                    Text.literal("§c[ScamShield] Player already whitelisted")
+            );
+            return 0;
         }
-
-        return 1;
     }
 
-    private static int removeWhitelist(CommandContext<FabricClientCommandSource> ctx) {
-        String player = StringArgumentType.getString(ctx, "player");
+    private static int whitelistRemove(CommandContext<FabricClientCommandSource> context) {
+        String player = StringArgumentType.getString(context, "player");
+        FabricClientCommandSource source = context.getSource();
+
         boolean removed = ScamShieldWhitelist.getInstance().remove(player);
 
         if (removed) {
-            ctx.getSource().sendFeedback(Text.literal("§a[ScamShield] Removed §f" + player + "§a from whitelist"));
+            source.sendFeedback(
+                    Text.literal("§a[ScamShield] ✓ Removed §f" + player + "§a from whitelist")
+            );
+            return 1;
         } else {
-            ctx.getSource().sendFeedback(Text.literal("§c[ScamShield] Player not found in whitelist"));
+            source.sendError(
+                    Text.literal("§c[ScamShield] Player not in whitelist")
+            );
+            return 0;
+        }
+    }
+
+    private static int whitelistList(CommandContext<FabricClientCommandSource> context) {
+        FabricClientCommandSource source = context.getSource();
+        var whitelist = ScamShieldWhitelist.getInstance().getWhitelistedPlayers();
+
+        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        source.sendFeedback(Text.literal("§e[ScamShield Whitelist]"));
+        source.sendFeedback(Text.literal(""));
+
+        if (whitelist.isEmpty()) {
+            source.sendFeedback(Text.literal("§7No whitelisted players"));
+        } else {
+            source.sendFeedback(
+                    Text.literal("§7Whitelisted Players: §f" + whitelist.size())
+            );
+            source.sendFeedback(Text.literal(""));
+            whitelist.forEach(player -> {
+                source.sendFeedback(Text.literal("§7  • §f" + player));
+            });
         }
 
+        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
         return 1;
     }
 
-    private static int listWhitelist(CommandContext<FabricClientCommandSource> ctx) {
-        var players = ScamShieldWhitelist.getInstance().getWhitelistedPlayers();
-
-        if (players.isEmpty()) {
-            ctx.getSource().sendFeedback(Text.literal("§e[ScamShield] Whitelist is empty"));
-        } else {
-            ctx.getSource().sendFeedback(Text.literal("§e§l[ScamShield Whitelist] §7(" + players.size() + " players)"));
-            players.forEach(player ->
-                    ctx.getSource().sendFeedback(Text.literal("§7  - §f" + player)));
-        }
-
-        return 1;
-    }
-
-    private static int clearWhitelist(CommandContext<FabricClientCommandSource> ctx) {
+    private static int whitelistClear(CommandContext<FabricClientCommandSource> context) {
         ScamShieldWhitelist.getInstance().clear();
-        ctx.getSource().sendFeedback(Text.literal("§a[ScamShield] Whitelist cleared"));
+        context.getSource().sendFeedback(
+                Text.literal("§a[ScamShield] ✓ Whitelist cleared")
+        );
         return 1;
-    }
-
-    private static String formatDuration(long millis) {
-        long seconds = millis / 1000;
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        long days = hours / 24;
-
-        if (days > 0) return days + "d";
-        if (hours > 0) return hours + "h";
-        if (minutes > 0) return minutes + "m";
-        return seconds + "s";
     }
 }

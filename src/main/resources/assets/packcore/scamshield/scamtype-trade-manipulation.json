@@ -1,0 +1,191 @@
+{
+  "id": "trade_manipulation_scam",
+  "name": "Trade Manipulation & Flex Scam",
+  "description": "Detects scams involving trade windows, flexing items, unbalanced trades, and auction manipulation",
+  "base_score": 30,
+  "pattern_groups": {
+    "flex_bait": {
+      "description": "Asking victim to show/flex valuable items",
+      "score": 25,
+      "phrases": [
+        "flex your",
+        "show me your",
+        "flex me your",
+        "flex your most expensive",
+        "show your most expensive",
+        "show me your items",
+        "flex your item",
+        "let me see your",
+        "put your item",
+        "place your item",
+        "show your inventory"
+      ]
+    },
+    "percentage_payment": {
+      "description": "Offering small percentage payment to see items",
+      "score": 30,
+      "phrases": [
+        "pay you 10%",
+        "pay 10% of",
+        "give you 10%",
+        "i'll pay you",
+        "reward you",
+        "pay you just to see",
+        "give coins to see",
+        "pay to look at",
+        "coins just to flex"
+      ]
+    },
+    "bid_bait": {
+      "description": "Asking for bids with promises",
+      "score": 35,
+      "phrases": [
+        "whoever bids",
+        "bid the highest",
+        "highest bidder",
+        "bid on my",
+        "auction my",
+        "bid to win",
+        "outbid for",
+        "top bidder gets"
+      ]
+    },
+    "fake_accident": {
+      "description": "Pretending to make a mistake on auction house",
+      "score": 35,
+      "phrases": [
+        "omg help",
+        "accidentally put",
+        "wrong price",
+        "by mistake",
+        "by accident",
+        "how do i get it back",
+        "help get back",
+        "put it for too cheap",
+        "listed wrong",
+        "wrong bin",
+        "wrong auction"
+      ]
+    },
+    "crafting_help": {
+      "description": "Asking for crafting help with materials",
+      "score": 20,
+      "phrases": [
+        "help me craft",
+        "can someone craft",
+        "don't have recipe",
+        "recipe unlocked",
+        "give me materials",
+        "give me the mats",
+        "need help crafting",
+        "can you craft",
+        "help on crafting"
+      ]
+    },
+    "trade_window": {
+      "description": "Directing to trade window",
+      "score": 15,
+      "phrases": [
+        "/trade me",
+        "trade me",
+        "open trade",
+        "trade window",
+        "put in trade",
+        "place in trade"
+      ]
+    },
+    "unbalanced_justification": {
+      "description": "Justifying unfair trades",
+      "score": 25,
+      "phrases": [
+        "offering more than",
+        "worth more than",
+        "better deal",
+        "i'm overpaying",
+        "more than what your",
+        "better than yours",
+        "my item is worth more",
+        "fair trade trust me"
+      ]
+    },
+    "ghost_items": {
+      "description": "Mentions items that might be fake/ghost",
+      "score": 20,
+      "phrases": [
+        "enchanted diamond blocks",
+        "stack of ench",
+        "stacked items",
+        "give me stack"
+      ]
+    },
+    "collateral_trick": {
+      "description": "Asking for collateral in crafting scams",
+      "score": 20,
+      "phrases": [
+        "need coins for collat",
+        "collateral first",
+        "give collat",
+        "coins for collateral",
+        "need collateral"
+      ]
+    },
+    "specific_valuables": {
+      "description": "Mentions specific high-value items",
+      "score": 15,
+      "phrases": [
+        "aspect of the dragons",
+        "superior boots",
+        "shadow assassin armor",
+        "old dragon boots",
+        "necron armor",
+        "juju shortbow",
+        "sea creature artifact",
+        "flower minion",
+        "hyperion",
+        "term"
+      ]
+    }
+  },
+  "combination_rules": [
+    {
+      "description": "Flex + Payment = classic flex scam",
+      "requires": ["flex_bait", "percentage_payment"],
+      "bonus": 60
+    },
+    {
+      "description": "Bid + Specific item = auction scam",
+      "requires": ["bid_bait", "specific_valuables"],
+      "bonus": 55
+    },
+    {
+      "description": "Fake accident + BIN/auction = fake listing scam",
+      "requires": ["fake_accident", "specific_valuables"],
+      "bonus": 70
+    },
+    {
+      "description": "Crafting help + Collateral = crafting scam",
+      "requires": ["crafting_help", "collateral_trick"],
+      "bonus": 50
+    },
+    {
+      "description": "Trade window + Unbalanced justification = unfair trade",
+      "requires": ["trade_window", "unbalanced_justification"],
+      "bonus": 45
+    },
+    {
+      "description": "Flex + Trade + Valuables = full flex scam sequence",
+      "requires": ["flex_bait", "trade_window", "specific_valuables"],
+      "bonus": 75
+    },
+    {
+      "description": "Crafting + Materials + Disappear pattern",
+      "requires": ["crafting_help", "specific_valuables"],
+      "bonus": 40
+    },
+    {
+      "description": "Bid + Fake reward = bid manipulation",
+      "requires": ["bid_bait", "specific_valuables"],
+      "bonus": 65
+    }
+  ]
+}

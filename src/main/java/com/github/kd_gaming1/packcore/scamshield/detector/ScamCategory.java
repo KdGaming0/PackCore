@@ -1,26 +1,46 @@
 package com.github.kd_gaming1.packcore.scamshield.detector;
 
-/**
- * Categories of scam types for organization and filtering
- */
 public enum ScamCategory {
-    DISCORD_VERIFY("Discord Verification Scam"),
-    SUSPICIOUS_LINK("Suspicious Link"),
-    FAKE_THREAT("Fake Account Threat"),
-    FAKE_REWARD("Too Good to be True"),
-    IMPERSONATION("Staff Impersonation"),
-    ACCOUNT_THEFT("Account Theft Attempt"),
-    URGENCY("Urgency Tactic"),
-    PHISHING("Phishing Attempt"),
-    CUSTOM("Custom Pattern");
+    DISCORD_VERIFY("Discord Verification Scam", "discord_verify_scam"),
+    SUSPICIOUS_LINK("Suspicious Link", "suspicious_link_scam"),
+    FAKE_THREAT("Fake Account Threat", "fake_threat_scam"),
+    FAKE_REWARD("Too Good to be True", "free_rank_bait_scam"),
+    IMPERSONATION("Staff Impersonation", "impersonation_scam"),
+    ACCOUNT_THEFT("Account Theft Attempt", "island_theft_scam"),
+    URGENCY("Urgency Tactic", "urgency_scam"),
+    PHISHING("Phishing Attempt", "phishing_language"),
+    CUSTOM("Custom Pattern", "custom");
 
     private final String displayName;
+    private final String scamTypeId;
 
-    ScamCategory(String displayName) {
+    ScamCategory(String displayName, String scamTypeId) {
         this.displayName = displayName;
+        this.scamTypeId = scamTypeId;
     }
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public String getScamTypeId() {
+        return scamTypeId;
+    }
+
+    /**
+     * Get category from scam type ID, or CUSTOM if not found
+     */
+    public static ScamCategory fromScamTypeId(String scamTypeId) {
+        if (scamTypeId == null) {
+            return CUSTOM;
+        }
+
+        for (ScamCategory category : values()) {
+            if (category.scamTypeId.equals(scamTypeId)) {
+                return category;
+            }
+        }
+
+        return CUSTOM;
     }
 }

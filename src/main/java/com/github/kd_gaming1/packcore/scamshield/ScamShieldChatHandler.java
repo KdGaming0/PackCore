@@ -24,8 +24,6 @@ public class ScamShieldChatHandler {
 
     private final ExecutorService detectionExecutor;
 
-    // Rate limiting to prevent spam
-    private static final long COOLDOWN_MS = TimeUnit.SECONDS.toMillis(5);
     private long lastWarningTime = 0;
 
     private boolean enabled = true;
@@ -38,8 +36,13 @@ public class ScamShieldChatHandler {
                 1,
                 2,
                 60L, TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(10),
-                new ThreadPoolExecutor.DiscardOldestPolicy()
+                new LinkedBlockingQueue<>(50),
+                r -> {
+                    Thread t = new Thread(r, "ScamShield-Detector");
+                    t.setDaemon(true);
+                    return t;
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }
 
@@ -64,6 +67,32 @@ public class ScamShieldChatHandler {
             return;
         }
 
+        // Check if this is the first message from this user
+        boolean isFirstMessage = false;
+        if (sender != null && !sender.isEmpty()) {
+            String senderKey = sender.toLowerCase();
+            isFirstMessage = detector.getSuspicionTracker().conversations.get(senderKey) == null;
+
+            // First message containing suspicious keywords is extra suspicious
+            if (isFirstMessage) {
+                String lowerMsg = message.toLowerCase();
+                if (lowerMsg.contains("discord") ||
+                        lowerMsg.contains("verify") ||
+                        lowerMsg.contains("verification") ||
+                        lowerMsg.contains("free rank") ||
+                        lowerMsg.contains("coopadd")) {
+
+                    if (PackCoreConfig.enableScamShieldDebugging) {
+                        PackCore.LOGGER.warn("[Scam Shield] First message from {} contains suspicious keywords: '{}'",
+                                sender, message);
+                    }
+
+                    // You could apply a "suspicion flag" here or lower the threshold
+                    // For now, we'll just log it - the sequence detection will catch it
+                }
+            }
+        }
+
         // Submit to thread pool
         detectionExecutor.execute(() -> {
             try {
@@ -76,7 +105,6 @@ public class ScamShieldChatHandler {
             }
         });
     }
-
     /**
      * Handle a triggered scam detection
      */
