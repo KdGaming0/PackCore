@@ -2,18 +2,17 @@ package com.github.kd_gaming1.packcore.scamshield;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.scamshield.detector.ConfidenceLevel;
 import com.github.kd_gaming1.packcore.scamshield.detector.DetectionResult;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
-
 import com.github.kd_gaming1.packcore.scamshield.storage.DetectedScam;
 import com.github.kd_gaming1.packcore.scamshield.storage.ScamShieldDataManager;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
 
 import java.util.concurrent.*;
 
 /**
- * Handles incoming chat messages and coordinates scam detection
+ * Main chat message handler - coordinates scam detection flow.
  */
 public class ScamShieldChatHandler {
     private static final ScamShieldChatHandler INSTANCE = new ScamShieldChatHandler();
@@ -21,21 +20,20 @@ public class ScamShieldChatHandler {
     private final ScamDetector detector;
     private final MinecraftClient client;
     private final ConcurrentLinkedQueue<DetectionResult> recentDetections;
-
     private final ExecutorService detectionExecutor;
 
-    private long lastWarningTime = 0;
-
-    private boolean enabled = true;
+    // Cooldown tracking per confidence level
+    private long lastLowConfidenceWarning = 0;
+    private long lastMediumConfidenceWarning = 0;
+    private long lastHighConfidenceWarning = 0;
 
     private ScamShieldChatHandler() {
         this.detector = ScamDetector.getInstance();
         this.client = MinecraftClient.getInstance();
         this.recentDetections = new ConcurrentLinkedQueue<>();
+
         this.detectionExecutor = new ThreadPoolExecutor(
-                1,
-                2,
-                60L, TimeUnit.SECONDS,
+                1, 2, 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(50),
                 r -> {
                     Thread t = new Thread(r, "ScamShield-Detector");
@@ -51,157 +49,217 @@ public class ScamShieldChatHandler {
     }
 
     /**
-     * Process an incoming chat message
-     * @param message The raw message text
-     * @param sender The sender's name (can be null)
+     * Main entry point for processing chat messages.
      */
     public void processChatMessage(String message, String sender) {
         if (!PackCoreConfig.enableScamShield || message == null || message.isEmpty()) {
             return;
         }
 
+        // Skip whitelisted players
         if (ScamShieldWhitelist.getInstance().isWhitelisted(sender)) {
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[Scam Shield] Skipping analysis for whitelisted player: {}", sender);
+                PackCore.LOGGER.info("[ScamShield] Skipping whitelisted player: {}", sender);
             }
             return;
         }
 
-        // Check if this is the first message from this user
-        boolean isFirstMessage = false;
-        if (sender != null && !sender.isEmpty()) {
-            String senderKey = sender.toLowerCase();
-            isFirstMessage = detector.getSuspicionTracker().conversations.get(senderKey) == null;
-
-            // First message containing suspicious keywords is extra suspicious
-            if (isFirstMessage) {
-                String lowerMsg = message.toLowerCase();
-                if (lowerMsg.contains("discord") ||
-                        lowerMsg.contains("verify") ||
-                        lowerMsg.contains("verification") ||
-                        lowerMsg.contains("free rank") ||
-                        lowerMsg.contains("coopadd")) {
-
-                    if (PackCoreConfig.enableScamShieldDebugging) {
-                        PackCore.LOGGER.warn("[Scam Shield] First message from {} contains suspicious keywords: '{}'",
-                                sender, message);
-                    }
-
-                    // You could apply a "suspicion flag" here or lower the threshold
-                    // For now, we'll just log it - the sequence detection will catch it
-                }
-            }
-        }
-
-        // Submit to thread pool
+        // Submit to background thread
         detectionExecutor.execute(() -> {
             try {
                 DetectionResult result = detector.analyze(message, sender);
+
                 if (result.isTriggered()) {
                     handleDetection(result);
                 }
             } catch (Exception e) {
-                PackCore.LOGGER.error("[Scam Shield] Error during scam detection", e);
+                PackCore.LOGGER.error("[ScamShield] Detection failed", e);
             }
         });
     }
+
     /**
-     * Handle a triggered scam detection
+     * Handle a triggered scam detection with tiered warnings.
      */
     private void handleDetection(DetectionResult result) {
-        long currentTime = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        ConfidenceLevel level = result.getConfidenceLevel();
 
-        long cooldownMs = TimeUnit.SECONDS.toMillis(PackCoreConfig.scamShieldNotificationCooldownSeconds);
-
-        // Check cooldown to prevent spam
-        if (currentTime - lastWarningTime < cooldownMs) {
+        // Check confidence-specific cooldown
+        if (!shouldShowWarning(level, now)) {
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[Scam Shield] Scam detected but cooldown active ({} ms remaining)",
-                        cooldownMs - (currentTime - lastWarningTime));
+                PackCore.LOGGER.info("[ScamShield] {} confidence cooldown active", level);
             }
             recentDetections.offer(result);
             return;
         }
 
-        lastWarningTime = currentTime;
+        // Update cooldown timestamp
+        updateCooldown(level, now);
         recentDetections.offer(result);
 
-        // Limit queue size
-        int maxRecent = PackCoreConfig.scamShieldMaxRecentDetections;
-        while (recentDetections.size() > maxRecent) {
+        // Trim history
+        while (recentDetections.size() > PackCoreConfig.scamShieldMaxRecentDetections) {
             recentDetections.poll();
         }
 
-        // Log detection
-        PackCore.LOGGER.warn("[Scam Shield] Potential scam detected! Score: {}, Category: {}, Sender: {}",
-                result.getTotalScore(),
-                result.getPrimaryCategory().getDisplayName(),
-                result.getSender());
+        // Log with appropriate severity
+        logDetection(result);
 
+        // Save to persistent history
         DetectedScam detectedScam = DetectedScam.fromResult(result);
         ScamShieldDataManager.getInstance().saveDetectionAsync(detectedScam);
 
+        // Show warning based on confidence level
         if (PackCoreConfig.scamShieldShowNotifications) {
-            client.execute(() -> showWarningScreen(result));
-        } else if (PackCoreConfig.enableScamShieldDebugging) {
-            PackCore.LOGGER.debug("[Scam Shield] Notification suppressed by config");
+            client.execute(() -> showWarning(result));
         }
     }
 
     /**
-     * Display the warning screen to the user
+     * Check if warning should be shown based on confidence-specific cooldown.
+     *
+     * Cooldown strategy:
+     * - LOW: 30 seconds (don't spam for uncertain detections)
+     * - MEDIUM: 20 seconds (more urgent)
+     * - HIGH: 10 seconds (always show critical warnings)
      */
-    private void showWarningScreen(DetectionResult result) {
-        if (client.currentScreen != null) {
-            // Don't interrupt if user is already in a screen
-            PackCore.LOGGER.info("[Scam Shield] Scam detected but user is in a screen, sending chat notification");
-            sendChatNotification(result);
-            return;
+    private boolean shouldShowWarning(ConfidenceLevel level, long now) {
+        long cooldownMs;
+        long lastWarning;
+
+        switch (level) {
+            case LOW:
+                cooldownMs = 30_000; // 30 seconds
+                lastWarning = lastLowConfidenceWarning;
+                break;
+            case MEDIUM:
+                cooldownMs = 20_000; // 20 seconds
+                lastWarning = lastMediumConfidenceWarning;
+                break;
+            case HIGH:
+                cooldownMs = 10_000; // 10 seconds
+                lastWarning = lastHighConfidenceWarning;
+                break;
+            default:
+                cooldownMs = 30_000;
+                lastWarning = lastLowConfidenceWarning;
         }
 
-        try {
-            // TODO: Replace with your actual warning screen class
-            // client.setScreen(new ScamWarningScreen(result));
+        return (now - lastWarning) >= cooldownMs;
+    }
 
-            // Temporary: Send chat notification until screen is implemented
-            sendChatNotification(result);
-        } catch (Exception e) {
-            PackCore.LOGGER.error("[Scam Shield] Failed to show warning screen", e);
-            sendChatNotification(result);
+    /**
+     * Update the appropriate cooldown timestamp.
+     */
+    private void updateCooldown(ConfidenceLevel level, long timestamp) {
+        switch (level) {
+            case LOW:
+                lastLowConfidenceWarning = timestamp;
+                break;
+            case MEDIUM:
+                lastMediumConfidenceWarning = timestamp;
+                break;
+            case HIGH:
+                lastHighConfidenceWarning = timestamp;
+                break;
         }
     }
 
     /**
-     * Send a chat notification as fallback
+     * Log detection with appropriate severity level.
      */
-    private void sendChatNotification(DetectionResult result) {
+    private void logDetection(DetectionResult result) {
+        ConfidenceLevel level = result.getConfidenceLevel();
+        String logMessage = String.format(
+                "[ScamShield] %s confidence detection | Score: %d | Category: %s | Sender: %s",
+                level.getDisplayName(),
+                result.getTotalScore(),
+                result.getPrimaryCategory().getDisplayName(),
+                result.getSender()
+        );
+
+        switch (level) {
+            case LOW:
+                PackCore.LOGGER.info(logMessage);
+                break;
+            case MEDIUM:
+                PackCore.LOGGER.warn(logMessage);
+                break;
+            case HIGH:
+                PackCore.LOGGER.error(logMessage);
+                break;
+        }
+    }
+
+    /**
+     * Display appropriate warning based on confidence level.
+     */
+    private void showWarning(DetectionResult result) {
+        ConfidenceLevel level = result.getConfidenceLevel();
+
+        // Send chat message (always)
+        sendChatWarning(result);
+
+        // Force open screen for HIGH confidence
+        if (level.shouldForceScreen()) {
+            openWarningScreen(result);
+        }
+    }
+
+    /**
+     * Send formatted chat warning message.
+     */
+    private void sendChatWarning(DetectionResult result) {
         if (client.player != null) {
             client.player.sendMessage(
-                    Text.literal("§c§l[SCAM WARNING] §r§7Potential scam detected! Category: §e"
-                            + result.getPrimaryCategory().getDisplayName()
-                            + " §7(Score: " + result.getTotalScore() + ")"),
+                    ScamWarningMessageBuilder.buildWarningMessage(result),
                     false
             );
         }
     }
 
     /**
-     * Get recent detections for display in UI
+     * Force open warning screen (HIGH confidence only).
+     * This blocks user interaction until they acknowledge the warning.
      */
+    private void openWarningScreen(DetectionResult result) {
+        // Don't interrupt if already in a screen (could be previous warning)
+        if (client.currentScreen != null) {
+            PackCore.LOGGER.info("[ScamShield] User already in screen, skipping forced screen open");
+            return;
+        }
+
+        try {
+            // TODO: Implement ScamWarningScreen
+            // client.setScreen(new ScamWarningScreen(result));
+
+            // Temporary: Send additional urgent chat message
+            if (client.player != null) {
+                client.player.sendMessage(
+                        net.minecraft.text.Text.literal(
+                                "§c§l[!] CRITICAL: A warning screen should have opened. " +
+                                        "If you don't see it, do NOT interact with " + result.getSender() + "!§r"
+                        ),
+                        false
+                );
+            }
+
+            PackCore.LOGGER.warn("[ScamShield] Warning screen not yet implemented - sent urgent message instead");
+
+        } catch (Exception e) {
+            PackCore.LOGGER.error("[ScamShield] Failed to open warning screen", e);
+        }
+    }
+
     public DetectionResult[] getRecentDetections() {
         return recentDetections.toArray(new DetectionResult[0]);
     }
 
-    /**
-     * Clear recent detections history
-     */
     public void clearHistory() {
         recentDetections.clear();
     }
 
-    /**
-     * Shutdown the executor gracefully - call this on client shutdown
-     */
     public void shutdown() {
         detectionExecutor.shutdown();
         try {
@@ -212,16 +270,6 @@ public class ScamShieldChatHandler {
             detectionExecutor.shutdownNow();
             Thread.currentThread().interrupt();
         }
-    }
-
-    // Getters and setters
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-        PackCore.LOGGER.info("ScamShield {}", enabled ? "enabled" : "disabled");
     }
 
     public ScamDetector getDetector() {

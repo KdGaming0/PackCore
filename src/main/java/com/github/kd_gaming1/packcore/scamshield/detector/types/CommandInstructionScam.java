@@ -71,21 +71,21 @@ public class CommandInstructionScam implements ScamType {
             if (command.contains("coop")) {
                 score += 100;
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield]   Co-op command instruction: +50 points");
+                    PackCore.LOGGER.info("[ScamShield]   Co-op command instruction: +50 points");
                 }
             }
             // /visit is very suspicious (item theft, scam islands)
             else if (command.contains("visit")) {
                 score += 40;
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield]   Visit command instruction: +40 points");
+                    PackCore.LOGGER.info("[ScamShield]   Visit command instruction: +40 points");
                 }
             }
             // /party or /trade are moderately suspicious
             else if (command.contains("party") || command.contains("trade")) {
                 score += 25;
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield]   Party/Trade command instruction: +25 points");
+                    PackCore.LOGGER.info("[ScamShield]   Party/Trade command instruction: +25 points");
                 }
             }
         }
@@ -95,7 +95,7 @@ public class CommandInstructionScam implements ScamType {
         if (rewardMatcher.find()) {
             score += 45;
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield]   Command with reward promise: +45 points");
+                PackCore.LOGGER.info("[ScamShield]   Command with reward promise: +45 points");
             }
         }
 
@@ -111,7 +111,7 @@ public class CommandInstructionScam implements ScamType {
         if (commandCount >= 2) {
             score += 35;
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield]   Multiple commands in message: +35 points");
+                PackCore.LOGGER.info("[ScamShield]   Multiple commands in message: +35 points");
             }
         }
 
@@ -122,7 +122,7 @@ public class CommandInstructionScam implements ScamType {
                 (lower.contains("coopadd") || lower.contains("coop"))) {
             score += 60; // VERY high - this is a known trick
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield]   Fake co-op command variant: +60 points");
+                PackCore.LOGGER.info("[ScamShield]   Fake co-op command variant: +60 points");
             }
         }
 
@@ -132,7 +132,7 @@ public class CommandInstructionScam implements ScamType {
                 lower.contains("enter /"))) {
             score += 20;
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield]   Imperative command language: +20 points");
+                PackCore.LOGGER.info("[ScamShield]   Imperative command language: +20 points");
             }
         }
 
@@ -142,7 +142,7 @@ public class CommandInstructionScam implements ScamType {
                     rawMessage.contains("/COOPADD") || rawMessage.contains("VISIT ME")) {
                 score += 15;
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield]   ALL CAPS command: +15 points");
+                    PackCore.LOGGER.info("[ScamShield]   ALL CAPS command: +15 points");
                 }
             }
         }
@@ -151,7 +151,7 @@ public class CommandInstructionScam implements ScamType {
             result.addScamTypeContribution(getId(), score);
 
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield] {} detected: +{} points",
+                PackCore.LOGGER.info("[ScamShield] {} detected: +{} points",
                         getDisplayName(), score);
             }
         }

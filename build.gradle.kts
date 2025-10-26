@@ -15,7 +15,7 @@ repositories {
     maven("https://maven.wispforest.io/releases/")
     maven("https://api.modrinth.com/maven")
     maven ("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
-    maven ("https://repo.hypixel.net/repository/Hypixel/")
+    maven ("https://maven.azureaaron.net/releases")
 }
 
 toolkitMultiversion {
@@ -62,7 +62,7 @@ dependencies {
     modImplementation(include("maven.modrinth:midnightlib:$midnightlibVersion")!!)
     modImplementation(include("io.wispforest.lavender-md:core:$lavenderMdVersion")!!)
     modImplementation(include("io.wispforest.lavender-md:owo-ui:$lavenderMdVersion")!!)
-    modImplementation(include("net.hypixel:mod-api:1.0.1")!!)
+    modImplementation(include("net.azureaaron:hm-api:1.0.1+1.21.2")!!)
 
     modCompileOnly("maven.modrinth:sodium:$sodiumVersion")
     modCompileOnly("maven.modrinth:iris:$irisVersion")

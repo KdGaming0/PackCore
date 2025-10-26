@@ -13,21 +13,32 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tracks conversation sequences and stages, not just scores.
+ * Tracks conversation history per user to detect multi-message scam patterns.
+ *
+ * Key features:
+ * - Stores message history per sender
+ * - Detects escalation patterns
+ * - Identifies dangerous tactic sequences
+ * - Manages conversation stages
+ * - Auto-cleanup of old conversations
  */
 public class UserSuspicionTracker {
     private static final UserSuspicionTracker INSTANCE = new UserSuspicionTracker();
 
+    // Map of sender -> conversation history
     public final Map<String, EnhancedConversationHistory> conversations = new ConcurrentHashMap<>();
+
     private final ScheduledExecutorService cleanupExecutor;
 
     private UserSuspicionTracker() {
+        // Background thread for cleaning up old conversations
         cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "ScamShield-EnhancedCleanup");
+            Thread t = new Thread(r, "ScamShield-Cleanup");
             t.setDaemon(true);
             return t;
         });
 
+        // Run cleanup every 5 minutes
         cleanupExecutor.scheduleWithFixedDelay(
                 this::cleanupOldConversations,
                 5, 5, TimeUnit.MINUTES
@@ -39,8 +50,20 @@ public class UserSuspicionTracker {
     }
 
     /**
-     * Record a message and analyze conversation patterns.
-     * Returns the bonus score from multi-message patterns.
+     * Record a message and analyze multi-message patterns.
+     *
+     * This is where the magic happens:
+     * - Stores message in history
+     * - Updates conversation stage
+     * - Detects escalation patterns
+     * - Identifies dangerous sequences
+     * - Returns bonus score from progression
+     *
+     * @param sender Username
+     * @param message Message text
+     * @param singleMessageScore Score from current message only
+     * @param result Full detection result for current message
+     * @return Bonus score from multi-message analysis
      */
     public int recordAndAnalyze(String sender, String message, int singleMessageScore,
                                 DetectionResult result) {
@@ -49,15 +72,17 @@ public class UserSuspicionTracker {
         }
 
         String senderKey = sender.toLowerCase();
+
+        // Get or create conversation history for this sender
         EnhancedConversationHistory history = conversations.computeIfAbsent(
                 senderKey,
                 k -> new EnhancedConversationHistory(sender)
         );
 
-        // Extract tactics from this message
+        // Extract which tactics were detected in this message
         Set<String> currentTactics = new HashSet<>(result.getTriggeredScamTypes());
 
-        // Record the message with its tactics
+        // Create record for this message
         MessageRecord record = new MessageRecord(
                 message,
                 singleMessageScore,
@@ -66,12 +91,16 @@ public class UserSuspicionTracker {
                 currentTactics
         );
 
+        // Add to history (also updates stage and tactic sequence)
         history.addMessage(record);
 
-        // Analyze and return total bonus
+        // Run progression analysis and return bonus
         return history.analyzeProgression();
     }
 
+    /**
+     * Remove conversations older than timeout threshold.
+     */
     private void cleanupOldConversations() {
         long cutoff = System.currentTimeMillis() -
                 (PackCoreConfig.scamShieldConversationTimeoutMinutes * 60_000L);
@@ -94,7 +123,8 @@ public class UserSuspicionTracker {
     }
 
     /**
-     * Enhanced conversation history that tracks sequences and stages
+     * Conversation history for a single sender.
+     * Tracks messages, tactics used, and current stage.
      */
     public static class EnhancedConversationHistory {
         private final String sender;
@@ -102,58 +132,58 @@ public class UserSuspicionTracker {
         private volatile long lastMessageTime = 0;
         private volatile ConversationStage currentStage = ConversationStage.INITIAL;
 
-        // Track all tactics used across the conversation (in order)
+        // Ordered list of all tactics used across all messages
         private final List<String> tacticSequence = Collections.synchronizedList(new ArrayList<>());
 
         public EnhancedConversationHistory(String sender) {
             this.sender = sender;
         }
 
+        /**
+         * Add a message to history and update state.
+         */
         public synchronized void addMessage(MessageRecord record) {
             messages.add(record);
             lastMessageTime = record.timestamp;
 
-            // Add new tactics to the sequence
+            // Build tactic sequence (skip consecutive duplicates)
             for (String tactic : record.detectedTactics) {
-                if (!tacticSequence.isEmpty() && tacticSequence.get(tacticSequence.size() - 1).equals(tactic)) {
-                    // Don't add consecutive duplicates
-                    continue;
+                if (tacticSequence.isEmpty() || !tacticSequence.getLast().equals(tactic)) {
+                    tacticSequence.add(tactic);
                 }
-                tacticSequence.add(tactic);
             }
 
-            // Update conversation stage based on tactics
+            // Update conversation stage based on new tactics
             updateConversationStage(record);
 
-            // Limit size
+            // Limit memory usage
             while (messages.size() > PackCoreConfig.scamShieldMaxMessagesPerUser) {
                 messages.remove(0);
             }
-
-            // Also limit tactic sequence size
             while (tacticSequence.size() > 20) {
                 tacticSequence.remove(0);
             }
         }
 
         /**
-         * Determine what stage the conversation is at based on tactics used
+         * Determine conversation stage based on tactics detected.
+         * Stages progress: INITIAL → SETUP → TRANSITION → EXPLOITATION → PRESSURE
          */
         private void updateConversationStage(MessageRecord record) {
             Set<String> tactics = record.detectedTactics;
 
-            // Check for exploitation stage indicators
+            // EXPLOITATION: Asking for credentials
             if (tactics.contains("credential_fishing") ||
                     tactics.contains("coop_command") ||
                     tactics.stream().anyMatch(t -> t.contains("credential"))) {
                 currentStage = ConversationStage.EXPLOITATION;
             }
-            // Check for pressure stage
+            // PRESSURE: Exploitation + urgency
             else if (currentStage == ConversationStage.EXPLOITATION &&
                     (tactics.contains("urgency") || tactics.contains("scarcity"))) {
                 currentStage = ConversationStage.PRESSURE;
             }
-            // Check for transition stage
+            // TRANSITION: Moving off-platform
             else if (tactics.contains("discord_mention") ||
                     tactics.contains("visit_command") ||
                     tactics.contains("verification_request")) {
@@ -161,7 +191,7 @@ public class UserSuspicionTracker {
                     currentStage = ConversationStage.TRANSITION;
                 }
             }
-            // Check for setup stage
+            // SETUP: Introducing the scam premise
             else if (tactics.contains("free_promise") ||
                     tactics.contains("quitting_claim") ||
                     tactics.contains("authority")) {
@@ -169,148 +199,40 @@ public class UserSuspicionTracker {
                     currentStage = ConversationStage.SETUP;
                 }
             }
+            // INITIAL: Normal conversation (default)
         }
 
         /**
-         * Comprehensive analysis including:
-         * 1. Original progression patterns (escalation, context shift, tactic stacking)
-         * 2. NEW: Sequence pattern detection
-         * 3. NEW: Conversation stage awareness
-         * 4. NEW: Temporal pattern analysis
+         * Analyze progression patterns and calculate bonus score.
+         *
+         * Checks for:
+         * - Score escalation (messages getting more suspicious)
+         * - Context shifts (sudden topic changes)
+         * - Tactic stacking (using many different tactics)
+         * - Dangerous sequences (e.g., discord → verify → credentials)
+         * - Temporal patterns (timing of messages)
          */
         public synchronized int analyzeProgression() {
             if (messages.size() < 2) {
-                return 0;
+                return 0; // Need at least 2 messages
             }
 
             int bonus = 0;
 
-            // Original patterns (keep these - they still work)
+            // Check various progression patterns
             bonus += detectEscalation();
             bonus += detectContextShift();
             bonus += detectTacticStacking();
-
-            // NEW: Detect dangerous sequences
             bonus += detectSequencePatterns();
-
-            // NEW: Stage-based scoring
             bonus += applyStageMultiplier(bonus);
 
-            // NEW: Temporal analysis
-            bonus += detectTemporalPatterns();
-
-            // Cap total bonus
+            // Cap total bonus to prevent runaway scores
             return Math.min(bonus, PackCoreConfig.scamShieldMaxProgressionBonus);
         }
 
         /**
-         * NEW: Detect dangerous tactic sequences across messages
+         * Detect if scores are consistently increasing (escalation).
          */
-        private int detectSequencePatterns() {
-            if (tacticSequence.size() < 3) {
-                return 0;
-            }
-
-            List<SequencePatternDetector.DetectedPattern> patterns =
-                    SequencePatternDetector.analyzeSequence(tacticSequence);
-
-            int totalBonus = 0;
-            for (SequencePatternDetector.DetectedPattern pattern : patterns) {
-                totalBonus += pattern.getBonus();
-
-                PackCore.LOGGER.warn("[ScamShield] Detected sequence '{}' from {}: +{} bonus",
-                        pattern.getName(), sender, pattern.getBonus());
-            }
-
-            return totalBonus;
-        }
-
-        /**
-         * NEW: Apply multiplier based on conversation stage
-         * Later stages are more dangerous
-         */
-        private int applyStageMultiplier(int currentBonus) {
-            if (currentStage == ConversationStage.INITIAL) {
-                return 0; // No stage bonus for initial contact
-            }
-
-            double multiplier = currentStage.getDangerMultiplier();
-            int stageBonus = (int) (currentBonus * (multiplier - 1.0));
-
-            if (stageBonus > 0 && PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield] Stage multiplier ({}): +{} bonus",
-                        currentStage.getDisplayName(), stageBonus);
-            }
-
-            return stageBonus;
-        }
-
-        /**
-         * NEW: Detect suspicious temporal patterns
-         * - Very fast messages (< 5 seconds apart) suggesting copy-paste
-         * - Deliberately paced messages (10-30 seconds) to avoid detection
-         * - Sudden acceleration after slow start (building trust then rushing)
-         */
-        private int detectTemporalPatterns() {
-            if (messages.size() < 3) {
-                return 0;
-            }
-
-            int bonus = 0;
-
-            // Calculate time gaps between messages
-            List<Long> gaps = new ArrayList<>();
-            for (int i = 1; i < messages.size(); i++) {
-                long gap = messages.get(i).timestamp - messages.get(i - 1).timestamp;
-                gaps.add(gap);
-            }
-
-            // Pattern 1: Very fast messages (copy-paste scripts)
-            long fastMessageCount = gaps.stream().filter(gap -> gap < 5000).count();
-            if (fastMessageCount >= 3 && messages.size() >= 4) {
-                bonus += 20;
-                if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield] Fast message pattern detected: +20 bonus");
-                }
-            }
-
-            // Pattern 2: Deliberate pacing (10-30 second gaps consistently)
-            long pacedMessageCount = gaps.stream()
-                    .filter(gap -> gap >= 10000 && gap <= 30000)
-                    .count();
-            if (pacedMessageCount >= 3) {
-                bonus += 15;
-                if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield] Deliberate pacing detected: +15 bonus");
-                }
-            }
-
-            // Pattern 3: Sudden acceleration
-            // First half slow (building trust), second half fast (closing scam)
-            if (messages.size() >= 6) {
-                int midpoint = messages.size() / 2;
-                double firstHalfAvgGap = gaps.subList(0, midpoint).stream()
-                        .mapToLong(Long::longValue)
-                        .average()
-                        .orElse(0);
-                double secondHalfAvgGap = gaps.subList(midpoint, gaps.size()).stream()
-                        .mapToLong(Long::longValue)
-                        .average()
-                        .orElse(0);
-
-                // If second half is 3x faster than first half
-                if (firstHalfAvgGap > 15000 && secondHalfAvgGap < firstHalfAvgGap / 3) {
-                    bonus += 25;
-                    if (PackCoreConfig.enableScamShieldDebugging) {
-                        PackCore.LOGGER.debug("[ScamShield] Acceleration pattern detected: +25 bonus");
-                    }
-                }
-            }
-
-            return bonus;
-        }
-
-        // Keep original detection methods
         private int detectEscalation() {
             if (messages.size() < 3) return 0;
 
@@ -319,7 +241,7 @@ public class UserSuspicionTracker {
                 if (messages.get(i).score > messages.get(i - 1).score) {
                     consecutiveIncreases++;
                     if (consecutiveIncreases >= 3) {
-                        return 25;
+                        return 25; // Clear escalation pattern
                     }
                 } else {
                     consecutiveIncreases = 0;
@@ -329,18 +251,23 @@ public class UserSuspicionTracker {
             return consecutiveIncreases >= 2 ? 10 : 0;
         }
 
+        /**
+         * Detect sudden jumps in suspicion (context shift).
+         */
         private int detectContextShift() {
             if (messages.size() < 4) return 0;
 
+            // Check for sudden score jump
             for (int i = 1; i < messages.size(); i++) {
                 MessageRecord prev = messages.get(i - 1);
                 MessageRecord curr = messages.get(i);
 
                 if (curr.score - prev.score > 50) {
-                    return 30;
+                    return 30; // Sudden suspicious shift
                 }
             }
 
+            // Check for first half vs second half average
             int midpoint = messages.size() / 2;
             double firstHalfAvg = messages.subList(0, midpoint).stream()
                     .mapToInt(m -> m.score)
@@ -352,6 +279,7 @@ public class UserSuspicionTracker {
                     .average()
                     .orElse(0);
 
+            // Second half significantly more suspicious?
             if (secondHalfAvg > firstHalfAvg * 2.5 && secondHalfAvg > 30) {
                 return 25;
             }
@@ -359,6 +287,9 @@ public class UserSuspicionTracker {
             return 0;
         }
 
+        /**
+         * Detect if many different tactics are being used (desperation).
+         */
         private int detectTacticStacking() {
             Set<String> allTriggeredTypes = new HashSet<>();
 
@@ -368,6 +299,7 @@ public class UserSuspicionTracker {
                 }
             }
 
+            // More tactics = more suspicious
             if (allTriggeredTypes.size() >= 4) {
                 return 40;
             } else if (allTriggeredTypes.size() >= 3) {
@@ -379,21 +311,57 @@ public class UserSuspicionTracker {
             return 0;
         }
 
-        public long getLastMessageTime() {
-            return lastMessageTime;
+        /**
+         * Detect known dangerous sequences (e.g., PDF-documented scams).
+         */
+        private int detectSequencePatterns() {
+            if (tacticSequence.size() < 3) {
+                return 0;
+            }
+
+            // Use SequencePatternDetector to find matching patterns
+            List<SequencePatternDetector.DetectedPattern> patterns =
+                    SequencePatternDetector.analyzeSequence(tacticSequence);
+
+            int totalBonus = 0;
+            for (SequencePatternDetector.DetectedPattern pattern : patterns) {
+                totalBonus += pattern.getBonus();
+
+                PackCore.LOGGER.warn("[ScamShield] Sequence detected: '{}' from {} (+{})",
+                        pattern.getName(), sender, pattern.getBonus());
+            }
+
+            return totalBonus;
         }
 
-        public ConversationStage getCurrentStage() {
-            return currentStage;
+        /**
+         * Apply multiplier based on conversation stage.
+         * Later stages are more dangerous.
+         */
+        private int applyStageMultiplier(int currentBonus) {
+            if (currentStage == ConversationStage.INITIAL) {
+                return 0; // No stage bonus yet
+            }
+
+            double multiplier = currentStage.getDangerMultiplier();
+            int stageBonus = (int) (currentBonus * (multiplier - 1.0));
+
+            if (stageBonus > 0 && PackCoreConfig.enableScamShieldDebugging) {
+                PackCore.LOGGER.info("[ScamShield] Stage multiplier ({}): +{} bonus",
+                        currentStage.getDisplayName(), stageBonus);
+            }
+
+            return stageBonus;
         }
 
-        public List<String> getTacticSequence() {
-            return new ArrayList<>(tacticSequence);
-        }
+        // Getters
+        public long getLastMessageTime() { return lastMessageTime; }
+        public ConversationStage getCurrentStage() { return currentStage; }
+        public List<String> getTacticSequence() { return new ArrayList<>(tacticSequence); }
     }
 
     /**
-     * Enhanced message record that includes detected tactics
+     * Single message record with metadata.
      */
     public static class MessageRecord {
         final String message;

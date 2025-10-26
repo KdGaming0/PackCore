@@ -69,7 +69,7 @@ public class ConversationContext {
         }
 
         if (this.currentActivity != activity) {
-            PackCore.LOGGER.debug("[ScamShield] Activity changed: {} → {}",
+            PackCore.LOGGER.info("[ScamShield] Activity changed: {} → {}",
                     this.currentActivity, activity);
             this.currentActivity = activity;
             this.activityStartTime = System.currentTimeMillis();
@@ -85,7 +85,7 @@ public class ConversationContext {
      */
     public void updateLocation(String location) {
         if (location != null && !location.equals(this.currentLocation)) {
-            PackCore.LOGGER.debug("[ScamShield] Location changed: {} → {}",
+            PackCore.LOGGER.info("[ScamShield] Location changed: {} → {}",
                     this.currentLocation, location);
             this.currentLocation = location;
         }
@@ -100,7 +100,7 @@ public class ConversationContext {
     public void addPartyMember(String playerName) {
         if (playerName != null && !playerName.isEmpty()) {
             recentPartyMembers.add(playerName.toLowerCase());
-            PackCore.LOGGER.debug("[ScamShield] Added party member: {}", playerName);
+            PackCore.LOGGER.info("[ScamShield] Added party member: {}", playerName);
         }
     }
 
@@ -112,7 +112,7 @@ public class ConversationContext {
     public void removePartyMember(String playerName) {
         if (playerName != null) {
             recentPartyMembers.remove(playerName.toLowerCase());
-            PackCore.LOGGER.debug("[ScamShield] Removed party member: {}", playerName);
+            PackCore.LOGGER.info("[ScamShield] Removed party member: {}", playerName);
         }
     }
 
@@ -121,7 +121,7 @@ public class ConversationContext {
      */
     public void clearPartyMembers() {
         if (!recentPartyMembers.isEmpty()) {
-            PackCore.LOGGER.debug("[ScamShield] Cleared party members");
+            PackCore.LOGGER.info("[ScamShield] Cleared party members");
             recentPartyMembers.clear();
         }
     }
@@ -171,7 +171,7 @@ public class ConversationContext {
      * Reset all context (call when leaving Hypixel or major state change)
      */
     public void reset() {
-        PackCore.LOGGER.debug("[ScamShield] Context reset");
+        PackCore.LOGGER.info("[ScamShield] Context reset");
         currentActivity = PlayerActivity.UNKNOWN;
         currentLocation = "";
         recentPartyMembers.clear();
@@ -204,7 +204,7 @@ public class ConversationContext {
                 .computeIfAbsent(scamTypeId, k -> new HashMap<>())
                 .put(activity, multiplier);
 
-        PackCore.LOGGER.debug("[ScamShield] Updated sensitivity rule: {} in {} = {}x",
+        PackCore.LOGGER.info("[ScamShield] Updated sensitivity rule: {} in {} = {}x",
                 scamTypeId, activity, multiplier);
     }
 }

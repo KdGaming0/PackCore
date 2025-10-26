@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore;
 import com.github.kd_gaming1.packcore.command.PackCoreCommand;
 import com.github.kd_gaming1.packcore.command.ScamShieldCommands;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.scamshield.ChatMessageInterceptor;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
 import com.github.kd_gaming1.packcore.scamshield.tracker.UserSuspicionTracker;
@@ -42,30 +43,17 @@ public class PackCore implements ClientModInitializer {
 
         HypixelEventUtil.init();
 
-        // Initialize ScamDetector
+        // Initialize the scam detection engine
         scamDetector = ScamDetector.getInstance();
-        LOGGER.info("[ScamShield] ScamShield initialized with {} scam types",
-                scamDetector.getScamTypes().size());
+        LOGGER.info("[ScamShield] Initialized with {} scam types", scamDetector.getScamTypes().size());
 
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            HypixelEventUtil.reset();
-        });
+        // Register chat message interceptor
+        ChatMessageInterceptor.getInstance().register();
 
-        ClientReceiveMessageEvents.CHAT.register(
-                (message, signedMessage, sender, params, receptionTimestamp) -> {
-                    String messageText = message.getString();
-                    String senderName = sender != null ? sender.getName() : null;
-                    if (HypixelEventUtil.isHelloPacketReceived()) {
-                        ScamShieldChatHandler.getInstance()
-                                .processChatMessage(messageText, senderName);
-                    }
-                });
-
-        // Shutdown handler - stop watching patterns on disconnect
+        // Cleanup on shutdown
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             scamDetector.shutdown();
             ScamShieldChatHandler.getInstance().shutdown();
-            UserSuspicionTracker.getInstance().shutdown();
         });
 
         try {
@@ -101,7 +89,6 @@ public class PackCore implements ClientModInitializer {
             PackCoreConfig.write(MOD_ID);
         }
     }
-
     public static ModpackInfo getModpackInfo() {
         return modpackInfo;
     }
@@ -113,5 +100,4 @@ public class PackCore implements ClientModInitializer {
     public static ScamDetector getScamDetector() {
         return scamDetector;
     }
-
 }

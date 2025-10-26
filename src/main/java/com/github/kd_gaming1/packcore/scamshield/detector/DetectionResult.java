@@ -7,9 +7,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Immutable result of scam detection analysis.
+ *
+ * Contains:
+ * - Total score (type + progression)
+ * - Triggered flag (score >= threshold)
+ * - Breakdown of contributions
+ * - Original message metadata
+ */
 public class DetectionResult {
     public static final DetectionResult SAFE = new DetectionResult(
-            false, 0, 0, Map.of(), List.of(), "", ""
+            false, 0, 0, Map.of(), List.of(), "", "", ConfidenceLevel.LOW
     );
 
     private final boolean triggered;
@@ -20,11 +29,12 @@ public class DetectionResult {
     private final String originalMessage;
     private final String sender;
     private final long timestamp;
+    private final ConfidenceLevel confidenceLevel;
 
     private DetectionResult(boolean triggered, int scamTypeScore, int progressionScore,
                             Map<String, Integer> scamTypeContributions,
                             List<String> triggeredScamTypes,
-                            String originalMessage, String sender) {
+                            String originalMessage, String sender, ConfidenceLevel confidenceLevel) {
         this.triggered = triggered;
         this.scamTypeScore = scamTypeScore;
         this.progressionScore = progressionScore;
@@ -33,43 +43,20 @@ public class DetectionResult {
         this.originalMessage = originalMessage == null ? "" : originalMessage;
         this.sender = sender == null ? "" : sender;
         this.timestamp = System.currentTimeMillis();
+        this.confidenceLevel = confidenceLevel;
     }
 
-    public boolean isTriggered() {
-        return triggered;
-    }
-
-    public int getTotalScore() {
-        return scamTypeScore + progressionScore;
-    }
-
-    public int getScamTypeScore() {
-        return scamTypeScore;
-    }
-
-    public int getProgressionScore() {
-        return progressionScore;
-    }
-
-    public Map<String, Integer> getScamTypeContributions() {
-        return scamTypeContributions;
-    }
-
-    public List<String> getTriggeredScamTypes() {
-        return triggeredScamTypes;
-    }
-
-    public String getOriginalMessage() {
-        return originalMessage;
-    }
-
-    public String getSender() {
-        return sender;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
+    // Getters
+    public boolean isTriggered() { return triggered; }
+    public int getTotalScore() { return scamTypeScore + progressionScore; }
+    public int getScamTypeScore() { return scamTypeScore; }
+    public int getProgressionScore() { return progressionScore; }
+    public Map<String, Integer> getScamTypeContributions() { return scamTypeContributions; }
+    public List<String> getTriggeredScamTypes() { return triggeredScamTypes; }
+    public String getOriginalMessage() { return originalMessage; }
+    public String getSender() { return sender; }
+    public long getTimestamp() { return timestamp; }
+    public ConfidenceLevel getConfidenceLevel() { return confidenceLevel; }
 
     public ScamCategory getPrimaryCategory() {
         return triggeredScamTypes.isEmpty()
@@ -79,11 +66,15 @@ public class DetectionResult {
 
     @Override
     public String toString() {
-        return String.format("DetectionResult{triggered=%s, total=%d (type=%d, progression=%d), types=%s, sender=%s}",
+        return String.format("DetectionResult{triggered=%s, total=%d (type=%d, prog=%d), confidence=%s, types=%s, sender=%s}",
                 triggered, getTotalScore(), scamTypeScore, progressionScore,
-                triggeredScamTypes, sender);
+                confidenceLevel, triggeredScamTypes, sender);
     }
 
+    /**
+     * Builder for constructing DetectionResult.
+     * Accumulates scores from multiple analyzers.
+     */
     public static class Builder {
         private int scamTypeScore = 0;
         private int progressionScore = 0;
@@ -116,21 +107,30 @@ public class DetectionResult {
             this.stage = stage;
         }
 
+        /**
+         * Build final result with stage-adjusted threshold and confidence level.
+         */
         public DetectionResult build() {
-            // Calculate stage-adjusted threshold
+            // Adjust threshold based on conversation stage
             int adjustedThreshold = threshold;
 
-            if (stage == ConversationStage.EXPLOITATION) {
-                adjustedThreshold = (int) (threshold * 0.7); // 30% more sensitive
-            } else if (stage == ConversationStage.PRESSURE) {
-                adjustedThreshold = (int) (threshold * 0.6); // 40% more sensitive
-            } else if (stage == ConversationStage.TRANSITION) {
-                adjustedThreshold = (int) (threshold * 0.85); // 15% more sensitive
+            switch (stage) {
+                case EXPLOITATION:
+                    adjustedThreshold = (int) (threshold * 0.7);
+                    break;
+                case PRESSURE:
+                    adjustedThreshold = (int) (threshold * 0.6);
+                    break;
+                case TRANSITION:
+                    adjustedThreshold = (int) (threshold * 0.85);
+                    break;
             }
-            // INITIAL and SETUP stages use normal threshold
 
             int totalScore = scamTypeScore + progressionScore;
             boolean triggered = totalScore >= adjustedThreshold;
+
+            // Determine confidence level based on total score
+            ConfidenceLevel confidence = ConfidenceLevel.fromScore(totalScore);
 
             return new DetectionResult(
                     triggered,
@@ -139,20 +139,38 @@ public class DetectionResult {
                     scamTypeContributions,
                     triggeredScamTypes,
                     originalMessage,
-                    sender
+                    sender,
+                    confidence
             );
+        }
+
+        /**
+         * Apply a multiplier to all scam type contributions.
+         * Used for legitimate trade context detection to reduce false positives.
+         *
+         * @param multiplier Value between 0.0 and 1.0 to scale scores
+         */
+        public void applyMultiplier(double multiplier) {
+            if (multiplier >= 1.0) {
+                return;
+            }
+
+            // Adjust the total scam type score
+            scamTypeScore = (int)(scamTypeScore * multiplier);
+
+            // Adjust individual contributions
+            for (Map.Entry<String, Integer> entry : scamTypeContributions.entrySet()) {
+                int originalScore = entry.getValue();
+                int adjustedScore = (int)(originalScore * multiplier);
+                scamTypeContributions.put(entry.getKey(), adjustedScore);
+            }
         }
 
         public int getCurrentTotalScore() {
             return scamTypeScore + progressionScore;
         }
 
-        public String getOriginalMessage() {
-            return originalMessage;
-        }
-
-        public String getSender() {
-            return sender;
-        }
+        public String getOriginalMessage() { return originalMessage; }
+        public String getSender() { return sender; }
     }
 }

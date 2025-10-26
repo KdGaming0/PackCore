@@ -83,7 +83,7 @@ public class PhishingLanguageScam implements ScamType {
                 totalScore += tacticScore;
 
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield]   Tactic '{}' detected: +{} points",
+                    PackCore.LOGGER.info("[ScamShield]   Tactic '{}' detected: +{} points",
                             tacticId, tacticScore);
                 }
             }
@@ -97,7 +97,7 @@ public class PhishingLanguageScam implements ScamType {
             totalScore += clusteringBonus;
 
             if (PackCoreConfig.enableScamShieldDebugging && clusteringBonus > 0) {
-                PackCore.LOGGER.debug("[ScamShield]   Tactic clustering detected! {} tactics = +{} bonus",
+                PackCore.LOGGER.info("[ScamShield]   Tactic clustering detected! {} tactics = +{} bonus",
                         detectedTactics.size(), clusteringBonus);
             }
         }
@@ -118,7 +118,7 @@ public class PhishingLanguageScam implements ScamType {
             result.addScamTypeContribution(getId(), totalScore);
 
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield] {} detected: +{} points (tactics: {}, context: {}x)",
+                PackCore.LOGGER.info("[ScamShield] {} detected: +{} points (tactics: {}, context: {}x)",
                         getDisplayName(), totalScore, detectedTactics, contextMultiplier);
             }
         }

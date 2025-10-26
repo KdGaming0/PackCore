@@ -24,20 +24,20 @@ public class DetectionStats {
 
         for (DetectedScam detection : detections) {
             // Count categories
-            String category = detection.getCategory();
+            String category = detection.category();
             categoryCounts.merge(category, 1, Integer::sum);
 
             // Track unique senders
-            if (detection.getSender() != null) {
-                uniqueSenderMap.put(detection.getSender(), true);
+            if (detection.sender() != null) {
+                uniqueSenderMap.put(detection.sender(), true);
             }
 
             // Track timestamps
-            if (detection.getTimestamp() < oldest) {
-                oldest = detection.getTimestamp();
+            if (detection.timestamp() < oldest) {
+                oldest = detection.timestamp();
             }
-            if (detection.getTimestamp() > newest) {
-                newest = detection.getTimestamp();
+            if (detection.timestamp() > newest) {
+                newest = detection.timestamp();
             }
         }
 

@@ -196,7 +196,7 @@ public class JsonBasedScamType implements ScamType {
                 totalScore += groupScore;
 
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield]   Pattern group '{}' matched {} times: +{} points",
+                    PackCore.LOGGER.info("[ScamShield]   Pattern group '{}' matched {} times: +{} points",
                             groupName, matchCount, groupScore);
                 }
             }
@@ -212,7 +212,7 @@ public class JsonBasedScamType implements ScamType {
                 totalScore += rule.bonus;
 
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.debug("[ScamShield]   Combination rule triggered: {} = +{} bonus",
+                    PackCore.LOGGER.info("[ScamShield]   Combination rule triggered: {} = +{} bonus",
                             rule.requires, rule.bonus);
                 }
             }
@@ -226,7 +226,7 @@ public class JsonBasedScamType implements ScamType {
             result.addScamTypeContribution(getId(), totalScore);
 
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.debug("[ScamShield] {} detected: +{} points (groups: {}, context: {}x)",
+                PackCore.LOGGER.info("[ScamShield] {} detected: +{} points (groups: {}, context: {}x)",
                         displayName, totalScore, matchedGroups, contextMultiplier);
             }
         }

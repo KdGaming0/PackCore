@@ -1,12 +1,12 @@
 {
   "id": "free_rank_bait_scam",
-  "name": "Free Rank/Reward Scam",
-  "description": "Detects scams offering free ranks, coins, or items that lead to account theft or coin scams",
+  "name": "Free Reward Bait Scam",
+  "description": "Detects scams offering free ranks, coins, or items as bait to lure victims",
   "base_score": 30,
   "pattern_groups": {
-    "free_promise": {
-      "description": "Promising free items/ranks",
-      "score": 25,
+    "free_offer": {
+      "description": "Promising free items/ranks/coins",
+      "score": 30,
       "phrases": [
         "free rank",
         "free coins",
@@ -17,126 +17,104 @@
         "million free coins",
         "free mvp",
         "free vip",
-        "free boost",
-        "free xp"
+        "free boost"
       ]
     },
-    "visit_command": {
-      "description": "Asking to visit or use commands",
+    "rank_mention": {
+      "description": "Specific rank mentions",
       "score": 20,
+      "phrases": [
+        "mvp++",
+        "mvp rank",
+        "vip rank",
+        "rank upgrade",
+        "hypixel rank",
+        "premium rank"
+      ]
+    },
+    "command_instruction": {
+      "description": "Telling victim to run commands",
+      "score": 25,
       "phrases": [
         "/visit me",
         "visit me",
-        "/visit",
         "/p me",
         "/party me",
         "add me to party",
-        "/coopadd",
-        "coopadd",
-        "co-op add",
-        "coop me"
+        "do /visit",
+        "type /visit"
       ]
     },
-    "reward_bait": {
-      "description": "Describing the reward to lure victims",
-      "score": 15,
-      "phrases": [
-        "superior dragon armor",
-        "shadow assassin",
-        "mvp++",
-        "mvp rank",
-        "rank upgrade",
-        "rare items",
-        "expensive items",
-        "my goodies",
-        "all my items"
-      ]
-    },
-    "action_required": {
-      "description": "Asking victim to take specific action",
-      "score": 20,
+    "claim_action": {
+      "description": "Requiring action to claim reward",
+      "score": 25,
       "phrases": [
         "to receive",
         "to get",
         "to claim",
         "to win",
-        "must win",
         "to find out how",
         "just add me",
-        "give me the coins",
-        "hand over"
+        "simply visit",
+        "all you need to do"
       ]
     },
-    "quitting_excuse": {
-      "description": "Claiming to quit as reason for giveaway",
-      "score": 15,
-      "phrases": [
-        "i'm quitting",
-        "im quitting",
-        "quitting skyblock",
-        "leaving hypixel",
-        "don't need anymore",
-        "giving away everything"
-      ]
-    },
-    "tournament_bait": {
+    "tournament_mention": {
       "description": "Fake tournament or competition",
-      "score": 20,
+      "score": 25,
       "phrases": [
         "tournament",
         "competition",
         "duel me for",
         "must win",
-        "whoever bids the highest",
-        "win a",
-        "register for"
+        "win a prize",
+        "register for tournament",
+        "sign up to win"
       ]
     },
-    "help_excuse": {
-      "description": "Pretending to need help",
-      "score": 15,
+    "specific_rewards": {
+      "description": "Mentions specific valuable rewards",
+      "score": 18,
       "phrases": [
-        "help!!",
-        "accidentally put",
-        "wrong price",
-        "made a mistake",
-        "how do i get it back",
-        "need help crafting",
-        "don't have recipe",
-        "can someone help"
+        "superior dragon armor",
+        "shadow assassin",
+        "rare items",
+        "expensive items",
+        "hyperion",
+        "billion coins"
       ]
     }
   },
   "combination_rules": [
     {
-      "description": "Free + Visit = classic lobby scam",
-      "requires": ["free_promise", "visit_command"],
-      "bonus": 45
+      "description": "Free offer + Command = classic lobby scam",
+      "requires": ["free_offer", "command_instruction"],
+      "bonus": 60
     },
     {
-      "description": "Free + Action = phishing bait",
-      "requires": ["free_promise", "action_required"],
-      "bonus": 40
-    },
-    {
-      "description": "Quitting + Visit = island theft scam",
-      "requires": ["quitting_excuse", "visit_command"],
+      "description": "Free offer + Claim action = bait and hook",
+      "requires": ["free_offer", "claim_action"],
       "bonus": 50
     },
     {
-      "description": "Tournament + Must Win = duel scam",
-      "requires": ["tournament_bait", "action_required"],
+      "description": "Rank + Command = free rank scam",
+      "requires": ["rank_mention", "command_instruction"],
+      "bonus": 55
+    },
+    {
+      "description": "Tournament + Must win = fake competition scam",
+      "requires": ["tournament_mention", "claim_action"],
+      "bonus": 55
+    },
+    {
+      "description": "Full free reward scam sequence",
+      "requires": ["free_offer", "command_instruction", "claim_action"],
+      "bonus": 75
+    },
+    {
+      "description": "Specific rewards with action required",
+      "requires": ["specific_rewards", "claim_action"],
       "bonus": 45
-    },
-    {
-      "description": "Help + Crafting = material theft",
-      "requires": ["help_excuse", "reward_bait"],
-      "bonus": 35
-    },
-    {
-      "description": "Full free rank scam sequence",
-      "requires": ["free_promise", "visit_command", "action_required"],
-      "bonus": 70
     }
   ]
 }

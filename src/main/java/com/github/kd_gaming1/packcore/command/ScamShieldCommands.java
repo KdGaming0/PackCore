@@ -5,6 +5,7 @@ import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldWhitelist;
 import com.github.kd_gaming1.packcore.scamshield.debug.ScamShieldDebugger;
 import com.github.kd_gaming1.packcore.scamshield.detector.DetectionResult;
+import com.github.kd_gaming1.packcore.scamshield.detector.types.ScamType;
 import com.github.kd_gaming1.packcore.scamshield.storage.DetectionStats;
 import com.github.kd_gaming1.packcore.scamshield.storage.ScamShieldDataManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -12,6 +13,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
+
+import java.util.List;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -89,18 +92,46 @@ public class ScamShieldCommands {
 
     private static int reloadPatterns(CommandContext<FabricClientCommandSource> context) {
         context.getSource().sendFeedback(
-                Text.literal("§e[ScamShield] §7Reloading pattern files...")
+                Text.literal("§e[ScamShield] §7Reloading pattern files and scanning for new scam types...")
         );
 
         try {
-            PackCore.getScamDetector().reloadScamTypes();
+            int loadedCount = PackCore.getScamDetector().reloadScamTypes();
+
             context.getSource().sendFeedback(
-                    Text.literal("§a[ScamShield] ✓ Pattern files reloaded successfully!")
+                    Text.literal("§a[ScamShield] ✓ Reload complete!")
             );
+            context.getSource().sendFeedback(
+                    Text.literal("§7Loaded §f" + loadedCount + "§7 scam detectors")
+            );
+            context.getSource().sendFeedback(
+                    Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            );
+
+            // Show loaded scam types
+            List<ScamType> scamTypes = PackCore.getScamDetector().getScamTypes();
+            context.getSource().sendFeedback(
+                    Text.literal("§e[Active Scam Detectors]")
+            );
+
+            for (ScamType scamType : scamTypes) {
+                String status = scamType.isEnabled() ? "§a✓" : "§c✗";
+                context.getSource().sendFeedback(
+                        Text.literal("§7  " + status + " §f" + scamType.getDisplayName())
+                );
+            }
+
+            context.getSource().sendFeedback(
+                    Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            );
+            context.getSource().sendFeedback(
+                    Text.literal("§7Tip: Drop new §escamtype-*.json§7 files in the folder and reload!")
+            );
+
             return 1;
         } catch (Exception e) {
             context.getSource().sendError(
-                    Text.literal("§c[ScamShield] Failed to reload patterns: " + e.getMessage())
+                    Text.literal("§c[ScamShield] Failed to reload: " + e.getMessage())
             );
             return 0;
         }

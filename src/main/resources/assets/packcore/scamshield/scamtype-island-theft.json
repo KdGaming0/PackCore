@@ -1,12 +1,12 @@
 {
   "id": "island_theft_scam",
   "name": "Island/Co-op Theft Scam",
-  "description": "Detects scams that try to get victims to use /coopadd or /visit commands to steal islands, items, or access",
+  "description": "Detects scams using /coopadd or /visit commands to steal islands, items, or access in Hypixel Skyblock",
   "base_score": 35,
   "pattern_groups": {
     "coop_command": {
-      "description": "Co-op related commands",
-      "score": 30,
+      "description": "Co-op add commands",
+      "score": 40,
       "phrases": [
         "/coopadd",
         "coopadd",
@@ -20,8 +20,8 @@
       ]
     },
     "visit_command": {
-      "description": "Visit commands that could lead to scams",
-      "score": 15,
+      "description": "Visit commands",
+      "score": 5,
       "phrases": [
         "/visit me",
         "visit me",
@@ -29,12 +29,13 @@
         "visit my island",
         "come to my island",
         "tp to me",
-        "teleport to me"
+        "teleport to me",
+        "come to island"
       ]
     },
-    "quitting_claim": {
+    "quitting_announcement": {
       "description": "Claims to be quitting the game",
-      "score": 25,
+      "score": 30,
       "phrases": [
         "i'm quitting",
         "im quitting",
@@ -44,28 +45,28 @@
         "done with skyblock",
         "leaving hypixel",
         "quitting sb",
-        "quitting the game"
+        "quitting the game",
+        "giving away everything",
+        "don't need anymore"
       ]
     },
-    "item_bait": {
-      "description": "Promises valuable items to lure victims",
-      "score": 20,
+    "giveaway_promise": {
+      "description": "Promises to give away items",
+      "score": 25,
       "phrases": [
         "all my items",
         "all my goodies",
         "my goodies",
         "everything i have",
         "all my stuff",
-        "valuable items",
-        "expensive items",
-        "rare items",
-        "my collection",
-        "take everything"
+        "take everything",
+        "you can have",
+        "its all yours"
       ]
     },
-    "specific_valuables": {
-      "description": "Mentions specific valuable items",
-      "score": 18,
+    "valuable_items": {
+      "description": "Mentions specific valuable items as bait",
+      "score": 20,
       "phrases": [
         "superior dragon armor",
         "shadow assassin",
@@ -76,54 +77,12 @@
         "valkyrie",
         "aotv",
         "dragon armor set",
-        "armor set"
-      ]
-    },
-    "urgency_giveaway": {
-      "description": "Creates urgency around the giveaway",
-      "score": 15,
-      "phrases": [
-        "quick",
-        "hurry",
-        "before i change my mind",
-        "right now",
-        "first come first serve",
-        "limited time",
-        "act fast"
-      ]
-    },
-    "trust_building": {
-      "description": "Builds trust before the scam",
-      "score": 12,
-      "phrases": [
-        "trust me",
-        "i promise",
-        "im serious",
-        "not joking",
-        "for real",
-        "i swear",
-        "honest",
-        "legit"
-      ]
-    },
-    "invitation_language": {
-      "description": "Invites victim to take action",
-      "score": 18,
-      "phrases": [
-        "to receive",
-        "to get",
-        "to claim",
-        "you can have",
-        "take all",
-        "its yours",
-        "you get",
-        "just add me",
-        "just visit"
+        "maxed gear"
       ]
     },
     "fake_mistake": {
-      "description": "Claims to have made a mistake inviting",
-      "score": 22,
+      "description": "Pretends to have made a mistake",
+      "score": 35,
       "phrases": [
         "invited you by mistake",
         "wrong person",
@@ -132,72 +91,66 @@
         "to undo",
         "denycoop",
         "deny coop",
-        "cancel invite"
+        "cancel invite",
+        "to clear it out",
+        "clear the invite"
       ]
     },
-    "rank_involvement": {
-      "description": "Mentions ranks with visit/coop",
-      "score": 16,
+    "action_instruction": {
+      "description": "Tells victim exactly what to do",
+      "score": 18,
       "phrases": [
-        "rank giveaway",
-        "free rank",
-        "mvp++",
-        "mvp",
-        "vip",
-        "for rank"
+        "to receive",
+        "to get",
+        "to claim",
+        "just add me",
+        "just visit",
+        "all you have to do",
+        "simply do",
+        "just type"
       ]
     }
   },
   "combination_rules": [
     {
       "description": "Co-op + Quitting = classic island theft",
-      "requires": ["coop_command", "quitting_claim"],
-      "bonus": 60
-    },
-    {
-      "description": "Co-op + Items = theft with bait",
-      "requires": ["coop_command", "item_bait"],
-      "bonus": 55
-    },
-    {
-      "description": "Quitting + Items = giveaway scam",
-      "requires": ["quitting_claim", "item_bait"],
-      "bonus": 50
-    },
-    {
-      "description": "Co-op + Valuables = high-value theft",
-      "requires": ["coop_command", "specific_valuables"],
-      "bonus": 65
-    },
-    {
-      "description": "Visit + Items = visit trap",
-      "requires": ["visit_command", "item_bait"],
-      "bonus": 40
-    },
-    {
-      "description": "Fake mistake + Co-op = command trick",
-      "requires": ["fake_mistake", "coop_command"],
+      "requires": ["coop_command", "quitting_announcement"],
       "bonus": 70
     },
     {
-      "description": "Co-op + Invitation = direct theft attempt",
-      "requires": ["coop_command", "invitation_language"],
-      "bonus": 45
+      "description": "Co-op + Giveaway = theft with bait",
+      "requires": ["coop_command", "giveaway_promise"],
+      "bonus": 65
     },
     {
-      "description": "Quitting + Urgency + Items = pressure tactic",
-      "requires": ["quitting_claim", "urgency_giveaway", "item_bait"],
+      "description": "Quitting + Giveaway = suspicious giveaway",
+      "requires": ["quitting_announcement", "giveaway_promise"],
+      "bonus": 50
+    },
+    {
+      "description": "Co-op + Valuables = high-value theft attempt",
+      "requires": ["coop_command", "valuable_items"],
       "bonus": 75
     },
     {
-      "description": "Co-op + Trust + Items = trust exploitation",
-      "requires": ["coop_command", "trust_building", "item_bait"],
-      "bonus": 68
+      "description": "Visit + Giveaway = visit trap",
+      "requires": ["visit_command", "giveaway_promise"],
+      "bonus": 45
     },
     {
-      "description": "Visit + Rank + Items = compound scam",
-      "requires": ["visit_command", "rank_involvement", "item_bait"],
-      "bonus": 50
+      "description": "Fake mistake + Co-op = command manipulation trick",
+      "requires": ["fake_mistake", "coop_command"],
+      "bonus": 85
+    },
+    {
+      "description": "Full island theft sequence",
+      "requires": ["coop_command", "quitting_announcement", "giveaway_promise"],
+      "bonus": 90
+    },
+    {
+      "description": "Co-op with instructions and bait",
+      "requires": ["coop_command", "action_instruction", "valuable_items"],
+      "bonus": 80
     }
   ]
 }

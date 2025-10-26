@@ -81,7 +81,7 @@ public class ScamShieldDataManager {
                             StandardCopyOption.ATOMIC_MOVE);
 
                     if (PackCoreConfig.enableScamShieldDebugging) {
-                        PackCore.LOGGER.debug(
+                        PackCore.LOGGER.info(
                                 "[ScamShield] Saved detection to history (total: {})",
                                 history.size()
                         );
