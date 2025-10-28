@@ -9,6 +9,8 @@ import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.update.modrinth.UpdateCache;
 import com.github.kd_gaming1.packcore.util.update.UpdateResult;
 import com.github.kd_gaming1.packcore.notification.UpdateNotifier;
+import com.github.kd_gaming1.packcore.ui.toast.PackCoreToast;
+import com.terraformersmc.modmenu.api.ModMenuApi;
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.*;
@@ -24,6 +26,7 @@ import net.minecraft.client.gui.screen.multiplayer.ConnectScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.world.SelectWorldScreen;
+import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.text.Text;
@@ -37,16 +40,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+import static com.github.kd_gaming1.packcore.ui.theme.UITheme.*;
 
+/**
+ * Improved styled title screen with better component organization
+ */
 public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private final Identifier backgroundTexture = Identifier.of(MOD_ID, "textures/gui/title/main_menu_background.png");
-
     private static final ModpackInfo info = PackCore.getModpackInfo();
 
-    private String ChangeLogInfoText;
-    private static final boolean updateNotificationEnabled =
+    private static long lastToastTime = 0;
+    private static final long TOAST_COOLDOWN_MS = 5 * 60 * 1000;
+
+    // Update state
+    private final boolean updateNotificationEnabled =
             info != null &&
                     PackCoreConfig.showUpdateNotificationsOnTitleScreen &&
                     PackCoreConfig.enableUpdateNotifications;
@@ -54,9 +63,9 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
     private String currentVersion;
     private String newVersion;
     private String changelog;
-    private String modrinthUrl;
     private String modrinthName;
 
+    // UI state
     private boolean showChangelog = false;
     private FlowLayout mainButtonLayout;
     private FlowLayout changelogLayout;
@@ -83,13 +92,15 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
     @Override
     protected void build(FlowLayout rootComponent) {
         rootComponent.surface(TextureSurfaces.stretched(backgroundTexture, 1920, 1082));
+
+        // Main components
         rootComponent.child(createMainButtonAndTitle()).horizontalAlignment(HorizontalAlignment.CENTER);
         rootComponent.child(createSocialButtons().positioning(Positioning.relative(0, 100)));
         rootComponent.child(createSeeWhatIsNewButtons().positioning(Positioning.relative(100, 0)));
         rootComponent.child(createModpackButtons().positioning(Positioning.relative(100, 100)));
 
         // Create changelog layout but don't add it initially
-        changelogLayout = (FlowLayout) createChangelogFiled().positioning(Positioning.relative(50, 75));
+        changelogLayout = createChangelogPanel();
     }
 
     @Override
@@ -97,24 +108,30 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         UpdateResult result = checkForUpdates();
 
         if (result.isSuccess() && result.isUpdateAvailable() && updateNotificationEnabled) {
-            if (UpdateNotifier.shouldShowMainMenuToast(result.getVersionNumber())) {
-                UpdateNotifier.showMainMenuToast(currentVersion, newVersion, modrinthName);
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastToastTime > TOAST_COOLDOWN_MS && UpdateNotifier.shouldShowMainMenuToast(result.getVersionNumber())) {
+                PackCoreToast.showUpdateAvailable(currentVersion, newVersion, modrinthName);
+                lastToastTime = currentTime;
             }
         }
 
         if (!result.isSuccess()) {
-            LOGGER.warn("Update check failed, but don't spam user: {}", result.getErrorMessage());
+            LOGGER.warn("Update check failed: {}", result.getErrorMessage());
         }
 
         super.init();
     }
 
+    /**
+     * Create main button area and title
+     */
     private FlowLayout createMainButtonAndTitle() {
         FlowLayout buttonAndTitle = (FlowLayout) Containers.verticalFlow(Sizing.fixed(320), Sizing.fill(100))
                 .gap(4)
                 .padding(Insets.of(4))
                 .margins(Insets.of(4, 4, 4, 4));
 
+        // Title texture
         TextureComponent title = (TextureComponent) Components.texture(
                         Identifier.of(MOD_ID, "textures/gui/title/title.png"),
                         0, 0, 1476, 157, 1476, 157
@@ -123,20 +140,28 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
                 .horizontalSizing(Sizing.fixed(312))
                 .verticalSizing(Sizing.fixed(34));
 
+        // Button layout
         mainButtonLayout = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(8)
                 .horizontalAlignment(HorizontalAlignment.CENTER)
                 .padding(Insets.of(8))
                 .margins(Insets.top(12));
 
-        // Add all buttons to layout
+        // Add all buttons
+        ButtonComponent joinHypixel = createButton("Join Hypixel", this::joinHypixel);
+        ButtonComponent openSingleplayer = createButton("SINGLEPLAYER", this::openSingleplayer);
+        ButtonComponent openMultiplayer = createButton("Multiplayer", this::openMultiplayer);
+        ButtonComponent openMods = createButton("MODS", this::openMods);
+        ButtonComponent openOptions = createButton("OPTIONS", this::openOptions);
+
         mainButtonLayout
-                .child(createHypixelButton())
-                .child(createSingleplayerButton())
-                .child(createMultiplayerButton())
-                .child(createModsButton())
-                .child(createOptionsButton())
-                .child(createQuitButton());
+                .child(joinHypixel)
+                .child(openSingleplayer)
+                .child(openMultiplayer)
+                .child(openMods)
+                .child(openOptions)
+                .child(createButton("QUIT", button -> MinecraftClient.getInstance().scheduleStop()));
+
 
         buttonAndTitle.child(title);
         buttonAndTitle.child(mainButtonLayout);
@@ -144,34 +169,105 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         return buttonAndTitle;
     }
 
+    /**
+     * Create a standard button
+     */
+    private ButtonComponent createButton(String text, ButtonComponent.PressAction action) {
+        return (ButtonComponent) Components.button(
+                        Text.literal(text).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
+                        action::onPress
+                )
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 200, 66))
+                .horizontalSizing(Sizing.fixed(200))
+                .verticalSizing(Sizing.fixed(22));
+    }
+
+
+    /**
+     * Create an icon button
+     */
+    private ButtonComponent createIconButton(String texture, String tooltip, Runnable action) {
+        return (ButtonComponent) Components.button(
+                        Text.empty(),
+                        button -> action.run()
+                )
+                .renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, texture), 0, 0, 22, 22))
+                .horizontalSizing(Sizing.fixed(22))
+                .verticalSizing(Sizing.fixed(22))
+                .tooltip(Text.literal(tooltip));
+    }
+
+    /**
+     * Create social buttons panel
+     */
     private FlowLayout createSocialButtons() {
         FlowLayout buttonLayout = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
                 .gap(6)
                 .horizontalAlignment(HorizontalAlignment.LEFT)
                 .padding(Insets.of(4));
 
-
         buttonLayout
-                .child(createDiscordButton())
-                .child(createModrinthButton())
-                .child(createGitHubButton())
-                .child(createInfo());
+                .child(createIconButton("textures/gui/menu/discord_icon.png",
+                        "Join our Discord server",
+                        () -> Util.getOperatingSystem().open(info.getDiscord())))
+                .child(createIconButton("textures/gui/menu/modrinth_icon.png",
+                        "Visit the modrinth page",
+                        () -> Util.getOperatingSystem().open(info.getWebsite())))
+                .child(createIconButton("textures/gui/menu/github_icon.png",
+                        "Report an issue",
+                        () -> Util.getOperatingSystem().open(info.getIssueTracker())))
+                .child(createVersionInfo());
 
         return buttonLayout;
     }
 
+    /**
+     * Create version info display
+     */
+    private FlowLayout createVersionInfo() {
+        FlowLayout mainLayout = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
+                .gap(4)
+                .horizontalAlignment(HorizontalAlignment.LEFT);
+
+        LabelComponent versionLabel = Components.label(
+                Text.literal("Pack Version: " + currentVersion)
+                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+        ).color(Color.ofArgb(TEXT_DARK));
+
+        mainLayout.child(versionLabel);
+
+        if (updateAvailable) {
+            LabelComponent updateAvailableLabel = Components.label(
+                    Text.literal("Update Available: " + newVersion)
+                            .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+            ).color(Color.ofArgb(TEXT_DARK));
+            mainLayout.child(updateAvailableLabel);
+        }
+
+        return mainLayout;
+    }
+
+    /**
+     * Create see what's new button
+     */
     private FlowLayout createSeeWhatIsNewButtons() {
         FlowLayout buttonLayout = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
                 .gap(6)
                 .horizontalAlignment(HorizontalAlignment.RIGHT)
                 .padding(Insets.of(4));
 
-        buttonLayout
-                .child(createSeeWhatIsNewButton());
+        buttonLayout.child(createIconButton("textures/gui/menu/update_icon.png",
+                "See what's new",
+                this::toggleChangelog));
 
         return buttonLayout;
     }
 
+    /**
+     * Create modpack buttons
+     */
     private FlowLayout createModpackButtons() {
         FlowLayout buttonLayout = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
                 .gap(6)
@@ -179,228 +275,115 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
                 .padding(Insets.of(4));
 
         buttonLayout
-                .child(createModpackButton())
-                .child(createHelpUpdateButton());
+                .child(createIconButton("textures/gui/menu/settings_icon.png",
+                        "Modpack Settings import/export your config",
+                        () -> {
+                            assert this.client != null;
+                            this.client.setScreen(new ConfigManagerScreen());
+                        }))
+                .child(createIconButton("textures/gui/menu/guide_icon.png",
+                        "See Guides on how to use the modpack",
+                        () -> {
+                            assert this.client != null;
+                            this.client.setScreen(new GuideListScreen());
+                        }));
 
         return buttonLayout;
     }
 
-    private FlowLayout createChangelogFiled() {
+    /**
+     * Create changelog panel with help button
+     */
+    private FlowLayout createChangelogPanel() {
         FlowLayout mainLayout = (FlowLayout) Containers.verticalFlow(Sizing.fill(65), Sizing.fill(75))
                 .gap(4)
                 .horizontalAlignment(HorizontalAlignment.CENTER)
                 .padding(Insets.of(4))
-                .surface(TextureSurfaces.stretched(Identifier.of(MOD_ID, "textures/gui/menu/info_box.png"), 1142, 934))
-                .margins(Insets.of(4, 4, 4, 4));
+                .surface(TextureSurfaces.stretched(
+                        Identifier.of(MOD_ID, "textures/gui/menu/info_box.png"), 1142, 934))
+                .margins(Insets.of(4, 4, 4, 4))
+                .positioning(Positioning.relative(50, 75));
 
+        // Header section
         FlowLayout changelogInfo = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(2)
                 .padding(Insets.of(6, 0, 8, 8))
                 .horizontalAlignment(HorizontalAlignment.CENTER);
 
+        // Determine status text
+        String changeLogInfoText;
         if (currentVersion.equals(newVersion)) {
-            ChangeLogInfoText = "You are up to date! See change log for current version below:";
+            changeLogInfoText = "You are up to date! See change log for current version below:";
         } else if (compareVersions(currentVersion, newVersion) < 0) {
-            ChangeLogInfoText = "A new version is available! See what's new below:";
+            changeLogInfoText = "A new version is available! See what's new below:";
         } else {
-            ChangeLogInfoText = "You are using a newer or unknown version.";
+            changeLogInfoText = "You are using a newer or unknown version.";
         }
 
-        LabelComponent changelogLabel = Components.label(Text.literal(ChangeLogInfoText).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).shadow(false);
+        LabelComponent changelogLabel = Components.label(
+                Text.literal(changeLogInfoText)
+                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+        ).shadow(false);
 
+        // Divider
         FlowLayout divider = (FlowLayout) Containers.horizontalFlow(Sizing.fill(98), Sizing.fill(8))
-                .surface(TextureSurfaces.scaledContain(Identifier.of(MOD_ID, "textures/gui/menu/divider.png"), 2401, 96));
+                .surface(TextureSurfaces.scaledContain(
+                        Identifier.of(MOD_ID, "textures/gui/menu/divider.png"), 2401, 96));
 
+        changelogInfo.child(changelogLabel);
+        changelogInfo.child(divider);
+        mainLayout.child(changelogInfo);
+
+        // Changelog content with markdown
+        String changelogContent = changelog != null ? changelog : "No changelog available.";
+
+        // Process markdown
         var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
-                changelog += """
-                        
-                        ---
-                        
-                        Need help **updating**? Click the button below.
-                        """,
+                changelogContent,
                 MARKDOWN_PROCESSOR::process
         );
         markdownComponent.horizontalSizing(Sizing.fill(98));
         markdownComponent.padding(Insets.of(0, 4, 4, 4));
 
-
-        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(Sizing.fill(98), Sizing.expand(), (FlowLayout) markdownComponent);
+        // Scrollable content
+        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
+                Sizing.fill(98),
+                Sizing.expand(),
+                (FlowLayout) markdownComponent
+        );
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
         scrollContainer.margins(Insets.bottom(10));
 
-        changelogInfo.child(changelogLabel);
-        changelogInfo.child(divider);
-        mainLayout.child(changelogInfo);
         mainLayout.child(scrollContainer);
 
-        return mainLayout;
-    }
+        // Help button section
+        FlowLayout buttonSection = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(8)
+                .horizontalAlignment(HorizontalAlignment.CENTER)
+                .padding(Insets.of(8));
 
-    private ButtonComponent createHypixelButton() {
-        return (ButtonComponent) Components.button(
-                        Text.literal("Join Hypixel").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
+        ButtonComponent helpButton = (ButtonComponent) Components.button(
+                        Text.literal("📚 Open Update Guide"),
                         button -> {
-                            MinecraftClient client = MinecraftClient.getInstance();
-                            ServerInfo serverInfo = new ServerInfo("Hypixel", PackCoreConfig.serverAddressForQuickJoinButton, ServerInfo.ServerType.OTHER);
-                            ConnectScreen.connect(this, client, ServerAddress.parse(PackCoreConfig.serverAddressForQuickJoinButton), serverInfo, false, null);
+                            // Open the guide screen and close the changelog
+                            assert this.client != null;
+                            this.client.setScreen(new GuideListScreen(this));
+                            toggleChangelog(); // Hide changelog when opening guides
                         }
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 200, 66))
-                .horizontalSizing(Sizing.fixed(200))
-                .verticalSizing(Sizing.fixed(22));
-    }
+                ).renderer(ButtonComponent.Renderer.texture(
+                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 180, 60))
+                .horizontalSizing(Sizing.fixed(180))
+                .verticalSizing(Sizing.fixed(20));
 
-    private ButtonComponent createSingleplayerButton() {
-        return (ButtonComponent) Components.button(
-                        Text.literal("SINGLEPLAYER").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
-                        button -> MinecraftClient.getInstance().setScreen(new SelectWorldScreen(this))
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 200, 66))
-                .horizontalSizing(Sizing.fixed(200))
-                .verticalSizing(Sizing.fixed(22));
-    }
-
-    private ButtonComponent createMultiplayerButton() {
-        return (ButtonComponent) Components.button(
-                        Text.literal("Multiplayer").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
-                        button -> MinecraftClient.getInstance().setScreen(new MultiplayerScreen(this))
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 200, 66))
-                .horizontalSizing(Sizing.fixed(200))
-                .verticalSizing(Sizing.fixed(22));
-    }
-
-    private ButtonComponent createModsButton() {
-        return (ButtonComponent) Components.button(
-                        Text.literal("MODS").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
-                        button -> {
-                            try {
-                                Class<?> modMenuClass = Class.forName("com.terraformersmc.modmenu.gui.ModsScreen");
-                                MinecraftClient client = MinecraftClient.getInstance();
-                                Screen modsScreen = (Screen) modMenuClass
-                                        .getConstructor(Screen.class)
-                                        .newInstance(client.currentScreen);
-                                client.setScreen(modsScreen);
-                            } catch (Exception e) {
-                                LOGGER.error("Failed to open ModMenu screen", e);
-                            }
-                        }
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 200, 66))
-                .horizontalSizing(Sizing.fixed(200))
-                .verticalSizing(Sizing.fixed(22));
-    }
-
-    private ButtonComponent createOptionsButton() {
-        return (ButtonComponent) Components.button(
-                        Text.literal("OPTIONS").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
-                        button -> {
-                            MinecraftClient client = MinecraftClient.getInstance();
-                            client.setScreen(new OptionsScreen(this, client.options));
-                        }
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 200, 66))
-                .horizontalSizing(Sizing.fixed(200))
-                .verticalSizing(Sizing.fixed(22));
-    }
-
-    private ButtonComponent createQuitButton() {
-        return (ButtonComponent) Components.button(
-                        Text.literal("QUIT").styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
-                        button -> MinecraftClient.getInstance().scheduleStop()
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/blank_button.png"), 0, 0, 200, 66))
-                .horizontalSizing(Sizing.fixed(200))
-                .verticalSizing(Sizing.fixed(22));
-    }
-
-    private ButtonComponent createDiscordButton() {
-        return (ButtonComponent) Components.button(
-                        Text.empty(),
-                        button -> Util.getOperatingSystem().open(info.getDiscord())
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/discord_icon.png"), 0, 0, 22, 22))
-                .horizontalSizing(Sizing.fixed(22))
-                .verticalSizing(Sizing.fixed(22))
-                .tooltip(Text.literal("Join our Discord server"));
-    }
-
-    private ButtonComponent createModrinthButton() {
-        return (ButtonComponent) Components.button(
-                        Text.empty(),
-                        button -> Util.getOperatingSystem().open(info.getWebsite())
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/modrinth_icon.png"), 0, 0, 22, 22))
-                .horizontalSizing(Sizing.fixed(22))
-                .verticalSizing(Sizing.fixed(22))
-                .tooltip(Text.literal("Visit the modrinth page"));
-    }
-
-    private ButtonComponent createGitHubButton() {
-        return (ButtonComponent) Components.button(
-                        Text.empty(), button -> Util.getOperatingSystem().open(info.getIssueTracker())
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/github_icon.png"), 0, 0, 22, 22))
-                .horizontalSizing(Sizing.fixed(22))
-                .verticalSizing(Sizing.fixed(22))
-                .tooltip(Text.literal("Report an issue"));
-    }
-
-    private FlowLayout createInfo() {
-        FlowLayout mainLayout = (FlowLayout) Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .gap(4)
-                .horizontalAlignment(HorizontalAlignment.LEFT);
-
-        //#if MC >= 1.21.8
-        //$$ LabelComponent versionLabel = Components.label(Text.literal("Pack Version: " + currentVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.BLACK);
-        //#else
-        LabelComponent versionLabel = Components.label(Text.literal("Pack Version: " + currentVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.ofArgb(0x030100));
-        //#endif
-        mainLayout.child(versionLabel);
-        if (updateAvailable) {
-            //#if MC >= 1.21.8
-            //$$ LabelComponent updateAvailableLabel = Components.label(Text.literal("Update Available: " + newVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.BLACK);
-            //#else
-            LabelComponent updateAvailableLabel = Components.label(Text.literal("Update Available: " + newVersion).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))).color(Color.ofArgb(0x030100));
-            //#endif
-            mainLayout.child(updateAvailableLabel);
-        }
+        buttonSection.child(helpButton);
+        mainLayout.child(buttonSection);
 
         return mainLayout;
     }
 
-    private ButtonComponent createSeeWhatIsNewButton() {
-        return (ButtonComponent) Components.button(
-                        Text.empty(),
-                        button -> toggleChangelog()
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/update_icon.png"), 0, 0, 22, 22))
-                .horizontalSizing(Sizing.fixed(22))
-                .verticalSizing(Sizing.fixed(22))
-                .tooltip(Text.literal("See what's new"));
-    }
-
-    private ButtonComponent createHelpUpdateButton() {
-        return (ButtonComponent) Components.button(
-                        Text.empty(), button -> this.client.setScreen(new GuideListScreen())
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/guide_icon.png"), 0, 0, 22, 22))
-                .horizontalSizing(Sizing.fixed(22))
-                .verticalSizing(Sizing.fixed(22))
-                .tooltip(Text.literal("See Guides on how to use the modpack"));
-    }
-
-    private ButtonComponent createModpackButton() {
-        return (ButtonComponent) Components.button(
-                        Text.empty(), button -> this.client.setScreen(new ConfigManagerScreen())
-                )
-                .renderer(ButtonComponent.Renderer.texture(Identifier.of(MOD_ID, "textures/gui/menu/settings_icon.png"), 0, 0, 22, 22))
-                .horizontalSizing(Sizing.fixed(22))
-                .verticalSizing(Sizing.fixed(22))
-                .tooltip(Text.literal("Modpack Settings import/export your config"));
-    }
-
-
+    /**
+     * Toggle changelog visibility
+     */
     private void toggleChangelog() {
         showChangelog = !showChangelog;
 
@@ -411,11 +394,50 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         } else {
             // Hide changelog and show main buttons
             changelogLayout.remove();
-            // Get the first child (which is the buttonAndTitle FlowLayout) and add mainButtonLayout back
             FlowLayout buttonAndTitle = (FlowLayout) this.uiAdapter.rootComponent.children().getFirst();
             buttonAndTitle.child(mainButtonLayout);
         }
     }
+
+    // ===== Button Actions =====
+
+    private void joinHypixel(ButtonWidget button) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        ServerInfo serverInfo = new ServerInfo("Hypixel",
+                PackCoreConfig.serverAddressForQuickJoinButton,
+                ServerInfo.ServerType.OTHER);
+        ConnectScreen.connect(this, client,
+                ServerAddress.parse(PackCoreConfig.serverAddressForQuickJoinButton),
+                serverInfo, false, null);
+    }
+
+    private void openSingleplayer(ButtonWidget button) {
+        MinecraftClient.getInstance().setScreen(new SelectWorldScreen(this));
+    }
+
+    private void openMultiplayer(ButtonWidget button) {
+        MinecraftClient.getInstance().setScreen(new MultiplayerScreen(this));
+    }
+
+    private void openMods(ButtonWidget button) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        Screen current = client.currentScreen;
+
+        try {
+            Screen modsScreen = ModMenuApi.createModsScreen(current);
+            client.setScreen(modsScreen);
+        } catch (Throwable t) {
+            LOGGER.error("Failed to open Mod Menu screen", t);
+            PackCoreToast.showError("Mod Menu Error", "Could not open Mod Menu");
+        }
+    }
+
+    private void openOptions(ButtonWidget button) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.setScreen(new OptionsScreen(this, client.options));
+    }
+
+    // ===== Update Check Logic =====
 
     public UpdateResult checkForUpdates() {
         UpdateCache updateManager = PackCore.getUpdateManager();
@@ -432,7 +454,6 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
             this.currentVersion = "";
             this.newVersion = "";
             this.changelog = "";
-            this.modrinthUrl = "";
             this.modrinthName = "";
             LOGGER.warn("Skipping update check - configuration not properly set up: {}",
                     info.getValidationError());
@@ -443,7 +464,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         if (!result.isSuccess()) {
             LOGGER.error("Update check failed: {}", result.getErrorMessage());
-            return result; // Return the error result
+            return result;
         }
 
         // Update instance variables
@@ -451,12 +472,15 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         this.currentVersion = info.getVersion();
         this.newVersion = result.getVersionNumber();
         this.changelog = result.getChangelog();
-        this.modrinthUrl = result.getModrinthUrl();
+        result.getModrinthUrl();
         this.modrinthName = info.getName();
 
-        return result; // Return the successful result
+        return result;
     }
 
+    /**
+     * Compare version strings
+     */
     public static int compareVersions(String v1, String v2) {
         String[] parts1 = v1.replaceAll("[^0-9.]", "").split("\\.");
         String[] parts2 = v2.replaceAll("[^0-9.]", "").split("\\.");
@@ -474,5 +498,4 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         return 0;
     }
-
 }

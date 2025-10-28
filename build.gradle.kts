@@ -66,6 +66,7 @@ dependencies {
 
     modCompileOnly("maven.modrinth:sodium:$sodiumVersion")
     modCompileOnly("maven.modrinth:iris:$irisVersion")
+    modCompileOnly("com.terraformersmc:modmenu:$modmenuVersion")
     modRuntimeOnly("com.terraformersmc:modmenu:$modmenuVersion")
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
 }

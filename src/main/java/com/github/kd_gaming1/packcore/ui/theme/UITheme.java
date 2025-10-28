@@ -21,6 +21,7 @@ public final class UITheme {
     // NEW: Text colors
     public static final int TEXT_PRIMARY = 0xFF_FFFFFF;        // White
     public static final int TEXT_SECONDARY = 0xFF_B0B8C8;      // Light gray
+    public static final int TEXT_DARK = 0xFF_000000;           // Black
     public static final int TEXT_HINT = 0xFF_6B7280;           // Darker gray
 
     // OLD: Kept for backwards compatibility
