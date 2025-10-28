@@ -163,7 +163,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
         headerRow.child(Components.label(
                 Text.literal("✓ Configuration Successful")
                         .setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        ).color(Color.ofRgb(TEXT_WHITE)));
+        ).color(Color.ofRgb(TEXT_PRIMARY)));
 
         messageSection.child(headerRow);
 

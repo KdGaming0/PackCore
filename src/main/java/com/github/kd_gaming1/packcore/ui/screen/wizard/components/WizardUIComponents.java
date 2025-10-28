@@ -240,7 +240,7 @@ public class WizardUIComponents {
                 .margins(Insets.vertical(2));
 
         item.child(Components.label(Text.literal(label))
-                .color(Color.ofRgb(TEXT_WHITE)));
+                .color(Color.ofRgb(TEXT_PRIMARY)));
 
         if (value != null) {
             LabelComponent valueLabel = (LabelComponent) Components.label(Text.literal(value))
