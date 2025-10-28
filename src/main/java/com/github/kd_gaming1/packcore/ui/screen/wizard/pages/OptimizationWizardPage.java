@@ -4,13 +4,8 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.util.wizard.WizardDataStore;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.WizardNavigator;
-import com.github.kd_gaming1.packcore.lavendermd.CustomLavenderCompiler;
+import com.github.kd_gaming1.packcore.ui.screen.wizard.components.WizardUIComponents;
 import com.github.kd_gaming1.packcore.util.markdown.MarkdownService;
-import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
-import io.wispforest.lavendermd.MarkdownProcessor;
-import io.wispforest.lavendermd.feature.*;
-import io.wispforest.owo.ops.TextOps;
-import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -18,237 +13,209 @@ import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import static com.github.kd_gaming1.packcore.ui.screen.wizard.pages.ResourcePacksWizardPage.getFlowLayoutScrollContainer;
+import static com.github.kd_gaming1.packcore.ui.theme.UITheme.*;
 
+/**
+ * Example of a simplified wizard page using the new component system.
+ * This shows the optimization profile selection page.
+ */
 public class OptimizationWizardPage extends BaseWizardPage {
 
-    private static final String FALLBACK_OPTIMIZATION_PROFILE = """
+    private static final String FALLBACK_CONTENT = """
             # Optimization Profile
-
-            Optimistic the game! This is the default Optimization content.
             
+            Choose your preferred performance settings.
             Find and edit this content in `rundir/packcore/wizard_markdown_content/optimisation.md`
             """;
 
-    private final MarkdownService markdownService = new MarkdownService();
+    /**
+     * Configuration for optimization profiles
+     */
+    private record ProfileOption(
+            String key,
+            String icon,
+            String title,
+            String description
+    ) {}
+
+    private static final List<ProfileOption> PROFILES = List.of(
+            new ProfileOption("Max FPS", "🚀", "Maximum FPS",
+                    "Highest frame rates. Reduces visual quality for smooth gameplay."),
+            new ProfileOption("Balanced", "⚖", "Balanced",
+                    "Best of both. Good FPS while keeping important visuals."),
+            new ProfileOption("Quality", "💎", "Visual Quality",
+                    "Beautiful graphics. Requires good hardware."),
+            new ProfileOption("Shaders", "✨", "Shaders Enabled",
+                    "Ultimate visuals. Needs high-end system.")
+    );
 
     private final String markdownContent;
-    private final ModpackInfo modpackInfo;
+    private final WizardDataStore dataStore;
 
-
-    private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
-            new MarkdownProcessor<>(
-                    CustomLavenderCompiler::new,
-                    new BasicFormattingFeature(),
-                    new ColorFeature(),
-                    new LinkFeature(),
-                    new ListFeature(),
-                    new BlockQuoteFeature(),
-                    new ImageFeature()
-            );
-
-    private static final Map<String, ParentComponent> COMPONENT_CACHE = new ConcurrentHashMap<>();
-
-    private String selectedOptimisationProfile = "";
-    LabelComponent headerTitle;
+    private String selectedProfile;
+    private LabelComponent headerTitle;
     private FlowLayout rightPanel;
-
-    private static final int SELECTED_OUTLINE_COLOR = 0xFF00FF00;
-    private static final int UNSELECTED_OUTLINE_COLOR = ACCENT_GOLD;
-
-    public record ProfileOption(String key, String title, String description) {
-    }
-
-    // The selectable options
-    private final List<OptimizationWizardPage.ProfileOption> allProfiles = List.of(
-            new OptimizationWizardPage.ProfileOption("Max FPS", "Profile: Max FPS", "Maximizes performance by reducing visual effects and render distances. Uses fast graphics mode, minimal particles, and optimized settings for the highest possible frame rates. Perfect for older hardware."),
-            new OptimizationWizardPage.ProfileOption("Balanced", "Profile: Balanced", "Provides an optimal balance between performance and visual quality. Maintains good frame rates while preserving important visual features like shadows and fancy graphics. Ideal for most gaming scenarios and hardware configurations."),
-            new OptimizationWizardPage.ProfileOption("Quality", "Profile: Quality", "Prioritizes visual fidelity with high render distances, fancy graphics mode, and enhanced visual effects. Includes fabulous graphics with improved lighting and shadows. Best suited for high-end systems or content creation."),
-            new OptimizationWizardPage.ProfileOption("Shaders", "Profile: Shaders", "Ultimate visual experience combining quality settings with shaders enabled. Features high render distances, fabulous graphics, and optimized settings and shaders enabled from the get go. Requires high-end hardware for optimal performance.")
-    );
 
     public OptimizationWizardPage() {
         super(
                 new WizardPageInfo(
                         Text.literal("FPS OR QUALITY???"),
                         1,
-                        5 // Total wizard steps
+                        6
                 ),
                 Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
-        this.markdownContent = markdownService.getOrDefault("optimisation.md", FALLBACK_OPTIMIZATION_PROFILE);
-        this.modpackInfo = PackCore.getModpackInfo();
+        // Load markdown content
+        MarkdownService markdownService = new MarkdownService();
+        this.markdownContent = markdownService.getOrDefault("optimisation.md", FALLBACK_CONTENT);
 
-        // Restore saved state
-        String savedProfile = WizardDataStore.getInstance().getOptimizationProfile();
-        if (!savedProfile.isEmpty()) {
-            this.selectedOptimisationProfile = savedProfile;
-        }
+        // Initialize data store
+        this.dataStore = WizardDataStore.getInstance();
+        this.selectedProfile = dataStore.getOptimizationProfile();
     }
 
     @Override
     protected void buildContent(FlowLayout contentContainer) {
-        contentContainer.child(createWelcomeHeader());
-        contentContainer.child(createMarkdownSection());
+        // Create header using component factory
+        contentContainer.child(
+                WizardUIComponents.createHeader(
+                        "Choose your preferred optimisation profile for",
+                        "Please read the information below carefully before continuing."
+                )
+        );
+
+        // Create markdown section using component factory
+        contentContainer.child(
+                WizardUIComponents.createMarkdownScroll(markdownContent)
+        );
     }
 
     @Override
     protected void buildContentRight(FlowLayout contentContainerRight) {
         this.rightPanel = contentContainerRight;
-        rightPanel.child(createHeader());
-        rightPanel.child(createProfilesScrollContainer());
+
+        // Create selection header
+        rightPanel.child(createSelectionHeader());
+
+        // Create profile options
+        rightPanel.child(createProfileOptions());
     }
 
-    private FlowLayout createWelcomeHeader() {
-        FlowLayout header = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(6);
-
-        Text welcomeText = TextOps.concat(
-                TextOps.withColor("Choose your prefer optimisation profile for ", TEXT_WHITE),
-                Text.literal(modpackInfo.getName()).setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
-        );
-
-        return getFlowLayout(header, welcomeText, Color.ofRgb(TEXT_SECONDARY));
-    }
-
-    @NotNull
-    static FlowLayout getFlowLayout(FlowLayout header, Text welcomeText, Color color) {
-        LabelComponent welcomeTitle = Components.label(welcomeText);
-
-        LabelComponent subtitle = (LabelComponent) Components.label(
-                Text.literal("Please read the information below carefully before continuing. Need help? Click the discord button at the bottom.")
-                        .setStyle(Style.EMPTY.withColor(Formatting.GRAY).withItalic(Boolean.TRUE))
-        ).color(color).margins(Insets.of(2, 0, 2, 0)).sizing(Sizing.expand(), Sizing.content());
-
-        header.child(welcomeTitle).child(subtitle);
-
-        return header;
-    }
-
-    private ScrollContainer<FlowLayout> createMarkdownSection() {
-        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(4);
-
-        var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
-                markdownContent,
-                MARKDOWN_PROCESSOR::process
-        ).horizontalSizing(Sizing.fill(98));
-
-        return getFlowLayoutScrollContainer(markdownWrapper, markdownComponent);
-    }
-
-    private FlowLayout createHeader() {
+    /**
+     * Create the selection status header
+     */
+    private FlowLayout createSelectionHeader() {
         FlowLayout header = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(6)
-                .margins(Insets.top(4));
+                .margins(Insets.of(8, 0, 8, 8));
 
-        if (selectedOptimisationProfile.isEmpty()) {
-            headerTitle = (LabelComponent) Components.label(TextOps.withColor("Select your optimisation profile by clicking one of the boxes below", ACCENT_GOLD)).horizontalSizing(Sizing.fill(100));
+        // Create status label based on selection
+        if (selectedProfile.isEmpty()) {
+            headerTitle = WizardUIComponents.createStatusLabel(
+                    "Select your performance profile below",
+                    "👇",
+                    ACCENT_SECONDARY
+            );
         } else {
-            headerTitle = (LabelComponent) Components.label(TextOps.withColor("Your selected profile is: " + selectedOptimisationProfile, ACCENT_GOLD)).horizontalSizing(Sizing.fill(100));
+            ProfileOption selected = findProfile(selectedProfile);
+            String icon = selected != null ? selected.icon() + " " : "";
+            headerTitle = WizardUIComponents.createStatusLabel(
+                    "Selected: " + icon + selectedProfile,
+                    "✓",
+                    SUCCESS_BORDER
+            );
         }
 
         header.child(headerTitle);
-
         return header;
     }
 
-    private FlowLayout createProfileBox(OptimizationWizardPage.ProfileOption profile) {
-        boolean isSelected = profile.key.equals(selectedOptimisationProfile);
-        FlowLayout box = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        box.surface(Surface.flat(0x20_FFD700).and(Surface.outline(isSelected ? SELECTED_OUTLINE_COLOR : UNSELECTED_OUTLINE_COLOR)));
-        box.padding(Insets.of(2));
+    /**
+     * Create scrollable profile options
+     */
+    private ScrollContainer<FlowLayout> createProfileOptions() {
+        FlowLayout profilesLayout = Containers.verticalFlow(Sizing.fill(96), Sizing.content())
+                .gap(8);
 
-        LabelComponent infoTitle = (LabelComponent) Components.label(
-                TextOps.withColor(profile.title, ACCENT_GOLD).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        ).margins(Insets.of(2, 2, 2, 2));
-        LabelComponent infoText = (LabelComponent) Components.label(
-                        TextOps.withColor(profile.description, TEXT_WHITE).setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
-                ).horizontalSizing(Sizing.fill(100))
-                .margins(Insets.of(2, 2, 2, 2));
+        // Create option boxes using component factory
+        for (ProfileOption profile : PROFILES) {
+            boolean isSelected = profile.key().equals(selectedProfile);
 
-        box.child(infoTitle).child(infoText);
+            FlowLayout optionBox = WizardUIComponents.createOptionBox(
+                    profile.icon(),
+                    profile.title(),
+                    profile.description(),
+                    isSelected,
+                    (box) -> selectProfile(profile.key())
+            );
 
-        box.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            selectedOptimisationProfile(profile.key);
-            return true;
-        });
-
-        return box;
-    }
-
-    // Scrollable container for all profile boxes
-    private ScrollContainer<FlowLayout> createProfilesScrollContainer() {
-        FlowLayout profilesLayout = Containers.verticalFlow(Sizing.fill(96), Sizing.content()).gap(6);
-
-        for (OptimizationWizardPage.ProfileOption profile : allProfiles) {
-            profilesLayout.child(createProfileBox(profile));
+            profilesLayout.child(optionBox);
         }
 
+        // Create scroll container
         ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
                 Sizing.fill(100),
                 Sizing.expand(),
                 profilesLayout
         );
+
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
         scrollContainer.scrollbarThiccness(6);
         scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
         scrollContainer.padding(Insets.of(6));
         scrollContainer.margins(Insets.bottom(4));
+
         return scrollContainer;
     }
 
-    private void selectedOptimisationProfile(String profileKey) {
-        selectedOptimisationProfile = profileKey;
+    /**
+     * Handle profile selection
+     */
+    private void selectProfile(String profileKey) {
+        selectedProfile = profileKey;
+        dataStore.setOptimizationProfile(profileKey);
 
-        // Store in data manager as an optimization profile
-        WizardDataStore.getInstance().setOptimizationProfile(profileKey);
-
+        // Update header with selection
         if (headerTitle != null) {
+            ProfileOption selected = findProfile(profileKey);
+            String icon = selected != null ? selected.icon() + " " : "";
+
             headerTitle.text(
-                    TextOps.withColor("Your selected performance profile: " + selectedOptimisationProfile, ACCENT_GOLD)
-            );
+                    Text.literal("✓ Selected: " + icon + profileKey)
+                            .setStyle(Style.EMPTY.withBold(true))
+            ).color(Color.ofRgb(SUCCESS_BORDER));
         }
 
-        // Update UI to show selection
-        updateProfileBoxes();
+        // Refresh profile boxes to update selection state
+        rebuildRightPanel();
     }
 
-    private void updateProfileBoxes() {
-        rightPanel.children().stream()
-                .filter(child -> child instanceof ScrollContainer)
+    /**
+     * Rebuild the right panel to update selection states
+     */
+    private void rebuildRightPanel() {
+        rightPanel.clearChildren();
+        rightPanel.child(createSelectionHeader());
+        rightPanel.child(createProfileOptions());
+    }
+
+    /**
+     * Find a profile by key
+     */
+    private ProfileOption findProfile(String key) {
+        return PROFILES.stream()
+                .filter(p -> p.key().equals(key))
                 .findFirst()
-                .ifPresent(scrollContainer -> {
-                    FlowLayout profilesLayout = (FlowLayout) ((ScrollContainer<?>) scrollContainer).child();
-
-                    // Update existing profile boxes instead of rebuilding
-                    for (int i = 0; i < profilesLayout.children().size() && i < allProfiles.size(); i++) {
-                        Component child = profilesLayout.children().get(i);
-                        if (child instanceof FlowLayout existingBox) {
-                            ProfileOption profile = allProfiles.get(i);
-                            boolean isSelected = profile.key.equals(selectedOptimisationProfile);
-
-                            // Update the surface to reflect the selection state
-                            existingBox.surface(Surface.flat(0x20_FFD700).and(
-                                    Surface.outline(isSelected ? SELECTED_OUTLINE_COLOR : UNSELECTED_OUTLINE_COLOR)
-                            ));
-                        }
-                    }
-                });
+                .orElse(null);
     }
-
 
     @Override
     protected void onContinuePressed() {
+        assert this.client != null;
         this.client.setScreen(WizardNavigator.createWizardPage(2));
     }
 

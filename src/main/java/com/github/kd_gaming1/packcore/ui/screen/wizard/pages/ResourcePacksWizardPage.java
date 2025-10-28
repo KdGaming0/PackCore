@@ -4,12 +4,8 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.util.wizard.WizardDataStore;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.WizardNavigator;
-import com.github.kd_gaming1.packcore.lavendermd.CustomLavenderCompiler;
+import com.github.kd_gaming1.packcore.ui.screen.wizard.components.WizardUIComponents;
 import com.github.kd_gaming1.packcore.util.markdown.MarkdownService;
-import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
-import io.wispforest.lavendermd.MarkdownProcessor;
-import io.wispforest.lavendermd.feature.*;
-import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
@@ -19,246 +15,324 @@ import io.wispforest.owo.ui.core.*;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
-import static com.github.kd_gaming1.packcore.ui.screen.wizard.pages.OptimizationWizardPage.getFlowLayout;
+import static com.github.kd_gaming1.packcore.ui.theme.UITheme.*;
 
+/**
+ * Resource Packs selection page - allows choosing multiple resource packs
+ */
 public class ResourcePacksWizardPage extends BaseWizardPage {
 
-    private static final String FALLBACK_RESOURCE_PACK_DESCRIPTION = """
+    private static final String FALLBACK_CONTENT = """
             # Resource Packs
-
+            
             Choose your Resource Pack! This is the default Resource Pack content.
             
             Find and edit this content in `rundir/packcore/wizard_markdown_content/resource_packs.md`
             """;
 
-    private final MarkdownService markdownService = new MarkdownService();
+    /**
+     * Resource pack configuration
+     */
+    private record PackOption(
+            String key,
+            String icon,
+            String title,
+            String description,
+            boolean requiresJVM
+    ) {}
+
+    private static final List<PackOption> AVAILABLE_PACKS = List.of(
+            new PackOption(
+                    "HypixelPlus",
+                    "⭐",
+                    "Hypixel Plus",
+                    "Clean vanilla-style pack for Hypixel. Updates items and icons for clarity.",
+                    true
+            ),
+            new PackOption(
+                    "FurfSkyOverlay",
+                    "🎭",
+                    "FurfSky Overlay",
+                    "Popular choice. Retextures items only, keeping vanilla GUI.",
+                    false
+            ),
+            new PackOption(
+                    "FurfSkyFull",
+                    "🌟",
+                    "FurfSky Full",
+                    "Complete makeover. Items + GUI + menus in unique style.",
+                    false
+            ),
+            new PackOption(
+                    "SkyBlockDarkUI",
+                    "🌙",
+                    "SkyBlock Dark UI",
+                    "Sleek dark theme for menus and mod interfaces. Modern aesthetic.",
+                    false
+            ),
+            new PackOption(
+                    "SkyBlockDarkmode",
+                    "🌑",
+                    "SkyBlock Dark mode",
+                    "Sleek dark theme for The End island and The Mist",
+                    false
+            ),
+            new PackOption(
+                    "Defrosted",
+                    "❄",
+                    "Defrosted",
+                    "Frosty blue 16x pack. Minimalist look with cool aesthetic.",
+                    false
+            ),
+            new PackOption(
+                    "Looshy",
+                    "✨",
+                    "Looshy",
+                    "Smooth vanilla-like 16x. Refined textures, fresh and polished.",
+                    false
+            )
+    );
 
     private final String markdownContent;
-    private final ModpackInfo modpackInfo;
-
-    private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
-            new MarkdownProcessor<>(
-                    CustomLavenderCompiler::new,
-                    new BasicFormattingFeature(),
-                    new ColorFeature(),
-                    new LinkFeature(),
-                    new ListFeature(),
-                    new BlockQuoteFeature(),
-                    new ImageFeature()
-            );
-
-    private static final Map<String, ParentComponent> COMPONENT_CACHE = new ConcurrentHashMap<>();
-
-    // Allow multiple selections
+    private final WizardDataStore dataStore;
     private final Set<String> selectedResourcePacks = new LinkedHashSet<>();
-    LabelComponent headerTitle;
+
     private FlowLayout rightPanel;
-
-    private static final int SELECTED_OUTLINE_COLOR = 0xFF00FF00;
-    private static final int UNSELECTED_OUTLINE_COLOR = ACCENT_GOLD;
-
-    public record OptionProfile(String key, String title, String description) {
-    }
-
-    // The selectable options
-    private final List<ResourcePacksWizardPage.OptionProfile> allProfiles = List.of(
-            new ResourcePacksWizardPage.OptionProfile("HypixelPlus", "Pack: Hypixel Plus", "A clean, mostly vanilla pack designed for Hypixel modes like SkyBlock. It updates items and icons for better clarity without changing the overall Minecraft feel."),
-            new ResourcePacksWizardPage.OptionProfile("FurfSkyOverlay", "Pack: FurfSky Overlay", "A comprehensive resource pack for Hypixel SkyBlock, offering textures for nearly every item in the game. With full retextures for only items in a special style."),
-            new ResourcePacksWizardPage.OptionProfile("FurfSkyFull", "Pack: FurfSky Full", "A comprehensive resource pack for Hypixel SkyBlock, offering textures for nearly every item in the game. With full retextures for items and menus in a special style."),
-            new ResourcePacksWizardPage.OptionProfile("SkyBlockDarkUI", "Pack: SkyBlock Dark UI", " A sleek, dark-themed resource pack for Hypixel SkyBlock, enhancing all GUI elements, including mod interfaces, with a modern aesthetic. Inspired by PacksHQ Dark UI"),
-            new ResourcePacksWizardPage.OptionProfile("Defrosted", "Pack: Defrosted", "Icy-themed 16x pack for Minecraft 1.21.5. It offers a frosty blue aesthetic across items and menus, maintaining a minimalist look without altering gameplay clarity."),
-            new ResourcePacksWizardPage.OptionProfile("Looshy", "Pack: Looshy", "A smooth, vanilla‑like 16x resource pack with clean updates and subtle charm. It keeps Minecraft’s original style while offering refined textures that feel fresh and polished.")
-    );
 
     public ResourcePacksWizardPage() {
         super(
                 new WizardPageInfo(
                         Text.literal("Resource Packs"),
-                        3,
-                        5 // Total wizard steps
+                        4,
+                        6
                 ),
                 Identifier.of(PackCore.MOD_ID, "textures/gui/wizard/welcome_bg.png")
         );
 
-        this.markdownContent = markdownService.getOrDefault("resource_packs.md", FALLBACK_RESOURCE_PACK_DESCRIPTION);
-        this.modpackInfo = PackCore.getModpackInfo();
+        MarkdownService markdownService = new MarkdownService();
+        this.markdownContent = markdownService.getOrDefault("resource_packs.md", FALLBACK_CONTENT);
 
-        // Restore saved state
-        List<String> savedPacks = WizardDataStore.getInstance().getResourcePacksOrdered();
-        this.selectedResourcePacks.addAll(savedPacks);
+        this.dataStore = WizardDataStore.getInstance();
+        this.selectedResourcePacks.addAll(dataStore.getResourcePacksOrdered());
     }
 
     @Override
     protected void buildContent(FlowLayout contentContainer) {
-        contentContainer.child(createWelcomeHeader());
-        contentContainer.child(createMarkdownSection());
+        // Header
+        contentContainer.child(
+                WizardUIComponents.createHeader(
+                        "Choose resource packs for",
+                        null // No subtitle for this page
+                )
+        );
+
+        // Markdown content
+        contentContainer.child(WizardUIComponents.createMarkdownScroll(markdownContent));
     }
 
     @Override
     protected void buildContentRight(FlowLayout contentContainerRight) {
         this.rightPanel = contentContainerRight;
-        rightPanel.child(createHeader());
-        rightPanel.child(createProfilesScrollContainer());
+        rightPanel.child(createSelectionHeader());
+        rightPanel.child(createPackOptions());
     }
 
-    private FlowLayout createWelcomeHeader() {
-        FlowLayout header = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(6);
-
-        Text welcomeText = TextOps.concat(
-                TextOps.withColor("Choose your prefer resource packs when using ", TEXT_WHITE),
-                Text.literal(modpackInfo.getName()).setStyle(Style.EMPTY.withColor(ACCENT_GOLD).withBold(Boolean.TRUE))
-        );
-
-        return getFlowLayout(header, welcomeText, Color.ofRgb(TEXT_SECONDARY));
-    }
-
-    private ScrollContainer<FlowLayout> createMarkdownSection() {
-        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(4);
-
-        var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
-                markdownContent,
-                MARKDOWN_PROCESSOR::process
-        ).horizontalSizing(Sizing.fill(96));
-
-        return getFlowLayoutScrollContainer(markdownWrapper, markdownComponent);
-    }
-
-    @NotNull
-    public static ScrollContainer<FlowLayout> getFlowLayoutScrollContainer(FlowLayout markdownWrapper, Component markdownComponent) {
-        markdownWrapper.child(markdownComponent);
-
-        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
-                Sizing.fill(100),
-                Sizing.expand(),
-                markdownWrapper
-        );
-
-        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        scrollContainer.scrollbarThiccness(6);
-        scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
-        scrollContainer.padding(Insets.of(8));
-
-        return scrollContainer;
-    }
-
-    private FlowLayout createHeader() {
+    /**
+     * Create the selection header with count and loading order
+     */
+    private FlowLayout createSelectionHeader() {
         FlowLayout header = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(6)
-                .margins(Insets.top(4));
+                .gap(8)
+                .margins(Insets.of(8, 0, 8, 8));
 
+        // Title
+        header.child(Components.label(
+                Text.literal("🎨 Resource Packs").setStyle(Style.EMPTY.withBold(true))
+        ).color(Color.ofRgb(TEXT_PRIMARY)));
+
+        // Selection status
+        LabelComponent headerTitle;
         if (selectedResourcePacks.isEmpty()) {
-            headerTitle = (LabelComponent) Components.label(TextOps.withColor("Select the resource packs you want by click the boxes below", ACCENT_GOLD)).horizontalSizing(Sizing.fill(100));
+            headerTitle = (LabelComponent) Components.label(
+                            Text.literal("Select packs below (optional)")
+                    ).color(Color.ofRgb(ACCENT_SECONDARY))
+                    .horizontalSizing(Sizing.fill(100));
         } else {
-            String joined = String.join(", ", selectedResourcePacks);
-            headerTitle = (LabelComponent) Components.label(TextOps.withColor("Your selected resource packs are: " + joined, ACCENT_GOLD)).horizontalSizing(Sizing.fill(100));
+            int count = selectedResourcePacks.size();
+            headerTitle = (LabelComponent) Components.label(
+                            Text.literal("✓ " + count + " pack" + (count == 1 ? "" : "s") + " selected")
+                                    .setStyle(Style.EMPTY.withBold(true))
+                    ).color(Color.ofRgb(SUCCESS_BORDER))
+                    .horizontalSizing(Sizing.fill(100));
         }
 
         header.child(headerTitle);
 
+        // Show loading order if any selected
+        if (!selectedResourcePacks.isEmpty()) {
+            header.child(createLoadingOrderPreview());
+        }
+
         return header;
     }
 
-    private FlowLayout createProfileBox(ResourcePacksWizardPage.OptionProfile profile) {
-        boolean isSelected = selectedResourcePacks.contains(profile.key);
-        FlowLayout box = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        box.surface(Surface.flat(0x20_FFD700).and(Surface.outline(isSelected ? SELECTED_OUTLINE_COLOR : UNSELECTED_OUTLINE_COLOR)));
-        box.padding(Insets.of(2));
+    /**
+     * Create loading order preview
+     */
+    private FlowLayout createLoadingOrderPreview() {
+        FlowLayout orderSection = WizardUIComponents.createInfoCard(
+                "📋 Loading Order (Top = Priority)",
+                null,
+                0x20_4A90E2,
+                ACCENT_PRIMARY
+        );
 
-        LabelComponent infoTitle = (LabelComponent) Components.label(
-                TextOps.withColor(profile.title, ACCENT_GOLD).setStyle(Style.EMPTY.withBold(Boolean.TRUE))
-        ).margins(Insets.of(2, 2, 2, 2));
-        LabelComponent infoText = (LabelComponent) Components.label(
-                        TextOps.withColor(profile.description, TEXT_WHITE).setStyle(Style.EMPTY.withItalic(Boolean.TRUE))
-                ).horizontalSizing(Sizing.fill(100))
-                .margins(Insets.of(2, 2, 2, 2));
+        int index = 1;
+        for (String packKey : selectedResourcePacks) {
+            FlowLayout orderItem = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                    .gap(6)
+                    .verticalAlignment(VerticalAlignment.CENTER);
 
-        box.child(infoTitle).child(infoText);
+            // Number badge
+            FlowLayout badge = (FlowLayout) Containers.horizontalFlow(Sizing.fixed(20), Sizing.fixed(20))
+                    .surface(Surface.flat(ACCENT_PRIMARY))
+                    .horizontalAlignment(HorizontalAlignment.CENTER)
+                    .verticalAlignment(VerticalAlignment.CENTER);
 
-        box.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            toggleSelectedProfile(profile.key);
-            return true;
-        });
+            badge.child(Components.label(Text.literal(String.valueOf(index)))
+                    .color(Color.ofRgb(TEXT_PRIMARY)));
 
-        return box;
+            orderItem.child(badge);
+
+            // Pack name
+            orderItem.child(Components.label(Text.literal(packKey))
+                    .color(Color.ofRgb(TEXT_SECONDARY))
+                    .horizontalSizing(Sizing.expand()));
+
+            orderSection.child(orderItem);
+            index++;
+        }
+
+        return orderSection;
     }
 
-    // Scrollable container for all profile boxes
-    private ScrollContainer<FlowLayout> createProfilesScrollContainer() {
-        FlowLayout profilesLayout = Containers.verticalFlow(Sizing.fill(96), Sizing.content()).gap(6);
+    /**
+     * Create scrollable pack options
+     */
+    private ScrollContainer<FlowLayout> createPackOptions() {
+        FlowLayout packsLayout = Containers.verticalFlow(Sizing.fill(96), Sizing.content()).gap(6);
 
-        for (ResourcePacksWizardPage.OptionProfile profile : allProfiles) {
-            profilesLayout.child(createProfileBox(profile));
+        for (PackOption pack : AVAILABLE_PACKS) {
+            packsLayout.child(createPackOption(pack));
         }
 
         ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
                 Sizing.fill(100),
                 Sizing.expand(),
-                profilesLayout
+                packsLayout
         );
+
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
         scrollContainer.scrollbarThiccness(6);
         scrollContainer.surface(Surface.flat(0x40_000000).and(Surface.outline(0x30_FFFFFF)));
         scrollContainer.padding(Insets.of(6));
         scrollContainer.margins(Insets.bottom(4));
+
         return scrollContainer;
     }
 
-    // Toggle selection and update manager + UI
-    private void toggleSelectedProfile(String profileKey) {
-        if (selectedResourcePacks.contains(profileKey)) {
-            selectedResourcePacks.remove(profileKey);
-        } else {
-            selectedResourcePacks.add(profileKey);
+    /**
+     * Create a single pack option
+     */
+    private FlowLayout createPackOption(PackOption pack) {
+        boolean isSelected = selectedResourcePacks.contains(pack.key);
+
+        FlowLayout card = WizardUIComponents.createSelectionCard(isSelected, (c) -> togglePack(pack.key));
+        card.cursorStyle(CursorStyle.HAND);
+
+        // Header with icon, title, and JVM badge if needed
+        FlowLayout header = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(8)
+                .verticalAlignment(VerticalAlignment.CENTER);
+
+        // Icon
+        header.child(Components.label(Text.literal(pack.icon))
+                .color(Color.ofRgb(ACCENT_SECONDARY)));
+
+        // Title
+        header.child(Components.label(
+                        Text.literal(pack.title).setStyle(Style.EMPTY.withBold(true))
+                ).color(Color.ofRgb(TEXT_PRIMARY))
+                .horizontalSizing(Sizing.expand()));
+
+        // JVM warning badge
+        if (pack.requiresJVM) {
+            FlowLayout warningBadge = (FlowLayout) Containers.horizontalFlow(Sizing.content(), Sizing.content())
+                    .surface(Surface.flat(WARNING_BG).and(Surface.outline(WARNING_BORDER)))
+                    .padding(Insets.of(2));
+
+            warningBadge.child(Components.label(Text.literal("⚠ JVM"))
+                    .color(Color.ofRgb(WARNING_BORDER)));
+
+            header.child(warningBadge);
         }
 
-        // NEW: Store in data manager using proper ordered list
-        List<String> orderedList = new ArrayList<>(selectedResourcePacks);
-        WizardDataStore.getInstance().setResourcePacksOrdered(orderedList);
+        card.child(header);
 
-        if (headerTitle != null) {
-            if (selectedResourcePacks.isEmpty()) {
-                headerTitle.text(TextOps.withColor("Select the resource packs you want by click the boxes below", ACCENT_GOLD));
-            } else {
-                headerTitle.text(TextOps.withColor("Your selected resource packs are: " + String.join(", ", selectedResourcePacks), ACCENT_GOLD));
-            }
+        // Description
+        LabelComponent desc = (LabelComponent) Components.label(Text.literal(pack.description))
+                .color(Color.ofRgb(TEXT_SECONDARY))
+                .horizontalSizing(Sizing.fill(100));
+        card.child(desc);
+
+        // JVM warning details if selected and requires JVM
+        if (pack.requiresJVM && isSelected) {
+            FlowLayout jvmWarning = WizardUIComponents.createInfoCard(
+                    "⚠ Requires JVM Argument",
+                    "Add -Xss4M to launcher settings. Exit wizard, add argument, restart game.",
+                    0x20_F59E0B,
+                    WARNING_BORDER
+            );
+            jvmWarning.margins(Insets.top(6));
+            card.child(jvmWarning);
         }
 
-        // Update UI outlines for profile boxes
-        updateProfileBoxes();
+        return card;
     }
 
-    private void updateProfileBoxes() {
-        rightPanel.children().stream()
-                .filter(child -> child instanceof ScrollContainer)
-                .findFirst()
-                .ifPresent(scrollContainer -> {
-                    FlowLayout profilesLayout = (FlowLayout) ((ScrollContainer<?>) scrollContainer).child();
+    /**
+     * Toggle pack selection
+     */
+    private void togglePack(String packKey) {
+        if (selectedResourcePacks.contains(packKey)) {
+            selectedResourcePacks.remove(packKey);
+        } else {
+            selectedResourcePacks.add(packKey);
+        }
 
-                    // Update existing profile boxes' surface to reflect selection state
-                    for (int i = 0; i < profilesLayout.children().size() && i < allProfiles.size(); i++) {
-                        Component child = profilesLayout.children().get(i);
-                        if (child instanceof FlowLayout existingBox) {
-                            ResourcePacksWizardPage.OptionProfile profile = allProfiles.get(i);
-                            boolean isSelected = selectedResourcePacks.contains(profile.key);
+        // Update data store
+        dataStore.setResourcePacksOrdered(new ArrayList<>(selectedResourcePacks));
 
-                            existingBox.surface(Surface.flat(0x20_FFD700).and(
-                                    Surface.outline(isSelected ? SELECTED_OUTLINE_COLOR : UNSELECTED_OUTLINE_COLOR)
-                            ));
-                        }
-                    }
-                });
+        // Rebuild right panel to update UI
+        rebuildRightPanel();
+    }
+
+    /**
+     * Rebuild the right panel
+     */
+    private void rebuildRightPanel() {
+        rightPanel.clearChildren();
+        rightPanel.child(createSelectionHeader());
+        rightPanel.child(createPackOptions());
     }
 
     @Override
     protected void onContinuePressed() {
-        this.client.setScreen(WizardNavigator.createWizardPage(4));
+        assert this.client != null;
+        this.client.setScreen(WizardNavigator.createWizardPage(5));
     }
 
     @Override

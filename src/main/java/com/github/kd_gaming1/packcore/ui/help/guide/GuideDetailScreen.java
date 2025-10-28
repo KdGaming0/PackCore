@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
-import static com.github.kd_gaming1.packcore.ui.screen.wizard.pages.ResourcePacksWizardPage.getFlowLayoutScrollContainer;
+import static com.github.kd_gaming1.packcore.ui.screen.wizard.components.WizardUIComponents.createMarkdownScroll;
 
 public class GuideDetailScreen extends BaseOwoScreen<FlowLayout> {
 
@@ -93,23 +93,13 @@ public class GuideDetailScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private ScrollContainer<FlowLayout> createMainContent() {
-        // Create a FlowLayout to wrap the markdown content
-        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(98), Sizing.content())
-                .gap(4);
-
         // Get the processed markdown component
         String content = guide.getFullContent();
         if (content == null || content.isEmpty()) {
             content = "# Error\n\nFailed to load guide content.";
         }
 
-        var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
-                content,
-                MARKDOWN_PROCESSOR::process
-        );
-
-        // Add the markdown component to our wrapper FlowLayout
-        return getFlowLayoutScrollContainer(markdownWrapper, markdownComponent);
+        return createMarkdownScroll(content);
     }
 
     @Override

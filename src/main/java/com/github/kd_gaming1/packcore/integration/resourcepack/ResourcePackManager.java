@@ -13,7 +13,8 @@ public class ResourcePackManager {
             "HypixelPlus", new String[]{"hypixel"},
             "FurfSkyOverlay", new String[]{"overlay", "furfsky"},
             "FurfSkyFull", new String[]{"full", "furfsky"},
-            "SkyBlockDarkUI", new String[]{"skyblock", "dark ui", "dark_ui"},
+            "SkyBlockDarkUI", new String[]{"skyblock", "dark", "ui"},
+            "SkyBlockDarkMode", new String[]{"dark", "skyblock", "mode"},
             "Defrosted", new String[]{"defrosted"},
             "Looshy", new String[]{"looshy"}
     );
@@ -23,6 +24,7 @@ public class ResourcePackManager {
             "FurfSkyOverlay", "overlay",
             "FurfSkyFull", "full",
             "SkyBlockDarkUI", "skyblock dark ui",
+            "SkyBlockDarkMode", "dark skyblock",
             "Defrosted", "defrosted",
             "Looshy", "looshy"
     );
@@ -190,11 +192,14 @@ public class ResourcePackManager {
     }
 
     private static int getMatchScore(String id, String name, String desc, String keyword) {
+        if (id.equals(keyword)) return 5;
+        if (id.startsWith(keyword)) return 4;
         if (id.contains(keyword)) return 3;
         if (name.contains(keyword)) return 2;
         if (desc.contains(keyword)) return 1;
-        return -1;
+        return 0;
     }
+
 
     private static Set<String> getAllKnownPackIds() {
         Set<String> allKnown = new HashSet<>();
