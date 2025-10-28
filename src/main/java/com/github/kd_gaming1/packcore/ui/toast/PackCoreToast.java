@@ -320,7 +320,7 @@ public class PackCoreToast extends BaseOwoToast<FlowLayout> {
                 .line(Text.literal(currentVersion).formatted(Formatting.GRAY)
                         .append(Text.literal(" → ").formatted(Formatting.DARK_AQUA))
                         .append(Text.literal(newVersion).formatted(Formatting.GOLD)))
-                .line("Update the pack in the launcher", Formatting.GRAY, Formatting.ITALIC)
+                .line("Update the pack in your launcher", Formatting.GRAY, Formatting.ITALIC)
                 .duration(12000)
                 .show();
     }
