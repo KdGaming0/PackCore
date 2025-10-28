@@ -13,6 +13,7 @@ import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.OverlayContainer;
+import io.wispforest.owo.ui.container.StackLayout;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
@@ -31,6 +32,7 @@ import static com.github.kd_gaming1.packcore.ui.screen.wizard.components.WizardU
  */
 public class ApplyConfigurationWizard extends BaseWizardPage {
 
+    private boolean configurationApplied = false;
     private final WizardDataStore dataStore;
     private LabelComponent statusLabel;
     private ButtonComponent applyButton;
@@ -496,6 +498,8 @@ public class ApplyConfigurationWizard extends BaseWizardPage {
 
         updatePrimaryButtonState(true);
 
+        configurationApplied = true;
+
         PackCoreConfig.haveShownWelcomeWizard = true;
         PackCoreConfig.write(MOD_ID);
     }
@@ -583,6 +587,14 @@ public class ApplyConfigurationWizard extends BaseWizardPage {
         this.client.setScreen(new SBEStyledTitleScreen());
     }
 
+    private void rebuildMenu() {
+        MinecraftClient.getInstance().execute(() -> {
+            StackLayout root = getRootComponent();
+            root.clearChildren();
+            build(root);
+        });
+    }
+
     @Override
     protected void onContinuePressed() {
         if (dataStore.isConfigurationApplying()) {
@@ -643,6 +655,6 @@ public class ApplyConfigurationWizard extends BaseWizardPage {
 
     @Override
     protected boolean isSkippable() {
-        return true;
+        return !configurationApplied;
     }
 }
