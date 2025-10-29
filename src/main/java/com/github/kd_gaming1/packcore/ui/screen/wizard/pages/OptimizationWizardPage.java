@@ -4,7 +4,7 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.util.wizard.WizardDataStore;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.WizardNavigator;
-import com.github.kd_gaming1.packcore.ui.screen.wizard.components.WizardUIComponents;
+import com.github.kd_gaming1.packcore.ui.screen.components.WizardUIComponents;
 import com.github.kd_gaming1.packcore.util.markdown.MarkdownService;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;

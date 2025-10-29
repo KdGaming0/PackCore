@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.ui.screen.wizard.components;
+package com.github.kd_gaming1.packcore.ui.screen.components;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.lavendermd.CustomLavenderCompiler;

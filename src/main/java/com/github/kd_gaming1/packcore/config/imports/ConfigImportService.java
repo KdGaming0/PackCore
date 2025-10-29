@@ -42,7 +42,7 @@ public class ConfigImportService {
         }
 
     /**
-     * Open native file chooser to select config zip with foreground focus
+     * Open native file chooser to select config zip
      */
     public static CompletableFuture<Path> selectConfigFile() {
         return CompletableFuture.supplyAsync(() -> {
@@ -72,9 +72,19 @@ public class ConfigImportService {
                     fileChooser.setCurrentDirectory(downloadsPath.toFile());
                 }
 
-                // Force dialog to front (platform-specific workarounds)
-                JDialog dialog = createForegroundDialog(fileChooser);
-                int result = fileChooser.showOpenDialog(dialog);
+                // Try to bring dialog to front - simpler approach
+                SwingUtilities.invokeLater(() -> {
+                    Window[] windows = Window.getWindows();
+                    for (Window window : windows) {
+                        if (window instanceof JDialog) {
+                            window.toFront();
+                            window.requestFocus();
+                        }
+                    }
+                });
+
+                // Show dialog directly without creating a separate parent dialog
+                int result = fileChooser.showOpenDialog(null);
 
                 if (result == JFileChooser.APPROVE_OPTION) {
                     Path selectedFile = fileChooser.getSelectedFile().toPath();
@@ -98,30 +108,6 @@ public class ConfigImportService {
                 return null;
             }
         });
-    }
-
-    /**
-     * Creates a dialog that attempts to stay in foreground
-     */
-    private static JDialog createForegroundDialog(JFileChooser fileChooser) {
-        JDialog dialog = new JDialog((Frame) null, "Select Config File", false);
-        dialog.setAlwaysOnTop(true);
-        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
-        // Platform-specific workarounds for bringing to front
-        SwingUtilities.invokeLater(() -> {
-            dialog.toFront();
-            dialog.setVisible(true);
-            dialog.requestFocus();
-
-            // Additional workaround for some systems
-            dialog.setAlwaysOnTop(false);
-            dialog.toFront();
-            dialog.requestFocus();
-            dialog.setAlwaysOnTop(true);
-        });
-
-        return dialog;
     }
 
     /**

@@ -1,10 +1,9 @@
 package com.github.kd_gaming1.packcore.ui.help.guide;
 
-import com.github.kd_gaming1.packcore.ui.screen.wizard.components.WizardUIComponents;
+import com.github.kd_gaming1.packcore.ui.screen.components.WizardUIComponents;
 import com.github.kd_gaming1.packcore.ui.surface.effects.TextureSurfaces;
 import com.github.kd_gaming1.packcore.util.help.guide.GuideInfo;
 import com.github.kd_gaming1.packcore.ui.theme.UITheme;
-import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;

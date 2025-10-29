@@ -1,106 +1,57 @@
 package com.github.kd_gaming1.packcore.ui.help.guide;
 
-import com.github.kd_gaming1.packcore.ui.surface.effects.TextureSurfaces;
-import com.github.kd_gaming1.packcore.util.help.guide.GuideInfo;
+import com.github.kd_gaming1.packcore.ui.screen.base.BasePackCoreScreen;
+import com.github.kd_gaming1.packcore.ui.screen.components.ScreenUIComponents;
 import com.github.kd_gaming1.packcore.ui.theme.UITheme;
+import com.github.kd_gaming1.packcore.util.help.guide.GuideInfo;
 import com.github.kd_gaming1.packcore.util.help.guide.GuideService;
-import com.github.kd_gaming1.packcore.ui.screen.wizard.components.WizardUIComponents;
 import io.wispforest.owo.ops.TextOps;
-import io.wispforest.owo.ui.base.BaseOwoScreen;
-import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
-
 /**
  * Screen that displays a list of available guides for the user to browse and open.
+ * Refactored to use BasePackCoreScreen and ScreenUIComponents for cleaner code.
  */
-public class GuideListScreen extends BaseOwoScreen<FlowLayout> {
+public class GuideListScreen extends BasePackCoreScreen {
 
-    private final Identifier backgroundTexture = Identifier.of(MOD_ID, "textures/gui/wizard/welcome_bg.png");
     private FlowLayout guideListContainer;
-    private final Screen parentScreen;
 
     public GuideListScreen() {
         this(null);
     }
 
     public GuideListScreen(Screen parentScreen) {
-        this.parentScreen = parentScreen;
+        super(parentScreen);
     }
 
     @Override
-    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
-        return OwoUIAdapter.create(this, Containers::verticalFlow);
-    }
-
-    @Override
-    protected void build(FlowLayout rootComponent) {
-        rootComponent
-                .surface(TextureSurfaces.stretched(backgroundTexture, 1920, 1082))
-                .padding(Insets.of(8));
-
-        rootComponent.child(createHeader());
-        rootComponent.child(createMainContent());
-
-        // Load guides after UI is built
-        loadGuides();
-    }
-
-    private FlowLayout createHeader() {
-        FlowLayout header = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.fixed(42))
-                .padding(Insets.of(2))
-                .verticalAlignment(VerticalAlignment.CENTER);
-
-        header.child(Components.texture(
-                Identifier.of(MOD_ID, "textures/gui/assets/sbe_logo.png"),
-                0, 0, 40, 40, 40, 40));
-
-        header.child(Components.label(
+    protected Component createTitleLabel() {
+        return Components.label(
                         Text.literal("Guides & Help")
-                                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                                .styled(s -> s.withFont(
+                                        net.minecraft.util.Identifier.of(
+                                                com.github.kd_gaming1.packcore.PackCore.MOD_ID,
+                                                "gallaeciaforte")))
                 ).color(Color.ofRgb(UITheme.ACCENT_SECONDARY))
                 .shadow(true)
-                .margins(Insets.of(0, 0, 4, 4)));
-
-        // Spacer
-        header.child(Containers.horizontalFlow(Sizing.expand(), Sizing.expand()));
-
-        // Back/Close button
-        String buttonText = parentScreen != null ? "Back" : "Close";
-        header.child(Components.button(
-                        Text.literal(buttonText),
-                        btn -> {
-                            if (parentScreen != null) {
-                                MinecraftClient.getInstance().setScreen(parentScreen);
-                            } else {
-                                MinecraftClient.getInstance().setScreen(null);
-                            }
-                        })
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 90, 57))
-                .sizing(Sizing.fixed(90), Sizing.fixed(19)));
-
-        return header;
+                .margins(Insets.of(0, 0, 4, 4));
     }
 
-    private FlowLayout createMainContent() {
+    @Override
+    protected FlowLayout createMainContent() {
         FlowLayout mainContent = (FlowLayout) Containers.verticalFlow(Sizing.fill(98), Sizing.expand())
                 .gap(6)
                 .padding(Insets.of(8));
 
+        // Description
         mainContent.child(Components.label(
                         TextOps.withColor(
                                 "Welcome to the PackCore Guides & Help! Browse the list of guides, or join the Discord for help.",
@@ -109,40 +60,35 @@ public class GuideListScreen extends BaseOwoScreen<FlowLayout> {
                 .horizontalSizing(Sizing.fill(100))
                 .margins(Insets.of(0, 0, 2, 0)));
 
-        // Create the container for guide entries
+        // Guide list container
         guideListContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content())
                 .gap(4);
 
-        ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
-                        Sizing.fill(100),
-                        Sizing.expand(),
-                        guideListContainer
-                )
-                .scrollbar(ScrollContainer.Scrollbar.vanilla())
-                .scrollbarThiccness(6);
+        // Wrap in scroll container
+        mainContent.child(ScreenUIComponents.createScrollContainer(guideListContainer));
 
-        mainContent.child(scrollContainer);
+        // Load guides
+        loadGuides();
 
         return mainContent;
     }
 
+    /**
+     * Load and display guides
+     */
     private void loadGuides() {
-        // Clear existing guides
         guideListContainer.clearChildren();
 
         List<GuideInfo> guides = GuideService.loadAvailableGuides();
 
         if (guides.isEmpty()) {
-            // Show "no guides" message
-            LabelComponent noGuidesLabel = Components.label(
+            guideListContainer.child(Components.label(
                     TextOps.withColor(
                             "No guides found. Place .md files in the packcore/guides folder.",
                             UITheme.TEXT_SECONDARY
                     )
-            );
-            guideListContainer.child(noGuidesLabel);
+            ));
         } else {
-            // Add each guide as an entry
             for (GuideInfo guide : guides) {
                 guideListContainer.child(createGuideEntry(guide));
             }
@@ -150,41 +96,19 @@ public class GuideListScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     /**
-     * Strip markdown formatting from text
+     * Create a single guide entry
      */
-    private String stripMarkdownFormatting(String text) {
-        if (text == null) return "";
-
-        // Remove {gold} and other color codes
-        text = text.replaceAll("\\{[^}]*\\}", "");
-
-        // Remove ** for bold
-        text = text.replaceAll("\\*\\*", "");
-
-        // Remove other common markdown
-        text = text.replaceAll("^#+\\s*", ""); // Headers
-        text = text.replaceAll("\\[([^\\]]+)\\]\\([^)]+\\)", "$1"); // Links
-        text = text.replaceAll("_", ""); // Italics
-        text = text.replaceAll("`", ""); // Code
-
-        return text.trim();
-    }
-
     private FlowLayout createGuideEntry(GuideInfo guide) {
-        FlowLayout entry = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                .gap(2)
-                .padding(Insets.of(8))
-                .surface(Surface.flat(0x30_000000).and(Surface.outline(0x20_FFFFFF)))
-                .margins(Insets.of(0, 0, 2, 0));
+        FlowLayout entry = ScreenUIComponents.createListEntry();
 
         // Title - strip markdown formatting
-        String cleanTitle = stripMarkdownFormatting(guide.getTitle());
+        String cleanTitle = ScreenUIComponents.stripMarkdown(guide.getTitle());
         LabelComponent titleLabel = Components.label(Text.literal(cleanTitle))
                 .color(Color.ofRgb(UITheme.ACCENT_SECONDARY))
                 .shadow(false);
 
-        // Preview text - also strip formatting
-        String cleanPreview = stripMarkdownFormatting(guide.getPreview());
+        // Preview text
+        String cleanPreview = ScreenUIComponents.stripMarkdown(guide.getPreview());
         LabelComponent previewLabel = (LabelComponent) Components.label(Text.literal(cleanPreview))
                 .color(Color.ofRgb(UITheme.TEXT_SECONDARY))
                 .sizing(Sizing.fill(100), Sizing.content());
@@ -192,59 +116,30 @@ public class GuideListScreen extends BaseOwoScreen<FlowLayout> {
         entry.child(titleLabel);
         entry.child(previewLabel);
 
-        // Add hover effects and click handling
-        setupGuideEntryInteraction(entry, guide);
+        // Apply hover effects and click handling
+        ScreenUIComponents.applyHoverEffects(entry, () -> openGuide(guide));
 
         return entry;
     }
 
-    private void setupGuideEntryInteraction(FlowLayout entry, GuideInfo guide) {
-        // Mouse enter - highlight effect
-        entry.mouseEnter().subscribe(() ->
-                entry.surface(Surface.flat(0x40_FFFFFF).and(Surface.outline(0x40_FFFFFF))));
-
-        // Mouse leave - remove highlight
-        entry.mouseLeave().subscribe(() ->
-                entry.surface(Surface.flat(0x30_000000).and(Surface.outline(0x20_FFFFFF))));
-
-        // Click - open guide
-        entry.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            if (button == 0) { // Left click
-                openGuide(guide);
-                return true;
-            }
-            return false;
-        });
-
-        // Add cursor pointer effect
-        entry.cursorStyle(CursorStyle.HAND);
-    }
-
+    /**
+     * Open a guide in the detail screen
+     */
     private void openGuide(GuideInfo guide) {
-        // Load the guide content if not already loaded
+        // Load guide content if not already loaded
         if (!guide.isContentLoaded()) {
             GuideService.loadGuideContent(guide);
         }
 
         // Open the guide viewer screen
+        assert this.client != null;
         this.client.setScreen(new GuideDetailScreen(guide, this));
     }
 
+    /**
+     * Refresh the guide list
+     */
     public void refresh() {
         loadGuides();
-    }
-
-    @Override
-    public boolean shouldCloseOnEsc() {
-        return true;
-    }
-
-    @Override
-    public void close() {
-        if (parentScreen != null) {
-            this.client.setScreen(parentScreen);
-        } else {
-            super.close();
-        }
     }
 }
