@@ -32,8 +32,10 @@ public class ScamWarningMessageBuilder {
     private static Text buildLowConfidenceMessage(DetectionResult result, ScamCategory category) {
         MutableText message = Text.literal("");
 
-        // Header
-        message.append(Text.literal("⚠ LOW CONFIDENCE ⚠\n")
+        // Header with spacing
+        message.append(Text.literal("\n⚠ LOW CONFIDENCE ⚠\n")
+                .styled(style -> style.withColor(0xFFAA00).withBold(true)));
+        message.append(Text.literal("ScamShield Notice\n\n")
                 .styled(style -> style.withColor(0xFFAA00).withBold(true)));
 
         // Category-specific message
@@ -53,65 +55,78 @@ public class ScamWarningMessageBuilder {
                 break;
         }
 
-        // Action buttons
+        // Action buttons with spacing
+        message.append(Text.literal("\n"));
         appendLowActions(message, result);
+        message.append(Text.literal("\n"));
 
         return message;
     }
 
     private static void appendLowBase(MutableText message) {
-        message.append(Text.literal("⚠ ScamShield Notice: ")
-                .styled(style -> style.withColor(0xFFAA00).withBold(true)));
-        message.append(Text.literal("This user has sent one or more messages that look a bit unusual. ")
+        message.append(Text.literal("This user sent unusual messages.\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("It might be harmless, but stay cautious before clicking links or entering any login info.\n")
+
+        message.append(Text.literal("\nIt might be harmless, but stay cautious:\n")
                 .styled(style -> style.withColor(0xAAAAAA)));
+
+        message.append(Text.literal("• Don't click suspicious links\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Don't enter login info\n")
+                .styled(style -> style.withColor(0xFFFF55)));
     }
 
     private static void appendLowPhishing(MutableText message) {
-        message.append(Text.literal("⚠ ScamShield Notice: ")
-                .styled(style -> style.withColor(0xFFAA00).withBold(true)));
-        message.append(Text.literal("This user sent a message that looks like it might contain a suspicious link or verification request. ")
+        message.append(Text.literal("Possible suspicious link or verification request detected.\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("It might be harmless, but scams often ask you to log in or verify through fake websites or Discord bots.\n")
+
+        message.append(Text.literal("\n⚠ Stay Safe:\n")
+                .styled(style -> style.withColor(0xFFAA00).withBold(true)));
+
+        message.append(Text.literal("• Scams often ask you to verify through fake sites\n")
                 .styled(style -> style.withColor(0xAAAAAA)));
-        message.append(Text.literal("Stay cautious before clicking any link or entering your email or password.\n")
+        message.append(Text.literal("• Don't click links from strangers\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Never enter your email or password\n")
                 .styled(style -> style.withColor(0xFFFF55)));
     }
 
     private static void appendLowGiveaway(MutableText message) {
-        message.append(Text.literal("⚠ ScamShield Notice: ")
-                .styled(style -> style.withColor(0xFFAA00).withBold(true)));
-        message.append(Text.literal("This message might be related to \"too good to be true\" offers, such as free ranks, giveaways, or high-profit trades. ")
+        message.append(Text.literal("\"Too good to be true\" offer detected.\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("It could be real, but scams often promise rewards to make you act fast.\n")
+        message.append(Text.literal("(Free ranks, giveaways, high-profit trades)\n\n")
                 .styled(style -> style.withColor(0xAAAAAA)));
-        message.append(Text.literal("Think before trading or visiting other islands.\n")
+
+        message.append(Text.literal("Could be real, but scammers often:\n")
+                .styled(style -> style.withColor(0xAAAAAA)));
+        message.append(Text.literal("• Promise big rewards to make you act fast\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Ask you to trade or visit their island first\n")
                 .styled(style -> style.withColor(0xFFFF55)));
     }
 
     private static void appendLowCoopIsland(MutableText message) {
-        message.append(Text.literal("⚠ ScamShield Notice: ")
-                .styled(style -> style.withColor(0xFFAA00).withBold(true)));
-        message.append(Text.literal("This player mentioned co-op or island access. ")
+        message.append(Text.literal("Co-op or island access mentioned.\n\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("Some scammers use co-op invites to steal your items or delete your island.\n")
+
+        message.append(Text.literal("⚠ Warning:\n")
+                .styled(style -> style.withColor(0xFFAA00).withBold(true)));
+        message.append(Text.literal("Some scammers use co-op to steal items or delete islands.\n\n")
                 .styled(style -> style.withColor(0xAAAAAA)));
-        message.append(Text.literal("Double-check who you're adding or inviting before using ")
+
+        message.append(Text.literal("Double-check before using ")
                 .styled(style -> style.withColor(0xFFFF55)));
         message.append(Text.literal("/coopadd")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal(".\n")
-                .styled(style -> style.withColor(0xFFFF55)));
     }
 
     private static void appendLowActions(MutableText message, DetectionResult result) {
-        message.append(Text.literal("Learn how to spot common scams and stay protected: ")
+        message.append(Text.literal("📚 Learn more: ")
                 .styled(style -> style.withColor(0xAAAAAA)));
         message.append(buildEducationButton());
         message.append(Text.literal("\n"));
 
-        message.append(Text.literal("Trust this player 100%? ")
+        message.append(Text.literal("✓ Trust this player? ")
                 .styled(style -> style.withColor(0xAAAAAA)));
         message.append(buildWhitelistButton(result.getSender()));
     }
@@ -120,8 +135,10 @@ public class ScamWarningMessageBuilder {
     private static Text buildMediumConfidenceMessage(DetectionResult result, ScamCategory category) {
         MutableText message = Text.literal("");
 
-        // Header
-        message.append(Text.literal("🟠 MEDIUM CONFIDENCE 🟠\n")
+        // Header with spacing
+        message.append(Text.literal("\n🟠 MEDIUM CONFIDENCE 🟠\n")
+                .styled(style -> style.withColor(0xFF5555).withBold(true)));
+        message.append(Text.literal("ScamShield Warning\n\n")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
 
         // Category-specific message
@@ -149,89 +166,110 @@ public class ScamWarningMessageBuilder {
                 break;
         }
 
-        // Action buttons
+        // Action buttons with spacing
+        message.append(Text.literal("\n"));
         appendMediumActions(message, result);
+        message.append(Text.literal("\n"));
 
         return message;
     }
 
     private static void appendMediumBase(MutableText message) {
-        message.append(Text.literal("🟠 ScamShield Warning: ")
-                .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("This user has sent multiple messages matching known scam patterns. ")
+        message.append(Text.literal("Multiple messages match known scam patterns.\n\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("Scammers often use fake verification steps or Discord links to steal Minecraft accounts.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
 
-        message.append(Text.literal("Avoid clicking links or logging in on unfamiliar websites. ")
+        message.append(Text.literal("🛑 DO NOT:\n")
+                .styled(style -> style.withColor(0xFF5555).withBold(true)));
+        message.append(Text.literal("• Click suspicious links\n")
                 .styled(style -> style.withColor(0xFFFF55)));
-        message.append(Text.literal("Never enter your email, password, or any code you receive by email outside the official Microsoft or Minecraft login pages — and never \"verify\" through Discord.\n")
-                .styled(style -> style.withColor(0xFF5555)));
+        message.append(Text.literal("• Log in on unfamiliar websites\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Enter email, password, or codes\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• \"Verify\" through Discord\n")
+                .styled(style -> style.withColor(0xFFFF55)));
     }
 
     private static void appendMediumPhishing(MutableText message) {
-        message.append(Text.literal("🟠 ScamShield Warning: ")
-                .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("This user's messages match known phishing and verification scams. ")
+        message.append(Text.literal("Phishing/Verification scam detected.\n\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("They might be pretending to \"verify\" your account or asking you to link it through a Discord or website.\n")
+
+        message.append(Text.literal("⚠ This scammer likely wants to:\n")
+                .styled(style -> style.withColor(0xFF5555).withBold(true)));
+        message.append(Text.literal("• Make you \"verify\" through fake sites\n")
+                .styled(style -> style.withColor(0xAAAAAA)));
+        message.append(Text.literal("• Steal your account login details\n\n")
                 .styled(style -> style.withColor(0xAAAAAA)));
 
-        message.append(Text.literal("⚠ Never enter your Microsoft or Minecraft login details anywhere except the official login page. ")
-                .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("Scammers use fake verification steps to steal accounts.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
+        message.append(Text.literal("✓ Only log in on official Microsoft/Minecraft pages\n")
+                .styled(style -> style.withColor(0x55FF55)));
+        message.append(Text.literal("✗ Never enter credentials elsewhere\n")
+                .styled(style -> style.withColor(0xFF5555)));
     }
 
     private static void appendMediumGiveaway(MutableText message) {
-        message.append(Text.literal("🟠 ScamShield Warning: ")
-                .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("Messages from this user match common \"free rank\" or \"giveaway\" scams. ")
+        message.append(Text.literal("\"Free rank\" or giveaway scam detected.\n\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("Scammers often ask you to join a Discord or send coins before they \"reward\" you.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
 
-        message.append(Text.literal("If something sounds too good to be true, it usually is.\n")
-                .styled(style -> style.withColor(0xFF5555)));
+        message.append(Text.literal("Common tactics:\n")
+                .styled(style -> style.withColor(0xAAAAAA)));
+        message.append(Text.literal("• Ask you to join Discord first\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Request coins before \"rewarding\" you\n\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+
+        message.append(Text.literal("⚠ If it sounds too good to be true, it usually is.\n")
+                .styled(style -> style.withColor(0xFF5555).withBold(true)));
     }
 
     private static void appendMediumTrade(MutableText message) {
-        message.append(Text.literal("🟠 ScamShield Warning: ")
-                .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("This user's messages match known trade or \"item flip\" scams. ")
+        message.append(Text.literal("Trade or \"item flip\" scam detected.\n\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("Scammers often offer deals far better than market value, then disappear once they receive your item or coins.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
 
-        message.append(Text.literal("Be cautious when trading or paying before you receive anything.\n")
+        message.append(Text.literal("Red flags:\n")
+                .styled(style -> style.withColor(0xAAAAAA)));
+        message.append(Text.literal("• Deals far better than market value\n")
                 .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Pressure to trade quickly\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Asking for payment before delivery\n\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+
+        message.append(Text.literal("⚠ Be cautious when paying before receiving items.\n")
+                .styled(style -> style.withColor(0xFF5555)));
     }
 
     private static void appendMediumCoopIsland(MutableText message) {
-        message.append(Text.literal("🟠 ScamShield Warning: ")
-                .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("This message pattern matches known co-op scams. ")
+        message.append(Text.literal("Co-op access scam detected.\n\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("Scammers might tell you to run ")
+
+        message.append(Text.literal("⚠ Danger:\n")
+                .styled(style -> style.withColor(0xFF5555).withBold(true)));
+        message.append(Text.literal("Scammers may ask you to run ")
                 .styled(style -> style.withColor(0xAAAAAA)));
         message.append(Text.literal("/coopadd")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal(" or invite them to your island \"for gifts\" or \"help.\"\n")
+        message.append(Text.literal("\nfor \"gifts\" or \"help.\"\n\n")
                 .styled(style -> style.withColor(0xAAAAAA)));
 
-        message.append(Text.literal("Once added, they can take your items or even delete your island. ")
+        message.append(Text.literal("Once added, they can:\n")
                 .styled(style -> style.withColor(0xFF5555)));
-        message.append(Text.literal("Don't add players you don't personally know.\n")
+        message.append(Text.literal("• Steal your items\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Delete your island\n\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+
+        message.append(Text.literal("⛔ Don't add players you don't personally know.\n")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
     }
 
     private static void appendMediumActions(MutableText message, DetectionResult result) {
-        message.append(Text.literal("Learn how to stay safe: ")
+        message.append(Text.literal("📚 Learn more: ")
                 .styled(style -> style.withColor(0xAAAAAA)));
         message.append(buildEducationButton());
-        message.append(Text.literal("\n"));
+        message.append(Text.literal("\n\n"));
 
-        message.append(Text.literal("Whitelist only if you fully trust this player: ")
+        message.append(Text.literal("⚠ Whitelist only if you fully trust this player:\n")
                 .styled(style -> style.withColor(0xFF5555)));
         message.append(Text.literal("/scamshield whitelist add " + result.getSender())
                 .styled(style -> style.withColor(0xAAAAAA).withItalic(true)));
@@ -242,14 +280,14 @@ public class ScamWarningMessageBuilder {
         MutableText message = Text.literal("");
 
         // Critical header
-        message.append(Text.literal("⛔⛔⛔ ")
-                .styled(style -> style.withColor(0xFF0000)));
-        message.append(Text.literal("[SCAM SHIELD] CRITICAL SCAM ALERT")
+        message.append(Text.literal("\n⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔\n")
                 .styled(style -> style.withColor(0xFF0000).withBold(true)));
-        message.append(Text.literal(" ⛔⛔⛔\n")
-                .styled(style -> style.withColor(0xFF0000)));
+        message.append(Text.literal("   CRITICAL SCAM ALERT   \n")
+                .styled(style -> style.withColor(0xFF0000).withBold(true)));
+        message.append(Text.literal("⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔⛔\n\n")
+                .styled(style -> style.withColor(0xFF0000).withBold(true)));
 
-        message.append(Text.literal("NEARLY CERTAIN SCAM ATTEMPT IN PROGRESS!\n")
+        message.append(Text.literal("🚨 NEARLY CERTAIN SCAM ATTEMPT 🚨\n\n")
                 .styled(style -> style.withColor(0xFF0000).withBold(true)));
 
         // Category-specific critical message
@@ -278,141 +316,129 @@ public class ScamWarningMessageBuilder {
         }
 
         // Critical actions
+        message.append(Text.literal("\n"));
         appendHighActions(message, result);
+        message.append(Text.literal("\n"));
 
         return message;
     }
 
     private static void appendHighBase(MutableText message) {
-        message.append(Text.literal("\n🚨 Scam Type: ")
+        message.append(Text.literal("🚨 Scam Type: ")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("Phishing\n")
+        message.append(Text.literal("Account Theft\n\n")
                 .styled(style -> style.withColor(0xFFFFFF).withBold(true)));
 
-        message.append(Text.literal("This scammer likely wants your login credentials or personal information.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
-
-        message.append(Text.literal("\n⛔ STOP ALL COMMUNICATION NOW!\n")
+        message.append(Text.literal("⛔ STOP ALL COMMUNICATION NOW!\n\n")
                 .styled(style -> style.withColor(0xFF0000).withBold(true)));
 
-        message.append(Text.literal("\n📋 What This Scammer Wants:\n")
+        message.append(Text.literal("What they want:\n")
                 .styled(style -> style.withColor(0xFFFF55).withBold(true)));
-        message.append(Text.literal("• Your account credentials (username/password)\n")
+        message.append(Text.literal("• Your login credentials\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("• Your 2FA or authentication codes\n")
+        message.append(Text.literal("• Your 2FA codes\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("• Access to steal your items or account\n")
+        message.append(Text.literal("• Access to steal everything\n\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
 
         appendRecommendedActions(message);
     }
 
     private static void appendHighPhishing(MutableText message) {
-        message.append(Text.literal("\n⛔ ")
-                .styled(style -> style.withColor(0xFF0000).withBold(true)));
-        message.append(Text.literal("[SCAM SHIELD] CRITICAL SCAM ALERT\n")
-                .styled(style -> style.withColor(0xFF0000).withBold(true)));
-
-        message.append(Text.literal("ScamShield has detected strong signs of a Discord or verification scam.\n")
-                .styled(style -> style.withColor(0xFFFFFF)));
-
-        message.append(Text.literal("\nThe user is likely trying to get you to log in or \"verify\" your account on a fake site or bot.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
-
-        message.append(Text.literal("\n⚠ Do NOT click any link or enter your Microsoft details anywhere but the official login page.\n")
+        message.append(Text.literal("🚨 Scam Type: ")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
+        message.append(Text.literal("Discord/Verification Phishing\n\n")
+                .styled(style -> style.withColor(0xFFFFFF).withBold(true)));
 
-        message.append(Text.literal("\nReport the player with ")
-                .styled(style -> style.withColor(0xFFFF55)));
-        message.append(Text.literal("/report")
-                .styled(style -> style.withColor(0x55FF55).withBold(true)));
-        message.append(Text.literal(" and block them with ")
-                .styled(style -> style.withColor(0xFFFF55)));
-        message.append(Text.literal("/ignore add <PlayerName>")
-                .styled(style -> style.withColor(0x55FF55).withBold(true)));
-        message.append(Text.literal(".\n")
-                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("⛔ STOP! DO NOT:\n")
+                .styled(style -> style.withColor(0xFF0000).withBold(true)));
+        message.append(Text.literal("• Click any links\n")
+                .styled(style -> style.withColor(0xFF5555)));
+        message.append(Text.literal("• \"Verify\" your account\n")
+                .styled(style -> style.withColor(0xFF5555)));
+        message.append(Text.literal("• Enter Microsoft login details\n\n")
+                .styled(style -> style.withColor(0xFF5555)));
+
+        appendRecommendedActions(message);
     }
 
     private static void appendHighGiveaway(MutableText message) {
-        message.append(Text.literal("\n⛔ ")
-                .styled(style -> style.withColor(0xFF0000).withBold(true)));
-        message.append(Text.literal("[SCAM SHIELD] CRITICAL SCAM ALERT\n")
-                .styled(style -> style.withColor(0xFF0000).withBold(true)));
-
-        message.append(Text.literal("This is almost certainly a giveaway scam. ")
-                .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("The scammer is trying to get you to send coins or log in to a fake site in exchange for a \"free rank\" or \"reward.\"\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
-
-        message.append(Text.literal("\nStop all communication. Do NOT send any items or coins.\n")
+        message.append(Text.literal("🚨 Scam Type: ")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal("Report and block this player immediately.\n")
+        message.append(Text.literal("Fake Giveaway/Free Rank\n\n")
+                .styled(style -> style.withColor(0xFFFFFF).withBold(true)));
+
+        message.append(Text.literal("⛔ STOP! DO NOT:\n")
+                .styled(style -> style.withColor(0xFF0000).withBold(true)));
+        message.append(Text.literal("• Send any items or coins\n")
                 .styled(style -> style.withColor(0xFF5555)));
+        message.append(Text.literal("• Log in to any links\n")
+                .styled(style -> style.withColor(0xFF5555)));
+        message.append(Text.literal("• Join their Discord\n\n")
+                .styled(style -> style.withColor(0xFF5555)));
+
+        appendRecommendedActions(message);
     }
 
     private static void appendHighTrade(MutableText message) {
-        message.append(Text.literal("\n⛔ ")
-                .styled(style -> style.withColor(0xFF0000).withBold(true)));
-        message.append(Text.literal("[SCAM SHIELD] CRITICAL SCAM ALERT\n")
+        message.append(Text.literal("🚨 Scam Type: ")
+                .styled(style -> style.withColor(0xFF5555).withBold(true)));
+        message.append(Text.literal("Trade/Item Flip Scam\n\n")
+                .styled(style -> style.withColor(0xFFFFFF).withBold(true)));
+
+        message.append(Text.literal("⛔ STOP THE TRADE!\n\n")
                 .styled(style -> style.withColor(0xFF0000).withBold(true)));
 
-        message.append(Text.literal("ScamShield detected a strong match with known trade or flip scams. ")
-                .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("These scams trick players into trading valuable items for worthless ones or paying before receiving anything.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
+        message.append(Text.literal("✅ Keep your items and coins safe\n")
+                .styled(style -> style.withColor(0x55FF55)));
+        message.append(Text.literal("✅ Report and block immediately\n\n")
+                .styled(style -> style.withColor(0x55FF55)));
 
-        message.append(Text.literal("\n✅ Don't continue the trade.\n")
-                .styled(style -> style.withColor(0x55FF55)));
-        message.append(Text.literal("✅ Report and block the player.\n")
-                .styled(style -> style.withColor(0x55FF55)));
-        message.append(Text.literal("✅ Keep your items and coins secure.\n")
-                .styled(style -> style.withColor(0x55FF55)));
+        appendRecommendedActions(message);
     }
 
     private static void appendHighCoopIsland(MutableText message) {
-        message.append(Text.literal("\n⛔ ")
-                .styled(style -> style.withColor(0xFF0000).withBold(true)));
-        message.append(Text.literal("[SCAM SHIELD] CRITICAL SCAM ALERT\n")
-                .styled(style -> style.withColor(0xFF0000).withBold(true)));
-
-        message.append(Text.literal("Detected a known co-op access scam. ")
-                .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("The scammer may ask you to type ")
-                .styled(style -> style.withColor(0xAAAAAA)));
-        message.append(Text.literal("/coopadd")
+        message.append(Text.literal("🚨 Scam Type: ")
                 .styled(style -> style.withColor(0xFF5555).withBold(true)));
-        message.append(Text.literal(" or invite them to your island.\n")
-                .styled(style -> style.withColor(0xAAAAAA)));
+        message.append(Text.literal("Co-op Access Theft\n\n")
+                .styled(style -> style.withColor(0xFFFFFF).withBold(true)));
 
-        message.append(Text.literal("\n⚠ Once added, they can steal your items or delete your island entirely.\n")
+        message.append(Text.literal("⛔ DO NOT RUN ")
+                .styled(style -> style.withColor(0xFF0000).withBold(true)));
+        message.append(Text.literal("/coopadd")
+                .styled(style -> style.withColor(0xFF0000).withBold(true)));
+        message.append(Text.literal("!\n\n")
                 .styled(style -> style.withColor(0xFF0000).withBold(true)));
 
-        message.append(Text.literal("\nStop all communication now. Report and block the player.\n")
+        message.append(Text.literal("They can:\n")
                 .styled(style -> style.withColor(0xFF5555)));
+        message.append(Text.literal("• Steal ALL your items\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+        message.append(Text.literal("• Delete your island entirely\n\n")
+                .styled(style -> style.withColor(0xFFFF55)));
+
+        appendRecommendedActions(message);
     }
 
     private static void appendRecommendedActions(MutableText message) {
-        message.append(Text.literal("\n✅ RECOMMENDED ACTIONS:\n")
+        message.append(Text.literal("✅ TAKE ACTION NOW:\n")
                 .styled(style -> style.withColor(0x55FF55).withBold(true)));
-        message.append(Text.literal("• Stop replying to this user immediately\n")
+        message.append(Text.literal("1. Stop replying immediately\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("• Use ")
+        message.append(Text.literal("2. Use ")
                 .styled(style -> style.withColor(0xFFFFFF)));
         message.append(Text.literal("/report")
                 .styled(style -> style.withColor(0x55FF55).withBold(true)));
-        message.append(Text.literal(" to notify Hypixel staff\n")
+        message.append(Text.literal(" to notify staff\n")
                 .styled(style -> style.withColor(0xFFFFFF)));
-        message.append(Text.literal("• Block them with ")
+        message.append(Text.literal("3. Block with ")
                 .styled(style -> style.withColor(0xFFFFFF)));
         message.append(Text.literal("/ignore add <PlayerName>\n")
                 .styled(style -> style.withColor(0x55FF55).withBold(true)));
-        message.append(Text.literal("• Never share the information they requested\n")
-                .styled(style -> style.withColor(0xFFFFFF)));
     }
 
     private static void appendHighActions(MutableText message, DetectionResult result) {
-        message.append(Text.literal("\nLearn how to protect your account: ")
+        message.append(Text.literal("📚 Learn how to protect your account:\n")
                 .styled(style -> style.withColor(0xAAAAAA)));
         message.append(buildEducationButton());
     }
@@ -429,7 +455,8 @@ public class ScamWarningMessageBuilder {
                         .withUnderline(true)
                         .withClickEvent(new ClickEvent.RunCommand("/scamshield education"))
                         .withHoverEvent(new HoverEvent.ShowText(
-                                Text.literal("§aClick to learn about common scams\n§7Run: /scamshield education"))));
+                                Text.literal("§aClick to learn about common scams\n§7Run: /scamshield education")
+                        )));
     }
 
     /**
@@ -448,6 +475,7 @@ public class ScamWarningMessageBuilder {
                         .withHoverEvent(new HoverEvent.ShowText(
                                 Text.literal("§aClick to whitelist §e" + playerName
                                         + "\n§7This will skip future scam checks for this player."
-                                        + "\n§7Suggest: " + command))));
+                                        + "\n§7Suggest: " + command)
+                        )));
     }
 }

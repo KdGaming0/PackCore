@@ -7,12 +7,14 @@ import com.github.kd_gaming1.packcore.scamshield.detector.DetectionResult;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
 import com.github.kd_gaming1.packcore.scamshield.storage.DetectedScam;
 import com.github.kd_gaming1.packcore.scamshield.storage.ScamShieldDataManager;
+import com.github.kd_gaming1.packcore.ui.screen.scamshield.ScamWarningScreen;
 import net.minecraft.client.MinecraftClient;
 
 import java.util.concurrent.*;
 
 /**
  * Main chat message handler - coordinates scam detection flow.
+ * Updated to integrate with ScamWarningScreen UI.
  */
 public class ScamShieldChatHandler {
     private static final ScamShieldChatHandler INSTANCE = new ScamShieldChatHandler();
@@ -118,7 +120,6 @@ public class ScamShieldChatHandler {
 
     /**
      * Check if warning should be shown based on confidence-specific cooldown.
-     *
      * Cooldown strategy:
      * - LOW: 30 seconds (don't spam for uncertain detections)
      * - MEDIUM: 20 seconds (more urgent)
@@ -126,25 +127,24 @@ public class ScamShieldChatHandler {
      */
     private boolean shouldShowWarning(ConfidenceLevel level, long now) {
         long cooldownMs;
-        long lastWarning;
-
-        switch (level) {
-            case LOW:
+        long lastWarning = switch (level) {
+            case LOW -> {
                 cooldownMs = 30_000; // 30 seconds
-                lastWarning = lastLowConfidenceWarning;
-                break;
-            case MEDIUM:
+                yield lastLowConfidenceWarning;
+            }
+            case MEDIUM -> {
                 cooldownMs = 20_000; // 20 seconds
-                lastWarning = lastMediumConfidenceWarning;
-                break;
-            case HIGH:
+                yield lastMediumConfidenceWarning;
+            }
+            case HIGH -> {
                 cooldownMs = 10_000; // 10 seconds
-                lastWarning = lastHighConfidenceWarning;
-                break;
-            default:
+                yield lastHighConfidenceWarning;
+            }
+            default -> {
                 cooldownMs = 30_000;
-                lastWarning = lastLowConfidenceWarning;
-        }
+                yield lastLowConfidenceWarning;
+            }
+        };
 
         return (now - lastWarning) >= cooldownMs;
     }
@@ -231,24 +231,36 @@ public class ScamShieldChatHandler {
         }
 
         try {
-            // TODO: Implement ScamWarningScreen
-            // client.setScreen(new ScamWarningScreen(result));
+            // Convert detection result to warning format
+            ScamWarningScreen.ScamWarning warning = ScamShieldScreenIntegration.convertToWarning(result);
 
-            // Temporary: Send additional urgent chat message
+            // Create the warning screen with callback
+            ScamWarningScreen warningScreen = new ScamWarningScreen(warning, () -> {
+                // Callback when user dismisses the warning
+                if (PackCoreConfig.enableScamShieldDebugging) {
+                    PackCore.LOGGER.info("[ScamShield] Warning screen dismissed for: {}", result.getSender());
+                }
+            });
+
+            // Open the screen
+            client.setScreen(warningScreen);
+
+            PackCore.LOGGER.warn("[ScamShield] Opened critical warning screen for: {}", result.getSender());
+
+        } catch (Exception e) {
+            PackCore.LOGGER.error("[ScamShield] Failed to open warning screen", e);
+
+            // Fallback: Send urgent chat message
             if (client.player != null) {
                 client.player.sendMessage(
                         net.minecraft.text.Text.literal(
-                                "§c§l[!] CRITICAL: A warning screen should have opened. " +
-                                        "If you don't see it, do NOT interact with " + result.getSender() + "!§r"
+                                "§c§l[!] CRITICAL SCAM ALERT: " +
+                                        "Do NOT interact with " + result.getSender() + "! " +
+                                        "Type /scamshield education to learn more.§r"
                         ),
                         false
                 );
             }
-
-            PackCore.LOGGER.warn("[ScamShield] Warning screen not yet implemented - sent urgent message instead");
-
-        } catch (Exception e) {
-            PackCore.LOGGER.error("[ScamShield] Failed to open warning screen", e);
         }
     }
 

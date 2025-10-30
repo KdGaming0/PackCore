@@ -9,8 +9,11 @@ public enum ScamCategory {
     ACCOUNT_THEFT("Account Theft Attempt", "island_theft_scam"),
     URGENCY("Urgency Tactic", "urgency_scam"),
     PHISHING("Phishing Attempt", "phishing_language"),
+    TRADE_MANIPULATION("Price Manipulation", "trade_manipulation_scam"),
+    CRAFTING_SCAM("Crafting/Reforging Scams", "crafting_scam"),
+    BORROWING_SCAM("Borrowing/Loaning Scams", "borrowing_scam"),
+    RANK_SELLING("Rank Selling", "rank_selling_scam"),
     CUSTOM("Custom Pattern", "custom");
-
     private final String displayName;
     private final String scamTypeId;
 

@@ -2,17 +2,25 @@ package com.github.kd_gaming1.packcore.command;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.scamshield.ScamShieldScreenIntegration;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldWhitelist;
 import com.github.kd_gaming1.packcore.scamshield.debug.ScamShieldDebugger;
 import com.github.kd_gaming1.packcore.scamshield.detector.DetectionResult;
 import com.github.kd_gaming1.packcore.scamshield.detector.types.ScamType;
 import com.github.kd_gaming1.packcore.scamshield.storage.DetectionStats;
 import com.github.kd_gaming1.packcore.scamshield.storage.ScamShieldDataManager;
+import com.github.kd_gaming1.packcore.scamshield.detector.ConfidenceLevel;
+import com.github.kd_gaming1.packcore.scamshield.detector.ScamCategory;
+import com.github.kd_gaming1.packcore.scamshield.ScamWarningMessageBuilder;
+import com.github.kd_gaming1.packcore.ui.help.guide.GuideListScreen;
+import com.github.kd_gaming1.packcore.ui.screen.scamshield.ScamEducationScreen;
+import com.github.kd_gaming1.packcore.ui.screen.scamshield.ScamWarningScreen;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.client.MinecraftClient;
 
 import java.util.List;
 
@@ -75,6 +83,62 @@ public class ScamShieldCommands {
                                 .then(literal("clear")
                                         .executes(ScamShieldCommands::whitelistClear)
                                 )
+                        )
+                        .then(literal("preview")
+                                .then(literal("low")
+                                        .then(literal("phishing")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.LOW, ScamCategory.PHISHING))
+                                        )
+                                        .then(literal("giveaway")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.LOW, ScamCategory.FAKE_REWARD))
+                                        )
+                                        .then(literal("coop")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.LOW, ScamCategory.ACCOUNT_THEFT))
+                                        )
+                                        .then(literal("generic")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.LOW, ScamCategory.CUSTOM))
+                                        )
+                                )
+                                .then(literal("medium")
+                                        .then(literal("phishing")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.MEDIUM, ScamCategory.PHISHING))
+                                        )
+                                        .then(literal("giveaway")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.MEDIUM, ScamCategory.FAKE_REWARD))
+                                        )
+                                        .then(literal("coop")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.MEDIUM, ScamCategory.ACCOUNT_THEFT))
+                                        )
+                                        .then(literal("trade")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.MEDIUM, ScamCategory.TRADE_MANIPULATION))
+                                        )
+                                        .then(literal("generic")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.MEDIUM, ScamCategory.CUSTOM))
+                                        )
+                                )
+                                .then(literal("high")
+                                        .then(literal("phishing")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.HIGH, ScamCategory.PHISHING))
+                                        )
+                                        .then(literal("giveaway")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.HIGH, ScamCategory.FAKE_REWARD))
+                                        )
+                                        .then(literal("coop")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.HIGH, ScamCategory.ACCOUNT_THEFT))
+                                        )
+                                        .then(literal("trade")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.HIGH, ScamCategory.TRADE_MANIPULATION))
+                                        )
+                                        .then(literal("generic")
+                                                .executes(ctx -> previewWarning(ctx, ConfidenceLevel.HIGH, ScamCategory.CUSTOM))
+                                        )
+                                )
+                        )
+                        .then(literal("previewscreen")
+                                .executes(ScamShieldCommands::previewWarningScreen)
+                        )
+                        .then(literal("education")
+                                .executes(ScamShieldCommands::openEducationScreen)
                         )
         );
     }
@@ -347,5 +411,120 @@ public class ScamShieldCommands {
                 Text.literal("§a[ScamShield] ✓ Whitelist cleared")
         );
         return 1;
+    }
+
+    /**
+     * Preview a warning message in chat without triggering detection.
+     */
+    private static int previewWarning(CommandContext<FabricClientCommandSource> context,
+                                      ConfidenceLevel level, ScamCategory category) {
+        FabricClientCommandSource source = context.getSource();
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (client.player == null) {
+            source.sendError(Text.literal("§c[ScamShield] Must be in-game to preview warnings"));
+            return 0;
+        }
+
+        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        source.sendFeedback(Text.literal("§e[Preview Mode] " + level.getDisplayName() + " Confidence - " + category.getDisplayName()));
+        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        source.sendFeedback(Text.literal(""));
+
+        // Create a mock detection result
+        DetectionResult.Builder builder = new DetectionResult.Builder(
+                "Example scam message for preview",
+                "PreviewScammer",
+                PackCoreConfig.scamShieldTriggerThreshold
+        );
+
+        // Add score to match the confidence level
+        builder.addScamTypeContribution(category.getScamTypeId(), level.getMinScore());
+
+        DetectionResult mockResult = builder.build();
+
+        // Build and send the warning message
+        Text warningMessage = ScamWarningMessageBuilder.buildWarningMessage(mockResult);
+        client.player.sendMessage(warningMessage, false);
+
+        source.sendFeedback(Text.literal(""));
+        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        source.sendFeedback(Text.literal("§7This is a preview. Real detections will look like this."));
+
+        return 1;
+    }
+
+    /**
+     * Preview the HIGH confidence warning screen.
+     */
+    private static int previewWarningScreen(CommandContext<FabricClientCommandSource> context) {
+        FabricClientCommandSource source = context.getSource();
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (client.player == null) {
+            source.sendError(Text.literal("§c[ScamShield] Must be in-game to preview screen"));
+            return 0;
+        }
+
+        source.sendFeedback(Text.literal("§e[ScamShield] §7Opening warning screen preview..."));
+
+        // Create a mock HIGH confidence detection
+        DetectionResult.Builder builder = new DetectionResult.Builder(
+                "join my discord to verify your account and get free rewards!",
+                "PreviewScammer",
+                PackCoreConfig.scamShieldTriggerThreshold
+        );
+
+        builder.addScamTypeContribution("discord_verify_scam", 150);
+        builder.addScamTypeContribution("credential_fishing", 100);
+
+        DetectionResult mockResult = builder.build();
+
+        // Open the warning screen
+        try {
+            ScamWarningScreen.ScamWarning warning =
+                    ScamShieldScreenIntegration.convertToWarning(mockResult);
+
+           ScamWarningScreen warningScreen =
+                    new ScamWarningScreen(warning, () -> {
+                        source.sendFeedback(Text.literal("§a[ScamShield] Preview screen dismissed"));
+                    });
+
+            client.send(() -> client.setScreen(warningScreen));
+
+        } catch (Exception e) {
+            source.sendError(Text.literal("§c[ScamShield] Failed to open preview screen: " + e.getMessage()));
+            PackCore.LOGGER.error("[ScamShield] Preview screen error", e);
+            return 0;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Open the ScamShield education screen
+     */
+    private static int openEducationScreen(CommandContext<FabricClientCommandSource> context) {
+        FabricClientCommandSource source = context.getSource();
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (client.player == null) {
+            source.sendError(Text.literal("§c[ScamShield] Must be in-game to open education screen"));
+            return 0;
+        }
+
+        source.sendFeedback(Text.literal("§e[ScamShield] §7Opening education screen..."));
+
+        try {
+            // Open the education screen
+            client.send(() -> {
+                client.setScreen(new ScamEducationScreen(null));
+            });
+            return 1;
+        } catch (Exception e) {
+            source.sendError(Text.literal("§c[ScamShield] Failed to open education screen: " + e.getMessage()));
+            PackCore.LOGGER.error("[ScamShield] Education screen error", e);
+            return 0;
+        }
     }
 }
