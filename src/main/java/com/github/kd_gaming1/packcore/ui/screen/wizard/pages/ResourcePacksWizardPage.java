@@ -81,6 +81,13 @@ public class ResourcePacksWizardPage extends BaseWizardPage {
                     false
             ),
             new PackOption(
+                    "",
+                    "📚",
+                    "Sophie's Hypixel Enchants",
+                    "Custom textures for all Enchantment Books throughout the whole of Skyblock.",
+                    false
+            ),
+            new PackOption(
                     "Defrosted",
                     "❄",
                     "Defrosted",

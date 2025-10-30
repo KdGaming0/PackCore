@@ -15,6 +15,7 @@ public class ResourcePackManager {
             "FurfSkyFull", new String[]{"full", "furfsky"},
             "SkyBlockDarkUI", new String[]{"skyblock", "dark", "ui"},
             "SkyBlockDarkMode", new String[]{"dark", "skyblock", "mode"},
+            "SophieHypixelEnchants", new String[]{"sophie's", "enchants"},
             "Defrosted", new String[]{"defrosted"},
             "Looshy", new String[]{"looshy"}
     );
@@ -25,6 +26,7 @@ public class ResourcePackManager {
             "FurfSkyFull", "full",
             "SkyBlockDarkUI", "skyblock dark ui",
             "SkyBlockDarkMode", "dark skyblock",
+            "SophieHypixelEnchants", "sophie's hypixel enchants",
             "Defrosted", "defrosted",
             "Looshy", "looshy"
     );
