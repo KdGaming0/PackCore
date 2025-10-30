@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.ui.screen.scamshield;
 import com.github.kd_gaming1.packcore.ui.screen.base.BasePackCoreScreen;
 import com.github.kd_gaming1.packcore.ui.screen.components.ScreenUIComponents;
 import com.github.kd_gaming1.packcore.ui.screen.components.WizardUIComponents;
+import com.github.kd_gaming1.packcore.util.markdown.MarkdownService;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -22,31 +23,30 @@ import static com.github.kd_gaming1.packcore.ui.theme.UITheme.*;
  */
 public class ScamEducationScreen extends BasePackCoreScreen {
 
-    private final String markdownContent;
+    private String markdownContent;
 
     /**
      * Create education screen with full content
      */
-    public ScamEducationScreen(Screen parentScreen) {
-        this(parentScreen, null, null);
+    public ScamEducationScreen(Screen parentScreen, String markdownContent) {
+        this(parentScreen);
+        this.markdownContent = markdownContent;
     }
 
     /**
      * Create education screen with specific content
      * @param parentScreen The parent screen to return to
-     * @param markdownContent Custom markdown content (null for default)
-     * @param highlightedSection Specific section to highlight (null for none)
      */
-    public ScamEducationScreen(Screen parentScreen, String markdownContent, String highlightedSection) {
+    public ScamEducationScreen(Screen parentScreen) {
         super(parentScreen);
-        this.markdownContent = markdownContent != null ? markdownContent : getDefaultContent();
-        // Optional: jump to specific section
+        MarkdownService markdownService = new MarkdownService();
+        this.markdownContent = markdownService.getOrDefault("scam_education.md", FALLBACK_CONTENT);
     }
 
     @Override
     protected Component createTitleLabel() {
         return Components.label(
-                        Text.literal("🛡 Scam Protection Education")
+                        Text.literal("Scam Protection Education")
                                 .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
                 ).color(Color.ofRgb(ACCENT_SECONDARY))
                 .shadow(true)
@@ -78,7 +78,7 @@ public class ScamEducationScreen extends BasePackCoreScreen {
         FlowLayout banner = ScreenUIComponents.createWarningCard(
                 "Stay Alert!",
                 "Scammers are constantly finding new ways to steal your items. " +
-                        "If something seems too good to be true, it probably is. Always verify trades carefully."
+                        "If something seems too good to be true, it probably is. Always verify and be carefull when interacting with others."
         );
 
         // Make it more prominent
@@ -91,25 +91,32 @@ public class ScamEducationScreen extends BasePackCoreScreen {
      * Create quick tips cards
      */
     private FlowLayout createQuickTips() {
-        FlowLayout tipsSection = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+        FlowLayout tipsSection = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(4);
 
         tipsSection.child(Components.label(
                 Text.literal("⚡ Quick Tips").setStyle(Style.EMPTY.withBold(true))
         ).color(Color.ofRgb(ACCENT_SECONDARY)));
 
-        FlowLayout tipsContainer = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+        FlowLayout tipsContainer = Containers.horizontalFlow(Sizing.content(), Sizing.content())
                 .gap(8);
 
-        // Tip cards
-        tipsContainer.child(createTipCard("🔍", "Always Check Trades",
-                "Verify every item before accepting"));
-        tipsContainer.child(createTipCard("❌", "Be Careful with Collateral",
-                "Scammers may ask for valuable collateral, then provide fake/worthless materials"));
-        tipsContainer.child(createTipCard("🔗", "Enable API",
-                "Check player stats before trading"));
+        // Use FlowLayout tip cards (no per-card scroll)
+        tipsContainer.child(createTipCard("🔒", "Protect Your Account",
+                "Never share your password or session ID with anyone — even if they claim to be staff."));
+        tipsContainer.child(createTipCard("🌐", "Avoid Suspicious Links",
+                "Never click on unknown links or login pages sent by other players."));
+        tipsContainer.child(createTipCard("💰", "If It’s Too Good to Be True...",
+                "Free coins, items, or giveaways are almost always scams."));
+        tipsContainer.child(createTipCard("🤝", "Trade Safely",
+                "Double-check items and coins in every trade — scammers may switch items."));
+        tipsContainer.child(createTipCard("🧠", "Stay Informed",
+                "Learn about common scams by doing '/scamshield education' to protect yourself."));
 
-        tipsSection.child(tipsContainer);
+        // Wrap the whole horizontal container in a single scroll box
+        var tipsScroll = ScreenUIComponents.createScrollBoxHorizontal(tipsContainer);
+        tipsScroll.sizing(Sizing.fill(100), Sizing.fixed(96));
+        tipsSection.child(tipsScroll);
 
         return tipsSection;
     }
@@ -118,7 +125,7 @@ public class ScamEducationScreen extends BasePackCoreScreen {
      * Create a single tip card
      */
     private FlowLayout createTipCard(String icon, String title, String description) {
-        FlowLayout card = (FlowLayout) Containers.verticalFlow(Sizing.fill(33), Sizing.content())
+        FlowLayout card = (FlowLayout) Containers.verticalFlow(Sizing.fixed(260), Sizing.content())
                 .gap(4)
                 .surface(Surface.flat(ENTRY_BACKGROUND).and(Surface.outline(ACCENT_PRIMARY)))
                 .padding(Insets.of(8))
@@ -151,22 +158,14 @@ public class ScamEducationScreen extends BasePackCoreScreen {
         ).color(Color.ofRgb(ACCENT_SECONDARY)));
 
         // Create markdown scroll with the content
-        ScrollContainer<FlowLayout> markdownScroll = WizardUIComponents.createMarkdownScroll(markdownContent);
-
-        // Wrap in container
-        FlowLayout container = Containers.verticalFlow(Sizing.fill(100), Sizing.expand())
-                .child(wrapper)
-                .child(markdownScroll);
-
-        return markdownScroll;
+        return WizardUIComponents.createMarkdownScroll(markdownContent);
     }
 
     /**
      * Get default markdown content
      * You'll replace this with your actual markdown content
      */
-    private String getDefaultContent() {
-        return """
+    private static final String FALLBACK_CONTENT = """
             # Hypixel SkyBlock Scam Prevention Guide
             
             ## Introduction
@@ -317,5 +316,4 @@ public class ScamEducationScreen extends BasePackCoreScreen {
             
             {gold}**Remember: Your items are YOUR responsibility. Stay alert and trade smart!**{gold}
             """;
-    }
 }

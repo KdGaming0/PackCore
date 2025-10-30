@@ -314,6 +314,20 @@ public class ScreenUIComponents {
         return scroll;
     }
 
+    /**
+     * Create a scrollable content container horizontal
+     */
+    public static ScrollContainer<FlowLayout> createScrollBoxHorizontal(FlowLayout content) {
+        ScrollContainer<FlowLayout> scroll = Containers.horizontalScroll(
+                Sizing.fill(100),
+                Sizing.expand(),
+                content
+        );
+        scroll.scrollbar(ScrollContainer.Scrollbar.vanilla());
+        scroll.scrollbarThiccness(6);
+        return scroll;
+    }
+
     // ===== Empty States =====
 
     /**
