@@ -1,7 +1,7 @@
-package com.github.kd_gaming1.packcore.command;
+package com.github.kd_gaming1.packcore.command.packcore;
 
 import com.github.kd_gaming1.packcore.PackCore;
-import com.github.kd_gaming1.packcore.ui.help.guide.GuideListScreen;
+import com.github.kd_gaming1.packcore.ui.screen.configmanager.ConfigManagerScreen;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -9,10 +9,10 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
-public class GuideCommand {
+public class ConfigManagerCommand {
 
     public static LiteralArgumentBuilder<FabricClientCommandSource> register() {
-        return ClientCommandManager.literal("guide").executes(GuideCommand::execute);
+        return ClientCommandManager.literal("configmanager").executes(ConfigManagerCommand::execute);
     }
 
     private static int execute(CommandContext<FabricClientCommandSource> context) {
@@ -31,9 +31,9 @@ public class GuideCommand {
          */
         client.send(() -> {
             try {
-                client.setScreen(new GuideListScreen());
+                client.setScreen(new ConfigManagerScreen());
             } catch (Exception e) {
-                PackCore.LOGGER.error("Failed to open guide: {}", e.getMessage());
+                PackCore.LOGGER.error("Failed to open config: {}", e.getMessage());
             }
         });
 

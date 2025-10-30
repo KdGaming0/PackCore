@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.command;
+package com.github.kd_gaming1.packcore.command.packcore;
 
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
