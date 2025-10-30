@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "id": "free_rank_bait_scam",
   "name": "Free Reward Bait Scam",
   "description": "Detects scams offering free ranks, coins, or items as bait to lure victims",

@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "id": "discord_verify_scam",
   "name": "Discord Verification Scam",
   "description": "Detects scams that try to move victims to Discord and request account verification/credentials",

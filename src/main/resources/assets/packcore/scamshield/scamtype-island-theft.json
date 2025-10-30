@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "id": "island_theft_scam",
   "name": "Island/Co-op Theft Scam",
   "description": "Detects scams using /coopadd or /visit commands to steal islands, items, or access in Hypixel Skyblock",

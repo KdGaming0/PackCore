@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "id": "trade_manipulation_scam",
   "name": "Trade Manipulation & Auction Scam",
   "description": "Detects scams involving trade windows, item flexing, auction manipulation, and crafting tricks",
