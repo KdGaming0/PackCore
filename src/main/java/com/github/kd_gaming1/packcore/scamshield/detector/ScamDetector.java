@@ -14,6 +14,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -37,6 +38,7 @@ public class ScamDetector {
     private final UserSuspicionTracker suspicionTracker = UserSuspicionTracker.getInstance();
     private final MessageAnalysisCache cache;
     private final Path scamShieldDir;
+    private final Map<String, MessageRepetition> recentMessages = new ConcurrentHashMap<>();
 
     private ScamDetector() {
         Path gameDir = FabricLoader.getInstance().getGameDir();
@@ -48,6 +50,20 @@ public class ScamDetector {
         );
 
         initializeScamTypes();
+    }
+
+    private static class MessageRepetition {
+        String normalizedMessage;
+        int count;
+        long firstSeen;
+        boolean markedAsLegit;
+
+        MessageRepetition(String msg) {
+            this.normalizedMessage = msg;
+            this.count = 1;
+            this.firstSeen = System.currentTimeMillis();
+            this.markedAsLegit = false;
+        }
     }
 
     public static ScamDetector getInstance() {
@@ -186,6 +202,29 @@ public class ScamDetector {
 
         String normalizedMessage = normalizeMessage(message);
 
+        String senderKey = sender != null ? sender.toLowerCase() : "";
+        MessageRepetition rep = recentMessages.computeIfAbsent(senderKey, k -> new MessageRepetition(normalizedMessage));
+
+        if (rep.normalizedMessage.equals(normalizedMessage)) {
+            rep.count++;
+
+            // If same message repeated 3+ times AND it's a trade ad, mark as legitimate
+            if (rep.count >= 3 && LegitimateTradeContext.isLegitimateTradeAd(normalizedMessage)) {
+                rep.markedAsLegit = true;
+            }
+
+            // If marked as legit due to repetition, return SAFE
+            if (rep.markedAsLegit) {
+                if (PackCoreConfig.enableScamShieldDebugging) {
+                    PackCore.LOGGER.info("[ScamShield] Repetition-whitelisted: {} (repeated {}x)", sender, rep.count);
+                }
+                return DetectionResult.SAFE;
+            }
+        } else {
+            // Different message, reset
+            recentMessages.put(senderKey, new MessageRepetition(normalizedMessage));
+        }
+
         // Check cache first - avoid re-analyzing identical messages
         DetectionResult cached = cache.get(normalizedMessage);
         if (cached != null) {
@@ -254,6 +293,9 @@ public class ScamDetector {
 
         // Cache the result
         cache.put(normalizedMessage, result);
+
+        long now = System.currentTimeMillis();
+        recentMessages.entrySet().removeIf(e -> (now - e.getValue().firstSeen) > 300_000);
 
         return result;
     }

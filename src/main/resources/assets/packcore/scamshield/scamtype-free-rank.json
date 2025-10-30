@@ -35,7 +35,7 @@
     },
     "command_instruction": {
       "description": "Telling victim to run commands",
-      "score": 25,
+      "score": 15,
       "phrases": [
         "/visit me",
         "visit me",

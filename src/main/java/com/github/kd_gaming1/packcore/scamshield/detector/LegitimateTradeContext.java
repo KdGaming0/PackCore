@@ -10,7 +10,12 @@ public class LegitimateTradeContext {
 
     // Lowballing - legitimate practice on Hypixel Skyblock
     private static final Pattern LOWBALLING = Pattern.compile(
-            "\\b(lb|lowball|lowballing)\\s+\\d+[mkb]\\b",
+            "\\b(lb|lowball\\w*|lbing)\\s*\\d+[mkb]\\b",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    private static final Pattern VISIT_WITH_AMOUNT = Pattern.compile(
+            "\\bvisit\\s+(?:me|\\w+).*?\\d+[mkb]\\b",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -44,6 +49,11 @@ public class LegitimateTradeContext {
             return true;
         }
 
+        // Visit + amount = likely legitimate trade
+        if (VISIT_WITH_AMOUNT.matcher(message).find()) {
+            return true;
+        }
+
         // Selling/buying with prices = legitimate
         if (SELLING_BUYING.matcher(message).find()) {
             return true;
@@ -73,12 +83,16 @@ public class LegitimateTradeContext {
             return 1.0; // No reduction
         }
 
-        // If it's lowballing or selling with prices, heavily reduce visit command scores
-        if (LOWBALLING.matcher(message).find() || SELLING_BUYING.matcher(message).find()) {
-            return 0.1; // Reduce to 10% (nearly ignore visit commands)
+        // If it's lowballing or selling with prices, HEAVILY reduce scores
+        if (LOWBALLING.matcher(message).find()) {
+            return 0.15;
+        }
+
+        if (SELLING_BUYING.matcher(message).find() || VISIT_WITH_AMOUNT.matcher(message).find()) {
+            return 0.15;
         }
 
         // For other legitimate contexts, moderately reduce
-        return 0.3; // Reduce to 30%
+        return 0.35;
     }
 }

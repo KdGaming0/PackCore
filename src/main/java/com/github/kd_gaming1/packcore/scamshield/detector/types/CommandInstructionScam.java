@@ -31,12 +31,6 @@ public class CommandInstructionScam implements ScamType {
             Pattern.CASE_INSENSITIVE
     );
 
-    // Commands mentioned without the slash (more suspicious - trying to hide)
-    private static final Pattern COMMAND_WITHOUT_SLASH = Pattern.compile(
-            "\\b(visit|party|coopadd|coop add)\\s+(me|\\w+)\\b",
-            Pattern.CASE_INSENSITIVE
-    );
-
     // "to receive" + command = very suspicious
     private static final Pattern COMMAND_WITH_REWARD = Pattern.compile(
             "\\b(to (receive|get|claim|win)).*?(/visit|/party|/p|/coopadd|visit|party)",
@@ -53,6 +47,7 @@ public class CommandInstructionScam implements ScamType {
         return "Command Instruction";
     }
 
+    // Replace the existing analyze method in CommandInstructionScam with this
     @Override
     public void analyze(String message, String rawMessage, String sender,
                         ConversationContext context, DetectionResult.Builder result) {
@@ -61,36 +56,48 @@ public class CommandInstructionScam implements ScamType {
         }
 
         int score = 0;
+        String lower = message.toLowerCase();
 
-        // Pattern 1: Direct command instruction (very suspicious)
+        boolean tradeOrPromoContext = lower.matches(".*\\b(wts|wtb|wtt|selling|buying|trade|trading|visit my island|visit me for|lowball|lowballing|lb|lbing)\\b.*")
+                || lower.contains("youtube")
+                || lower.contains("subscriber")
+                || lower.contains("series")
+                || lower.contains("hype")
+                || lower.matches(".*\\d+[mkb].*");
+
+        // Pattern 1: Direct command instruction (very suspicious normally)
         Matcher commandMatcher = COMMAND_INSTRUCTION.matcher(message);
         if (commandMatcher.find()) {
             String command = commandMatcher.group(2).toLowerCase();
 
-            // /coopadd is EXTREMELY suspicious (island theft)
             if (command.contains("coop")) {
+                // Keep co-op add extremely suspicious
                 score += 100;
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.info("[ScamShield]   Co-op command instruction: +50 points");
+                    PackCore.LOGGER.info("[ScamShield]   Co-op command instruction: +100 points");
                 }
             }
-            // /visit is very suspicious (item theft, scam islands)
             else if (command.contains("visit")) {
-                score += 40;
+                // VISIT is commonly used legitimately to show an item. Reduce base penalty.
+                // If in trade/promo context, make it much less severe.
+                int visitPenalty = tradeOrPromoContext ? 5 : 15;
+                score += visitPenalty;
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.info("[ScamShield]   Visit command instruction: +40 points");
+                    PackCore.LOGGER.info("[ScamShield]   Visit command instruction: +{} points (promoContext={})",
+                            visitPenalty, tradeOrPromoContext);
                 }
             }
-            // /party or /trade are moderately suspicious
             else if (command.contains("party") || command.contains("trade")) {
-                score += 25;
+                int penalty = tradeOrPromoContext ? 5 : 10;
+                score += penalty;
                 if (PackCoreConfig.enableScamShieldDebugging) {
-                    PackCore.LOGGER.info("[ScamShield]   Party/Trade command instruction: +25 points");
+                    PackCore.LOGGER.info("[ScamShield]   Party/Trade command instruction: +{} points (promoContext={})",
+                            penalty, tradeOrPromoContext);
                 }
             }
         }
 
-        // Pattern 2: Command linked to reward (PDF: "Do /p scammer to receive 5 million free coins!")
+        // Pattern 2: Command linked to reward (still highly suspicious)
         Matcher rewardMatcher = COMMAND_WITH_REWARD.matcher(message);
         if (rewardMatcher.find()) {
             score += 45;
@@ -99,9 +106,7 @@ public class CommandInstructionScam implements ScamType {
             }
         }
 
-        // Pattern 3: Multiple commands in one message (PDF: "/coopadd Scammer DenyCoop")
-        // This is VERY suspicious - trying to trick with complex commands
-        String lower = message.toLowerCase();
+        // Pattern 3: Multiple commands in one message (very suspicious)
         int commandCount = 0;
         if (lower.contains("/visit") || lower.contains("visit me")) commandCount++;
         if (lower.contains("/party") || lower.contains("/p ")) commandCount++;
@@ -115,28 +120,29 @@ public class CommandInstructionScam implements ScamType {
             }
         }
 
-        // Pattern 4: Fake command variants (PDF: "/coopadd Scammer DenyCoop for me to clear it out")
-        // Scammers invent fake command parameters to confuse victims
+        // Pattern 4: Fake co-op variants remain very suspicious
         if ((lower.contains("denycoop") || lower.contains("deny coop") ||
                 lower.contains("clear it out") || lower.contains("to clear")) &&
                 (lower.contains("coopadd") || lower.contains("coop"))) {
-            score += 60; // VERY high - this is a known trick
+            score += 60;
             if (PackCoreConfig.enableScamShieldDebugging) {
                 PackCore.LOGGER.info("[ScamShield]   Fake co-op command variant: +60 points");
             }
         }
 
-        // Pattern 5: Imperative language with commands (DO this, MUST do, TYPE this)
+        // Pattern 5: Imperative language with commands (reduce for promo/trade context)
         if ((lower.contains("do /") || lower.contains("type /") ||
                 lower.contains("run /") || lower.contains("use /") ||
                 lower.contains("enter /"))) {
-            score += 20;
+            int impPenalty = tradeOrPromoContext ? 5 : 20;
+            score += impPenalty;
             if (PackCoreConfig.enableScamShieldDebugging) {
-                PackCore.LOGGER.info("[ScamShield]   Imperative command language: +20 points");
+                PackCore.LOGGER.info("[ScamShield]   Imperative command language: +{} points (promoContext={})",
+                        impPenalty, tradeOrPromoContext);
             }
         }
 
-        // Pattern 6: Command in ALL CAPS (trying to grab attention)
+        // Pattern 6: ALL CAPS commands
         if (rawMessage != null && rawMessage.toUpperCase().equals(rawMessage)) {
             if (rawMessage.contains("/VISIT") || rawMessage.contains("/PARTY") ||
                     rawMessage.contains("/COOPADD") || rawMessage.contains("VISIT ME")) {

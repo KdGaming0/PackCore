@@ -20,7 +20,7 @@ public enum ConfidenceLevel {
      * - Suggest whitelist command
      * - Allow user to proceed
      */
-    LOW(70, 119, "Low", "§e", false),
+    LOW(90, 129, "Low", "§e", false),
 
     /**
      * MEDIUM confidence (130-199 points) - LOWERED FROM 150-249
@@ -33,7 +33,7 @@ public enum ConfidenceLevel {
      * - Provide education link
      * - Encourage caution
      */
-    MEDIUM(120, 159, "Medium", "§6", false),
+    MEDIUM(130, 159, "Medium", "§6", false),
 
     /**
      * HIGH confidence (200+ points) - LOWERED FROM 250

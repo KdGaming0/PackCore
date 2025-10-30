@@ -22,7 +22,7 @@
     },
     "visit_command": {
       "description": "Visit commands",
-      "score": 5,
+      "score": 15,
       "phrases": [
         "/visit me",
         "visit me",
