@@ -71,6 +71,31 @@ public class ChatMessageInterceptor {
 
             ScamShieldChatHandler.getInstance().processChatMessage(chatData.message, chatData.sender);
         });
+
+        ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, timestamp) -> {
+            if (!HypixelEventUtil.isHelloPacketReceived()) {
+                if (PackCoreConfig.enableScamShieldDebugging) {
+                    PackCore.LOGGER.info("[ScamShield] Skipping CHAT - not connected to Hypixel");
+                }
+                return;
+            }
+
+            String rawMessage = message.getString();
+            if (rawMessage == null || rawMessage.isEmpty()) {
+                return;
+            }
+
+            // Remove color codes
+            String cleanMessage = rawMessage.replaceAll("§.", "");
+
+            // Use the provided sender directly
+            if (sender != null && !cleanMessage.isEmpty()) {
+                if (PackCoreConfig.enableScamShieldDebugging) {
+                    PackCore.LOGGER.info("[ScamShield] [CHAT PLAYER: {}] Message: '{}'", sender, cleanMessage);
+                }
+                ScamShieldChatHandler.getInstance().processChatMessage(cleanMessage, String.valueOf(sender));
+            }
+        });
     }
 
     /**
