@@ -238,8 +238,12 @@ public class ConfigManagerScreen extends BasePackCoreScreen {
         ConfigMetadata meta = selectedConfig.metadata();
         int padding = MinecraftClient.getInstance().options.getGuiScale().getValue() <= 2 ? 6 : 0;
 
+        // Create scrollable content container
+        FlowLayout scrollableContent = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(8);
+
         // Header
-        infoPanel.child(Components.label(Text.literal(meta.getName())
+        scrollableContent.child(Components.label(Text.literal(meta.getName())
                         .setStyle(Style.EMPTY.withBold(true)))
                 .color(color(ACCENT_SECONDARY))
                 .margins(Insets.of(padding, 0, 0, 0)));
@@ -256,23 +260,27 @@ public class ConfigManagerScreen extends BasePackCoreScreen {
                     ScreenUIComponents.formatTimestamp(meta.getCreatedDate())));
         }
 
-        infoPanel.child(infoBox);
+        scrollableContent.child(infoBox);
 
         // Description
         if (meta.getDescription() != null && !meta.getDescription().isEmpty()) {
-            infoPanel.child(Components.label(Text.literal("Description:")
+            scrollableContent.child(Components.label(Text.literal("Description:")
                             .setStyle(Style.EMPTY.withBold(true)))
                     .color(color(ACCENT_SECONDARY)));
 
-            infoPanel.child(Components.label(Text.literal(meta.getDescription()))
+            scrollableContent.child(Components.label(Text.literal(meta.getDescription()))
                     .color(color(TEXT_PRIMARY))
-                    .sizing(Sizing.fill(95), Sizing.content()));
+                    .sizing(Sizing.fill(94), Sizing.content()));
         }
 
         // Mods list
-        infoPanel.child(createModsList(meta));
+        scrollableContent.child(createModsList(meta));
 
-        // Action buttons
+        // Add scrollable content to panel
+        infoPanel.child(ScreenUIComponents.createScrollContainer(scrollableContent)
+                .sizing(Sizing.fill(96), Sizing.expand()));
+
+        // Action buttons (outside scroll, always visible at bottom)
         infoPanel.child(createActionButtons());
     }
 
