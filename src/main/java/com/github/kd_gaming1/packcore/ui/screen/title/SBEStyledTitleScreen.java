@@ -33,8 +33,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +45,6 @@ import static com.github.kd_gaming1.packcore.ui.theme.UITheme.*;
  */
 public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private final Identifier backgroundTexture = Identifier.of(MOD_ID, "textures/gui/title/main_menu_background.png");
     private static final ModpackInfo info = PackCore.getModpackInfo();
 
@@ -116,7 +113,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         }
 
         if (!result.isSuccess()) {
-            LOGGER.warn("Update check failed: {}", result.getErrorMessage());
+            PackCore.LOGGER.warn("Update check failed: {}", result.getErrorMessage());
         }
 
         super.init();
@@ -427,7 +424,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
             Screen modsScreen = ModMenuApi.createModsScreen(current);
             client.setScreen(modsScreen);
         } catch (Throwable t) {
-            LOGGER.error("Failed to open Mod Menu screen", t);
+            PackCore.LOGGER.error("Failed to open Mod Menu screen", t);
             PackCoreToast.showError("Mod Menu Error", "Could not open Mod Menu");
         }
     }
@@ -444,7 +441,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         ModpackInfo info = PackCore.getModpackInfo();
 
         if (updateManager == null || info == null) {
-            LOGGER.error("Update system not initialized properly");
+            PackCore.LOGGER.error("Update system not initialized properly");
             return UpdateResult.error("Update system not initialized properly");
         }
 
@@ -455,7 +452,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
             this.newVersion = "";
             this.changelog = "";
             this.modrinthName = "";
-            LOGGER.warn("Skipping update check - configuration not properly set up: {}",
+            PackCore.LOGGER.warn("Skipping update check - configuration not properly set up: {}",
                     info.getValidationError());
             return UpdateResult.error("Configuration not properly set up: " + info.getValidationError());
         }
@@ -463,7 +460,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         UpdateResult result = updateManager.checkForUpdates(info);
 
         if (!result.isSuccess()) {
-            LOGGER.error("Update check failed: {}", result.getErrorMessage());
+            PackCore.LOGGER.error("Update check failed: {}", result.getErrorMessage());
             return result;
         }
 
