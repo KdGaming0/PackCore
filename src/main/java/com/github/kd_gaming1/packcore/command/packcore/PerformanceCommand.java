@@ -1,10 +1,9 @@
-package com.github.kd_gaming1.packcore.command;
+package com.github.kd_gaming1.packcore.command.packcore;
 
 import com.github.kd_gaming1.packcore.integration.minecraft.PerformanceProfileService;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.MinecraftClient;

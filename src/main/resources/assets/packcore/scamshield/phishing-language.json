@@ -1,0 +1,184 @@
+{
+  "version": "1.0.0",
+  "description": "Pure psychological manipulation tactics - reusable across all scam types",
+  "tactics": {
+    "urgency": {
+      "description": "Creates time pressure to force quick decisions",
+      "baseScore": 15,
+      "combinationBonus": 10,
+      "patterns": [
+        {
+          "description": "Time pressure words",
+          "weight": 1.0,
+          "phrases": [
+            "quick",
+            "quickly",
+            "hurry",
+            "fast",
+            "now",
+            "right now",
+            "asap",
+            "immediately",
+            "urgent",
+            "before it's too late",
+            "limited time",
+            "expires",
+            "ending soon"
+          ]
+        },
+        {
+          "description": "All caps urgency",
+          "weight": 1.3,
+          "phrases": [
+            "now!!",
+            "quick!!",
+            "hurry!!"
+          ]
+        }
+      ]
+    },
+    "scarcity": {
+      "description": "Creates false scarcity to increase perceived value",
+      "baseScore": 15,
+      "combinationBonus": 10,
+      "patterns": [
+        {
+          "description": "Limited availability claims",
+          "weight": 1.0,
+          "phrases": [
+            "limited",
+            "only you",
+            "exclusive",
+            "rare opportunity",
+            "last chance",
+            "one time offer",
+            "won't last",
+            "running out",
+            "spots filling up",
+            "only a few left",
+            "first come first serve"
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "description": "Claims authority or official status to gain trust",
+      "baseScore": 25,
+      "combinationBonus": 15,
+      "patterns": [
+        {
+          "description": "Staff/Admin impersonation",
+          "weight": 1.5,
+          "phrases": [
+            "i'm staff",
+            "i'm admin",
+            "i'm mod",
+            "i'm a moderator",
+            "official",
+            "hypixel team",
+            "hypixel staff",
+            "authorized",
+            "verified account",
+            "staff giveaway",
+            "official giveaway"
+          ]
+        },
+        {
+          "description": "YouTuber impersonation",
+          "weight": 1.4,
+          "phrases": [
+            "i'm a youtuber",
+            "famous youtuber",
+            "youtuber giveaway",
+            "check my channel",
+            "my youtube"
+          ]
+        }
+      ]
+    },
+    "trust_building": {
+      "description": "Attempts to build false trust and rapport",
+      "baseScore": 12,
+      "combinationBonus": 8,
+      "patterns": [
+        {
+          "description": "Direct trust appeals",
+          "weight": 1.0,
+          "phrases": [
+            "trust me",
+            "i promise",
+            "i swear",
+            "i'll help you",
+            "you can trust",
+            "i'm legit",
+            "not a scam",
+            "100% real",
+            "guaranteed",
+            "legit giveaway",
+            "real giveaway"
+          ]
+        }
+      ]
+    },
+    "reciprocity": {
+      "description": "Offers something to create obligation",
+      "baseScore": 10,
+      "combinationBonus": 8,
+      "patterns": [
+        {
+          "description": "Gift/Favor language",
+          "weight": 1.0,
+          "phrases": [
+            "i'll give you",
+            "i'll pay you",
+            "reward you",
+            "in return",
+            "you'll get",
+            "i'll send you",
+            "free for you"
+          ]
+        }
+      ]
+    },
+    "social_proof": {
+      "description": "Claims others are doing it to pressure conformity",
+      "baseScore": 10,
+      "combinationBonus": 5,
+      "patterns": [
+        {
+          "description": "Popularity claims",
+          "weight": 1.0,
+          "phrases": [
+            "everyone is doing",
+            "tons of people",
+            "so many people",
+            "all my friends",
+            "everyone got",
+            "others already have",
+            "join everyone",
+            "everyone knows"
+          ]
+        }
+      ]
+    },
+    "multiple_punctuation": {
+      "description": "Excessive punctuation to create urgency",
+      "baseScore": 5,
+      "combinationBonus": 5,
+      "patterns": [
+        {
+          "description": "Multiple exclamation/question marks",
+          "weight": 0.8,
+          "phrases": [
+            "!!",
+            "!!!",
+            "!?",
+            "??",
+            "???",
+            "?!?"
+          ]
+        }
+      ]
+    }
+  }
+}

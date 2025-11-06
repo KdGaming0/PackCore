@@ -2,7 +2,7 @@ package com.github.kd_gaming1.packcore.notification;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.ui.toast.UpdateAvailableToast;
+import com.github.kd_gaming1.packcore.ui.toast.PackCoreToast;
 import com.github.kd_gaming1.packcore.util.update.UpdateResult;
 import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -38,9 +38,7 @@ public class UpdateNotifier {
     }
 
     public static void showMainMenuToast(String currentVersion, String newVersion, String modpackName) {
-        MinecraftClient.getInstance().getToastManager().add(
-                new UpdateAvailableToast(currentVersion, newVersion, modpackName)
-        );
+        PackCoreToast.showUpdateAvailable(currentVersion, newVersion, modpackName);
         shownVersionsThisSession.add(newVersion);
         lastMainMenuToastTime = System.currentTimeMillis();
     }
@@ -77,12 +75,5 @@ public class UpdateNotifier {
         } catch (IllegalArgumentException e) {
             PackCore.LOGGER.error("Invalid Modrinth URL: {}", modrinthUrl, e);
         }
-    }
-
-    // Call this when a new session starts or when versions change
-    public static void resetSessionData() {
-        shownVersionsThisSession.clear();
-        hasShownInGameNotificationThisSession = false;
-        lastMainMenuToastTime = 0;
     }
 }

@@ -1,15 +1,21 @@
 package com.github.kd_gaming1.packcore;
 
-import com.github.kd_gaming1.packcore.command.PackCoreCommand;
+import com.github.kd_gaming1.packcore.command.packcore.PackCoreCommand;
+import com.github.kd_gaming1.packcore.command.scamshield.ScamShieldCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.scamshield.ChatMessageInterceptor;
+import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
+import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.pages.WelcomeWizardPage;
 import com.github.kd_gaming1.packcore.ui.screen.title.SBEStyledTitleScreen;
 import com.github.kd_gaming1.packcore.integration.bobby.BobbyConfigModifier;
 import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
+import com.github.kd_gaming1.packcore.util.HypixelEventUtil;
 import com.github.kd_gaming1.packcore.util.update.modrinth.UpdateCache;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screen.TitleScreen;
@@ -26,9 +32,26 @@ public class PackCore implements ClientModInitializer {
     private static UpdateCache updateManager;
     private static final Path packcoreDir = FabricLoader.getInstance().getGameDir().resolve("packcore");
 
+    private static ScamDetector scamDetector;
+
     @Override
     public void onInitializeClient() {
         LOGGER.info("PackCore initialized!");
+
+        HypixelEventUtil.init();
+
+        // Initialize the scam detection engine
+        scamDetector = ScamDetector.getInstance();
+        LOGGER.info("[ScamShield] Initialized with {} scam types", scamDetector.getScamTypes().size());
+
+        // Register chat message interceptor
+        ChatMessageInterceptor.getInstance().register();
+
+        // Cleanup on shutdown
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+            scamDetector.shutdown();
+            ScamShieldChatHandler.getInstance().shutdown();
+        });
 
         try {
             modpackInfo = ModpackInfo.loadFromFile(packcoreDir);
@@ -41,8 +64,10 @@ public class PackCore implements ClientModInitializer {
 
         MidnightConfig.init(MOD_ID, PackCoreConfig.class);
 
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-                PackCoreCommand.registerCommands(dispatcher));
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            PackCoreCommand.registerCommands(dispatcher);
+            ScamShieldCommand.register(dispatcher);
+        });
 
         if (PackCoreConfig.enableCustomMenu) {
             ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
@@ -61,12 +86,15 @@ public class PackCore implements ClientModInitializer {
             PackCoreConfig.write(MOD_ID);
         }
     }
-
     public static ModpackInfo getModpackInfo() {
         return modpackInfo;
     }
 
     public static UpdateCache getUpdateManager() {
         return updateManager;
+    }
+
+    public static ScamDetector getScamDetector() {
+        return scamDetector;
     }
 }

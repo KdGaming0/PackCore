@@ -1,14 +1,13 @@
 package com.github.kd_gaming1.packcore.ui.screen.configmanager;
 
-import com.github.kd_gaming1.packcore.ui.surface.effects.TextureSurfaces;
-import com.github.kd_gaming1.packcore.ui.component.PlaceholderTextArea;
-import com.github.kd_gaming1.packcore.ui.theme.UITheme;
-import com.github.kd_gaming1.packcore.ui.component.tree.FileTreeNode;
 import com.github.kd_gaming1.packcore.config.export.ConfigExportService;
 import com.github.kd_gaming1.packcore.config.export.ConfigExportService.ExportRequest;
 import com.github.kd_gaming1.packcore.config.export.ConfigExportService.PresetType;
 import com.github.kd_gaming1.packcore.notification.ExportNotifications;
-import io.wispforest.owo.ui.base.BaseOwoScreen;
+import com.github.kd_gaming1.packcore.ui.component.PlaceholderTextArea;
+import com.github.kd_gaming1.packcore.ui.component.tree.FileTreeNode;
+import com.github.kd_gaming1.packcore.ui.screen.base.BasePackCoreScreen;
+import com.github.kd_gaming1.packcore.ui.screen.components.ScreenUIComponents;
 import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -17,9 +16,7 @@ import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,22 +32,29 @@ import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 import static com.github.kd_gaming1.packcore.PackCore.getModpackInfo;
 import static com.github.kd_gaming1.packcore.ui.theme.UITheme.*;
 
-public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
+/**
+ * Export configuration screen - refactored for improved code clarity.
+ * Handles file selection, metadata input, and async export operations.
+ */
+public class ExportConfigScreen extends BasePackCoreScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static final String DEFAULT_VERSION = "1.0.0";
-    private ScheduledExecutorService asyncExecutor;
 
-    private ConfigExportService exportManager;
+    private final ScheduledExecutorService asyncExecutor;
+    private final ConfigExportService exportManager;
+
+    // State
     private final Set<Path> selectedPaths = ConcurrentHashMap.newKeySet();
     private final Map<String, Boolean> modsToInclude = new LinkedHashMap<>();
     private FileTreeNode rootNode;
 
+    // UI Components
     private FlowLayout treeContainer;
-    private ScrollContainer<FlowLayout> treeScrollContainer;
     private FlowLayout contentPanel;
     private LabelComponent selectionInfoLabel;
     private ButtonComponent nextButton;
 
+    // Metadata form
     private TextBoxComponent nameField;
     private TextAreaComponent descriptionArea;
     private TextBoxComponent versionField;
@@ -62,38 +66,25 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
     private String selectedResolution;
     private String currentResolution;
 
+    // Tree caching
     private final Map<FileTreeNode, FlowLayout> nodeRowCache = new ConcurrentHashMap<>();
     private final Map<FileTreeNode, CheckboxComponent> nodeCheckboxCache = new ConcurrentHashMap<>();
     private volatile boolean isLoading = false;
-    private FlowLayout loadingIndicator;
+
+    // Progress tracking
     private FlowLayout exportProgressDialog;
     private LabelComponent exportProgressLabel;
-
     private volatile boolean exportInBackground = false;
     private volatile String currentExportName = "";
 
+    public ExportConfigScreen() {
+        super(new ConfigManagerScreen());
 
-    @Override
-    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
-        return OwoUIAdapter.create(this, Containers::verticalFlow);
-    }
-
-    @Override
-    protected void build(FlowLayout rootComponent) {
-        // Create a new executor for each screen instance
         asyncExecutor = Executors.newScheduledThreadPool(2);
-
         exportManager = new ConfigExportService();
         detectCurrentResolution();
 
-        rootComponent.surface(TextureSurfaces.stretched(
-                Identifier.of(MOD_ID, "textures/gui/wizard/welcome_bg.png"), 1920, 1082));
-        rootComponent.padding(Insets.of(8));
-
-        rootComponent.child(createHeader());
-        rootComponent.child(createMainContent());
-
-        // Load initial tree asynchronously with the new executor
+        // Load initial tree asynchronously
         CompletableFuture.runAsync(() -> {
             rootNode = exportManager.buildFileTree();
             scanMods();
@@ -104,149 +95,87 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         }));
     }
 
-    private FlowLayout createLoadingIndicator() {
-        var loading = Containers.horizontalFlow(Sizing.content(), Sizing.content());
-        loading.child(Components.label(Text.literal("Loading..."))
-                .color(UITheme.color(TEXT_SECONDARY)));
-        return loading;
+    @Override
+    protected Component createTitleLabel() {
+        return Components.label(
+                Text.literal("Export Configuration - " + getModpackInfo().getName())
+                        .styled(s -> s.withFont(net.minecraft.util.Identifier.of(MOD_ID, "gallaeciaforte")))
+        ).color(color(TEXT_PRIMARY));
     }
 
-    private void detectCurrentResolution() {
-        var mc = MinecraftClient.getInstance();
-        currentResolution = mc.getWindow().getWidth() + "x" + mc.getWindow().getHeight();
-    }
+    @Override
+    protected FlowLayout createMainContent() {
+        FlowLayout mainContent = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.expand())
+                .gap(8);
 
-    private FlowLayout createHeader() {
-        var header = Containers.horizontalFlow(Sizing.fill(100), Sizing.fixed(50));
-        header.gap(8);
-        header.verticalAlignment(VerticalAlignment.CENTER);
-
-        header.child(Components.texture(
-                Identifier.of(MOD_ID, "textures/gui/assets/sbe_logo.png"),
-                0, 0, 40, 40, 40, 40));
-
-        header.child(Components.label(
-                        Text.literal("Export Configuration - " + getModpackInfo().getName())
-                                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
-                .color(UITheme.color(TEXT_WHITE)));
-
-        var backContainer = Containers.horizontalFlow(Sizing.expand(), Sizing.content());
-        backContainer.horizontalAlignment(HorizontalAlignment.RIGHT);
-        backContainer.child(createBackButton());
-        header.child(backContainer);
-
-        return header;
-    }
-
-    private ButtonComponent createBackButton() {
-        return (ButtonComponent) Components.button(Text.literal("Back"),
-                        btn -> {
-                            shutdownExecutor();
-                            MinecraftClient.getInstance().setScreen(new ConfigManagerScreen());
-                        })
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 90, 57))
-                .sizing(Sizing.fixed(90), Sizing.fixed(19));
-    }
-
-    private FlowLayout createMainContent() {
-        var mainContent = Containers.horizontalFlow(Sizing.fill(100), Sizing.expand());
-        mainContent.gap(8);
         mainContent.child(createSidebar());
         mainContent.child(createContentArea());
+
         return mainContent;
     }
 
-    private FlowLayout createSidebar() {
-        var sidebar = Containers.verticalFlow(Sizing.fill(35), Sizing.expand());
-        sidebar.gap(8);
-        sidebar.surface(TextureSurfaces.stretched(
-                Identifier.of(MOD_ID, "textures/gui/menu/notif_box.png"), 607, 755));
-        sidebar.padding(Insets.of(12));
+    // ===== Sidebar =====
 
-        var scrollContent = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
-        scrollContent.gap(8);
+    private FlowLayout createSidebar() {
+        FlowLayout sidebar = ScreenUIComponents.createSidebar(35);
+
+        FlowLayout scrollContent = Containers.verticalFlow(Sizing.fill(96), Sizing.content())
+                .gap(8);
 
         scrollContent.child(createInfoSection());
         scrollContent.child(createPresetSection());
         scrollContent.child(createSelectionInfo());
 
-        var scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), scrollContent);
-        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        sidebar.child(scrollContainer);
+        sidebar.child(ScreenUIComponents.createScrollContainer(scrollContent));
 
-        nextButton = (ButtonComponent) Components.button(
-                        Text.literal("Next: Add Details"),
-                        btn -> showMetadataView())
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 120, 60))
-                .sizing(Sizing.fixed(120), Sizing.fixed(20));
-
+        // Next button
+        nextButton = ScreenUIComponents.createButton("Next: Add Details",
+                btn -> showMetadataView(), 120, 20);
         nextButton.active(false);
 
-        sidebar.child(nextButton);
+        sidebar.child(nextButton).horizontalAlignment(HorizontalAlignment.CENTER);
+
         return sidebar;
     }
 
-    private FlowLayout createInfoSection() {
-        var section = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        section.padding(Insets.of(8));
+    private Component createInfoSection() {
+        FlowLayout section = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .padding(Insets.of(8));
+
         section.child(Components.label(
-                        Text.literal("Select files and folders to include in your configuration export."))
-                .color(UITheme.color(TEXT_WHITE)));
+                Text.literal("Select files and folders to include in your configuration export.")
+        ).color(color(TEXT_PRIMARY)).horizontalSizing(Sizing.fill(100)));
+
         return section;
     }
 
     private FlowLayout createPresetSection() {
-        var section = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        section.gap(4);
-        section.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        section.padding(Insets.of(8));
+        FlowLayout section = ScreenUIComponents.createSection("Quick Presets", 0);
         section.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        section.child(Components.label(Text.literal("Quick Presets")
-                        .setStyle(Style.EMPTY.withBold(true)))
-                .color(UITheme.color(ACCENT_GOLD)));
-
         for (PresetType preset : PresetType.values()) {
-            section.child(createPresetButton(preset));
+            section.child(ScreenUIComponents.createButton(preset.getDisplayName(),
+                    btn -> applyPreset(preset), 90, 19));
         }
 
         return section;
     }
 
-    private ButtonComponent createPresetButton(PresetType preset) {
-        return (ButtonComponent) Components.button(
-                        Text.literal(preset.getDisplayName()),
-                        btn -> applyPreset(preset))
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 57))
-                .sizing(Sizing.fixed(90), Sizing.fixed(19));
-    }
-
     private FlowLayout createSelectionInfo() {
-        var section = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        section.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        section.padding(Insets.of(8));
+        FlowLayout section = ScreenUIComponents.createSection("Selection Info", 0);
         section.horizontalAlignment(HorizontalAlignment.CENTER);
 
-        section.child(Components.label(Text.literal("Selection Info")
-                        .setStyle(Style.EMPTY.withBold(true)))
-                .color(UITheme.color(ACCENT_GOLD)));
-
         selectionInfoLabel = Components.label(Text.literal("0 items selected\nSize: 0 KB"))
-                .color(UITheme.color(TEXT_SECONDARY));
+                .color(color(TEXT_SECONDARY));
         section.child(selectionInfoLabel);
 
         return section;
     }
 
-    private FlowLayout createContentArea() {
-        contentPanel = Containers.verticalFlow(Sizing.fill(65), Sizing.expand());
-        contentPanel.surface(TextureSurfaces.stretched(
-                Identifier.of(MOD_ID, "textures/gui/menu/info_box.png"), 1142, 934));
-        contentPanel.padding(Insets.of(14));
+    // ===== Content Area =====
 
+    private FlowLayout createContentArea() {
+        contentPanel = ScreenUIComponents.createInfoPanel(65);
         showFileTreeView();
         return contentPanel;
     }
@@ -258,17 +187,15 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
 
         contentPanel.child(Components.label(Text.literal("Select Files to Export")
                         .setStyle(Style.EMPTY.withBold(true)))
-                .color(UITheme.color(ACCENT_GOLD)));
+                .color(color(ACCENT_SECONDARY)));
 
         treeContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
-        treeScrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), treeContainer);
-        treeScrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
 
+        ScrollContainer<FlowLayout> treeScrollContainer = ScreenUIComponents.createScrollContainer(treeContainer);
         contentPanel.child(treeScrollContainer);
 
-        loadingIndicator = createLoadingIndicator();
         if (rootNode == null) {
-            treeContainer.child(loadingIndicator);
+            treeContainer.child(ScreenUIComponents.createEmptyState("Loading files..."));
         } else {
             displayInitialTree();
         }
@@ -289,20 +216,20 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
     private void addTreeNodeOptimized(FileTreeNode node, int depth) {
         if (node.isHidden() || depth > 10) return;
 
-        var nodeRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        nodeRow.gap(4);
-        nodeRow.padding(Insets.left(depth * 16));
-        nodeRow.verticalAlignment(VerticalAlignment.CENTER);
+        FlowLayout nodeRow = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(4)
+                .padding(Insets.left(depth * 16))
+                .verticalAlignment(VerticalAlignment.CENTER);
 
         // Expand/collapse button for directories
         if (node.isDirectory() && (!node.getChildren().isEmpty() || node.hasUnloadedChildren())) {
             nodeRow.child(Components.button(
                             Text.literal(node.isExpanded() ? "▼" : "▶"),
-                            btn -> toggleNodeExpansion(node))
-                    .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_GOLD, ENTRY_BORDER))
+                            btn -> toggleNodeExpansion(node)
+                    ).renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_SECONDARY, ENTRY_BORDER))
                     .sizing(Sizing.fixed(16), Sizing.fixed(16)));
         } else {
-            var placeholder = Components.box(Sizing.fixed(16), Sizing.fixed(16));
+            BoxComponent placeholder = Components.box(Sizing.fixed(16), Sizing.fixed(16));
             placeholder.fill(true);
             placeholder.color(Color.ofArgb(0x00000000));
             nodeRow.child(placeholder);
@@ -310,7 +237,7 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
 
         // Checkbox
         boolean isSelected = selectedPaths.contains(node.getPath());
-        var checkbox = Components.checkbox(Text.empty())
+        CheckboxComponent checkbox = Components.checkbox(Text.empty())
                 .checked(isSelected)
                 .onChanged(checked -> toggleSelectionAsync(node, checked));
         nodeRow.child(checkbox);
@@ -319,7 +246,7 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         // Label
         String icon = node.isDirectory() ? "📁" : "📄";
         nodeRow.child(Components.label(Text.literal(icon + " " + node.getName()))
-                .color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE)));
+                .color(color(isSelected ? ACCENT_SECONDARY : TEXT_PRIMARY)));
 
         nodeRowCache.put(node, nodeRow);
         treeContainer.child(nodeRow);
@@ -336,17 +263,15 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         if (isLoading) return;
 
         if (!node.isExpanded() && !node.isChildrenLoaded()) {
-            // Load children asynchronously
             isLoading = true;
             showLoadingForNode(node);
 
-            CompletableFuture.runAsync(() -> exportManager.loadNodeChildren(node), asyncExecutor).thenRun(() -> { // Changed from ASYNC_EXECUTOR
-                MinecraftClient.getInstance().execute(() -> {
-                    node.setExpanded(true);
-                    updateNodeExpansion(node);
-                    isLoading = false;
-                });
-            });
+            CompletableFuture.runAsync(() -> exportManager.loadNodeChildren(node), asyncExecutor)
+                    .thenRun(() -> MinecraftClient.getInstance().execute(() -> {
+                        node.setExpanded(true);
+                        updateNodeExpansion(node);
+                        isLoading = false;
+                    }));
         } else {
             node.setExpanded(!node.isExpanded());
             updateNodeExpansion(node);
@@ -364,7 +289,6 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void updateNodeExpansion(FileTreeNode node) {
-        // Find the node's row in the tree
         int nodeIndex = -1;
         for (int i = 0; i < treeContainer.children().size(); i++) {
             if (treeContainer.children().get(i) == nodeRowCache.get(node)) {
@@ -375,7 +299,6 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
 
         if (nodeIndex == -1) return;
 
-        // Update expand button
         FlowLayout nodeRow = nodeRowCache.get(node);
         if (nodeRow != null && !nodeRow.children().isEmpty()) {
             Component firstChild = nodeRow.children().getFirst();
@@ -385,16 +308,27 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         }
 
         if (node.isExpanded()) {
-            // Add children after this node
+            boolean parentSelected = selectedPaths.contains(node.getPath());
+
             int depth = calculateDepth(node);
             int insertIndex = nodeIndex + 1;
             for (FileTreeNode child : node.getChildren()) {
+                if (parentSelected) {
+                    selectedPaths.add(child.getPath());
+                    if (child.isDirectory()) {
+                        addDescendantsAsync(child);
+                    }
+                }
+
                 if (!nodeRowCache.containsKey(child)) {
                     createNodeRow(child, depth + 1, insertIndex++);
                 }
             }
+
+            if (parentSelected) {
+                updateSelectionInfo();
+            }
         } else {
-            // Remove children
             removeChildrenFromTree(node);
         }
     }
@@ -402,20 +336,20 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
     private void createNodeRow(FileTreeNode node, int depth, int insertIndex) {
         if (node.isHidden()) return;
 
-        var nodeRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        nodeRow.gap(4);
-        nodeRow.padding(Insets.left(depth * 16));
-        nodeRow.verticalAlignment(VerticalAlignment.CENTER);
+        FlowLayout nodeRow = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(4)
+                .padding(Insets.left(depth * 16))
+                .verticalAlignment(VerticalAlignment.CENTER);
 
         // Expand/collapse button
         if (node.isDirectory() && (!node.getChildren().isEmpty() || node.hasUnloadedChildren())) {
             nodeRow.child(Components.button(
                             Text.literal(node.isExpanded() ? "▼" : "▶"),
-                            btn -> toggleNodeExpansion(node))
-                    .renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_GOLD, ENTRY_BORDER))
+                            btn -> toggleNodeExpansion(node)
+                    ).renderer(ButtonComponent.Renderer.flat(ENTRY_BACKGROUND, ACCENT_SECONDARY, ENTRY_BORDER))
                     .sizing(Sizing.fixed(16), Sizing.fixed(16)));
         } else {
-            var placeholder = Components.box(Sizing.fixed(16), Sizing.fixed(16));
+            BoxComponent placeholder = Components.box(Sizing.fixed(16), Sizing.fixed(16));
             placeholder.fill(true);
             placeholder.color(Color.ofArgb(0x00000000));
             nodeRow.child(placeholder);
@@ -423,7 +357,7 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
 
         // Checkbox
         boolean isSelected = selectedPaths.contains(node.getPath());
-        var checkbox = Components.checkbox(Text.empty())
+        CheckboxComponent checkbox = Components.checkbox(Text.empty())
                 .checked(isSelected)
                 .onChanged(checked -> toggleSelectionAsync(node, checked));
         nodeRow.child(checkbox);
@@ -432,7 +366,7 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         // Label
         String icon = node.isDirectory() ? "📁" : "📄";
         nodeRow.child(Components.label(Text.literal(icon + " " + node.getName()))
-                .color(UITheme.color(isSelected ? ACCENT_GOLD : TEXT_WHITE)));
+                .color(color(isSelected ? ACCENT_SECONDARY : TEXT_PRIMARY)));
 
         nodeRowCache.put(node, nodeRow);
 
@@ -467,7 +401,6 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
     private int calculateDepth(FileTreeNode node) {
         FlowLayout nodeRow = nodeRowCache.get(node);
         if (nodeRow == null) return 0;
-
         Insets padding = nodeRow.padding().get();
         return padding.left() / 16;
     }
@@ -477,22 +410,25 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
             if (selected) {
                 selectedPaths.add(node.getPath());
                 if (node.isDirectory()) {
+                    if (!node.isChildrenLoaded()) {
+                        exportManager.loadNodeChildren(node);
+                    }
                     addDescendantsAsync(node);
                 }
             } else {
                 selectedPaths.remove(node.getPath());
                 if (node.isDirectory()) {
+                    if (!node.isChildrenLoaded()) {
+                        exportManager.loadNodeChildren(node);
+                    }
                     removeDescendantsAsync(node);
                 }
             }
-        }, asyncExecutor).thenRun(() -> { // Changed from ASYNC_EXECUTOR
-            MinecraftClient.getInstance().execute(() -> {
-                updateNodeVisualsRecursive(node);
-                updateSelectionInfo();
-            });
-        });
+        }, asyncExecutor).thenRun(() -> MinecraftClient.getInstance().execute(() -> {
+            updateNodeVisualsRecursive(node);
+            updateSelectionInfo();
+        }));
     }
-
 
     private void addDescendantsAsync(FileTreeNode node) {
         for (FileTreeNode child : node.getChildren()) {
@@ -513,13 +449,11 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private void updateNodeVisualsRecursive(FileTreeNode node) {
-        // Update checkbox
         CheckboxComponent checkbox = nodeCheckboxCache.get(node);
         if (checkbox != null) {
             checkbox.checked(selectedPaths.contains(node.getPath()));
         }
 
-        // Update children if expanded
         if (node.isDirectory() && node.isExpanded()) {
             for (FileTreeNode child : node.getChildren()) {
                 updateNodeVisualsRecursive(child);
@@ -532,23 +466,15 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
             int count = selectedPaths.size();
             long size = exportManager.calculateSelectionSize(selectedPaths);
             return new SelectionInfo(count, size);
-        }, asyncExecutor).thenAccept(info -> { // Changed from ASYNC_EXECUTOR
-            MinecraftClient.getInstance().execute(() -> {
-                String sizeText = formatSize(info.size);
-                selectionInfoLabel.text(Text.literal(
-                        info.count + " item" + (info.count != 1 ? "s" : "") + " selected\nSize: " + sizeText));
-                updateNextButton();
-            });
-        });
+        }, asyncExecutor).thenAccept(info -> MinecraftClient.getInstance().execute(() -> {
+            String sizeText = ScreenUIComponents.formatSize(info.size);
+            selectionInfoLabel.text(Text.literal(
+                    info.count + " item" + (info.count != 1 ? "s" : "") + " selected\nSize: " + sizeText));
+            updateNextButton();
+        }));
     }
 
     private record SelectionInfo(int count, long size) {}
-
-    private String formatSize(long bytes) {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return (bytes / 1024) + " KB";
-        return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
-    }
 
     private void updateNextButton() {
         nextButton.active(!selectedPaths.isEmpty() && !showingMetadata);
@@ -574,13 +500,11 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
                 }
             }
             return presetPaths;
-        }, asyncExecutor).thenAccept(paths -> { // Changed from ASYNC_EXECUTOR
-            MinecraftClient.getInstance().execute(() -> {
-                // Update all checkboxes
-                nodeCheckboxCache.forEach((node, checkbox) -> checkbox.checked(selectedPaths.contains(node.getPath())));
-                updateSelectionInfo();
-            });
-        });
+        }, asyncExecutor).thenAccept(paths -> MinecraftClient.getInstance().execute(() -> {
+            nodeCheckboxCache.forEach((node, checkbox) ->
+                    checkbox.checked(selectedPaths.contains(node.getPath())));
+            updateSelectionInfo();
+        }));
     }
 
     private FileTreeNode findNodeByPath(FileTreeNode currentNode, Path targetPath) {
@@ -606,6 +530,8 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         }
     }
 
+    // ===== Metadata View =====
+
     private void showMetadataView() {
         contentPanel.clearChildren();
         showingMetadata = true;
@@ -613,15 +539,17 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
 
         contentPanel.child(Components.label(Text.literal("Configuration Details")
                         .setStyle(Style.EMPTY.withBold(true)))
-                .color(UITheme.color(ACCENT_GOLD)));
+                .color(color(ACCENT_SECONDARY)));
 
-        var formContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content());
-        formContainer.gap(8);
+        FlowLayout formContainer = Containers.verticalFlow(Sizing.fill(98), Sizing.content())
+                .gap(8);
 
+        // Name field
         nameField = Components.textBox(Sizing.fill(70), "");
         nameField.setPlaceholder(Text.literal("Enter configuration name"));
         formContainer.child(createFormRow("Name*:", nameField));
 
+        // Description field
         descriptionArea = PlaceholderTextArea.create(
                 Sizing.fill(70),
                 Sizing.fixed(80),
@@ -629,151 +557,130 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         );
         formContainer.child(createFormRow("Description:", descriptionArea));
 
+        // Version field
         versionField = Components.textBox(Sizing.fixed(120), DEFAULT_VERSION);
         formContainer.child(createFormRow("Version:", versionField));
 
+        // Author field
         authorField = Components.textBox(Sizing.fill(70),
                 MinecraftClient.getInstance().getSession().getUsername());
         formContainer.child(createFormRow("Author:", authorField));
 
+        // Resolution dropdown
         populateResolutionDropdown();
         formContainer.child(createFormRow("Target Resolution:", resolutionButton));
 
+        // Mods list
         formContainer.child(Components.label(Text.literal("Installed mods when the configs was exported:"))
-                .color(UITheme.color(TEXT_WHITE))
+                .color(color(TEXT_PRIMARY))
                 .horizontalSizing(Sizing.fill(100)));
 
-        var modsListWrapper = Containers.verticalFlow(Sizing.fill(100), Sizing.fixed(125));
-        modsListWrapper.surface(Surface.flat(ENTRY_BACKGROUND).and(Surface.outline(ENTRY_BORDER)));
-        modsListWrapper.padding(Insets.of(8));
+        FlowLayout modsListWrapper = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.fixed(125))
+                .surface(Surface.flat(ENTRY_BACKGROUND).and(Surface.outline(ENTRY_BORDER)))
+                .padding(Insets.of(8));
 
         modsListContainer = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .padding(Insets.bottom(8));
 
-        var modsScroll = Containers.verticalScroll(Sizing.fill(100), Sizing.fixed(120), modsListContainer)
-                .scrollbar(ScrollContainer.Scrollbar.vanilla());
+        modsListWrapper.child(ScreenUIComponents.createScrollContainer(modsListContainer)
+                .sizing(Sizing.fill(100), Sizing.fixed(120)));
 
-        modsListWrapper.child(modsScroll);
         formContainer.child(modsListWrapper);
-
         populateModsList();
 
-        var scrollContainer = Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), formContainer);
-        scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
-        contentPanel.child(scrollContainer);
+        contentPanel.child(ScreenUIComponents.createScrollContainer(formContainer));
 
-        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .gap(8);
+        // Action buttons
+        FlowLayout buttonRow = ScreenUIComponents.createButtonRow(
+                ScreenUIComponents.createButton("Back", btn -> showFileTreeView(), 90, 20),
+                ScreenUIComponents.createButton("Export", btn -> showExportWarningDialog())
+        );
         buttonRow.margins(Insets.top(6));
-        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
-
-        buttonRow.child(Components.button(Text.literal("Back"), btn -> showFileTreeView())
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 60))
-                .sizing(Sizing.fixed(90), Sizing.fixed(20)));
-
-        buttonRow.child(Components.button(Text.literal("Export"), btn -> showExportWarningDialog())
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 90, 60))
-                .sizing(Sizing.fixed(90), Sizing.fixed(20)));
-
         contentPanel.child(buttonRow);
     }
 
     private FlowLayout createFormRow(String label, Component field) {
-        var row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        row.gap(8);
-        row.verticalAlignment(VerticalAlignment.CENTER);
+        FlowLayout row = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(8)
+                .verticalAlignment(VerticalAlignment.CENTER);
+
         row.child(Components.label(Text.literal(label))
-                .color(UITheme.color(TEXT_WHITE))
+                .color(color(TEXT_PRIMARY))
                 .sizing(Sizing.fixed(60), Sizing.content()));
+
         row.child(field);
+
         return row;
     }
 
     private void populateResolutionDropdown() {
-        resolutionButton = (ButtonComponent) Components.button(
-                        Text.literal(currentResolution),
-                        this::openResolutionDropdown)
-                .renderer(ButtonComponent.Renderer.texture(
-                        Identifier.of(MOD_ID, "textures/gui/wizard/button.png"), 0, 0, 120, 60))
-                .sizing(Sizing.fixed(120), Sizing.fixed(20));
-
+        resolutionButton = ScreenUIComponents.createButton(currentResolution,
+                btn -> openResolutionDropdown(), 120, 20);
         selectedResolution = currentResolution;
     }
 
-    private void openResolutionDropdown(ButtonComponent button) {
-        var commonResolutions = List.of(
+    private void openResolutionDropdown() {
+        List<String> commonResolutions = List.of(
                 "1280×720", "1920×1080", "1920×1200",
                 "2560×1440", "2560×1080", "3440×1440", "3840×2160",
                 currentResolution
         );
 
-        var uniqueResolutions = commonResolutions.stream()
+        List<String> uniqueResolutions = commonResolutions.stream()
                 .distinct()
                 .toList();
 
         DropdownComponent.openContextMenu(
-                        this,
-                        this.uiAdapter.rootComponent,
-                        FlowLayout::child,
-                        button.x(),
-                        button.y() + button.height(),
-                        dropdown -> {
-                            for (String resolution : uniqueResolutions) {
-                                dropdown.button(Text.literal(resolution), selectedDropdown -> {
-                                    selectedResolution = resolution;
-                                    currentResolution = resolution;
-                                    resolutionButton.setMessage(Text.literal(resolution));
-                                    selectedDropdown.parent().removeChild(selectedDropdown);
-                                });
-                            }
+                this,
+                this.uiAdapter.rootComponent,
+                FlowLayout::child,
+                resolutionButton.x(),
+                resolutionButton.y() + resolutionButton.height(),
+                dropdown -> {
+                    for (String resolution : uniqueResolutions) {
+                        dropdown.button(Text.literal(resolution), selectedDropdown -> {
+                            selectedResolution = resolution;
+                            currentResolution = resolution;
+                            resolutionButton.setMessage(Text.literal(resolution));
+                            assert selectedDropdown.parent() != null;
+                            selectedDropdown.parent().removeChild(selectedDropdown);
+                        });
+                    }
 
-                            dropdown.divider();
-                            dropdown.button(Text.literal("Custom..."), selectedDropdown -> {
-                                openCustomResolutionDialog();
-                                selectedDropdown.parent().removeChild(selectedDropdown);
-                            });
-                        }
-                )
-                .zIndex(8);
+                    dropdown.divider();
+                    dropdown.button(Text.literal("Custom..."), selectedDropdown -> {
+                        openCustomResolutionDialog();
+                        assert selectedDropdown.parent() != null;
+                        selectedDropdown.parent().removeChild(selectedDropdown);
+                    });
+                }
+        ).zIndex(8);
     }
-
     private void openCustomResolutionDialog() {
-        var dialogContainer = Containers.verticalFlow(Sizing.fixed(300), Sizing.content());
-        dialogContainer.surface(Surface.flat(PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        dialogContainer.padding(Insets.of(16));
-        dialogContainer.positioning(Positioning.absolute(
-                (this.width - 300) / 2,
-                (this.height - 150) / 2
-        )).zIndex(10);
+        FlowLayout dialog = ScreenUIComponents.createDialog(
+                "Enter Custom Resolution",
+                null,
+                300
+        );
 
-        dialogContainer.child(Components.label(Text.literal("Enter Custom Resolution"))
-                .color(UITheme.color(ACCENT_GOLD)));
-
-        var customResolutionField = Components.textBox(Sizing.fixed(200), "1920x1080");
+        TextBoxComponent customResolutionField = Components.textBox(Sizing.fixed(200), "1920x1080");
         customResolutionField.setPlaceholder(Text.literal("Width x Height (e.g. 1920x1080)"));
-        dialogContainer.child(customResolutionField);
+        dialog.child(customResolutionField);
 
-        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        buttonRow.gap(8);
-        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+        dialog.child(ScreenUIComponents.createButtonRow(
+                ScreenUIComponents.createButton("Cancel", btn -> closeTopOverlay(), 60, 20),
+                ScreenUIComponents.createButton("OK", btn -> {
+                    String customRes = customResolutionField.getText().trim();
+                    if (customRes.matches("\\d+x\\d+")) {
+                        selectedResolution = customRes;
+                        currentResolution = customRes;
+                        resolutionButton.setMessage(Text.literal(customRes));
+                    }
+                    closeTopOverlay();
+                }, 60, 20)
+        ));
 
-        buttonRow.child(Components.button(Text.literal("Cancel"), btn ->
-                this.uiAdapter.rootComponent.removeChild(dialogContainer)).sizing(Sizing.fixed(60), Sizing.fixed(20)));
-
-        buttonRow.child(Components.button(Text.literal("OK"), btn -> {
-            String customRes = customResolutionField.getText().trim();
-            if (customRes.matches("\\d+x\\d+")) {
-                selectedResolution = customRes;
-                currentResolution = customRes;
-                resolutionButton.setMessage(Text.literal(customRes));
-            }
-            this.uiAdapter.rootComponent.removeChild(dialogContainer);
-        }).sizing(Sizing.fixed(60), Sizing.fixed(20)));
-
-        dialogContainer.child(buttonRow);
-        this.uiAdapter.rootComponent.child(dialogContainer);
+        showOverlay(dialog, false);
     }
 
     private void populateModsList() {
@@ -781,128 +688,66 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
 
         if (modsToInclude.isEmpty()) {
             modsListContainer.child(Components.label(Text.literal("No mods found"))
-                    .color(UITheme.color(TEXT_SECONDARY)));
+                    .color(color(TEXT_SECONDARY)));
             return;
         }
 
         for (Map.Entry<String, Boolean> entry : modsToInclude.entrySet()) {
-            var checkbox = Components.checkbox(Text.literal(entry.getKey()))
+            CheckboxComponent checkbox = Components.checkbox(Text.literal(entry.getKey()))
                     .checked(entry.getValue())
                     .onChanged(checked -> modsToInclude.put(entry.getKey(), checked));
             modsListContainer.child(checkbox);
         }
     }
 
+    private void detectCurrentResolution() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        currentResolution = mc.getWindow().getWidth() + "x" + mc.getWindow().getHeight();
+    }
+
+    // ===== Export Operations =====
+
     private void showExportWarningDialog() {
-        var dialogContainer = Containers.verticalFlow(Sizing.fixed(400), Sizing.content());
-        dialogContainer.surface(Surface.flat(DARK_PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        dialogContainer.padding(Insets.of(16));
-        dialogContainer.positioning(Positioning.absolute(
-                (this.width - 400) / 2,
-                (this.height - 200) / 2
-        )).zIndex(10);
+        FlowLayout dialog = ScreenUIComponents.createWarningDialog(
+                "Export Warning",
+                null,
+                400
+        );
 
-        dialogContainer.child(Components.label(Text.literal("Export Warning"))
-                .color(UITheme.color(ACCENT_GOLD))
-                .margins(Insets.bottom(8)));
-
-        var warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-        warningText.gap(4);
+        FlowLayout warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                .gap(4);
 
         warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
-                .color(UITheme.color(TEXT_WHITE))
+                .color(color(TEXT_PRIMARY))
                 .margins(Insets.bottom(4)));
 
         warningText.child(Components.label(Text.literal("• The export will run in the background"))
-                .color(UITheme.color(TEXT_WHITE)));
+                .color(color(TEXT_PRIMARY)));
 
         warningText.child(Components.label(Text.literal("• A progress indicator will show the status"))
-                .color(UITheme.color(TEXT_WHITE)));
+                .color(color(TEXT_PRIMARY)));
 
         warningText.child(Components.label(Text.literal("• You can continue using the interface"))
-                .color(UITheme.color(TEXT_WHITE))
+                .color(color(TEXT_PRIMARY))
                 .margins(Insets.bottom(8)));
 
-        dialogContainer.child(warningText);
+        dialog.child(warningText);
 
-        var buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        buttonRow.gap(8);
-        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
+        dialog.child(ScreenUIComponents.createButtonRow(
+                ScreenUIComponents.createButton("Cancel", btn -> closeTopOverlay(), 80, 20),
+                ScreenUIComponents.createButton("Continue Export", btn -> {
+                    closeTopOverlay();
+                    performAsyncExport();
+                }, 120, 20)
+        ));
 
-        buttonRow.child(Components.button(Text.literal("Cancel"), btn ->
-                this.uiAdapter.rootComponent.removeChild(dialogContainer)).sizing(Sizing.fixed(80), Sizing.fixed(20)));
-
-        buttonRow.child(Components.button(Text.literal("Continue Export"), btn -> {
-            this.uiAdapter.rootComponent.removeChild(dialogContainer);
-            performAsyncExport();
-        }).sizing(Sizing.fixed(120), Sizing.fixed(20)));
-
-        dialogContainer.child(buttonRow);
-        this.uiAdapter.rootComponent.child(dialogContainer);
-    }
-
-    private void showExportProgressDialog() {
-        exportProgressDialog = Containers.verticalFlow(Sizing.fixed(350), Sizing.content());
-        exportProgressDialog.surface(Surface.flat(DARK_PANEL_BACKGROUND).and(Surface.outline(ACCENT_GOLD)));
-        exportProgressDialog.padding(Insets.of(16));
-        exportProgressDialog.positioning(Positioning.absolute(
-                (this.width - 350) / 2,
-                (this.height - 150) / 2
-        )).zIndex(15);
-
-        // Title
-        exportProgressDialog.child(Components.label(Text.literal("Exporting Configuration"))
-                .color(UITheme.color(ACCENT_GOLD))
-                .margins(Insets.bottom(8)));
-
-        // Progress label
-        exportProgressLabel = (LabelComponent) Components.label(Text.literal("Preparing export..."))
-                .color(UITheme.color(TEXT_WHITE))
-                .margins(Insets.bottom(12));
-        exportProgressDialog.child(exportProgressLabel);
-
-        // Button row
-        FlowLayout buttonRow = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        buttonRow.gap(8);
-        buttonRow.horizontalAlignment(HorizontalAlignment.CENTER);
-
-        // Continue in background button
-        ButtonComponent backgroundButton = (ButtonComponent) Components.button(
-                Text.literal("Continue in Background"),
-                btn -> {
-                    exportInBackground = true;
-                    closeExportProgressDialog();
-                }
-        ).horizontalSizing(Sizing.content());
-
-        buttonRow.child(backgroundButton);
-        exportProgressDialog.child(buttonRow);
-
-        this.uiAdapter.rootComponent.child(exportProgressDialog);
-    }
-
-    private void updateExportProgress(String message) {
-        MinecraftClient.getInstance().execute(() -> {
-            if (exportProgressLabel != null && !exportInBackground) {
-                exportProgressLabel.text(Text.literal(message));
-            }
-        });
-    }
-
-    private void closeExportProgressDialog() {
-        MinecraftClient.getInstance().execute(() -> {
-            if (exportProgressDialog != null) {
-                this.uiAdapter.rootComponent.removeChild(exportProgressDialog);
-                exportProgressDialog = null;
-                exportProgressLabel = null;
-            }
-        });
+        showOverlay(dialog, false);
     }
 
     private void performAsyncExport() {
         String name = nameField.getText().trim();
         if (name.isEmpty()) {
-            showError("Configuration name is required!");
+            showErrorDialog("Configuration name is required!");
             return;
         }
 
@@ -931,13 +776,10 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
                 Path exportedPath = exportManager.exportConfigAsync(request, this::updateExportProgress);
 
                 MinecraftClient.getInstance().execute(() -> {
-                    // Close progress dialog if still open
                     closeExportProgressDialog();
 
-                    // Notify completion
                     ExportNotifications.notifyExportComplete(currentExportName, exportedPath);
 
-                    // If still on the export screen, auto-open folder
                     if (MinecraftClient.getInstance().currentScreen == this) {
                         try {
                             Util.getOperatingSystem().open(exportedPath.getParent().toFile());
@@ -946,7 +788,6 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
                         }
                     }
 
-                    // Return to main menu only if not in background
                     if (!exportInBackground) {
                         shutdownExecutor();
                         MinecraftClient.getInstance().setScreen(new ConfigManagerScreen());
@@ -956,10 +797,75 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
                 LOGGER.error("Failed to export configuration", e);
                 MinecraftClient.getInstance().execute(() -> {
                     closeExportProgressDialog();
-                    showError("Export failed: " + e.getMessage());
+                    showErrorDialog("Export failed: " + e.getMessage());
                 });
             }
-        }, asyncExecutor); // Changed from ASYNC_EXECUTOR
+        }, asyncExecutor);
+    }
+
+    private void showExportProgressDialog() {
+        exportProgressDialog = ScreenUIComponents.createDialog("Exporting Configuration", null, 350);
+        exportProgressDialog.positioning(Positioning.absolute(
+                (this.width - 350) / 2,
+                (this.height - 150) / 2
+        ));
+        exportProgressDialog.zIndex(15);
+
+        exportProgressLabel = (LabelComponent) Components.label(Text.literal("Preparing export..."))
+                .color(color(TEXT_PRIMARY))
+                .margins(Insets.bottom(12));
+        exportProgressDialog.child(exportProgressLabel);
+
+        FlowLayout buttonRow = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                .gap(8)
+                .horizontalAlignment(HorizontalAlignment.CENTER);
+
+        ButtonComponent backgroundButton = (ButtonComponent) Components.button(
+                Text.literal("Continue in Background"),
+                btn -> {
+                    exportInBackground = true;
+                    closeExportProgressDialog();
+                }
+        ).horizontalSizing(Sizing.content());
+
+        buttonRow.child(backgroundButton);
+        exportProgressDialog.child(buttonRow);
+
+        rootComponent.child(exportProgressDialog);
+    }
+
+    private void updateExportProgress(String message) {
+        MinecraftClient.getInstance().execute(() -> {
+            if (exportProgressLabel != null && !exportInBackground) {
+                exportProgressLabel.text(Text.literal(message));
+            }
+        });
+    }
+
+    private void closeExportProgressDialog() {
+        MinecraftClient.getInstance().execute(() -> {
+            if (exportProgressDialog != null) {
+                rootComponent.removeChild(exportProgressDialog);
+                exportProgressDialog = null;
+                exportProgressLabel = null;
+            }
+        });
+    }
+
+    private void showErrorDialog(String message) {
+        FlowLayout dialog = ScreenUIComponents.createDialog("Error", message, 350);
+        dialog.surface(Surface.flat(DARK_PANEL_BACKGROUND).and(Surface.outline(ERROR_BORDER)));
+        dialog.positioning(Positioning.absolute(
+                (this.width - 350) / 2,
+                (this.height - 120) / 2
+        ));
+        dialog.zIndex(20);
+
+        dialog.child(ScreenUIComponents.createButton("OK",
+                        btn -> rootComponent.removeChild(dialog), 80, 20)
+                .horizontalSizing(Sizing.content()));
+
+        rootComponent.child(dialog);
     }
 
     private void shutdownExecutor() {
@@ -976,15 +882,9 @@ public class ExportConfigScreen extends BaseOwoScreen<FlowLayout> {
         }
     }
 
-    private void showError(String message) {
-        LOGGER.error(message);
-        // You can add a visual error dialog here if needed
-    }
-
     @Override
     public void close() {
         shutdownExecutor();
         super.close();
     }
-
 }
