@@ -5,6 +5,7 @@ import com.github.kd_gaming1.packcore.util.wizard.WizardDataStore;
 import com.github.kd_gaming1.packcore.integration.resourcepack.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.minecraft.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.tabdesign.TabDesignManager;
+import com.github.kd_gaming1.packcore.integration.itembackground.ItemBackgroundManager;
 
 import java.util.List;
 import java.util.Set;
@@ -64,7 +65,57 @@ public class WizardOptionApplyService {
                     }
                 }
 
-                // Step 2: Apply Resource Packs (separately from performance)
+                // Step 2: Apply Tab Design
+                String tabDesign = dataManager.getTabDesign();
+                if (!tabDesign.isEmpty()) {
+                    if (progressCallback != null) {
+                        progressCallback.updateProgress("tabdesign", "running", null);
+                    }
+
+                    boolean tabDesignApplied = TabDesignManager.applyTabDesignFromWizard();
+                    if (!tabDesignApplied) {
+                        String error = "Could not apply the '" + tabDesign + "' tab menu style. The theme may be unavailable.";
+                        PackCore.LOGGER.warn(error);
+                        failedSteps.put("Tab Menu Style", error);
+                        if (progressCallback != null) {
+                            progressCallback.updateProgress("tabdesign", "error", "Theme unavailable");
+                        }
+                    } else {
+                        String success = "Successfully applied '" + tabDesign + "' tab menu style";
+                        PackCore.LOGGER.info(success);
+                        successfulSteps.put("Tab Menu Style", success);
+                        if (progressCallback != null) {
+                            progressCallback.updateProgress("tabdesign", "success", null);
+                        }
+                    }
+                }
+
+                // Step 3: Apply Item Background
+                String itemBackground = dataManager.getItemBackground();
+                if (!itemBackground.isEmpty()) {
+                    if (progressCallback != null) {
+                        progressCallback.updateProgress("itembackground", "running", null);
+                    }
+
+                    boolean itemBackgroundApplied = ItemBackgroundManager.applyItemBackgroundFromWizard();
+                    if (!itemBackgroundApplied) {
+                        String error = "Could not apply the '" + itemBackground + "' item background style. Skyblocker may not be installed or the config structure changed.";
+                        PackCore.LOGGER.warn(error);
+                        failedSteps.put("Item Background Style", error);
+                        if (progressCallback != null) {
+                            progressCallback.updateProgress("itembackground", "error", "Style unavailable");
+                        }
+                    } else {
+                        String success = "Successfully applied '" + itemBackground + "' item background style";
+                        PackCore.LOGGER.info(success);
+                        successfulSteps.put("Item Background Style", success);
+                        if (progressCallback != null) {
+                            progressCallback.updateProgress("itembackground", "success", null);
+                        }
+                    }
+                }
+
+                // Step 4: Apply Resource Packs
                 List<String> resourcePacks = dataManager.getResourcePacksOrdered();
                 if (!resourcePacks.isEmpty()) {
                     if (progressCallback != null) {
@@ -105,32 +156,7 @@ public class WizardOptionApplyService {
                     }
                 }
 
-                // Step 3: Apply Tab Design
-                String tabDesign = dataManager.getTabDesign();
-                if (!tabDesign.isEmpty()) {
-                    if (progressCallback != null) {
-                        progressCallback.updateProgress("tabdesign", "running", null);
-                    }
-
-                    boolean tabDesignApplied = TabDesignManager.applyTabDesignFromWizard();
-                    if (!tabDesignApplied) {
-                        String error = "Could not apply the '" + tabDesign + "' tab menu style. The theme may be unavailable.";
-                        PackCore.LOGGER.warn(error);
-                        failedSteps.put("Tab Menu Style", error);
-                        if (progressCallback != null) {
-                            progressCallback.updateProgress("tabdesign", "error", "Theme unavailable");
-                        }
-                    } else {
-                        String success = "Successfully applied '" + tabDesign + "' tab menu style";
-                        PackCore.LOGGER.info(success);
-                        successfulSteps.put("Tab Menu Style", success);
-                        if (progressCallback != null) {
-                            progressCallback.updateProgress("tabdesign", "success", null);
-                        }
-                    }
-                }
-
-                // Step 4: Apply Additional Settings
+                // Step 5: Apply Additional Settings
                 Set<String> additionalSettings = dataManager.getAdditionalSettings();
                 if (!additionalSettings.isEmpty()) {
                     if (progressCallback != null) {

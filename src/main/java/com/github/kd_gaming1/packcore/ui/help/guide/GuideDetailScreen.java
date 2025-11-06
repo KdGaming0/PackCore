@@ -1,11 +1,9 @@
 package com.github.kd_gaming1.packcore.ui.help.guide;
 
+import com.github.kd_gaming1.packcore.ui.screen.components.WizardUIComponents;
 import com.github.kd_gaming1.packcore.ui.surface.effects.TextureSurfaces;
 import com.github.kd_gaming1.packcore.util.help.guide.GuideInfo;
 import com.github.kd_gaming1.packcore.ui.theme.UITheme;
-import com.github.kd_gaming1.packcore.lavendermd.CustomLavenderCompiler;
-import io.wispforest.lavendermd.MarkdownProcessor;
-import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;
@@ -19,26 +17,12 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
-import static com.github.kd_gaming1.packcore.ui.screen.wizard.pages.ResourcePacksWizardPage.getFlowLayoutScrollContainer;
 
+/**
+ * Screen that displays the detailed content of a selected guide.
+ */
 public class GuideDetailScreen extends BaseOwoScreen<FlowLayout> {
-
-    private static final MarkdownProcessor<ParentComponent> MARKDOWN_PROCESSOR =
-            new MarkdownProcessor<>(
-                    CustomLavenderCompiler::new,
-                    new BasicFormattingFeature(),
-                    new ColorFeature(),
-                    new LinkFeature(),
-                    new ListFeature(),
-                    new BlockQuoteFeature(),
-                    new ImageFeature()
-            );
-
-    private static final Map<String, ParentComponent> COMPONENT_CACHE = new ConcurrentHashMap<>();
 
     private final GuideInfo guide;
     private final Screen parentScreen;
@@ -69,23 +53,28 @@ public class GuideDetailScreen extends BaseOwoScreen<FlowLayout> {
                 .padding(Insets.of(2))
                 .verticalAlignment(VerticalAlignment.CENTER);
 
-
-        // Logo and title
+        // Logo
         header.child(Components.texture(
                 Identifier.of(MOD_ID, "textures/gui/assets/sbe_logo.png"),
                 0, 0, 40, 40, 40, 40));
 
-        header.child(Components.label(Text.literal(guide.getTitle()).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
-                .color(Color.ofRgb(UITheme.ACCENT_GOLD))
+        // Title - strip markdown formatting
+        String cleanTitle = stripMarkdownFormatting(guide.getTitle());
+        header.child(Components.label(
+                        Text.literal(cleanTitle)
+                                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                ).color(Color.ofRgb(UITheme.ACCENT_SECONDARY))
                 .shadow(true)
                 .margins(Insets.of(0, 0, 4, 4)));
 
-        //Spacer
+        // Spacer
         header.child(Containers.horizontalFlow(Sizing.expand(), Sizing.expand()));
 
-        header.child(Components.button(Text.literal("Back"),
-                        btn -> MinecraftClient.getInstance().setScreen(new GuideListScreen()))
-                .renderer(ButtonComponent.Renderer.texture(
+        // Back button
+        header.child(Components.button(
+                        Text.literal("Back"),
+                        btn -> MinecraftClient.getInstance().setScreen(parentScreen)
+                ).renderer(ButtonComponent.Renderer.texture(
                         Identifier.of(MOD_ID, "textures/gui/wizard/previous.png"), 0, 0, 90, 57))
                 .sizing(Sizing.fixed(90), Sizing.fixed(19)));
 
@@ -93,23 +82,34 @@ public class GuideDetailScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private ScrollContainer<FlowLayout> createMainContent() {
-        // Create a FlowLayout to wrap the markdown content
-        FlowLayout markdownWrapper = Containers.verticalFlow(Sizing.fill(98), Sizing.content())
-                .gap(4);
-
-        // Get the processed markdown component
         String content = guide.getFullContent();
         if (content == null || content.isEmpty()) {
             content = "# Error\n\nFailed to load guide content.";
         }
 
-        var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
-                content,
-                MARKDOWN_PROCESSOR::process
-        );
+        // Use the reusable markdown scroll component
+        return WizardUIComponents.createMarkdownScroll(content);
+    }
 
-        // Add the markdown component to our wrapper FlowLayout
-        return getFlowLayoutScrollContainer(markdownWrapper, markdownComponent);
+    /**
+     * Strip markdown formatting from text
+     */
+    private String stripMarkdownFormatting(String text) {
+        if (text == null) return "";
+
+        // Remove {gold} and other color codes
+        text = text.replaceAll("\\{[^}]*\\}", "");
+
+        // Remove ** for bold
+        text = text.replaceAll("\\*\\*", "");
+
+        // Remove other common markdown
+        text = text.replaceAll("^#+\\s*", ""); // Headers
+        text = text.replaceAll("\\[([^\\]]+)\\]\\([^)]+\\)", "$1"); // Links
+        text = text.replaceAll("_", ""); // Italics
+        text = text.replaceAll("`", ""); // Code
+
+        return text.trim();
     }
 
     @Override
@@ -119,6 +119,7 @@ public class GuideDetailScreen extends BaseOwoScreen<FlowLayout> {
 
     @Override
     public void close() {
+        assert this.client != null;
         this.client.setScreen(parentScreen);
     }
 }

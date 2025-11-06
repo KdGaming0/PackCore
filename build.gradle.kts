@@ -15,6 +15,7 @@ repositories {
     maven("https://maven.wispforest.io/releases/")
     maven("https://api.modrinth.com/maven")
     maven ("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
+    maven ("https://maven.azureaaron.net/releases")
 }
 
 toolkitMultiversion {
@@ -61,9 +62,11 @@ dependencies {
     modImplementation(include("maven.modrinth:midnightlib:$midnightlibVersion")!!)
     modImplementation(include("io.wispforest.lavender-md:core:$lavenderMdVersion")!!)
     modImplementation(include("io.wispforest.lavender-md:owo-ui:$lavenderMdVersion")!!)
+    modImplementation(include("net.azureaaron:hm-api:1.0.1+1.21.2")!!)
 
     modCompileOnly("maven.modrinth:sodium:$sodiumVersion")
     modCompileOnly("maven.modrinth:iris:$irisVersion")
+    modCompileOnly("com.terraformersmc:modmenu:$modmenuVersion")
     modRuntimeOnly("com.terraformersmc:modmenu:$modmenuVersion")
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
 }

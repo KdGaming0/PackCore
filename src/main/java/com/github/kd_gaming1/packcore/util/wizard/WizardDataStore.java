@@ -1,149 +1,229 @@
 package com.github.kd_gaming1.packcore.util.wizard;
 
 import com.github.kd_gaming1.packcore.PackCore;
-
 import java.util.*;
 
 /**
- * Singleton class to manage wizard data and state.
- * This class stores user selections from the wizard pages,
- * tracks application state, and provides methods to retrieve
- * a summary of the configuration.
+ * Manages wizard configuration data and application state.
+ * Uses a simple singleton pattern for data persistence across wizard pages.
  */
 public class WizardDataStore {
-    private static WizardDataStore instance;
 
-    // Core selections from wizard pages
-    private String optimizationProfile = "";
-    private final List<String> resourcePacksOrdered = new ArrayList<>();
-    private String tabDesign = "";
+    private static final WizardDataStore INSTANCE = new WizardDataStore();
 
-    // Application tracking
-    private boolean configurationApplied = false;
-    private boolean configurationApplying = false;
-    private String lastError = "";
+    // Configuration selections
+    private final WizardData data = new WizardData();
+
+    // Application state
+    private ApplicationState appState = new ApplicationState();
 
     private WizardDataStore() {}
 
+    /**
+     * Get the singleton instance
+     */
     public static WizardDataStore getInstance() {
-        if (instance == null) {
-            instance = new WizardDataStore();
-        }
-        return instance;
+        return INSTANCE;
     }
 
-    // ===== Optimization Profile (Page 1) =====
+    // ===== Configuration Getters/Setters =====
 
     public void setOptimizationProfile(String profile) {
-        this.optimizationProfile = profile;
-        PackCore.LOGGER.debug("Set optimization profile: {}", profile);
+        data.optimizationProfile = profile;
+        logUpdate("optimization profile", profile);
     }
 
     public String getOptimizationProfile() {
-        return optimizationProfile;
+        return data.optimizationProfile;
     }
-
-    // ===== Resource Packs (Page 3) =====
-
-    public void setResourcePacksOrdered(List<String> packs) {
-        this.resourcePacksOrdered.clear();
-        this.resourcePacksOrdered.addAll(packs);
-        PackCore.LOGGER.debug("Set resource packs: {}", packs);
-    }
-
-    public List<String> getResourcePacksOrdered() {
-        return new ArrayList<>(resourcePacksOrdered);
-    }
-
-    // ===== Tab Design (Page 2) =====
 
     public void setTabDesign(String design) {
-        this.tabDesign = design;
-        PackCore.LOGGER.debug("Set tab design: {}", design);
+        data.tabDesign = design;
+        logUpdate("tab design", design);
     }
 
     public String getTabDesign() {
-        return tabDesign;
+        return data.tabDesign;
+    }
+
+    public void setItemBackground(String background) {
+        data.itemBackground = background;
+        logUpdate("item background", background);
+    }
+
+    public String getItemBackground() {
+        return data.itemBackground;
+    }
+
+    public void setResourcePacksOrdered(List<String> packs) {
+        data.resourcePacksOrdered.clear();
+        data.resourcePacksOrdered.addAll(packs);
+        logUpdate("resource packs", packs.toString());
+    }
+
+    public List<String> getResourcePacksOrdered() {
+        return new ArrayList<>(data.resourcePacksOrdered);
+    }
+
+    public Set<String> getAdditionalSettings() {
+        return new HashSet<>(); // Placeholder for compatibility
     }
 
     // ===== Application State =====
 
-    public void setConfigurationApplying(boolean applying) {
-        this.configurationApplying = applying;
+    public void setApplicationState(boolean applying, boolean applied, String error) {
+        appState = new ApplicationState(applying, applied, error);
     }
 
     public boolean isConfigurationApplying() {
-        return configurationApplying;
+        return appState.applying;
     }
 
-    public void setConfigurationApplied(boolean applied) {
-        this.configurationApplied = applied;
+    public void setConfigurationApplying(boolean applying) {
+        appState = appState.withApplying(applying);
     }
 
     public boolean isConfigurationApplied() {
-        return configurationApplied;
+        return appState.applied;
+    }
+
+    public void setConfigurationApplied(boolean applied) {
+        appState = appState.withApplied(applied);
     }
 
     public void setConfigurationResult(String result, String errorMessage) {
-        this.lastError = errorMessage != null ? errorMessage : "";
-        PackCore.LOGGER.debug("Configuration result: {} - {}", result, errorMessage);
+        appState = appState.withError(errorMessage != null ? errorMessage : "");
+        logUpdate("configuration result", result + " - " + errorMessage);
     }
 
     public String getConfigurationResult() {
-        return configurationApplied ? "success" : (!lastError.isEmpty() ? "failed" : "");
+        return appState.applied ? "success" : (!appState.error.isEmpty() ? "failed" : "");
     }
 
     public String getConfigurationErrorMessage() {
-        return lastError;
+        return appState.error;
     }
 
-    // ===== Additional Settings (unused but kept for compatibility) =====
+    // ===== Summary Methods =====
 
-    public Set<String> getAdditionalSettings() {
-        return new HashSet<>(); // Return empty set for compatibility
-    }
-
-    // ===== Configuration Summary =====
-
+    /**
+     * Get the complete configuration
+     */
     public WizardConfiguration getConfiguration() {
         return new WizardConfiguration(
-                optimizationProfile,
-                new ArrayList<>(resourcePacksOrdered),
-                tabDesign
+                data.optimizationProfile,
+                new ArrayList<>(data.resourcePacksOrdered),
+                data.tabDesign,
+                data.itemBackground
         );
     }
 
+    /**
+     * Check if minimum configuration is complete
+     */
     public boolean isConfigurationComplete() {
-        // At minimum we need an optimization profile
-        return !optimizationProfile.isEmpty();
+        return !data.optimizationProfile.isEmpty();
     }
 
-    // ===== Reset =====
-
+    /**
+     * Reset all data to defaults
+     */
     public void reset() {
-        optimizationProfile = "";
-        resourcePacksOrdered.clear();
-        tabDesign = "";
-        configurationApplied = false;
-        configurationApplying = false;
-        lastError = "";
+        data.clear();
+        appState = new ApplicationState();
         PackCore.LOGGER.info("Wizard data reset");
     }
 
-    public static void clearInstance() {
-        instance = null;
+    /**
+     * Get a human-readable summary of the configuration
+     */
+    public String getSummary() {
+        StringBuilder sb = new StringBuilder();
+
+        if (!data.optimizationProfile.isEmpty()) {
+            sb.append("Performance: ").append(data.optimizationProfile);
+        }
+
+        if (!data.tabDesign.isEmpty()) {
+            if (!sb.isEmpty()) sb.append(", ");
+            sb.append("Tab: ").append(data.tabDesign);
+        }
+
+        if (!data.itemBackground.isEmpty()) {
+            if (!sb.isEmpty()) sb.append(", ");
+            sb.append("Items: ").append(data.itemBackground);
+        }
+
+        if (!data.resourcePacksOrdered.isEmpty()) {
+            if (!sb.isEmpty()) sb.append(", ");
+            sb.append("Packs: ").append(String.join(", ", data.resourcePacksOrdered));
+        }
+
+        return sb.toString();
     }
 
-    // ===== Data Class =====
+    private void logUpdate(String field, String value) {
+        PackCore.LOGGER.debug("Set {}: {}", field, value);
+    }
 
-    public record WizardConfiguration(String optimizationProfile, List<String> resourcePacksOrdered, String tabDesign) {
+    /**
+     * Internal data storage class
+     */
+    private static class WizardData {
+        String optimizationProfile = "";
+        String tabDesign = "";
+        String itemBackground = "";
+        final List<String> resourcePacksOrdered = new ArrayList<>();
+
+        void clear() {
+            optimizationProfile = "";
+            tabDesign = "";
+            itemBackground = "";
+            resourcePacksOrdered.clear();
+        }
+    }
+
+    /**
+     * Immutable application state
+     */
+    private record ApplicationState(
+            boolean applying,
+            boolean applied,
+            String error
+    ) {
+        ApplicationState() {
+            this(false, false, "");
+        }
+
+        ApplicationState withApplying(boolean applying) {
+            return new ApplicationState(applying, this.applied, this.error);
+        }
+
+        ApplicationState withApplied(boolean applied) {
+            return new ApplicationState(this.applying, applied, this.error);
+        }
+
+        ApplicationState withError(String error) {
+            return new ApplicationState(this.applying, this.applied, error);
+        }
+    }
+
+    /**
+     * Configuration record for external use
+     */
+    public record WizardConfiguration(
+            String optimizationProfile,
+            List<String> resourcePacksOrdered,
+            String tabDesign,
+            String itemBackground
+    ) {
 
         @Override
         public List<String> resourcePacksOrdered() {
             return new ArrayList<>(resourcePacksOrdered);
         }
 
-        // For compatibility with existing code
+        // Compatibility methods
         public Set<String> getAdditionalSettings() {
             return new HashSet<>();
         }

@@ -1,13 +1,12 @@
 package com.github.kd_gaming1.packcore.notification;
 
-import com.github.kd_gaming1.packcore.ui.toast.BackupCompletionToast;
+import com.github.kd_gaming1.packcore.PackCore;
+import com.github.kd_gaming1.packcore.ui.toast.PackCoreToast;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 
@@ -15,8 +14,6 @@ import java.nio.file.Path;
  * Notifies users when backup operations complete
  */
 public class BackupNotifications {
-    private static final Logger LOGGER = LoggerFactory.getLogger("PackCore-Backup");
-
     public static void notifyBackupComplete(String backupName, Path backupPath, boolean isRestore) {
         MinecraftClient client = MinecraftClient.getInstance();
         ClientPlayerEntity player = client.player;
@@ -45,15 +42,13 @@ public class BackupNotifications {
 
             player.sendMessage(message, false);
         } catch (Exception e) {
-            LOGGER.warn("Failed to send chat notification", e);
+            PackCore.LOGGER.warn("[Backup] Failed to send chat notification", e);
             // Fallback to toast
             showToastNotification(backupName, backupPath, isRestore);
         }
     }
 
     private static void showToastNotification(String backupName, Path backupPath, boolean isRestore) {
-        MinecraftClient.getInstance().getToastManager().add(
-                new BackupCompletionToast(backupName, backupPath, isRestore)
-        );
+        PackCoreToast.showBackupComplete(backupName, String.valueOf(backupPath), isRestore);
     }
 }

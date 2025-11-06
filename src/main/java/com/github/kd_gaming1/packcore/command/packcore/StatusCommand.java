@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.command;
+package com.github.kd_gaming1.packcore.command.packcore;
 
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
