@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Manages a whitelist of trusted players whose messages bypass scam detection.
  */
 public class ScamShieldWhitelist {
-    private static final ScamShieldWhitelist INSTANCE = new ScamShieldWhitelist();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final ScamShieldWhitelist INSTANCE = new ScamShieldWhitelist();
 
     private final Set<String> whitelistedPlayers = ConcurrentHashMap.newKeySet();
     private final Path whitelistFile;
