@@ -50,6 +50,7 @@ public class FileLayoutInitializer {
         Map<String, String> directories = Map.of(
                 "packcore/modpack_config/official_configs", "Official modpack configurations",
                 "packcore/modpack_config/custom_configs", "Custom modpack configurations",
+                "packcore/imports", "Import staging folder for config files",
                 "packcore/wizard_markdown_content", "Information and help markdown files",
                 "packcore/guides", "User guides and documentation"
         );
@@ -59,6 +60,9 @@ public class FileLayoutInitializer {
             Files.createDirectories(dirPath);
             LOGGER.info("Created directory: {} - {}", dirPath, entry.getValue());
         }
+
+        // Create a README in the imports folder
+        createImportsReadme();
     }
 
     /**
@@ -320,6 +324,60 @@ public class FileLayoutInitializer {
                 
                 Join our Discord for support, updates, and to share your configurations!
                 """;
+    }
+
+    /**
+     * Create a helpful README file in the imports folder
+     */
+    private static void createImportsReadme() {
+        Path readmePath = RUN_DIR.resolve("packcore/imports/README.txt");
+
+        if (Files.exists(readmePath)) {
+            return;
+        }
+
+        try {
+            String content = """
+                ═══════════════════════════════════════════════════════════
+                PackCore Configuration Imports Folder
+                ═══════════════════════════════════════════════════════════
+                
+                📂 How to Use This Folder:
+                
+                1. Place your configuration .zip files here
+                2. Open the game and go to: Config Manager > Import
+                3. Click "Refresh" to see your files
+                4. Select a file to preview and import it
+                
+                ✅ Valid Config Files Must:
+                - Be .zip archives
+                - Contain packcore_metadata.json
+                - NOT contain any .jar files (configs only!)
+                
+                ⚠️ Important Notes:
+                - Files are automatically validated before import
+                - You can preview files before importing
+                - Invalid files will be marked with an error
+                - Successfully imported files can be auto-deleted
+                
+                📋 What Gets Imported:
+                - Game settings (options.txt)
+                - Mod configurations
+                - Resource pack selections
+                - Keybindings
+                - UI layouts
+                
+                💡 Tip: Always export your current config before importing
+                a new one, so you can revert if needed!
+                
+                ═══════════════════════════════════════════════════════════
+                """;
+
+            Files.writeString(readmePath, content);
+            LOGGER.info("Created imports README: {}", readmePath);
+        } catch (IOException e) {
+            LOGGER.error("Failed to create imports README", e);
+        }
     }
 
     /**

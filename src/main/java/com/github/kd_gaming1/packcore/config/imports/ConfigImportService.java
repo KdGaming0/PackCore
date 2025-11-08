@@ -8,120 +8,176 @@ import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.*;
+import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Manages importing configuration ZIP files with validation
+ * Manages importing configuration ZIP files with validation.
+ * Uses a folder-based approach to avoid Swing/AWT headless issues.
  */
 public class ConfigImportService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigImportService.class);
     private static final DateTimeFormatter TIMESTAMP_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
+    public static final String IMPORTS_FOLDER = "packcore/imports";
+
     /**
-         * Validation result with details
-         */
-        public record ValidationResult(boolean isValid, String errorMessage) {
+     * Validation result with details
+     */
+    public record ValidationResult(boolean isValid, String errorMessage) {
 
         public static ValidationResult valid() {
-                return new ValidationResult(true, null);
-            }
-
-            public static ValidationResult invalid(String message) {
-                return new ValidationResult(false, message);
-            }
+            return new ValidationResult(true, null);
         }
 
+        public static ValidationResult invalid(String message) {
+            return new ValidationResult(false, message);
+        }
+    }
+
     /**
-     * Open native file chooser to select config zip
+     * Represents a file available for import
      */
-    public static CompletableFuture<Path> selectConfigFile() {
+    public record ImportableFile(
+            Path path,
+            String fileName,
+            long fileSize,
+            LocalDateTime lastModified,
+            ConfigMetadata metadata,
+            ValidationResult validation
+    ) {
+        public boolean isValid() {
+            return validation.isValid();
+        }
+
+        public String getDisplayName() {
+            if (metadata != null && metadata.getName() != null) {
+                return metadata.getName();
+            }
+            return fileName;
+        }
+
+        public String getFileSizeFormatted() {
+            if (fileSize < 1024) return fileSize + " B";
+            if (fileSize < 1024 * 1024) return String.format("%.1f KB", fileSize / 1024.0);
+            return String.format("%.1f MB", fileSize / (1024.0 * 1024.0));
+        }
+    }
+
+    /**
+     * Get the imports folder path, creating it if necessary
+     */
+    public static Path getImportsFolder() {
+        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path importsDir = gameDir.resolve(IMPORTS_FOLDER);
+
+        try {
+            Files.createDirectories(importsDir);
+        } catch (IOException e) {
+            LOGGER.error("Failed to create imports directory", e);
+        }
+
+        return importsDir;
+    }
+
+    /**
+     * Open the imports folder in the system file browser
+     */
+    public static CompletableFuture<Boolean> openImportsFolder() {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // Show warning about file dialog
-                MinecraftClient.getInstance().execute(() -> {
-                    if (MinecraftClient.getInstance().player != null) {
-                        MinecraftClient.getInstance().player.sendMessage(
-                                net.minecraft.text.Text.literal(
-                                        "§eFile browser opening... It may appear behind Minecraft. Check your taskbar!"),
-                                false
-                        );
-                    }
-                });
+                Path importsFolder = getImportsFolder();
 
-                // Create file chooser with better configuration
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setDialogTitle("Select Config File to Import (.zip with metadata)");
-                fileChooser.setFileFilter(
-                        new FileNameExtensionFilter("Config Files (*.zip)", "zip"));
-                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                fileChooser.setMultiSelectionEnabled(false);
-
-                // Set initial directory to user's Downloads folder
-                Path downloadsPath = Paths.get(System.getProperty("user.home"), "Downloads");
-                if (Files.exists(downloadsPath)) {
-                    fileChooser.setCurrentDirectory(downloadsPath.toFile());
+                if (!Files.exists(importsFolder)) {
+                    Files.createDirectories(importsFolder);
                 }
 
-                // Try to bring dialog to front - simpler approach
-                SwingUtilities.invokeLater(() -> {
-                    Window[] windows = Window.getWindows();
-                    for (Window window : windows) {
-                        if (window instanceof JDialog) {
-                            window.toFront();
-                            window.requestFocus();
-                        }
+                if (Desktop.isDesktopSupported()) {
+                    Desktop desktop = Desktop.getDesktop();
+                    if (desktop.isSupported(Desktop.Action.OPEN)) {
+                        desktop.open(importsFolder.toFile());
+                        LOGGER.info("Opened imports folder: {}", importsFolder);
+                        return true;
                     }
-                });
-
-                // Show dialog directly without creating a separate parent dialog
-                int result = fileChooser.showOpenDialog(null);
-
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    Path selectedFile = fileChooser.getSelectedFile().toPath();
-                    LOGGER.info("Selected file: {}", selectedFile);
-
-                    if (!selectedFile.toString().toLowerCase().endsWith(".zip")) {
-                        LOGGER.warn("Selected file is not a zip: {}", selectedFile);
-                        showErrorDialog("Invalid File",
-                                "Please select a .zip file containing a valid configuration.");
-                        return null;
-                    }
-
-                    return selectedFile;
                 }
 
-                return null;
+                LOGGER.warn("Desktop operations not supported on this system");
+                return false;
 
-            } catch (Exception e) {
-                LOGGER.error("Error opening file dialog", e);
-                showErrorDialog("Error", "Failed to open file browser: " + e.getMessage());
-                return null;
+            } catch (IOException e) {
+                LOGGER.error("Failed to open imports folder", e);
+                return false;
             }
         });
     }
 
     /**
-     * Shows an error dialog to the user
+     * Scan the imports folder for available config files
      */
-    private static void showErrorDialog(String title, String message) {
-        SwingUtilities.invokeLater(() -> {
-            JOptionPane optionPane = new JOptionPane(
-                    message,
-                    JOptionPane.ERROR_MESSAGE
-            );
-            JDialog dialog = optionPane.createDialog(title);
-            dialog.setAlwaysOnTop(true);
-            dialog.setVisible(true);
+    public static CompletableFuture<List<ImportableFile>> scanImportsFolder() {
+        return CompletableFuture.supplyAsync(() -> {
+            List<ImportableFile> importableFiles = new ArrayList<>();
+            Path importsFolder = getImportsFolder();
+
+            if (!Files.exists(importsFolder)) {
+                LOGGER.warn("Imports folder does not exist: {}", importsFolder);
+                return importableFiles;
+            }
+
+            try (Stream<Path> files = Files.list(importsFolder)) {
+                files.filter(path -> path.toString().toLowerCase().endsWith(".zip"))
+                        .forEach(path -> {
+                            try {
+                                // Get file info
+                                long size = Files.size(path);
+                                LocalDateTime modified = LocalDateTime.ofInstant(
+                                        Files.getLastModifiedTime(path).toInstant(),
+                                        java.time.ZoneId.systemDefault()
+                                );
+
+                                // Validate the file
+                                ValidationResult validation = validateConfigZip(path);
+
+                                // Try to read metadata (null if invalid)
+                                ConfigMetadata metadata = null;
+                                if (validation.isValid()) {
+                                    metadata = ConfigFileRepository.readMetadataFromZip(path);
+                                }
+
+                                ImportableFile importableFile = new ImportableFile(
+                                        path,
+                                        path.getFileName().toString(),
+                                        size,
+                                        modified,
+                                        metadata,
+                                        validation
+                                );
+
+                                importableFiles.add(importableFile);
+
+                            } catch (IOException e) {
+                                LOGGER.error("Failed to process file: {}", path, e);
+                            }
+                        });
+
+            } catch (IOException e) {
+                LOGGER.error("Failed to scan imports folder", e);
+            }
+
+            // Sort by last modified (newest first)
+            importableFiles.sort((a, b) -> b.lastModified().compareTo(a.lastModified()));
+
+            return importableFiles;
         });
     }
 
@@ -143,7 +199,6 @@ public class ConfigImportService {
         ValidationResult validation = validateConfigZip(configPath);
         if (!validation.isValid) {
             LOGGER.error("Config validation failed: {}", validation.errorMessage);
-            showErrorDialog("Invalid Config", validation.errorMessage);
             return null;
         }
 
@@ -297,6 +352,34 @@ public class ConfigImportService {
         });
     }
 
+    /**
+     * Import and optionally delete the source file from imports folder
+     */
+    public static void importConfigAndCleanup(Path sourceFile, boolean applyImmediately,
+                                              boolean deleteAfterImport, ProgressListener callback) {
+        ProgressListener wrappedCallback = new ProgressListener() {
+            @Override
+            public void onProgress(String msg, int pct) {
+                if (callback != null) callback.onProgress(msg, pct);
+            }
+
+            @Override
+            public void onComplete(boolean success, String msg) {
+                if (success && deleteAfterImport) {
+                    try {
+                        Files.deleteIfExists(sourceFile);
+                        LOGGER.info("Deleted imported file from imports folder: {}", sourceFile);
+                    } catch (IOException e) {
+                        LOGGER.warn("Failed to delete imported file: {}", sourceFile, e);
+                    }
+                }
+                if (callback != null) callback.onComplete(success, msg);
+            }
+        };
+
+        importConfig(sourceFile, applyImmediately, wrappedCallback);
+    }
+
     private static Path copyToCustomConfigs(Path sourceFile, ConfigMetadata metadata) {
         try {
             Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
@@ -347,5 +430,26 @@ public class ConfigImportService {
                 .anyMatch(config -> config.fileName()
                         .toLowerCase()
                         .contains(sanitizedName));
+    }
+
+    /**
+     * Delete a file from the imports folder
+     */
+    public static boolean deleteImportFile(Path filePath) {
+        try {
+            Files.deleteIfExists(filePath);
+            LOGGER.info("Deleted import file: {}", filePath);
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("Failed to delete import file: {}", filePath, e);
+            return false;
+        }
+    }
+
+    /**
+     * Get the imports folder path as a string for display
+     */
+    public static String getImportsFolderPath() {
+        return getImportsFolder().toAbsolutePath().toString();
     }
 }
