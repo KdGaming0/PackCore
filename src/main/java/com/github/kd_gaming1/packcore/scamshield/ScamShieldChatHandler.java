@@ -58,6 +58,11 @@ public class ScamShieldChatHandler {
             return;
         }
 
+        // Skip messages from the user themselves
+        if (client.player != null && sender.equals(client.player.getName().getString())) {
+            return;
+        }
+
         // Skip whitelisted players
         if (ScamShieldWhitelist.getInstance().isWhitelisted(sender)) {
             if (PackCoreConfig.enableScamShieldDebugging) {
