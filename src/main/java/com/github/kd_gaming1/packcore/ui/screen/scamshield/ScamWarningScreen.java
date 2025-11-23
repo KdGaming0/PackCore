@@ -388,19 +388,21 @@ public class ScamWarningScreen extends BaseOwoScreen<FlowLayout> {
 
         // Secondary action: Report Player
         buttonRow.child(ScreenUIComponents.createButton("📢 Report", btn -> {
-            //#if MC >= 1.21.8
-            //$$ if (MinecraftClient.getInstance().player != null) {
-            //$$     MinecraftClient.getInstance().player.networkHandler.sendChatCommand(
-            //$$         "report " + warning.playerName() + " Scamming"
-            //$$     );
-            //$$ }
-            //#else
+            //? if >=1.21.8 {
+            
+            /*if (MinecraftClient.getInstance().player != null) {
+                MinecraftClient.getInstance().player.networkHandler.sendChatCommand(
+                     "report " + warning.playerName() + " Scamming"
+                 );
+            }
+             
+            *///?} else {
             if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.networkHandler.sendCommand(
                         "report " + warning.playerName() + " Scamming"
                 );
             }
-            //#endif
+            //?}
             dismiss();
         }, 110, 22));
 

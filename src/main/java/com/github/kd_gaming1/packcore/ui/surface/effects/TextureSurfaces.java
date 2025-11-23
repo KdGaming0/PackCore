@@ -3,10 +3,11 @@ package com.github.kd_gaming1.packcore.ui.surface.effects;
 import io.wispforest.owo.ui.core.Surface;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.Identifier;
+//? if >= 1.21.8 {
 
-//#if MC >= 1.21.6
-//$$ import net.minecraft.client.gl.RenderPipelines;
-//#endif
+/*import net.minecraft.client.gl.RenderPipelines;
+
+*///?}
 
 /**
  * Enhanced Surface implementations for texture rendering with different scaling modes.
@@ -50,11 +51,13 @@ public final class TextureSurfaces {
             int drawY = cy + (ch - scaledHeight) / 2;
 
             context.drawTexture(
-                    //#if MC >= 1.21.6
-                    //$$ RenderPipelines.GUI_TEXTURED,
-                    //#else
+                    //? if >=1.21.8 {
+                    
+                    /*RenderPipelines.GUI_TEXTURED,
+                     
+                    *///?} else {
                     RenderLayer::getGuiTextured,
-                    //#endif
+                    //?}
                     texture,
                     drawX, drawY,
                     0f, 0f,
@@ -94,11 +97,13 @@ public final class TextureSurfaces {
             int drawY = cy + (ch - scaledHeight) / 2;
 
             context.drawTexture(
-                    //#if MC >= 1.21.6
-                    //$$ RenderPipelines.GUI_TEXTURED,
-                    //#else
+                    //? if >=1.21.8 {
+                    
+                    /*RenderPipelines.GUI_TEXTURED,
+                     
+                    *///?} else {
                     RenderLayer::getGuiTextured,
-                    //#endif
+                    //?}
                     texture,
                     drawX, drawY,
                     0f, 0f,
@@ -121,11 +126,13 @@ public final class TextureSurfaces {
             if (component.width() <= 0 || component.height() <= 0) return;
 
             context.drawTexture(
-                    //#if MC >= 1.21.6
-                    //$$ RenderPipelines.GUI_TEXTURED,
-                    //#else
+                    //? if >=1.21.8 {
+                    
+                    /*RenderPipelines.GUI_TEXTURED,
+                     
+                    *///?} else {
                     RenderLayer::getGuiTextured,
-                    //#endif
+                    //?}
                     texture,
                     component.x(), component.y(),
                     0f, 0f,
@@ -161,11 +168,13 @@ public final class TextureSurfaces {
 
                     // Draw partial texture region for edge tiles
                     context.drawTexture(
-                            //#if MC >= 1.21.6
-                            //$$ RenderPipelines.GUI_TEXTURED,
-                            //#else
+                            //? if >=1.21.8 {
+                            
+                            /*RenderPipelines.GUI_TEXTURED,
+                             
+                            *///?} else {
                             RenderLayer::getGuiTextured,
-                            //#endif
+                            //?}
                             texture,
                             x, y,
                             0f, 0f,
@@ -202,11 +211,13 @@ public final class TextureSurfaces {
                     int drawWidth = Math.min(tileWidth, endX - x);
 
                     context.drawTexture(
-                            //#if MC >= 1.21.6
-                            //$$ RenderPipelines.GUI_TEXTURED,
-                            //#else
+                            //? if >=1.21.8 {
+                            
+                            /*RenderPipelines.GUI_TEXTURED,
+                             
+                            *///?} else {
                             RenderLayer::getGuiTextured,
-                            //#endif
+                            //?}
                             texture,
                             x, y,
                             0f, 0f,
