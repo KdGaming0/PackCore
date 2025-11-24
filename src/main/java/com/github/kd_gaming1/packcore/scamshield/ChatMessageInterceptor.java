@@ -55,6 +55,7 @@ public class ChatMessageInterceptor {
             // Extract sender and message content
             ChatMessageData chatData = extractChatData(cleanMessage);
 
+            // Skip if not a player chat message
             if (chatData == null) {
                 // System/server message - log as such
                 if (PackCoreConfig.enableScamShieldDebugging) {
@@ -63,6 +64,13 @@ public class ChatMessageInterceptor {
                 return;
             }
 
+            // Skip if sender is NPC
+            if (cleanMessage.startsWith("[NPC]")) {
+                if (PackCoreConfig.enableScamShieldDebugging) {
+                    PackCore.LOGGER.info("[ScamShield] [NPC] Skipping CHAT message from NPC: '{}'", cleanMessage);
+                }
+                return;
+            }
             // Player message - log with sender
             if (PackCoreConfig.enableScamShieldDebugging) {
                 PackCore.LOGGER.info("[ScamShield] [PLAYER: {}] Message: '{}'",
@@ -87,6 +95,14 @@ public class ChatMessageInterceptor {
 
             // Remove color codes
             String cleanMessage = rawMessage.replaceAll("§.", "");
+
+            // Skip if sender is NPC
+            if (cleanMessage.startsWith("[NPC]")) {
+                if (PackCoreConfig.enableScamShieldDebugging) {
+                    PackCore.LOGGER.info("[ScamShield] [NPC] Skipping CHAT message from NPC: '{}'", cleanMessage);
+                }
+                return;
+            }
 
             // Use the provided sender directly
             if (sender != null && !cleanMessage.isEmpty()) {

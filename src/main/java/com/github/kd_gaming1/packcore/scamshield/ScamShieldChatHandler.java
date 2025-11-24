@@ -60,6 +60,9 @@ public class ScamShieldChatHandler {
 
         // Skip messages from the user themselves
         if (client.player != null && sender.equals(client.player.getName().getString())) {
+            if (PackCoreConfig.enableScamShieldDebugging) {
+                PackCore.LOGGER.info("[ScamShield] Skipping message from your self: {}", sender);
+            }
             return;
         }
 
