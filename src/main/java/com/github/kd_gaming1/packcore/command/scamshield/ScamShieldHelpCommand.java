@@ -15,7 +15,7 @@ public class ScamShieldHelpCommand {
         return ClientCommandManager.literal("help").executes(ScamShieldHelpCommand::execute);
     }
 
-    private static int execute(CommandContext<FabricClientCommandSource> context) {
+    public static int execute(CommandContext<FabricClientCommandSource> context) {
         var source = context.getSource();
 
         source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
