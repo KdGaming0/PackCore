@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore;
 import com.github.kd_gaming1.packcore.command.packcore.PackCoreCommand;
 import com.github.kd_gaming1.packcore.command.scamshield.ScamShieldCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.config.backup.ScheduledBackupManager;
 import com.github.kd_gaming1.packcore.scamshield.ChatMessageInterceptor;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
@@ -68,6 +69,8 @@ public class PackCore implements ClientModInitializer {
             PackCoreCommand.registerCommands(dispatcher);
             ScamShieldCommand.register(dispatcher);
         });
+
+        ScheduledBackupManager.initialize();
 
         if (PackCoreConfig.enableCustomMenu) {
             ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {

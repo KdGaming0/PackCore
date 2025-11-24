@@ -148,7 +148,7 @@ public class BackupManager {
     /**
      * Create a backup with metadata (async)
      */
-    private static CompletableFuture<Path> createBackupAsync(
+    static CompletableFuture<Path> createBackupAsync(
             BackupType type, String title, String description, Consumer<String> progressCallback) {
 
         return CompletableFuture.supplyAsync(() -> {
@@ -652,6 +652,7 @@ public class BackupManager {
      * Shutdown the executor (call on game close)
      */
     public static void shutdown() {
+        ScheduledBackupManager.shutdown();
         BACKUP_EXECUTOR.shutdown();
     }
 }
