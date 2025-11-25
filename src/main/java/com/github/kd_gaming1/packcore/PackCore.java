@@ -70,6 +70,11 @@ public class PackCore implements ClientModInitializer {
             ScamShieldCommand.register(dispatcher);
         });
 
+        // Initialize scheduled backups
+        if (PackCoreConfig.enableScheduledBackups) {
+            ScheduledBackupManager.initialize();
+        }
+
         // try catch just in case something goes wrong with title screen
         try {
             if (PackCoreConfig.enableCustomMenu) {
