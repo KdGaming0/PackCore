@@ -74,14 +74,14 @@ public class ResourcePacksWizardPage extends BaseWizardPage {
                     false
             ),
             new PackOption(
-                    "SkyBlockDarkmode",
+                    "SkyBlockDarkMode",
                     "🌑",
                     "SkyBlock Dark mode",
                     "Sleek dark theme for The End island and The Mist",
                     false
             ),
             new PackOption(
-                    "",
+                    "SophieHypixelEnchants",
                     "📚",
                     "Sophie's Hypixel Enchants",
                     "Custom textures for all Enchantment Books throughout the whole of Skyblock.",
