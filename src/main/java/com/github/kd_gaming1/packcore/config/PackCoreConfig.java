@@ -16,7 +16,7 @@ public class PackCoreConfig extends MidnightConfig {
     public static boolean enableCustomMenu = true;
 
     // Spacer
-    @Comment(category = UI)
+    @Comment(category = UI, name = "packcore.midnightconfig.spacer")
     public static Comment spacer1;
 
     // BACKUP CATEGORY
@@ -27,7 +27,7 @@ public class PackCoreConfig extends MidnightConfig {
     public static int maxBackups = 5;
 
     // Spacer
-    @Comment(category = BACKUP)
+    @Comment(category = BACKUP, name = "packcore.midnightconfig.spacer")
     public static Comment backupSpacer;
 
     // CUSTOMIZATION CATEGORY
@@ -61,13 +61,13 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = SCAMSHIELD , name = "packcore.midnightconfig.enable_scamshield_debugging")
     public static boolean enableScamShieldDebugging = false;
 
-    @Comment(category = SCAMSHIELD)
+    @Comment(category = SCAMSHIELD, name = "packcore.midnightconfig.spacer")
     public static Comment scamshieldSpacer1;
 
     @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_trigger_threshold", min = 50, max = 500)
     public static int scamShieldTriggerThreshold = 100;
 
-    @Comment(category = SCAMSHIELD)
+    @Comment(category = SCAMSHIELD, name = "packcore.midnightconfig.spacer")
     public static Comment scamshieldSpacer2;
 
     @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_show_notifications")
@@ -79,13 +79,13 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_max_recent_detections", min = 5, max = 50)
     public static int scamShieldMaxRecentDetections = 10;
 
-    @Comment(category = SCAMSHIELD)
+    @Comment(category = SCAMSHIELD, name = "packcore.midnightconfig.spacer")
     public static Comment scamshieldSpacer3;
 
     @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_max_history_size", min = 10, max = 1000)
     public static int scamShieldMaxHistorySize = 100;
 
-    @Comment(category = SCAMSHIELD)
+    @Comment(category = SCAMSHIELD, name = "packcore.midnightconfig.spacer")
     public static Comment scamshieldSpacer4;
 
     @Entry(category = SCAMSHIELD, name = "packcore.midnightconfig.scamshield_regex_timeout_ms", min = 50, max = 500)

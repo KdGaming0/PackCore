@@ -70,17 +70,20 @@ public class PackCore implements ClientModInitializer {
             ScamShieldCommand.register(dispatcher);
         });
 
-        ScheduledBackupManager.initialize();
-
-        if (PackCoreConfig.enableCustomMenu) {
-            ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-                if (screen instanceof TitleScreen) {
-                    client.execute(() -> client.setScreen(PackCoreConfig.haveShownWelcomeWizard
-                            ? new SBEStyledTitleScreen()
-                            : new WelcomeWizardPage())
-                    );
-                }
-            });
+        // try catch just in case something goes wrong with title screen
+        try {
+            if (PackCoreConfig.enableCustomMenu) {
+                ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+                    if (screen instanceof TitleScreen) {
+                        client.execute(() -> client.setScreen(PackCoreConfig.haveShownWelcomeWizard
+                                ? new SBEStyledTitleScreen()
+                                : new WelcomeWizardPage())
+                        );
+                    }
+                });
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to show custom title screen: {}", e.getMessage());
         }
 
         if (!PackCoreConfig.haveSetBobbyConfig) {
