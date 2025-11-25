@@ -18,5 +18,21 @@
   "packcore.midnightconfig.first_startup": "First Startup - Tracker",
   "packcore.midnightconfig.welcome_wizard_shown": "Welcome Wizard Shown - Tracker",
   "packcore.midnightconfig.have_set_bobby_config": "Have Set Bobby Config - Tracker",
-  "packcore.midnightconfig.setup_wizard_completed": "Setup Wizard Completed - Tracker"
+  "packcore.midnightconfig.setup_wizard_completed": "Setup Wizard Completed - Tracker",
+
+  "packcore.midnightconfig.scamshieldSpacer": "",
+
+  "packcore.midnightconfig.enable_scamshield": "Enable ScamShield",
+  "packcore.midnightconfig.enable_scamshield_debugging":"Enable ScamShield Debugging",
+  "packcore.midnightconfig.scamshield_trigger_threshold": "Scam shield Trigger Threshold",
+  "packcore.midnightconfig.scamshield_show_notifications":"Toggle ScamShield Notifications",
+  "packcore.midnightconfig.scamshield_notification_cooldown": "ScamShield Notification Cooldown (seconds)",
+  "packcore.midnightconfig.scamshield_max_recent_detections": "Recent Detections",
+  "packcore.midnightconfig.scamshield_max_history_size":"Maximum History Size",
+  "packcore.midnightconfig.scamshield_regex_timeout_ms": "Regex Timeout (ms)",
+  "packcore.midnightconfig.scamshield_cache_size": "Cache Size",
+  "packcore.midnightconfig.scamshield_cache_ttl_seconds":"Cache TTL (seconds)",
+  "packcore.midnightconfig.scamshield_conversation_timeout_minutes": "Conversation Timeout (minutes)",
+  "packcore.midnightconfig.scamshield_max_messages_per_user": "Max Messages Per User",
+  "packcore.midnightconfig.scamshield_max_progression_bonus": "Max Progression Bonus"
 }
