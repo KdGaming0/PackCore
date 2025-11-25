@@ -1,0 +1,5 @@
+- fix: Typo in Resource Packs Wizard page and added missing key for Sophie's Hypixel Enhants. Should not be possible to apply from wizard page correctly.
+- fix: Added check for NPC in sender for Scam shield. Scam shield is no longer checking NPC messages.
+- feat: Added automatic config backups that run every three days. Apply them from the Configuration menu.
+- feat: Changed Gradle build system to use Stonecutter for easy multi-version support.
+- chore: Fixed language files and improved readability.
