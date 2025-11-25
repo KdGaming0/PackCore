@@ -40,28 +40,34 @@ public class ResourcePackManager {
                 return CompletableFuture.completedFuture(false);
             }
 
-            List<String> foundPackIds = findAvailablePackIdsOrderedList(packKeysOrdered);
-            if (foundPackIds.isEmpty()) {
-                PackCore.LOGGER.warn("No matching resource packs found for keys: {}", packKeysOrdered);
-                return CompletableFuture.completedFuture(false);
-            }
-
-            PackCore.LOGGER.info("Found {} packs in order: {}", foundPackIds.size(), foundPackIds);
-
-            client.execute(() -> applyPacksOnMainThread(foundPackIds, result));
+            // The mixin handles sanitization automatically when scanPacks() is called
+            client.execute(() -> applyPacksOnMainThread(packKeysOrdered, result));
 
         } catch (Exception e) {
-            PackCore.LOGGER.error("Failed to apply resource packs", e);
+            PackCore.LOGGER.error("Failed to schedule resource packs application", e);
             return CompletableFuture.completedFuture(false);
         }
 
         return result.completeOnTimeout(false, 10, TimeUnit.SECONDS);
     }
 
-    private static void applyPacksOnMainThread(List<String> foundPackIds, CompletableFuture<Boolean> result) {
+    private static void applyPacksOnMainThread(List<String> packKeysOrdered, CompletableFuture<Boolean> result) {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
             net.minecraft.resource.ResourcePackManager packManager = client.getResourcePackManager();
+
+            // Scan packs - mixin will sanitize filenames before this processes them
+            packManager.scanPacks();
+
+            List<String> foundPackIds = findAvailablePackIdsOrderedList(packKeysOrdered);
+
+            if (foundPackIds.isEmpty()) {
+                PackCore.LOGGER.warn("No matching resource packs found for keys: {}", packKeysOrdered);
+                result.complete(true);
+                return;
+            }
+
+            PackCore.LOGGER.info("Found {} packs in order: {}", foundPackIds.size(), foundPackIds);
 
             List<String> currentPacks = new ArrayList<>(client.options.resourcePacks);
             List<String> newPacks = new ArrayList<>();
@@ -135,7 +141,8 @@ public class ResourcePackManager {
                 continue;
             }
 
-            PackCore.LOGGER.info("Looking for pack '{}' (selection #{}) with keywords: {}", key, index + 1, Arrays.toString(keywords));
+            PackCore.LOGGER.info("Looking for pack '{}' (selection #{}) with keywords: {}",
+                    key, index + 1, Arrays.toString(keywords));
 
             ResourcePackProfile bestMatch = findBestMatch(allProfiles, keywords);
 
@@ -145,14 +152,13 @@ public class ResourcePackManager {
                         key, bestMatch.getId(), bestMatch.getDisplayName().getString(),
                         index + 1, found.size());
             } else {
-                PackCore.LOGGER.warn("No match found for pack '{}' (selection #{}) with keywords: {}", key, index + 1, Arrays.toString(keywords));
+                PackCore.LOGGER.warn("No match found for pack '{}' (selection #{}) with keywords: {}",
+                        key, index + 1, Arrays.toString(keywords));
             }
         }
 
         return found;
     }
-
-
 
     private static String[] getKeywordsForPack(String key) {
         String[] keywords = MULTI_PACK_KEYWORDS.get(key);
@@ -202,7 +208,6 @@ public class ResourcePackManager {
         return 0;
     }
 
-
     private static Set<String> getAllKnownPackIds() {
         Set<String> allKnown = new HashSet<>();
         MinecraftClient client = MinecraftClient.getInstance();
@@ -210,15 +215,11 @@ public class ResourcePackManager {
 
         net.minecraft.resource.ResourcePackManager packManager = client.getResourcePackManager();
 
-        // Add single keywords
         Set<String> allKeywords = new HashSet<>(PACK_KEYWORDS.values());
-
-        // Add multi keywords
         for (String[] keywords : MULTI_PACK_KEYWORDS.values()) {
             allKeywords.addAll(Arrays.asList(keywords));
         }
 
-        // Find all packs that match any of our keywords
         for (String keyword : allKeywords) {
             for (ResourcePackProfile profile : packManager.getProfiles()) {
                 String name = stripMinecraftColors(profile.getDisplayName().getString().toLowerCase());
@@ -233,43 +234,6 @@ public class ResourcePackManager {
 
         PackCore.LOGGER.debug("All known managed pack IDs: {}", allKnown);
         return allKnown;
-    }
-
-    private static Set<String> findAvailablePackIds(Set<String> packKeys) {
-        Set<String> found = new HashSet<>();
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return found;
-
-        net.minecraft.resource.ResourcePackManager packManager = client.getResourcePackManager();
-        Collection<ResourcePackProfile> allProfiles = packManager.getProfiles();
-
-        for (String key : packKeys) {
-            String[] keywords = getKeywordsForPack(key);
-            if (keywords == null) continue;
-
-            PackCore.LOGGER.info("Looking for pack '{}' with keywords: {}", key, Arrays.toString(keywords));
-            boolean foundMatch = false;
-
-            for (ResourcePackProfile profile : allProfiles) {
-                String id = stripMinecraftColors(profile.getId().toLowerCase());
-
-                for (String keyword : keywords) {
-                    if (id.contains(keyword)) {
-                        found.add(profile.getId());
-                        PackCore.LOGGER.info("MATCHED '{}' -> '{}' via keyword '{}' in filename",
-                                key, profile.getId(), keyword);
-                        foundMatch = true;
-                        break;
-                    }
-                }
-                if (foundMatch) break;
-            }
-
-            if (!foundMatch) {
-                PackCore.LOGGER.warn("No match found for key '{}' with keywords: {}", key, Arrays.toString(keywords));
-            }
-        }
-        return found;
     }
 
     private static String stripMinecraftColors(String text) {
