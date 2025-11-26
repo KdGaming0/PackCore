@@ -2,4 +2,5 @@
 - fix: Added check for NPC in sender for Scam shield. Scam shield is no longer checking NPC messages.
 - feat: Added automatic config backups that run every three days. Apply them from the Configuration menu.
 - feat: Changed Gradle build system to use Stonecutter for easy multi-version support.
+- feat: Added config update system; this lets me update a specific config file with a modpack update or add configs for a new mod without having to apply configs for all mods.
 - chore: Fixed language files and improved readability.
