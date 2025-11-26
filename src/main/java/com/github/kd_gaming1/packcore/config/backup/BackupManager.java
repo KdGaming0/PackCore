@@ -8,7 +8,7 @@ import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
 import com.github.kd_gaming1.packcore.config.model.ConfigMetadata;
 import com.github.kd_gaming1.packcore.util.io.zip.ZipAsyncTask;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,11 +119,11 @@ public class BackupManager {
 
     /**
      * Create an automatic backup (blocking fallback)
+     * Safe to call during pre-launch - uses game directory from FabricLoader if client not available
      */
     public static Path createAutoBackup() {
         try {
-            return createAutoBackupAsync(msg -> {
-            }).get();
+            return createAutoBackupAsync(msg -> {}).get();
         } catch (Exception e) {
             LOGGER.error("Failed to create auto backup", e);
             return null;
@@ -147,6 +147,7 @@ public class BackupManager {
 
     /**
      * Create a backup with metadata (async)
+     * Safe to call during pre-launch - automatically determines game directory
      */
     static CompletableFuture<Path> createBackupAsync(
             BackupType type, String title, String description, Consumer<String> progressCallback) {
@@ -155,7 +156,37 @@ public class BackupManager {
             try {
                 progressCallback.accept("Preparing backup...");
 
-                Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+                // Get game directory safely - works during pre-launch and post-launch
+                Path gameDir = getGameDirectory();
+                return createBackupAsyncInternal(gameDir, type, title, description, progressCallback). join();
+
+            } catch (Exception e) {
+                LOGGER.error("Failed to create backup", e);
+                progressCallback.accept("Backup failed: " + e.getMessage());
+                throw new RuntimeException("Backup creation failed", e);
+            }
+        }, BACKUP_EXECUTOR);
+    }
+
+    /**
+     * Create a backup with explicit game directory (pre-launch safe)
+     */
+    public static CompletableFuture<Path> createBackupAsync(
+            Path gameDir, BackupType type, String title, String description, Consumer<String> progressCallback) {
+        return createBackupAsyncInternal(gameDir, type, title, description, progressCallback);
+    }
+
+    /**
+     * Internal backup creation method that accepts game directory
+     * This is the core implementation that doesn't depend on MinecraftClient
+     */
+    private static CompletableFuture<Path> createBackupAsyncInternal(
+            Path gameDir, BackupType type, String title, String description, Consumer<String> progressCallback) {
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                progressCallback.accept("Preparing backup.. .");
+
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
                 Files.createDirectories(backupsDir);
 
@@ -165,13 +196,13 @@ public class BackupManager {
                 Path backupZip = backupsDir.resolve(backupId + ".zip");
 
                 // Create temporary directory for backup content
-                Path tempDir = Files.createTempDirectory("packcore_backup");
+                Path tempDir = Files. createTempDirectory("packcore_backup");
 
                 try {
                     progressCallback.accept("Copying configuration files...");
 
                     // Copy config-related files asynchronously
-                    copyConfigFilesAsync(gameDir, tempDir, progressCallback).join();
+                    copyConfigFilesAsync(gameDir, tempDir, progressCallback). join();
 
                     progressCallback.accept("Calculating backup size...");
 
@@ -179,7 +210,7 @@ public class BackupManager {
                     ConfigMetadata currentConfig = ConfigFileRepository.getCurrentConfig();
 
                     // Calculate size asynchronously
-                    long size = calculateDirectorySizeAsync(tempDir).join();
+                    long size = calculateDirectorySizeAsync(tempDir). join();
 
                     // Create backup metadata
                     BackupInfo backupInfo = new BackupInfo(
@@ -201,10 +232,10 @@ public class BackupManager {
 
                     // Create ZIP asynchronously
                     ZipAsyncTask zipFiles = new ZipAsyncTask();
-                    zipFiles.zipDirectoryAsync(tempDir.toFile(), backupZip.toString(),
+                    zipFiles.zipDirectoryAsync(tempDir. toFile(), backupZip.toString(),
                             (bytesProcessed, totalBytes, percentage) -> progressCallback.accept(String.format("Zipping: %d%%", percentage))).join();
 
-                    LOGGER.info("Created {} backup: {}", type.getDisplayName().toLowerCase(), backupZip);
+                    LOGGER.info("Created {} backup: {}", type.getDisplayName(). toLowerCase(), backupZip);
 
                     // Clean up old backups in background
                     CompletableFuture.runAsync(() -> cleanupOldBackups(backupsDir), BACKUP_EXECUTOR);
@@ -225,7 +256,7 @@ public class BackupManager {
 
             } catch (Exception e) {
                 LOGGER.error("Failed to create backup", e);
-                progressCallback.accept("Backup failed: " + e.getMessage());
+                progressCallback. accept("Backup failed: " + e.getMessage());
                 throw new RuntimeException("Backup creation failed", e);
             }
         }, BACKUP_EXECUTOR);
@@ -346,10 +377,9 @@ public class BackupManager {
     /**
      * Get list of all backups with metadata (async)
      */
-    public static CompletableFuture<List<BackupInfo>> getBackupsAsync() {
+    public static CompletableFuture<List<BackupInfo>> getBackupsAsync(Path gameDir) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
 
                 if (!Files.exists(backupsDir)) {
@@ -378,6 +408,14 @@ public class BackupManager {
                 return new ArrayList<>();
             }
         }, BACKUP_EXECUTOR);
+    }
+
+    /**
+     * Get list of all backups with metadata (async)
+     * Automatically determines game directory
+     */
+    public static CompletableFuture<List<BackupInfo>> getBackupsAsync() {
+        return getBackupsAsync(getGameDirectory());
     }
 
     /**
@@ -458,7 +496,7 @@ public class BackupManager {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+                Path gameDir = getGameDirectory();
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
                 Path backupZip = backupsDir.resolve(backupInfo.backupId + ".zip");
 
@@ -472,8 +510,13 @@ public class BackupManager {
                 progressCallback.accept("Creating safety backup...");
 
                 // Create a backup of current state before restoring
-                createAutoBackupAsync(msg -> {
-                }).join();
+                createBackupAsync(
+                        gameDir,
+                        BackupType.AUTO,
+                        "Auto backup before restore",
+                        "Safety backup created before restoring: " + backupInfo.backupId,
+                        msg -> {}
+                ).join();
 
                 progressCallback.accept("Extracting backup...");
 
@@ -481,9 +524,9 @@ public class BackupManager {
                 Path tempDir = Files.createTempDirectory("packcore_restore");
                 try {
                     var unzipper = new UnzipAsyncTask();
-                    unzipper.unzipAsync(backupZip.toString(), tempDir.toString(),
+                    unzipper.unzipAsync(backupZip. toString(), tempDir. toString(),
                             (bytesProcessed, totalBytes, percentage) ->
-                                    progressCallback.accept(String.format("Extracting: %d%%", percentage))).join();
+                                    progressCallback.accept(String.format("Extracting: %d%%", percentage))). join();
 
                     progressCallback.accept("Restoring files...");
 
@@ -585,7 +628,7 @@ public class BackupManager {
      */
     public static boolean deleteBackup(BackupInfo backupInfo) {
         try {
-            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+            Path gameDir = getGameDirectory();
             Path backupsDir = gameDir.resolve(BACKUPS_DIR);
             Path backupZip = backupsDir.resolve(backupInfo.backupId + ".zip");
 
@@ -608,7 +651,10 @@ public class BackupManager {
      */
     private static void cleanupOldBackups(Path backupsDir) {
         try {
-            List<BackupInfo> backups = getBackups();
+            // Extract gameDir from backupsDir
+            Path gameDir = backupsDir.getParent().getParent();
+
+            List<BackupInfo> backups = getBackupsAsync(gameDir).get();
 
             // Separate auto and manual backups
             List<BackupInfo> autoBackups = backups.stream()
@@ -620,7 +666,15 @@ public class BackupManager {
                 List<BackupInfo> toDelete = autoBackups.subList(PackCoreConfig.maxBackups, autoBackups.size());
 
                 for (BackupInfo backup : toDelete) {
-                    deleteBackup(backup);
+                    try {
+                        Path backupZip = backupsDir. resolve(backup.backupId + ".zip");
+                        if (Files.exists(backupZip)) {
+                            Files.delete(backupZip);
+                            LOGGER.info("Deleted old auto backup: {}", backup.getDisplayName());
+                        }
+                    } catch (IOException e) {
+                        LOGGER.warn("Failed to delete backup: {}", backup.backupId, e);
+                    }
                 }
 
                 LOGGER.info("Cleaned up {} old auto backups", toDelete.size());
@@ -637,7 +691,7 @@ public class BackupManager {
     public static void openBackupsFolder() {
         CompletableFuture.runAsync(() -> {
             try {
-                Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+                Path gameDir = getGameDirectory();
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
                 Files.createDirectories(backupsDir);
 
@@ -646,6 +700,20 @@ public class BackupManager {
                 LOGGER.error("Failed to open backups folder", e);
             }
         }, BACKUP_EXECUTOR);
+    }
+
+    /**
+     * Safely get game directory - works during pre-launch and post-launch
+     */
+    private static Path getGameDirectory() {
+        // Try to get from MinecraftClient first (post-launch)
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null && client.runDirectory != null) {
+            return client.runDirectory. toPath();
+        }
+
+        // Fallback to FabricLoader for pre-launch
+        return FabricLoader.getInstance().getGameDir();
     }
 
     /**

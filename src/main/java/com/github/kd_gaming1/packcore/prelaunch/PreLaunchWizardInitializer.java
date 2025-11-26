@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.prelaunch;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.config.apply.ConfigAutoApplier;
 import com.github.kd_gaming1.packcore.config.apply.ConfigApplyService;
+import com.github.kd_gaming1.packcore.config.update.ConfigUpdateService;
 import com.github.kd_gaming1.packcore.util.io.file.FileLayoutInitializer;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
@@ -23,12 +24,9 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
     public void onPreLaunch() {
         LOGGER.info("PackCore pre-launch initializer started");
 
-        // Initialize MidnightConfig to load existing settings
         MidnightConfig.init("packcore", PackCoreConfig.class);
-
         Path runDir = FabricLoader.getInstance().getGameDir();
 
-        // Always create necessary directories and files
         FileLayoutInitializer.initializeFileStructure();
 
         // CHECK FOR PENDING CONFIG APPLICATION FIRST
@@ -39,12 +37,12 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
             PackCoreConfig.write(MOD_ID);
         }
 
-        // Check if automatic config application is needed
+        // Handle first-time setup
         if (isUpgradeFromOldVersion(runDir)) {
-            // If it's an upgrade, mark it as no longer first startup to prevent future auto-applies
-            LOGGER.info("Upgrade from old version detected - marking as not first startup");
+            LOGGER.info("Upgrade from old pre 2.0 version detected");
             PackCoreConfig.isFirstStartup = false;
             PackCoreConfig.write(MOD_ID);
+            // Update configs will apply below for upgrade users
         } else if (shouldApplyConfigAutomatically()) {
             LOGGER.info("First launch detected - applying config automatically...");
             boolean success = ConfigAutoApplier.applyBestMatchingConfig(runDir);
@@ -54,9 +52,16 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
                 PackCoreConfig.defaultConfigSuccessfullyApplied = true;
                 PackCoreConfig.isFirstStartup = false;
                 PackCoreConfig.write(MOD_ID);
-            } else {
-                LOGGER.warn("Failed to apply config automatically - will use defaults");
+                // Skip update configs - we just applied the latest full config
+                LOGGER.info("Skipping update configs - full config already applied");
+                return;
             }
+        }
+
+        // Apply update configs (only if full config was applied previously)
+        if (PackCoreConfig.defaultConfigSuccessfullyApplied) {
+            LOGGER.info("Checking for config updates...");
+            ConfigUpdateService.checkAndApplyUpdates(runDir);
         }
 
         LOGGER.info("PackCore pre-launch initialization complete");

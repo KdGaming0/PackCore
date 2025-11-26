@@ -5,6 +5,7 @@ import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.ui.toast.PackCoreToast;
 import com.github.kd_gaming1.packcore.util.GsonUtils;
 import com.google.gson.Gson;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 
 import java.io.IOException;
@@ -92,7 +93,7 @@ public class ScheduledBackupManager {
      */
     public static void updateLastActive() {
         try {
-            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+            Path gameDir = getGameDirectorySafe();
             Path activeFile = gameDir.resolve(LAST_ACTIVE_FILE);
 
             long currentTime = System.currentTimeMillis();
@@ -101,7 +102,7 @@ public class ScheduledBackupManager {
 
             PackCore.LOGGER.debug("[ScheduledBackupManager] Updated last active timestamp: {}", currentTime);
         } catch (Exception e) {
-            PackCore.LOGGER.error("[ScheduledBackupManager] Failed to update last active timestamp", e);
+            PackCore. LOGGER.error("[ScheduledBackupManager] Failed to update last active timestamp", e);
         }
     }
 
@@ -109,13 +110,13 @@ public class ScheduledBackupManager {
      * Check if a scheduled backup should be performed and execute it
      */
     private static void checkAndPerformScheduledBackup() {
-        if (!PackCoreConfig.enableAutoBackups) {
+        if (! PackCoreConfig.enableAutoBackups) {
             PackCore.LOGGER.debug("[ScheduledBackupManager] Auto backups disabled, skipping scheduled backup check");
             return;
         }
 
         try {
-            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+            Path gameDir = getGameDirectorySafe();
             Path trackingFile = gameDir.resolve(LAST_BACKUP_FILE);
 
             BackupTracking tracking = BackupTracking.loadOrCreate(trackingFile);
@@ -125,12 +126,12 @@ public class ScheduledBackupManager {
             // Check if 3 days have passed since last backup
             if (timeSinceLastBackup < THREE_DAYS_MILLIS) {
                 long hoursRemaining = (THREE_DAYS_MILLIS - timeSinceLastBackup) / (1000 * 60 * 60);
-                PackCore.LOGGER.debug("[ScheduledBackupManager] Not time for scheduled backup yet. Hours remaining: {}", hoursRemaining);
+                PackCore.LOGGER.debug("[ScheduledBackupManager] Not time for scheduled backup yet.  Hours remaining: {}", hoursRemaining);
                 return;
             }
 
             // Check if user has been active in the past 3 days
-            if (!hasBeenActiveInPastThreeDays()) {
+            if (! hasBeenActiveInPastThreeDays()) {
                 PackCore.LOGGER.debug("[ScheduledBackupManager] User has not been active in past 3 days, skipping scheduled backup");
                 return;
             }
@@ -142,6 +143,7 @@ public class ScheduledBackupManager {
             String description = "Automatic backup created after 3 days of activity";
 
             BackupManager.createBackupAsync(
+                    gameDir,
                     BackupManager.BackupType.AUTO,
                     title,
                     description,
@@ -156,31 +158,36 @@ public class ScheduledBackupManager {
                     newTracking.save(trackingFile);
                     PackCore.LOGGER.info("[ScheduledBackupManager] Scheduled backup completed: {}", backupPath.getFileName());
 
-                    // Show toast notification on the main thread
-                    MinecraftClient.getInstance().execute(() -> {
-                        PackCoreToast.showBackupComplete(
-                                "Scheduled Config Backup",
-                                backupPath.getFileName().toString(),
-                                false
+                    // Show toast notification on the main thread (only if client is available)
+                    MinecraftClient client = MinecraftClient.getInstance();
+                    if (client != null) {
+                        client.execute(() -> {
+                            PackCoreToast.showBackupComplete(
+                                    "Scheduled Config Backup",
+                                    backupPath.getFileName().toString(),
+                                    false
+                            );
+                        });
+                    }
+                }
+            }). exceptionally(ex -> {
+                PackCore.LOGGER.error("[ScheduledBackupManager] Scheduled backup failed", ex);
+
+                // Show error toast on the main thread (only if client is available)
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client != null) {
+                    client.execute(() -> {
+                        PackCoreToast.showError(
+                                "Scheduled Config Backup Failed",
+                                "Check logs for details"
                         );
                     });
                 }
-            }).exceptionally(ex -> {
-                PackCore.LOGGER.error("[ScheduledBackupManager] Scheduled backup failed", ex);
-
-                // Show error toast on the main thread
-                MinecraftClient.getInstance().execute(() -> {
-                    PackCoreToast.showError(
-                            "Scheduled Config Backup Failed",
-                            "Check logs for details"
-                    );
-                });
                 return null;
             });
 
-
         } catch (Exception e) {
-            PackCore.LOGGER.error("[ScheduledBackupManager] Failed to check/perform scheduled backup", e);
+            PackCore.LOGGER. error("[ScheduledBackupManager] Failed to check/perform scheduled backup", e);
         }
     }
 
@@ -189,7 +196,7 @@ public class ScheduledBackupManager {
      */
     private static boolean hasBeenActiveInPastThreeDays() {
         try {
-            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+            Path gameDir = getGameDirectorySafe();
             Path activeFile = gameDir.resolve(LAST_ACTIVE_FILE);
 
             if (!Files.exists(activeFile)) {
@@ -198,7 +205,7 @@ public class ScheduledBackupManager {
             }
 
             String content = Files.readString(activeFile, StandardCharsets.UTF_8);
-            long lastActive = Long.parseLong(content.trim());
+            long lastActive = Long.parseLong(content. trim());
             long currentTime = System.currentTimeMillis();
             long daysSinceActive = (currentTime - lastActive) / (1000 * 60 * 60 * 24);
 
@@ -217,7 +224,7 @@ public class ScheduledBackupManager {
      */
     public static long getTimeUntilNextBackup() {
         try {
-            Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+            Path gameDir = getGameDirectorySafe();
             Path trackingFile = gameDir.resolve(LAST_BACKUP_FILE);
 
             BackupTracking tracking = BackupTracking.loadOrCreate(trackingFile);
@@ -231,9 +238,23 @@ public class ScheduledBackupManager {
             return THREE_DAYS_MILLIS - timeSinceLastBackup;
 
         } catch (Exception e) {
-            PackCore.LOGGER.warn("[ScheduledBackupManager] Failed to calculate time until next backup", e);
+            PackCore. LOGGER.warn("[ScheduledBackupManager] Failed to calculate time until next backup", e);
             return -1;
         }
+    }
+
+    /**
+     * Safely get game directory - works during pre-launch and post-launch
+     */
+    private static Path getGameDirectorySafe() {
+        // Try to get from MinecraftClient first (post-launch)
+        MinecraftClient client = MinecraftClient. getInstance();
+        if (client != null && client.runDirectory != null) {
+            return client.runDirectory. toPath();
+        }
+
+        // Fallback to FabricLoader for pre-launch
+        return FabricLoader.getInstance().getGameDir();
     }
 
     /**
