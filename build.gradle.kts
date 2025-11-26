@@ -47,7 +47,9 @@ dependencies {
     modRuntimeOnly("com.terraformersmc:modmenu:${property("deps.modmenu_version")}")
     modImplementation("io.wispforest:owo-lib:${property("deps.owo_version")}")
     modImplementation("io.wispforest.lavender-md:core:${property("deps.lavender_md_version")}")
+    include("io.wispforest.lavender-md:core:${property("deps.lavender_md_version")}")
     modImplementation("io.wispforest.lavender-md:owo-ui:${property("deps.lavender_md_version")}")
+    include("io.wispforest.lavender-md:owo-ui:${property("deps.lavender_md_version")}")
     modImplementation("net.azureaaron:hm-api:1.0.1+1.21.2")
 
     modImplementation("maven.modrinth:sodium:${property("deps.sodium_version")}")
