@@ -3,4 +3,5 @@
 - feat: Added automatic config backups that run every three days. Apply them from the Configuration menu.
 - feat: Changed Gradle build system to use Stonecutter for easy multi-version support.
 - feat: Added config update system; this lets me update a specific config file with a modpack update or add configs for a new mod without having to apply configs for all mods.
+- feat: Added option to apply specific config files instead of the whole zip file.
 - chore: Fixed language files and improved readability.

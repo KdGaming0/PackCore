@@ -318,18 +318,24 @@ public class ConfigManagerScreen extends BasePackCoreScreen {
     }
 
     private FlowLayout createActionButtons() {
-        FlowLayout buttonPanel = (FlowLayout) Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+        FlowLayout buttonPanel = (FlowLayout) Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(8)
                 .horizontalAlignment(HorizontalAlignment.CENTER)
                 .margins(Insets.top(12));
 
-        buttonPanel.child(ScreenUIComponents.createButton("Apply Config",
-                btn -> showConfirmationDialog()));
+        // Full config
+        buttonPanel.child(ScreenUIComponents.createButton("Apply Full Config",
+                btn -> showConfirmationDialog(), 120, 20));
 
-        // Delete button for custom configs only
+        // Selective config (NEW)
+        buttonPanel.child(ScreenUIComponents.createButton("Apply Specific Files",
+                btn -> MinecraftClient.getInstance().setScreen(
+                        new SelectiveFileApplicationScreen(selectedConfig, this)), 120, 20));
+
+        // Delete (if custom)
         if (!selectedConfig.official()) {
             buttonPanel.child(ScreenUIComponents.createButton("Delete",
-                    btn -> deleteConfig()));
+                    btn -> deleteConfig(), 90, 20));
         }
 
         return buttonPanel;

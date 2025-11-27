@@ -79,7 +79,8 @@ public class ScreenUIComponents {
                 .sizing(Sizing.fixed(80), Sizing.content()));
 
         row.child(Components.label(Text.literal(value))
-                .color(color(TEXT_PRIMARY)));
+                .color(color(TEXT_PRIMARY))
+                .horizontalSizing(Sizing.expand()));
 
         return row;
     }

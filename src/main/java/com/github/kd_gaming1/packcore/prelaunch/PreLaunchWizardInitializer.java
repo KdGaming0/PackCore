@@ -2,11 +2,13 @@ package com.github.kd_gaming1.packcore.prelaunch;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.config.apply.ConfigAutoApplier;
-import com.github.kd_gaming1.packcore.config.apply.ConfigApplyService;
-import com.github.kd_gaming1.packcore.config.update.ConfigUpdateService;
-import com.github.kd_gaming1.packcore.util.io.file.FileLayoutInitializer;
+import com.github. kd_gaming1.packcore.config.apply.ConfigApplyService;
+import com.github.kd_gaming1.packcore.config.apply.SelectiveConfigApplyService;
+import com.github.kd_gaming1.packcore.config.backup.SelectiveBackupRestoreService;
+import com.github.kd_gaming1.packcore.config. update.ConfigUpdateService;
+import com.github. kd_gaming1.packcore.util.io.file.FileLayoutInitializer;
 import eu.midnightdust.lib.config.MidnightConfig;
-import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api. FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,14 +39,28 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
             PackCoreConfig.write(MOD_ID);
         }
 
+        // CHECK FOR PENDING SELECTIVE CONFIG APPLICATION
+        boolean selectiveConfigApplied = SelectiveConfigApplyService.checkAndApplyPendingSelectiveConfig(runDir);
+        if (selectiveConfigApplied) {
+            LOGGER.info("Applied pending selective config during pre-launch");
+            // Note: We don't set defaultConfigSuccessfullyApplied for selective applies
+            // since they're partial applications
+        }
+
+        // CHECK FOR PENDING SELECTIVE BACKUP RESTORE
+        boolean selectiveRestoreApplied = SelectiveBackupRestoreService.checkAndApplyPendingSelectiveRestore(runDir);
+        if (selectiveRestoreApplied) {
+            LOGGER.info("Applied pending selective backup restore during pre-launch");
+        }
+
         // Handle first-time setup
         if (isUpgradeFromOldVersion(runDir)) {
             LOGGER.info("Upgrade from old pre 2.0 version detected");
             PackCoreConfig.isFirstStartup = false;
-            PackCoreConfig.write(MOD_ID);
+            PackCoreConfig. write(MOD_ID);
             // Update configs will apply below for upgrade users
         } else if (shouldApplyConfigAutomatically()) {
-            LOGGER.info("First launch detected - applying config automatically...");
+            LOGGER.info("First launch detected - applying config automatically.. .");
             boolean success = ConfigAutoApplier.applyBestMatchingConfig(runDir);
 
             if (success) {
@@ -69,7 +85,7 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
 
     private boolean shouldApplyConfigAutomatically() {
         return PackCoreConfig.isFirstStartup &&
-                !PackCoreConfig.defaultConfigSuccessfullyApplied;
+                !PackCoreConfig. defaultConfigSuccessfullyApplied;
     }
 
     /**
@@ -84,7 +100,7 @@ public class PreLaunchWizardInitializer implements PreLaunchEntrypoint {
         boolean exists = Files.exists(oldFolder) && Files.isDirectory(oldFolder);
 
         if (exists) {
-            LOGGER.info("Detected 'SkyBlock Enhanced' folder - this is an upgrade from old version");
+            LOGGER. info("Detected 'SkyBlock Enhanced' folder - this is an upgrade from old version");
         }
 
         return exists;

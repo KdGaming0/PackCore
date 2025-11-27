@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.ui.screen.configmanager;
 
+import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.backup.BackupManager;
 import com.github.kd_gaming1.packcore.notification.BackupNotifications;
 import com.github.kd_gaming1.packcore.ui.screen.base.BasePackCoreScreen;
@@ -15,8 +16,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -32,7 +31,6 @@ import static com.github.kd_gaming1.packcore.ui.theme.UITheme.*;
  * Handles backup creation, restoration, and deletion with async operations.
  */
 public class BackupManagementScreen extends BasePackCoreScreen {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private BackupManager.BackupInfo selectedBackup = null;
     private FlowLayout infoPanel;
@@ -296,12 +294,19 @@ public class BackupManagementScreen extends BasePackCoreScreen {
                 .gap(8)
                 .horizontalAlignment(HorizontalAlignment.CENTER);
 
-        buttonPanel.child(ScreenUIComponents.createButton("Restore Backup",
-                btn -> showRestoreConfirmation()));
+        // Full restore
+        buttonPanel.child(ScreenUIComponents.createButton("Restore Full Backup",
+                btn -> showRestoreConfirmation(), 120, 20));
 
+        // Selective restore (NEW)
+        buttonPanel.child(ScreenUIComponents.createButton("Restore Specific Files",
+                btn -> MinecraftClient.getInstance().setScreen(
+                        new SelectiveFileApplicationScreen(selectedBackup, this)), 120, 20));
+
+        // Delete (if manual)
         if (selectedBackup.type() == BackupManager.BackupType.MANUAL) {
             buttonPanel.child(ScreenUIComponents.createButton("Delete",
-                    btn -> showDeleteConfirmation()));
+                    btn -> showDeleteConfirmation(), 90, 20));
         }
 
         return buttonPanel;
@@ -412,14 +417,14 @@ public class BackupManagementScreen extends BasePackCoreScreen {
                         try {
                             Util.getOperatingSystem().open(backupPath.getParent().toFile());
                         } catch (Exception e) {
-                            LOGGER.warn("Failed to auto-open backup folder", e);
+                            PackCore.LOGGER.warn("Failed to auto-open backup folder", e);
                         }
                     }
                 }))
                 .exceptionally(throwable -> {
                     MinecraftClient.getInstance().execute(() -> {
                         closeProgressDialog();
-                        LOGGER.error("Failed to create backup", throwable);
+                        PackCore.LOGGER.error("Failed to create backup", throwable);
                         showErrorDialog("Backup failed: " + throwable.getMessage());
                     });
                     return null;
@@ -535,7 +540,7 @@ public class BackupManagementScreen extends BasePackCoreScreen {
                 .exceptionally(throwable -> {
                     MinecraftClient.getInstance().execute(() -> {
                         closeProgressDialog();
-                        LOGGER.error("Failed to restore backup", throwable);
+                        PackCore.LOGGER.error("Failed to restore backup", throwable);
                         showErrorDialog("Restore failed: " + throwable.getMessage());
                     });
                     return null;
@@ -568,7 +573,7 @@ public class BackupManagementScreen extends BasePackCoreScreen {
         if (selectedBackup == null) return;
 
         if (BackupManager.deleteBackup(selectedBackup)) {
-            LOGGER.info("Deleted backup: {}", selectedBackup.getDisplayName());
+            PackCore.LOGGER.info("Deleted backup: {}", selectedBackup.getDisplayName());
             selectedBackup = null;
             refreshBackupsList();
         } else {
