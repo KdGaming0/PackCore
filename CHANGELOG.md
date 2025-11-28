@@ -1,7 +1,2 @@
-- fix: Typo in Resource Packs Wizard page and added missing key for Sophie's Hypixel Enhants. Should not be possible to apply from wizard page correctly.
-- fix: Added check for NPC in sender for Scam shield. Scam shield is no longer checking NPC messages.
-- feat: Added automatic config backups that run every three days. Apply them from the Configuration menu.
-- feat: Changed Gradle build system to use Stonecutter for easy multi-version support.
-- feat: Added config update system; this lets me update a specific config file with a modpack update or add configs for a new mod without having to apply configs for all mods.
-- feat: Added option to apply specific config files instead of the whole zip file.
-- chore: Fixed language files and improved readability.
+- feat: add code to force-close the Zen and Krypt update notification; this should be handled by the modpack.
+- feat: add function to disable Skyblocker dungeon map on startup; it is being replaced by Krypt in the new configs.

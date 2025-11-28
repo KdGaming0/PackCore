@@ -69,6 +69,9 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = CATEGORY_ADVANCED, name = "packcore.midnightconfig.have_set_bobby_config")
     public static boolean haveSetBobbyConfig = false;
 
+    @Entry(category = CATEGORY_ADVANCED, name = "packcore.midnightconfig.have_set_skyblocker_dungeon_map_config")
+    public static boolean haveSetDungeonMapConfig = false;
+
     @Hidden
     @Entry(category = CATEGORY_ADVANCED, name = "packcore.midnightconfig.setup_wizard_completed")
     public static boolean defaultConfigSuccessfullyApplied = false;

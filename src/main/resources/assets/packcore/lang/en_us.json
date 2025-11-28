@@ -38,6 +38,9 @@
   "packcore.midnightconfig.have_set_bobby_config": "Mark Bobby config as applied",
   "packcore.midnightconfig.have_set_bobby_config.tooltip": "Tracks if PackCore has applied Bobby’s settings. Change it to force the setup again.",
 
+  "packcore.midnightconfig.have_set_skyblocker_dungeon_map_config": "Mark Skyblocker Dungeon Map config as applied",
+  "packcore.midnightconfig.have_set_skyblocker_dungeon_map_config.tooltip": "Tracks if PackCore has applied Skyblocker Dungeon Map config",
+
   "packcore.midnightconfig.setup_wizard_completed": "Mark setup wizard as completed",
   "packcore.midnightconfig.setup_wizard_completed.tooltip": "Tracks if the setup wizard has been completed.",
 

@@ -4,6 +4,7 @@ import com.github.kd_gaming1.packcore.command.packcore.PackCoreCommand;
 import com.github.kd_gaming1.packcore.command.scamshield.ScamShieldCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.config.backup.ScheduledBackupManager;
+import com.github.kd_gaming1.packcore.integration.skyblocker.DungeonMap;
 import com.github.kd_gaming1.packcore.scamshield.ChatMessageInterceptor;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
@@ -17,8 +18,11 @@ import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,6 +100,24 @@ public class PackCore implements ClientModInitializer {
             PackCoreConfig.haveSetBobbyConfig = true;
             PackCoreConfig.write(MOD_ID);
         }
+
+        if (!PackCoreConfig.haveSetDungeonMapConfig) {
+            DungeonMap.disableDungeonMap();
+            PackCoreConfig.haveSetDungeonMapConfig = true;
+            PackCoreConfig.write(MOD_ID);
+        }
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            try {
+                Screen currentScreen = client.currentScreen;
+                Class<?> zenClass = Class.forName("xyz.meowing.zen.updateChecker.UpdateGUI");
+                Class<?> kryptClass = Class.forName("xyz.meowing.krypt.updateChecker.UpdateGUI");
+
+                if (zenClass.isInstance(currentScreen) || kryptClass.isInstance(currentScreen)) {
+                    MinecraftClient.getInstance().setScreen(null);
+                }
+            } catch (ClassNotFoundException ignored) {}
+        });
     }
     public static ModpackInfo getModpackInfo() {
         return modpackInfo;
