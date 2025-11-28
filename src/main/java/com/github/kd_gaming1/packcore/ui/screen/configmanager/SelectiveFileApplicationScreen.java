@@ -345,9 +345,26 @@ public class SelectiveFileApplicationScreen extends BasePackCoreScreen {
         rootNode.setExpanded(true);
         rootNode.setChildrenLoaded(true);
 
+        // Create a set of all directory paths for quick lookup
+        Set<String> directoryPaths = new HashSet<>();
+        for (SelectableFile file : allFiles) {
+            String path = file.path();
+            String[] parts = path.split("[/\\\\]");
+
+            // Add all parent directories
+            StringBuilder currentPath = new StringBuilder();
+            for (int i = 0; i < parts.length - 1; i++) {
+                if (currentPath.length() > 0) {
+                    currentPath.append("/");
+                }
+                currentPath.append(parts[i]);
+                directoryPaths.add(currentPath.toString());
+            }
+        }
+
         // Build tree from files
         for (SelectableFile file : allFiles) {
-            addFileToTree(file);
+            addFileToTree(file, directoryPaths);
         }
 
         // Render root's children
@@ -358,18 +375,30 @@ public class SelectiveFileApplicationScreen extends BasePackCoreScreen {
         updateSelectionInfo();
     }
 
-    private void addFileToTree(SelectableFile file) {
+    private void addFileToTree(SelectableFile file, Set<String> directoryPaths) {
         String[] pathParts = file.path().split("[/\\\\]");
         FileTreeNode currentNode = rootNode;
 
         for (int i = 0; i < pathParts.length; i++) {
             String part = pathParts[i];
-            boolean isLast = (i == pathParts.length - 1);
+
+            // Build the full path up to this point
+            StringBuilder pathBuilder = new StringBuilder();
+            for (int j = 0; j <= i; j++) {
+                if (pathBuilder.length() > 0) {
+                    pathBuilder.append("/");
+                }
+                pathBuilder.append(pathParts[j]);
+            }
+            String fullPath = pathBuilder.toString();
+
+            // Determine if this is a directory
+            boolean isDirectory = directoryPaths.contains(fullPath);
 
             FileTreeNode childNode = findChild(currentNode, part);
             if (childNode == null) {
                 Path nodePath = currentNode.getPath().resolve(part);
-                childNode = new FileTreeNode(nodePath, part, !isLast);
+                childNode = new FileTreeNode(nodePath, part, isDirectory);
                 childNode.setChildrenLoaded(true);
                 currentNode.addChild(childNode);
             }

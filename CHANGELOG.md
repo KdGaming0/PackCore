@@ -1,1 +1,1 @@
-- fix: skyblocker configs being reset on startup.
+- fix: backup manager restores specific files, letting you select specific sup files inside the config folder.
