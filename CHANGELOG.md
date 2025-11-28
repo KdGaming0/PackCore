@@ -1,2 +1,1 @@
-- feat: add code to force-close the Zen and Krypt update notification; this should be handled by the modpack.
-- feat: add function to disable Skyblocker dungeon map on startup; it is being replaced by Krypt in the new configs.
+- fix: skyblocker configs being reset on startup.

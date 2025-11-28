@@ -101,11 +101,19 @@ public class PackCore implements ClientModInitializer {
             PackCoreConfig.write(MOD_ID);
         }
 
-        if (!PackCoreConfig.haveSetDungeonMapConfig) {
-            DungeonMap.disableDungeonMap();
-            PackCoreConfig.haveSetDungeonMapConfig = true;
-            PackCoreConfig.write(MOD_ID);
-        }
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            client.execute(() -> {
+                try {
+                    if (!PackCoreConfig.haveSetDungeonMapConfig) {
+                        DungeonMap.disableDungeonMap();
+                        PackCoreConfig.haveSetDungeonMapConfig = true;
+                        PackCoreConfig.write(MOD_ID);
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to apply DungeonMap config after startup", e);
+                }
+            });
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
