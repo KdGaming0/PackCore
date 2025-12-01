@@ -6,7 +6,7 @@
 [![fapi-badge](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/requires/fabric-api_vector.svg)](https://modrinth.com/mod/fabric-api)
 
 ![Build Status](https://github.com/KdGaming0/PackCore/actions/workflows/build.yml/badge.svg)
-[![Modrinth Donwloads](https://img.shields.io/modrinth/dt/packcore?color=00AF5C&label=downloads&logo=modrinth)](https://modrinth.com/mod/yoinkgui)
+[![Modrinth Donwloads](https://img.shields.io/modrinth/dt/packcore?color=00AF5C&label=downloads&logo=modrinth)](https://modrinth.com/mod/packcore)
 
 PackCore is a companion mod for the **Skyblock Enhanced** modpacks. It enhances the player experience with a seamless and immersive start to the game.
 
