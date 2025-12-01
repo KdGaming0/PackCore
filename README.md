@@ -37,13 +37,20 @@ Features strong performance and a large collection of SkyBlock-specific mods, al
 
 ---
 
-## Partner Offer: Bisect Hosting
+Support the Project
+-------------------
 
-[![Bisect Hosting Banner](https://wsrv.nl/?url=https%3A%2F%2Fwww.bisecthosting.com%2Fpartners%2Fcustom-banners%2F8a1e1ba8-343f-4e31-a276-a1eba99388f3.webp&n=-1)](https://www.bisecthosting.com/SBE)
+Want to support my work? You can do this on Ko‑fi. All donations are highly appreciated and help me continue providing support and updates. Thank you to everyone who wants to help!
 
-I partner with **Bisect Hosting** to provide reliable game servers.  
-Whether you're hosting Minecraft or another title, they offer fast support and high-performance hardware.
+→ [☕ Support on Ko-fi](https://ko-fi.com/kdgaming1)
 
-**Use code `SBE` for 25% off** your first purchase.  
-Support my work by using this link:  
-https://www.bisecthosting.com/SBE
+Server Hosting Partner
+----------------------
+
+In need of your own server? I partner with Bisect Hosting to bring you reliable game servers. Whether you play Minecraft or another title, they deliver high‑performance hardware and fast support.
+
+Use code **SBE** at checkout for **25% off** your first purchase.
+
+→ [🎮 Get 25% Off with Bisect Hosting](https://www.bisecthosting.com/SBE?r=SkyblockEnhancedModrinthPage)
+
+![Bisect Hosting promotional banner advertising 'Use code SBE for 25% off' to start your adventure, featuring the Bisect Hosting logo and pixelated Minecraft-style text with golden decorative borders](https://cdn.modrinth.com/data/cached_images/01502d9d41e784dfa18a3a1903a3e906cde1af1f.webp)
