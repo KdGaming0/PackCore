@@ -1,1 +1,1 @@
-- fix: backup manager restores specific files, letting you select specific sup files inside the config folder.
+- fix: Added default message to /scamshield and /packcore command.
