@@ -5,6 +5,9 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+
+import static com.github.kd_gaming1.packcore.command.CommandHelper.sendCopyCommand;
 
 /**
  * Displays help information for ScamShield commands.
@@ -18,42 +21,49 @@ public class ScamShieldHelpCommand {
     public static int execute(CommandContext<FabricClientCommandSource> context) {
         var source = context.getSource();
 
-        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        source.sendFeedback(Text.literal("§e§lScamShield Commands"));
-        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+        source.sendFeedback(Text.literal("━━━━━━━━━━━━━━━━━━━━━━━━━━━━").formatted(Formatting.GRAY));
+        source.sendFeedback(Text.literal("ScamShield Commands").formatted(Formatting.YELLOW, Formatting.BOLD));
+        source.sendFeedback(Text.literal("━━━━━━━━━━━━━━━━━━━━━━━━━━━━").formatted(Formatting.GRAY));
         source.sendFeedback(Text.literal(""));
 
-        source.sendFeedback(Text.literal("§6System Control:"));
-        source.sendFeedback(Text.literal("  §e/scamshield toggle §7- Enable/disable ScamShield"));
-        source.sendFeedback(Text.literal("  §e/scamshield reload §7- Reload pattern files"));
+        // System Control
+        source.sendFeedback(Text.literal("System Control:").formatted(Formatting.GOLD, Formatting.BOLD));
+        sendCopyCommand(source, "§e/scamshield toggle §7- Enable/disable ScamShield", "/scamshield toggle");
+        sendCopyCommand(source, "§e/scamshield reload §7- Reload pattern files", "/scamshield reload");
         source.sendFeedback(Text.literal(""));
 
-        source.sendFeedback(Text.literal("§6Statistics:"));
-        source.sendFeedback(Text.literal("  §e/scamshield stats §7- View detection statistics"));
-        source.sendFeedback(Text.literal("  §e/scamshield clear §7- Clear detection history"));
+        // Statistics
+        source.sendFeedback(Text.literal("Statistics:").formatted(Formatting.GOLD, Formatting.BOLD));
+        sendCopyCommand(source, "§e/scamshield stats §7- View detection statistics", "/scamshield stats");
+        sendCopyCommand(source, "§e/scamshield clear §7- Clear detection history", "/scamshield clear");
         source.sendFeedback(Text.literal(""));
 
-        source.sendFeedback(Text.literal("§6Testing:"));
-        source.sendFeedback(Text.literal("  §e/scamshield test <message> §7- Test a message"));
-        source.sendFeedback(Text.literal("  §e/scamshield debug §7- Run full debug test suite"));
+        // Testing
+        source.sendFeedback(Text.literal("Testing:").formatted(Formatting.GOLD, Formatting.BOLD));
+        sendCopyCommand(source, "§e/scamshield test <message> §7- Test a message", "/scamshield test <message>");
+        sendCopyCommand(source, "§e/scamshield debug §7- Run full debug test suite", "/scamshield debug");
         source.sendFeedback(Text.literal(""));
 
-        source.sendFeedback(Text.literal("§6Whitelist:"));
-        source.sendFeedback(Text.literal("  §e/scamshield whitelist add <player> §7- Add player"));
-        source.sendFeedback(Text.literal("  §e/scamshield whitelist remove <player> §7- Remove player"));
-        source.sendFeedback(Text.literal("  §e/scamshield whitelist list §7- List all whitelisted"));
-        source.sendFeedback(Text.literal("  §e/scamshield whitelist clear §7- Clear whitelist"));
+        // Whitelist
+        source.sendFeedback(Text.literal("Whitelist:").formatted(Formatting.GOLD, Formatting.BOLD));
+        sendCopyCommand(source, "§e/scamshield whitelist add <player> §7- Add player", "/scamshield whitelist add <player>");
+        sendCopyCommand(source, "§e/scamshield whitelist remove <player> §7- Remove player", "/scamshield whitelist remove <player>");
+        sendCopyCommand(source, "§e/scamshield whitelist list §7- List all whitelisted", "/scamshield whitelist list");
+        sendCopyCommand(source, "§e/scamshield whitelist clear §7- Clear whitelist", "/scamshield whitelist clear");
         source.sendFeedback(Text.literal(""));
 
-        source.sendFeedback(Text.literal("§6Preview & Education:"));
-        source.sendFeedback(Text.literal("  §e/scamshield preview <level> <type> §7- Preview warnings"));
-        source.sendFeedback(Text.literal("  §e/scamshield previewscreen §7- Preview warning screen"));
-        source.sendFeedback(Text.literal("  §e/scamshield education §7- Open education screen"));
+        // Preview & Education
+        source.sendFeedback(Text.literal("Preview & Education:").formatted(Formatting.GOLD, Formatting.BOLD));
+        sendCopyCommand(source, "§e/scamshield preview <level> <type> §7- Preview warnings", "/scamshield preview <level> <type>");
+        sendCopyCommand(source, "§e/scamshield preview screen §7- Preview warning screen", "/scamshield previewscreen");
+        sendCopyCommand(source, "§e/scamshield education §7- Open education screen", "/scamshield education");
         source.sendFeedback(Text.literal(""));
 
-        source.sendFeedback(Text.literal("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        source.sendFeedback(Text.literal("§7For more info: §fhttps://github.com/kd-gaming1/PackCore"));
+        source.sendFeedback(Text.literal("━━━━━━━━━━━━━━━━━━━━━━━━━━━━").formatted(Formatting.GRAY));
+        source.sendFeedback(Text.literal("Tip: Click any command to copy it!")
+                .formatted(Formatting.GRAY, Formatting.ITALIC));
 
         return 1;
     }
+
 }

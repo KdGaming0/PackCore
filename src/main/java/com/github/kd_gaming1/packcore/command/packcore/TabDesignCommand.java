@@ -12,13 +12,25 @@ import net.minecraft.util.Formatting;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.github.kd_gaming1.packcore.command.CommandHelper.sendCopyCommand;
+
 public class TabDesignCommand {
 
     public static LiteralArgumentBuilder<FabricClientCommandSource> register() {
         return ClientCommandManager.literal("tabdesign")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("Available types: list, apply")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
                 .then(ClientCommandManager.literal("list")
                         .executes(TabDesignCommand::listTabDesigns))
                 .then(ClientCommandManager.literal("apply")
+                        .executes(context -> {
+                            context.getSource().sendFeedback(Text.literal("Available designs: skyhanni, skyblocker")
+                                    .formatted(Formatting.YELLOW));
+                            return 0;
+                        })
                         .then(ClientCommandManager.argument("design", StringArgumentType.word())
                                 .suggests((context, builder) -> {
                                     builder.suggest("skyhanni");

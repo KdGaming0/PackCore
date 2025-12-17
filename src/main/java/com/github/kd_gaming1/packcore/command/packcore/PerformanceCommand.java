@@ -12,13 +12,25 @@ import net.minecraft.util.Formatting;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.github.kd_gaming1.packcore.command.CommandHelper.sendCopyCommand;
+
 public class PerformanceCommand {
 
     public static LiteralArgumentBuilder<FabricClientCommandSource> register() {
         return ClientCommandManager.literal("performance")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("Available types: list, apply")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
                 .then(ClientCommandManager.literal("list")
                         .executes(PerformanceCommand::listPerformanceProfiles))
                 .then(ClientCommandManager.literal("apply")
+                        .executes(context -> {
+                            context.getSource().sendFeedback(Text.literal("Available performance options: performance, balanced, quality, shaders")
+                                    .formatted(Formatting.YELLOW));
+                            return 0;
+                        })
                         .then(ClientCommandManager.argument("profile", StringArgumentType.word())
                                 .suggests((context, builder) -> {
                                     builder.suggest("performance");
@@ -107,35 +119,46 @@ public class PerformanceCommand {
     }
 
     private static int listPerformanceProfiles(CommandContext<FabricClientCommandSource> context) {
+        var source = context.getSource();
         var availability = PerformanceProfileService.getSystemAvailability();
 
-        context.getSource().sendFeedback(Text.literal("=== PackCore Performance Profiles ===")
+        source.sendFeedback(Text.literal("=== PackCore Performance Profiles ===")
                 .formatted(Formatting.GOLD));
 
-        // Show available systems
-        context.getSource().sendFeedback(Text.literal("Available Systems:")
+        // Available systems
+        source.sendFeedback(Text.literal("Available Systems:")
                 .formatted(Formatting.YELLOW));
-        context.getSource().sendFeedback(Text.literal("  • Minecraft: ✓")
+        source.sendFeedback(Text.literal("  • Minecraft: ✓")
                 .formatted(Formatting.GREEN));
-        context.getSource().sendFeedback(Text.literal("  • Sodium: " + (availability.sodiumAvailable() ? "✓" : "✗"))
+        source.sendFeedback(Text.literal("  • Sodium: " + (availability.sodiumAvailable() ? "✓" : "✗"))
                 .formatted(availability.sodiumAvailable() ? Formatting.GREEN : Formatting.RED));
-        context.getSource().sendFeedback(Text.literal("  • Iris/Shaders: " + (availability.irisAvailable() ? "✓" : "✗"))
+        source.sendFeedback(Text.literal("  • Iris/Shaders: " + (availability.irisAvailable() ? "✓" : "✗"))
                 .formatted(availability.irisAvailable() ? Formatting.GREEN : Formatting.RED));
 
-        context.getSource().sendFeedback(Text.literal(""));
+        source.sendFeedback(Text.literal(""));
 
-        // Show available profiles
-        context.getSource().sendFeedback(Text.literal("Available Profiles:")
+        // Profiles
+        source.sendFeedback(Text.literal("Available Profiles:")
                 .formatted(Formatting.YELLOW));
 
-        for (PerformanceProfileService.PerformanceProfile profile : PerformanceProfileService.PerformanceProfile.values()) {
+        for (PerformanceProfileService.PerformanceProfile profile
+                : PerformanceProfileService.PerformanceProfile.values()) {
+
             String command = "/packcore performance apply " + profile.name().toLowerCase();
-            context.getSource().sendFeedback(Text.literal("  • " + profile.getDisplayName() + " - " + profile.getDescription())
-                    .formatted(Formatting.WHITE));
-            context.getSource().sendFeedback(Text.literal("    Command: " + command)
+
+            source.sendFeedback(Text.literal("  • " + profile.getDisplayName())
+                    .formatted(Formatting.WHITE, Formatting.BOLD));
+            source.sendFeedback(Text.literal("    " + profile.getDescription())
                     .formatted(Formatting.GRAY));
+
+            sendCopyCommand(
+                    source,
+                    "    §a" + command + " §7- Apply this profile",
+                    command
+            );
         }
 
         return 1;
     }
+
 }
