@@ -58,11 +58,8 @@ public class MenuCommand {
                         .append(Text.literal(status).formatted(color))
         );
 
-        context.getSource().sendFeedback(
-                Text.literal("Use ").formatted(Formatting.GRAY)
-                        .append(Text.literal("/packcore menu toggle").formatted(Formatting.GREEN))
-                        .append(Text.literal(" to change").formatted(Formatting.GRAY))
-        );
+        context.getSource().sendFeedback(Text.literal("/packcore menu toggle")
+                .formatted(Formatting.YELLOW));
 
         return 1;
     }

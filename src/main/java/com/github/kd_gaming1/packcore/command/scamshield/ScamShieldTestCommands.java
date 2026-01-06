@@ -9,6 +9,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 /**
  * Commands for testing ScamShield detection capabilities.
@@ -17,6 +18,11 @@ public class ScamShieldTestCommands {
 
     public static LiteralArgumentBuilder<FabricClientCommandSource> registerTest() {
         return ClientCommandManager.literal("test")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("/scamshield test <message>")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
                 .then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
                         .executes(ScamShieldTestCommands::testMessage)
                 );

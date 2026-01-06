@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import static com.github.kd_gaming1.packcore.command.CommandHelper.sendCopyCommand;
+
 public class PackCoreCommand {
 
     public static void registerCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
@@ -27,20 +29,16 @@ public class PackCoreCommand {
         var source = context.getSource();
 
         source.sendFeedback(Text.literal("PackCore Commands").formatted(Formatting.GOLD, Formatting.BOLD));
-        source.sendFeedback(Text.literal("Type ").formatted(Formatting.GRAY)
-                .append(Text.literal("/packcore help").formatted(Formatting.GREEN))
-                .append(Text.literal(" for full command list").formatted(Formatting.GRAY)));
+
+        sendCopyCommand(source, "§7Type §a/packcore help §7for full command list", "/packcore help");
+
         source.sendFeedback(Text.literal(""));
         source.sendFeedback(Text.literal("Quick Commands:").formatted(Formatting.YELLOW));
-        source.sendFeedback(Text.literal("  • ").formatted(Formatting.GRAY)
-                .append(Text.literal("/packcore wizard").formatted(Formatting.GREEN))
-                .append(Text.literal(" - Open setup wizard").formatted(Formatting.GRAY)));
-        source.sendFeedback(Text.literal("  • ").formatted(Formatting.GRAY)
-                .append(Text.literal("/packcore menu toggle").formatted(Formatting.GREEN))
-                .append(Text.literal(" - Toggle custom menu").formatted(Formatting.GRAY)));
-        source.sendFeedback(Text.literal("  • ").formatted(Formatting.GRAY)
-                .append(Text.literal("/packcore configmanager").formatted(Formatting.GREEN))
-                .append(Text.literal(" - Open config manager").formatted(Formatting.GRAY)));
+
+        sendCopyCommand(source, "§7 • §a/packcore wizard §7- Open setup wizard", "/packcore wizard");
+        sendCopyCommand(source, "§7 • §a/packcore menu toggle §7- Toggle custom menu", "/packcore menu toggle");
+        sendCopyCommand(source, "§7 • §a/packcore configmanager §7- Open config manager", "/packcore configmanager");
+
 
         return 1;
     }

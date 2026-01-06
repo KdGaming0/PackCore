@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 /**
  * Commands for previewing ScamShield warnings and screens.
@@ -22,6 +23,12 @@ public class ScamShieldPreviewCommands {
 
     public static LiteralArgumentBuilder<FabricClientCommandSource> register() {
         return ClientCommandManager.literal("preview")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("Available severity: high, medium, low, screen")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
+
                 .then(registerLowPreview())
                 .then(registerMediumPreview())
                 .then(registerHighPreview())
@@ -32,6 +39,11 @@ public class ScamShieldPreviewCommands {
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> registerLowPreview() {
         return ClientCommandManager.literal("low")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("Available types: coop, giveaway, phishing, trade, generic")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
                 .then(ClientCommandManager.literal("phishing")
                         .executes(ctx -> previewWarning(ctx, ConfidenceLevel.LOW, ScamCategory.PHISHING))
                 )
@@ -48,6 +60,11 @@ public class ScamShieldPreviewCommands {
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> registerMediumPreview() {
         return ClientCommandManager.literal("medium")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("Available types: coop, giveaway, phishing, trade, generic")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
                 .then(ClientCommandManager.literal("phishing")
                         .executes(ctx -> previewWarning(ctx, ConfidenceLevel.MEDIUM, ScamCategory.PHISHING))
                 )
@@ -67,6 +84,11 @@ public class ScamShieldPreviewCommands {
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> registerHighPreview() {
         return ClientCommandManager.literal("high")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("Available types: coop, giveaway, phishing, trade, generic")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
                 .then(ClientCommandManager.literal("phishing")
                         .executes(ctx -> previewWarning(ctx, ConfidenceLevel.HIGH, ScamCategory.PHISHING))
                 )

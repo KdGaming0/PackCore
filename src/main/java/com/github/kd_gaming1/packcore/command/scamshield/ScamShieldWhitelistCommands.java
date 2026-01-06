@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 /**
  * Commands for managing the ScamShield whitelist.
@@ -15,12 +16,27 @@ public class ScamShieldWhitelistCommands {
 
     public static LiteralArgumentBuilder<FabricClientCommandSource> register() {
         return ClientCommandManager.literal("whitelist")
+                .executes(context -> {
+                    context.getSource().sendFeedback(Text.literal("Available options: add, remove, list, clear")
+                            .formatted(Formatting.YELLOW));
+                    return 0;
+                })
                 .then(ClientCommandManager.literal("add")
+                        .executes(context -> {
+                            context.getSource().sendFeedback(Text.literal("/scamshield whitelist add <player>")
+                                    .formatted(Formatting.YELLOW));
+                            return 0;
+                        })
                         .then(ClientCommandManager.argument("player", StringArgumentType.word())
                                 .executes(ScamShieldWhitelistCommands::whitelistAdd)
                         )
                 )
                 .then(ClientCommandManager.literal("remove")
+                        .executes(context -> {
+                            context.getSource().sendFeedback(Text.literal("/scamshield whitelist remove <player>")
+                                    .formatted(Formatting.YELLOW));
+                            return 0;
+                        })
                         .then(ClientCommandManager.argument("player", StringArgumentType.word())
                                 .executes(ScamShieldWhitelistCommands::whitelistRemove)
                         )
