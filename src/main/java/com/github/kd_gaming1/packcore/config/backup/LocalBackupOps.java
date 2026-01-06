@@ -38,10 +38,10 @@ public class LocalBackupOps {
 
             LOGGER.info("Creating backup at: {}", backupPath);
 
-            // Backup key configuration files and folders
-            backupIfExists(gameDir.resolve("config"), backupPath.resolve("config"));
-            backupIfExists(gameDir.resolve("options.txt"), backupPath.resolve("options.txt"));
-            backupIfExists(gameDir.resolve("servers.dat"), backupPath.resolve("servers.dat"));
+            // Backup key configuration files and folders using centralized utilities
+            backupIfExists(gameDir.resolve("config"), backupPath.resolve("config"), gameDir);
+            backupIfExists(gameDir.resolve("options.txt"), backupPath.resolve("options.txt"), gameDir);
+            backupIfExists(gameDir.resolve("servers.dat"), backupPath.resolve("servers.dat"), gameDir);
 
             // Backup current metadata if it exists
             Path currentMetadata = gameDir.resolve(ConfigFileRepository.METADATA_FILE);
@@ -60,11 +60,12 @@ public class LocalBackupOps {
         }
     }
 
-    private static void backupIfExists(Path source, Path target) {
+    private static void backupIfExists(Path source, Path target, Path gameDir) {
         try {
             if (Files.exists(source)) {
                 if (Files.isDirectory(source)) {
-                    FileUtils.copyDirectory(source, target);
+                    // Use the centralized FileUtils method with exclusions
+                    FileUtils.copyDirectoryWithExclusions(source, target, gameDir);
                 } else {
                     Files.createDirectories(target.getParent());
                     Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);

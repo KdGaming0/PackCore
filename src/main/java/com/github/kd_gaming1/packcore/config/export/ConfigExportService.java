@@ -1,13 +1,13 @@
 package com.github.kd_gaming1.packcore.config.export;
 
 import com.github.kd_gaming1.packcore.util.GsonUtils;
+import com.github.kd_gaming1.packcore.util.io.file.ExclusionPatterns;
 import com.github.kd_gaming1.packcore.util.io.file.FileUtils;
 import com.github.kd_gaming1.packcore.ui.component.tree.FileTreeNode;
 import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
 import com.github.kd_gaming1.packcore.config.model.ConfigMetadata;
 import com.github.kd_gaming1.packcore.util.io.zip.ZipAsyncTask;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,16 +28,6 @@ import java.util.stream.Stream;
 public class ConfigExportService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigExportService.class);
     private static final Gson GSON = GsonUtils.GSON;
-
-    private static final Set<String> HIDDEN_FOLDERS = Set.of(
-            "packcore", "logs", "crash-reports", "screenshots",
-            ".git", ".minecraft", "saves", "assets", "mods", ".firmament"
-    );
-
-    private static final Set<String> EXCLUDED_CONFIG_SUBFOLDERS = Set.of(
-            "firmament/profiles", "skyhanni/backup", "skyhanni/repo",
-            "skyblocker/item-repo", "skyocean/data"
-    );
 
     private static final int MAX_TREE_DEPTH = 10;
     private static final int MAX_CHILDREN_PER_NODE = 100;
@@ -139,15 +129,13 @@ public class ConfigExportService {
     private boolean isHidden(Path path) {
         String name = path.getFileName().toString().toLowerCase();
 
-        if (HIDDEN_FOLDERS.contains(name) || name.startsWith(".")) {
+        // Use centralized hidden folders list
+        if (ExclusionPatterns.HIDDEN_FOLDERS.contains(name) || name.startsWith(".")) {
             return true;
         }
 
-        Path relativePath = gameDir.relativize(path);
-        String relativePathStr = relativePath.toString().replace("\\", "/");
-
-        return EXCLUDED_CONFIG_SUBFOLDERS.stream()
-                .anyMatch(excluded -> relativePathStr.equals(excluded) || relativePathStr.startsWith(excluded + "/"));
+        // Use centralized exclusion check
+        return ExclusionPatterns.shouldExclude(gameDir, path);
     }
 
     private Comparator<Path> comparePaths() {
@@ -368,7 +356,8 @@ public class ConfigExportService {
                     Path targetPath = targetDir.resolve(relativePath);
 
                     if (Files.isDirectory(selectedPath)) {
-                        FileUtils.copyDirectory(selectedPath, targetPath);
+                        // Use exclusion-aware copy for directories
+                        FileUtils.copyDirectoryWithExclusions(selectedPath, targetPath, gameDir);
                     } else {
                         Files.createDirectories(targetPath.getParent());
                         Files.copy(selectedPath, targetPath, StandardCopyOption.REPLACE_EXISTING);

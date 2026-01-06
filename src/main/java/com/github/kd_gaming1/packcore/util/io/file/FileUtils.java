@@ -52,6 +52,49 @@ public class FileUtils {
     }
 
     /**
+     * Recursively copies a directory while excluding specified subfolders.
+     * Uses the centralized exclusion patterns.
+     *
+     * @param source  The source directory to copy.
+     * @param target  The target directory.
+     * @param gameDir The game directory (for calculating relative paths).
+     * @throws IOException If an I/O error occurs during copying.
+     */
+    public static void copyDirectoryWithExclusions(Path source, Path target, Path gameDir) throws IOException {
+        Files.walkFileTree(source, new SimpleFileVisitor<>() {
+            @Override
+            public @NotNull FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                    throws IOException {
+                // Check if this directory should be excluded
+                if (ExclusionPatterns.shouldExclude(gameDir, dir)) {
+                    LOGGER.debug("Skipping excluded folder: {}", gameDir.relativize(dir));
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+
+                Path targetDir = target.resolve(source.relativize(dir));
+                Files.createDirectories(targetDir);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public @NotNull FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Path targetFile = target.resolve(source.relativize(file));
+                Files.copy(file, targetFile,
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.COPY_ATTRIBUTES);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public @NotNull FileVisitResult visitFileFailed(Path file, IOException exc) {
+                LOGGER.warn("Failed to copy file: {} - {}", file, exc.getMessage());
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    /**
      * Recursively deletes a directory and all its contents. Ignored when directory does not exist.
      *
      * @param directory The directory to delete.

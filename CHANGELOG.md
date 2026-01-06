@@ -1,1 +1,3 @@
 - fix: Added default message to /scamshield and /packcore command.
+- fix: Main menu crash when the modrinth api is down.
+- fix: Increased the speed of auto backups.

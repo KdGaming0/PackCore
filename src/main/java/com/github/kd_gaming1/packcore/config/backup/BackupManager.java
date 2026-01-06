@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.config.backup;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.util.GsonUtils;
+import com.github.kd_gaming1.packcore.util.io.file.ExclusionPatterns;
 import com.github.kd_gaming1.packcore.util.io.file.FileUtils;
 import com.github.kd_gaming1.packcore.util.io.zip.UnzipAsyncTask;
 import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
@@ -52,15 +53,7 @@ public class BackupManager {
             "config",
             "options.txt",
             "servers.dat",
-            "resourcepacks",
-            "shaderpacks",
             "packcore/current_config.json"
-    );
-
-    // Excluded config subfolders
-    private static final Set<String> EXCLUDED_CONFIG_SUBFOLDERS = Set.of(
-            "firmament/profiles", "skyhanni/backup", "skyhanni/repo",
-            "skyblocker/item-repo", "skyocean/data"
     );
 
     // Batch size for file operations
@@ -281,7 +274,8 @@ public class BackupManager {
                         progressCallback.accept(String.format("Copying %s...", configPath));
 
                         if (Files.isDirectory(sourcePath)) {
-                            copyDirectoryWithExclusionsAsync(sourcePath, targetPath).join();
+                            // Pass gameDir for proper exclusion checking
+                            copyDirectoryWithExclusionsAsync(sourcePath, targetPath, gameDir).join();
                         } else {
                             Files.createDirectories(targetPath.getParent());
                             Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
@@ -301,7 +295,7 @@ public class BackupManager {
     /**
      * Copy directory asynchronously while excluding specified subfolders
      */
-    private static CompletableFuture<Void> copyDirectoryWithExclusionsAsync(Path source, Path target) {
+    private static CompletableFuture<Void> copyDirectoryWithExclusionsAsync(Path source, Path target, Path gameDir) {
         return CompletableFuture.runAsync(() -> {
             try {
                 Files.createDirectories(target);
@@ -320,16 +314,12 @@ public class BackupManager {
                     // Process batch in parallel
                     batch.parallelStream().forEach(sourcePath -> {
                         try {
-                            Path relativePath = source.relativize(sourcePath);
-                            String relativePathStr = relativePath.toString().replace("\\", "/");
-
-                            // Check if this path should be excluded
-                            for (String excludedFolder : EXCLUDED_CONFIG_SUBFOLDERS) {
-                                if (relativePathStr.startsWith(excludedFolder)) {
-                                    return; // Skip this path
-                                }
+                            // Use centralized exclusion check
+                            if (ExclusionPatterns.shouldExclude(gameDir, sourcePath)) {
+                                return; // Skip this path
                             }
 
+                            Path relativePath = source.relativize(sourcePath);
                             Path targetPath = target.resolve(relativePath);
 
                             if (Files.isDirectory(sourcePath)) {

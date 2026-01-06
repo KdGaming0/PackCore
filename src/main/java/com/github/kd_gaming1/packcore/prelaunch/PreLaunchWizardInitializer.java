@@ -6,7 +6,7 @@ import com.github. kd_gaming1.packcore.config.apply.ConfigApplyService;
 import com.github.kd_gaming1.packcore.config.apply.SelectiveConfigApplyService;
 import com.github.kd_gaming1.packcore.config.backup.SelectiveBackupRestoreService;
 import com.github.kd_gaming1.packcore.config. update.ConfigUpdateService;
-import com.github. kd_gaming1.packcore.util.io.file.FileLayoutInitializer;
+import com.github.kd_gaming1.packcore.util.io.file.FileLayoutInitializer;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api. FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;

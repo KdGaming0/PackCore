@@ -442,16 +442,24 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         if (updateManager == null || info == null) {
             PackCore.LOGGER.error("Update system not initialized properly");
+            // Initialize defaults to prevent NPEs in UI
+            this.currentVersion = "Unknown";
+            this.newVersion = "Unknown";
+            this.modrinthName = "Modpack";
+            this.changelog = "Update system error";
             return UpdateResult.error("Update system not initialized properly");
         }
+
+        // Always initialize local state from info first to ensure variables are not null
+        this.currentVersion = info.getVersion() != null ? info.getVersion() : "Unknown";
+        this.modrinthName = info.getName();
+        // Default newVersion to currentVersion so equality checks in build() don't fail
+        this.newVersion = this.currentVersion;
 
         // Check if the configuration is valid
         if (info.isConfigurationValid()) {
             this.updateAvailable = false;
-            this.currentVersion = "";
-            this.newVersion = "";
-            this.changelog = "";
-            this.modrinthName = "";
+            this.changelog = "Configuration invalid: " + info.getValidationError();
             PackCore.LOGGER.warn("Skipping update check - configuration not properly set up: {}",
                     info.getValidationError());
             return UpdateResult.error("Configuration not properly set up: " + info.getValidationError());
@@ -461,16 +469,16 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         if (!result.isSuccess()) {
             PackCore.LOGGER.error("Update check failed: {}", result.getErrorMessage());
+            // Set error info for the UI
+            this.updateAvailable = false;
+            this.changelog = "Failed to check for updates.\n\nError: " + result.getErrorMessage();
             return result;
         }
 
-        // Update instance variables
+        // Update instance variables with remote data
         this.updateAvailable = result.isUpdateAvailable();
-        this.currentVersion = info.getVersion();
         this.newVersion = result.getVersionNumber();
         this.changelog = result.getChangelog();
-        result.getModrinthUrl();
-        this.modrinthName = info.getName();
 
         return result;
     }
