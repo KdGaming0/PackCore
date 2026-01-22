@@ -1,1 +1,3 @@
 - chore: updated to 1.21.10
+- fix: removed hyperlinks for resource pack markdown since they crashed the game when clicked.
+- 

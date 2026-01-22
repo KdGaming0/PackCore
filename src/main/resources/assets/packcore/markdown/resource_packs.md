@@ -41,46 +41,46 @@ To put a pack at the top, click it first. You can change order later in **Option
 **Hypixel Plus**  
 A clean, mostly-vanilla UI and item pack made for Hypixel. Clear icons, polished menus, and great clarity without heavy style changes.
 
-{#275EF5}[View Gallery](https://modrinth.com/resourcepack/hypixel-plus/gallery){}
+{#275EF5}Go to: https://modrinth.com/resourcepack/hypixel-plus/gallery for showcase{}
 
 ---
 
 **FurfSky (Full & Overlay)**  
 A very popular SkyBlock pack. **Full** replaces almost everything, including GUI. **Overlay** only changes SkyBlock item textures.
 
-{#275EF5}[View Gallery](https://modrinth.com/resourcepack/furfsky-reborn/gallery){}
+{#275EF5}Go to: https://modrinth.com/resourcepack/furfsky-reborn/gallery for showcase{}
 
 ---
 
 **SkyBlock Dark UI**  
 A dark GUI theme for SkyBlock menus and mod interfaces. Inspired by PacksHQ. Smooth modern menus.
 
-{#275EF5}[View Gallery](https://modrinth.com/resourcepack/skyblock-dark-ui/gallery){}
+{#275EF5}Go to: https://modrinth.com/resourcepack/skyblock-dark-ui/gallery for showcase{}
 
 ---
 
 **Defrosted**  
 Frost-blue themed 16× pack with clean minimalist style. Also available in pink.
 
-{#275EF5}[View Gallery](https://modrinth.com/resourcepack/defrosted_pack/gallery){}
+{#275EF5}Go to: https://modrinth.com/resourcepack/defrosted_pack/gallery for showcase{}
 
 ---
 
 **Looshy**  
 Smooth vanilla-style 16× pack. Minimalist, clean, clear visuals. Adds polish without changing the Minecraft feel.
 
-{#275EF5}[View Gallery](https://modrinth.com/resourcepack/looshy/gallery){}
+{#275EF5}Go to: https://modrinth.com/resourcepack/looshy/gallery for showcase{}
 
 ---
 
 **Dark Mode SkyBlock**  
 A dark-theme SkyBlock world pack for 1.21.5-1.21.8. Makes zones like The End, The Mist, Rift, and Glacite Tunnels easier on your eyes during long sessions.
 
-{#275EF5}[View Gallery](https://modrinth.com/resourcepack/dark-mode-skyblock/gallery){}
+{#275EF5}Go to: https://modrinth.com/resourcepack/dark-mode-skyblock/gallery for showcase{}
 
 ---
 
 **Sophie's Enchants**  
 Gives every enchanted book a unique texture. Helps you sort enchants fast in the inventory or chests. Great quality-of-life pack.
 
-{#275EF5}[View Gallery](https://modrinth.com/resourcepack/sophies-enchants/gallery){}
+{#275EF5}Go to: https://modrinth.com/resourcepack/sophies-enchants/gallery for showcase{}
