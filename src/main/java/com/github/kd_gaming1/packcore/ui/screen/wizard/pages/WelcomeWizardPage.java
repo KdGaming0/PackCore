@@ -347,8 +347,8 @@ public class WelcomeWizardPage extends BaseWizardPage {
         overlay.closeOnClick(true);
         overlay.surface(Surface.flat(0x80_000000));
         //? if <=1.21.8 {
-        /*overlay.zIndex(10);
-         *///?}
+        overlay.zIndex(10);
+         //?}
 
         getRootComponent().child(overlay);
     }

@@ -13,8 +13,8 @@ import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
 //? if >= 1.21.10 {
-import net.minecraft.text.StyleSpriteSource;
-//?}
+/*import net.minecraft.text.StyleSpriteSource;
+*///?}
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
@@ -47,9 +47,9 @@ public class ConfigManagerScreen extends BasePackCoreScreen {
         return Components.label(
                 Text.literal("Configuration Manager")
                         //? if <= 1.21.8 {
-                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                         *///?} else
-                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         //?} else
+                        //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).color(color(TEXT_PRIMARY));
     }
 

@@ -2,3 +2,5 @@
 - fix: removed hyperlinks for resource pack markdown since they crashed the game when clicked.
 - feat: add modpack branding information to crash reports and logs
   - Let's me see what version of the modpack a user is using in the logs and crash reports.
+- feat: add low-allocated memory warning
+- feat: improve version comparison handling

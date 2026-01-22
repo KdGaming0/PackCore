@@ -152,11 +152,11 @@ public class TabDesignManager {
         if (player == null) return;
         //? if >=1.21.8 {
         
-        player.networkHandler.sendChatCommand(command);
+        /*player.networkHandler.sendChatCommand(command);
         
-        //?} else {
-        /*player.networkHandler.sendCommand(command);
-        *///?}
+        *///?} else {
+        player.networkHandler.sendCommand(command);
+        //?}
         PackCore.LOGGER.info("Executed SkyHanni command: /{}", command);
     }
 

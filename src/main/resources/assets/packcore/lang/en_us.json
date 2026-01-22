@@ -29,6 +29,10 @@
   "packcore.midnightconfig.enable_update_notifications.tooltip": "Shows a message in chat when the modpack has updates.",
   "packcore.midnightconfig.show_update_notifications_title": "Show update notifications on title screen",
   "packcore.midnightconfig.show_update_notifications_title.tooltip": "Shows update notices on the title screen.",
+  "packcore.midnightconfig.show_low_memory_warning": "Show Low Memory Warning",
+  "packcore.midnightconfig.show_low_memory_warning.tooltip": "Show a warning on the main menu if allocated RAM is below the minimum",
+  "packcore.midnightconfig.minimum_ram_gb": "Minimum RAM (GB)",
+  "packcore.midnightconfig.minimum_ram_gb.tooltip": "Minimum amount of RAM in GB before showing a warning",
 
   "packcore.midnightconfig.first_startup": "Treat next launch as first startup",
   "packcore.midnightconfig.first_startup.tooltip": "Controls whether PackCore runs its first-time setup. Turn this on if you want the modpack to run the setup steps again.",

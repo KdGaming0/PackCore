@@ -57,6 +57,12 @@ public class PackCoreConfig extends MidnightConfig {
     @Comment(category = CATEGORY_CUSTOMIZATION, name = "packcore.midnightconfig.customization_spacer_1")
     public static Comment customizationSpacer;
 
+    @Entry(category = CATEGORY_CUSTOMIZATION, name = "packcore.midnightconfig.show_low_memory_warning")
+    public static boolean showLowMemoryWarning = true;
+
+    @Entry(category = CATEGORY_CUSTOMIZATION, name = "packcore.midnightconfig.minimum_ram_gb", min = 2, max = 8)
+    public static int minimumRamGB = 3;
+
     // ---------------------
     // Advanced / telemetry-like trackers (hidden flags visible to pack devs)
     // ---------------------

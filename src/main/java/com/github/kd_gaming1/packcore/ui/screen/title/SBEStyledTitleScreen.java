@@ -30,14 +30,15 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 //? if >= 1.21.10 {
-import net.minecraft.text.StyleSpriteSource;
-//?}
+/*import net.minecraft.text.StyleSpriteSource;
+*///?}
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
@@ -53,6 +54,9 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
     private static long lastToastTime = 0;
     private static final long TOAST_COOLDOWN_MS = 5 * 60 * 1000;
+
+    private static long lastRamWarningTime = 0;
+    private static final long RAM_WARNING_COOLDOWN_MS = 5 * 60 * 1000;
 
     // Update state
     private final boolean updateNotificationEnabled =
@@ -119,7 +123,30 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
             PackCore.LOGGER.warn("Update check failed: {}", result.getErrorMessage());
         }
 
+        if (PackCoreConfig.showLowMemoryWarning) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastRamWarningTime > RAM_WARNING_COOLDOWN_MS) {
+                checkAndWarnLowMemory();
+            }
+        }
+
         super.init();
+    }
+
+    /**
+     * Check allocated RAM and show warning if less than 3GB
+     */
+    private void checkAndWarnLowMemory() {
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        double maxMemoryGB = maxMemory / (1024.0 * 1024.0 * 1024.0);
+
+        if (maxMemoryGB < PackCoreConfig.minimumRamGB) {
+            PackCoreToast.showWarning(
+                    "Low Memory Allocation",
+                    String.format("Only %.1f GB allocated! Recommend %.0fGB+ for optimal performance.", maxMemoryGB, (double) PackCoreConfig.minimumRamGB)
+            );
+            lastRamWarningTime = System.currentTimeMillis();
+        }
     }
 
     /**
@@ -176,9 +203,9 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         return (ButtonComponent) Components.button(
                         Text.literal(text)
                                 //? if <= 1.21.8 {
-                                /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
-                                 *///?} else
-                                .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))),
+                                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
+                                 //?} else
+                                //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))),
                         action::onPress
                 )
                 .renderer(ButtonComponent.Renderer.texture(
@@ -238,9 +265,9 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         LabelComponent versionLabel = Components.label(
                 Text.literal("Pack Version: " + currentVersion)
                         //? if <= 1.21.8 {
-                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                         *///?} else
-                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         //?} else
+                        //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).color(Color.ofArgb(TEXT_DARK));
 
         mainLayout.child(versionLabel);
@@ -249,9 +276,9 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
             LabelComponent updateAvailableLabel = Components.label(
                     Text.literal("Update Available: " + newVersion)
                             //? if <= 1.21.8 {
-                            /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                             *///?} else
-                            .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                            .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                             //?} else
+                            //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
             ).color(Color.ofArgb(TEXT_DARK));
             mainLayout.child(updateAvailableLabel);
         }
@@ -322,7 +349,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         // Determine status text
         String changeLogInfoText;
-        if (currentVersion.equals(newVersion)) {
+        if (Objects.equals(currentVersion, newVersion)) {
             changeLogInfoText = "You are up to date! See change log for current version below:";
         } else if (compareVersions(currentVersion, newVersion) < 0) {
             changeLogInfoText = "A new version is available! See what's new below:";
@@ -333,9 +360,9 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         LabelComponent changelogLabel = Components.label(
                 Text.literal(changeLogInfoText)
                         //? if <= 1.21.8 {
-                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                         *///?} else
-                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         //?} else
+                        //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).shadow(false);
 
         // Divider
@@ -503,18 +530,29 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
      * Compare version strings
      */
     public static int compareVersions(String v1, String v2) {
+        // Treat nulls explicitly
+        if (v1 == null && v2 == null) return 0;
+        if (v1 == null) return -1;
+        if (v2 == null) return 1;
+
         String[] parts1 = v1.replaceAll("[^0-9.]", "").split("\\.");
         String[] parts2 = v2.replaceAll("[^0-9.]", "").split("\\.");
 
         int maxLength = Math.max(parts1.length, parts2.length);
 
         for (int i = 0; i < maxLength; i++) {
-            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            int p1 = 0;
+            int p2 = 0;
 
-            if (p1 != p2) {
-                return p1 - p2;
+            if (i < parts1.length && !parts1[i].isEmpty()) {
+                try { p1 = Integer.parseInt(parts1[i]); } catch (NumberFormatException ignored) { p1 = 0; }
             }
+
+            if (i < parts2.length && !parts2[i].isEmpty()) {
+                try { p2 = Integer.parseInt(parts2[i]); } catch (NumberFormatException ignored) { p2 = 0; }
+            }
+
+            if (p1 != p2) return p1 - p2;
         }
 
         return 0;

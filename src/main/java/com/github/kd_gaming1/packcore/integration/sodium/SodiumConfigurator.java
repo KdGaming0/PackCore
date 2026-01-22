@@ -4,12 +4,12 @@ import com.github.kd_gaming1.packcore.integration.minecraft.PerformanceProfileSe
 import net.caffeinemc.mods.sodium.client.SodiumClientMod;
 //? if >=1.21.8 {
 
-import net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions;
+/*import net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions;
 import net.caffeinemc.mods.sodium.client.render.chunk.DeferMode;
 
-//?} else {
-/*import net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions;
-*///?}
+*///?} else {
+import net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions;
+//?}
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
@@ -72,13 +72,13 @@ public class SodiumConfigurator {
         // Quality settings
         //? if >=1.21.8 {
         
-        options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.FAST;
+        /*options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.FAST;
         options.quality.leavesQuality = SodiumGameOptions.LeavesQuality.FAST;
         
-        //?} else {
-        /*options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.FAST;
+        *///?} else {
+        options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.FAST;
         options.quality.leavesQuality = SodiumGameOptions.GraphicsQuality.FAST;
-        *///?}
+        //?}
         options.quality.enableVignette = true;
 
         // Advanced settings
@@ -90,11 +90,11 @@ public class SodiumConfigurator {
         options.performance.chunkBuilderThreads = 0; // 0 = auto
         //? if >=1.21.8 {
         
-        options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
+        /*options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
          
-        //?} else {
-        /*options.performance.alwaysDeferChunkUpdates = true;
-        *///?}
+        *///?} else {
+        options.performance.alwaysDeferChunkUpdates = true;
+        //?}
         options.performance.animateOnlyVisibleTextures = true;
         options.performance.useEntityCulling = true;
         options.performance.useFogOcclusion = true;
@@ -110,13 +110,13 @@ public class SodiumConfigurator {
         // Quality settings
         //? if >=1.21.8 {
         
-        options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.DEFAULT;
+        /*options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.DEFAULT;
         options.quality.leavesQuality = SodiumGameOptions.LeavesQuality.DEFAULT;
          
-        //?} else {
-        /*options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.DEFAULT;
+        *///?} else {
+        options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.DEFAULT;
         options.quality.leavesQuality = SodiumGameOptions.GraphicsQuality.DEFAULT;
-        *///?}
+        //?}
         options.quality.enableVignette = true;
 
         // Advanced settings
@@ -128,11 +128,11 @@ public class SodiumConfigurator {
         options.performance.chunkBuilderThreads = 0; // 0 = auto
         //? if >=1.21.8 {
         
-        options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
+        /*options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
          
-        //?} else {
-        /*options.performance.alwaysDeferChunkUpdates = true;
-        *///?}
+        *///?} else {
+        options.performance.alwaysDeferChunkUpdates = true;
+        //?}
         options.performance.animateOnlyVisibleTextures = true;
         options.performance.useEntityCulling = true;
         options.performance.useFogOcclusion = true;
@@ -148,13 +148,13 @@ public class SodiumConfigurator {
         // Quality settings
         //? if >=1.21.8 {
         
-        options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.FANCY;
+        /*options.quality.weatherQuality = SodiumGameOptions.WeatherQuality.FANCY;
         options.quality.leavesQuality = SodiumGameOptions.LeavesQuality.FANCY;
          
-        //?} else {
-        /*options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.FANCY;
+        *///?} else {
+        options.quality.weatherQuality = SodiumGameOptions.GraphicsQuality.FANCY;
         options.quality.leavesQuality = SodiumGameOptions.GraphicsQuality.FANCY;
-        *///?}
+        //?}
         options.quality.enableVignette = true;
 
         // Advanced settings
@@ -166,11 +166,11 @@ public class SodiumConfigurator {
         options.performance.chunkBuilderThreads = 0; // 0 = auto
         //? if >=1.21.8 {
         
-        options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
+        /*options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
          
-        //?} else {
-        /*options.performance.alwaysDeferChunkUpdates = true;
-        *///?}
+        *///?} else {
+        options.performance.alwaysDeferChunkUpdates = true;
+        //?}
         options.performance.animateOnlyVisibleTextures = true;
         options.performance.useEntityCulling = true;
         options.performance.useFogOcclusion = true;

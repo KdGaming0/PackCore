@@ -197,7 +197,7 @@ public class PackCoreToast extends BaseOwoToast<FlowLayout> {
          * Add a line of text with formatting
          */
         public Builder line(String text, Formatting... formatting) {
-            LabelComponent line = Components.label(Text.literal(text).formatted(formatting));
+            LabelComponent line = (LabelComponent) Components.label(Text.literal(text).formatted(formatting)).horizontalSizing(Sizing.fill(100));
             line.horizontalTextAlignment(HorizontalAlignment.LEFT);
             this.lines.add(line);
             return this;

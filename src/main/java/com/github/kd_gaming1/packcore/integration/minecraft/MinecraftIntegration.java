@@ -133,11 +133,11 @@ public class MinecraftIntegration {
         options.getCloudRenderMode().setValue(CloudRenderMode.FANCY); // renderClouds:"true"
         //? if >=1.21.8 {
         
-        options.getViewDistance().setValue(20); // renderDistance:20
+        /*options.getViewDistance().setValue(20); // renderDistance:20
          
-        //?} else {
-        /*options.getViewDistance().setValue(16); // renderDistance:16
-        *///?}
+        *///?} else {
+        options.getViewDistance().setValue(16); // renderDistance:16
+        //?}
         options.getSimulationDistance().setValue(12);
 
         LOGGER.debug("Applied Minecraft quality settings");
