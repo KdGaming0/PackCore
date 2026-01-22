@@ -4,6 +4,7 @@ import com.github.kd_gaming1.packcore.command.packcore.PackCoreCommand;
 import com.github.kd_gaming1.packcore.command.scamshield.ScamShieldCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.config.backup.ScheduledBackupManager;
+import com.github.kd_gaming1.packcore.crash.CrashBrandingLogger;
 import com.github.kd_gaming1.packcore.integration.skyblocker.DungeonMap;
 import com.github.kd_gaming1.packcore.scamshield.ChatMessageInterceptor;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
@@ -66,6 +67,9 @@ public class PackCore implements ClientModInitializer {
         } catch (Exception e) {
             LOGGER.error("Failed to load modpack info: {}", e.getMessage());
         }
+
+        // Add modpack information to logs
+        CrashBrandingLogger.logBrandingInfo();
 
         MidnightConfig.init(MOD_ID, PackCoreConfig.class);
 

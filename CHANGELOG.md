@@ -1,3 +1,4 @@
 - chore: updated to 1.21.10
 - fix: removed hyperlinks for resource pack markdown since they crashed the game when clicked.
-- 
+- feat: add modpack branding information to crash reports and logs
+  - Let's me see what version of the modpack a user is using in the logs and crash reports.
