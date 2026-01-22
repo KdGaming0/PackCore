@@ -1,7 +1,10 @@
 package com.github.kd_gaming1.packcore.ui.screen.configmanager;
 
 import com.github.kd_gaming1.packcore.PackCore;
+import com.github.kd_gaming1.packcore.config.apply.ConfigApplyService;
 import com.github.kd_gaming1.packcore.config.backup.BackupManager;
+import com.github.kd_gaming1.packcore.config.model.ConfigMetadata;
+import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
 import com.github.kd_gaming1.packcore.notification.BackupNotifications;
 import com.github.kd_gaming1.packcore.ui.screen.base.BasePackCoreScreen;
 import com.github.kd_gaming1.packcore.ui.screen.components.ScreenUIComponents;
@@ -491,17 +494,17 @@ public class BackupManagementScreen extends BasePackCoreScreen {
         FlowLayout warningText = Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                 .gap(4);
 
-        warningText.child(Components.label(Text.literal("⚠ Important Notice:"))
+        warningText.child(Components.label(Text.literal("⚠ Game Will Close"))
                 .color(color(TEXT_PRIMARY))
                 .margins(Insets.bottom(4)));
 
-        warningText.child(Components.label(Text.literal("• The restore will run in the background"))
+        warningText.child(Components.label(Text.literal("• The game will close and restart"))
                 .color(color(TEXT_PRIMARY)));
 
-        warningText.child(Components.label(Text.literal("• A progress indicator will show the status"))
+        warningText.child(Components.label(Text.literal("• The backup will be applied on startup"))
                 .color(color(TEXT_PRIMARY)));
 
-        warningText.child(Components.label(Text.literal("• You can continue using the interface"))
+        warningText.child(Components.label(Text.literal("• An auto-backup will be created first"))
                 .color(color(TEXT_PRIMARY))
                 .margins(Insets.bottom(8)));
 
@@ -509,10 +512,10 @@ public class BackupManagementScreen extends BasePackCoreScreen {
 
         dialog.child(ScreenUIComponents.createButtonRow(
                 ScreenUIComponents.createButton("Cancel", btn -> closeTopOverlay(), 80, 20),
-                ScreenUIComponents.createButton("Continue Restore", btn -> {
+                ScreenUIComponents. createButton("Restore & Close Game", btn -> {
                     closeTopOverlay();
                     performRestore();
-                }, 120, 20)
+                }, 150, 20)
         ));
 
         showOverlay(dialog, false);
@@ -521,37 +524,42 @@ public class BackupManagementScreen extends BasePackCoreScreen {
     private void performRestore() {
         if (selectedBackup == null) return;
 
-        currentOperationName = selectedBackup.getDisplayName();
-        operationInBackground = false;
-        isRestoreOperation = true;
+        closeTopOverlay();
 
-        showProgressDialog("Restoring Backup", "Preparing restore...");
+        try {
+            // Get the backup file path
+            Path gameDir = MinecraftClient.getInstance().runDirectory. toPath();
+            Path backupsDir = gameDir.resolve("packcore/backups");
+            Path backupZipPath = backupsDir.resolve(selectedBackup.backupId() + ".zip");
 
-        BackupManager.restoreBackupAsync(selectedBackup, this::updateProgress)
-                .thenAccept(success -> MinecraftClient.getInstance().execute(() -> {
-                    closeProgressDialog();
+            // Create a temporary ConfigFile wrapper for the backup
+            ConfigMetadata metadata = ConfigMetadata.builder()
+                    .name(selectedBackup.configName() != null ? selectedBackup.configName() : "Restored Backup")
+                    .version(selectedBackup.configVersion() != null ? selectedBackup.configVersion() : "1.0.0")
+                    .description(selectedBackup.description() != null ? selectedBackup.description() : "Backup restoration")
+                    .build();
 
-                    if (success) {
-                        refreshBackupsList();
+            ConfigFileRepository.ConfigFile backupAsConfig = new ConfigFileRepository.ConfigFile(
+                    backupZipPath.getFileName().toString(),
+                    backupZipPath,
+                    false,
+                    metadata
+            );
 
-                        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
-                        Path backupsDir = gameDir.resolve("packcore/backups");
-                        Path backupPath = backupsDir.resolve(selectedBackup.backupId() + ".zip");
+            // Use ConfigApplyService to schedule restoration
+            ConfigApplyService.scheduleConfigApplication(backupAsConfig);
 
-                        BackupNotifications.notifyBackupComplete(
-                                currentOperationName, backupPath, true);
-                    } else {
-                        showErrorDialog("Failed to restore backup!");
-                    }
-                }))
-                .exceptionally(throwable -> {
-                    MinecraftClient.getInstance().execute(() -> {
-                        closeProgressDialog();
-                        PackCore.LOGGER.error("Failed to restore backup", throwable);
-                        showErrorDialog("Restore failed: " + throwable.getMessage());
-                    });
-                    return null;
-                });
+            if (MinecraftClient.getInstance().player != null) {
+                MinecraftClient.getInstance().player.sendMessage(
+                        Text.literal("Restoring:  " + selectedBackup.getDisplayName() + " - Restarting..."),
+                        false
+                );
+            }
+
+        } catch (Exception e) {
+            PackCore.LOGGER.error("Failed to schedule backup restoration", e);
+            showErrorDialog("Failed to schedule restore:  " + e.getMessage());
+        }
     }
 
     private void showDeleteConfirmation() {

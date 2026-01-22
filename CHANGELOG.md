@@ -4,3 +4,4 @@
   - Let's me see what version of the modpack a user is using in the logs and crash reports.
 - feat: add low-allocated memory warning
 - feat: improve version comparison handling
+- fix: fixed bug in backup restore. You can now restore backups!

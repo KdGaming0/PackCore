@@ -124,13 +124,15 @@ public class ConfigApplyService {
             }
 
             // Extract config zip to game directory
+            final int[] lastLogged = {-1};
             UnzipService unzipper = new UnzipService();
             unzipper.unzip(
                     configZipPath.toString(),
                     gameDir.toString(),
                     (bytesProcessed, totalBytes, percentage) -> {
-                        if (percentage % 25 == 0) {
+                        if (percentage % 25 == 0 && percentage != lastLogged[0]) {
                             LOGGER.info("Extraction progress: {}%", percentage);
+                            lastLogged[0] = (int) percentage;
                         }
                     }
             );
