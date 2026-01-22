@@ -572,7 +572,9 @@ public class ApplyConfigurationWizard extends BaseWizardPage {
         OverlayContainer<FlowLayout> overlay = Containers.overlay(dialog);
         overlay.closeOnClick(true);
         overlay.surface(Surface.flat(0x80_000000));
-        overlay.zIndex(10);
+        //? if <=1.21.8 {
+        /*overlay.zIndex(10);
+         *///?}
 
         getRootComponent().child(overlay);
     }

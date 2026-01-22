@@ -21,7 +21,11 @@ import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Style;
+//? if >= 1.21.10 {
+import net.minecraft.text.StyleSpriteSource;
+//?}
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +103,10 @@ public class SelectiveFileApplicationScreen extends BasePackCoreScreen {
 
         return Components.label(
                 Text.literal(mode.getTitle() + " - " + sourceName)
-                        .styled(s -> s.withFont(net.minecraft.util.Identifier.of(MOD_ID, "gallaeciaforte")))
+                        //? if <= 1.21.8 {
+                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         *///?} else
+                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).color(color(TEXT_PRIMARY));
     }
 

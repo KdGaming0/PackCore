@@ -29,6 +29,9 @@ import net.minecraft.client.gui.screen.world.SelectWorldScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
+//? if >= 1.21.10 {
+import net.minecraft.text.StyleSpriteSource;
+//?}
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
@@ -171,7 +174,11 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
      */
     private ButtonComponent createButton(String text, ButtonComponent.PressAction action) {
         return (ButtonComponent) Components.button(
-                        Text.literal(text).styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
+                        Text.literal(text)
+                                //? if <= 1.21.8 {
+                                /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
+                                 *///?} else
+                                .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))),
                         action::onPress
                 )
                 .renderer(ButtonComponent.Renderer.texture(
@@ -230,7 +237,10 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         LabelComponent versionLabel = Components.label(
                 Text.literal("Pack Version: " + currentVersion)
-                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                        //? if <= 1.21.8 {
+                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         *///?} else
+                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).color(Color.ofArgb(TEXT_DARK));
 
         mainLayout.child(versionLabel);
@@ -238,7 +248,10 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         if (updateAvailable) {
             LabelComponent updateAvailableLabel = Components.label(
                     Text.literal("Update Available: " + newVersion)
-                            .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                            //? if <= 1.21.8 {
+                            /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                             *///?} else
+                            .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
             ).color(Color.ofArgb(TEXT_DARK));
             mainLayout.child(updateAvailableLabel);
         }
@@ -319,7 +332,10 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         LabelComponent changelogLabel = Components.label(
                 Text.literal(changeLogInfoText)
-                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                        //? if <= 1.21.8 {
+                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         *///?} else
+                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).shadow(false);
 
         // Divider

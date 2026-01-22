@@ -10,7 +10,7 @@ stonecutter tasks {
     order("publishCurseforge")
 }
 
-stonecutter active "1.21.5"
+stonecutter active "1.21.10"
 
 stonecutter parameters {
     swaps["mod_version"] = "\"" + property("mod.version") + "\";"

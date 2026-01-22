@@ -74,7 +74,7 @@ public class ItemBackgroundManager {
      * Updates the Skyblocker config object with the new item background settings.
      *
      * If *style* is null, this will disable item rarity backgrounds. Otherwise it will set the enum,
-     * enable rarity backgrounds and set default opacity.
+     * enable rarity backgrounds, and set default opacity.
      *
      * @param config the Skyblocker config instance
      * @param style the background style to apply, or null to disable backgrounds

@@ -99,7 +99,10 @@ public class WizardUIComponents {
                 .cursorStyle(CursorStyle.HAND);
 
         if (onClick != null) {
-            card.mouseDown().subscribe((x, y, button) -> {
+            //? if <= 1.21.8 {
+            /*card.mouseDown().subscribe((x, y, button) -> {
+             *///?} else
+            card.mouseDown().subscribe((click, doubled) -> {
                 onClick.accept(card);
                 return true;
             });
@@ -283,7 +286,10 @@ public class WizardUIComponents {
                 .cursorStyle(CursorStyle.HAND);
 
         if (onClick != null) {
-            imageContainer.mouseDown().subscribe((x, y, button) -> {
+            //? if <= 1.21.8 {
+            /*imageContainer.mouseDown().subscribe((x, y, button) -> {
+             *///?} else
+            imageContainer.mouseDown().subscribe((click, doubled) -> {
                 onClick.run();
                 return true;
             });

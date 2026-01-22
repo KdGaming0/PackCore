@@ -140,7 +140,6 @@ public abstract class BasePackCoreScreen extends BaseOwoScreen<FlowLayout> {
         var overlay = Containers.overlay(content);
         overlay.closeOnClick(closeOnClick);
         overlay.surface(Surface.flat(0x80_000000));
-        overlay.zIndex(10);
         rootComponent.child(overlay);
     }
 
@@ -154,11 +153,6 @@ public abstract class BasePackCoreScreen extends BaseOwoScreen<FlowLayout> {
                 rootComponent.removeChild(lastChild);
             }
         }
-    }
-
-    @Override
-    public boolean shouldCloseOnEsc() {
-        return true;
     }
 
     @Override

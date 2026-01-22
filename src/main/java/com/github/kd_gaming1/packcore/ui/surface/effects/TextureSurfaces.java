@@ -5,9 +5,9 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.Identifier;
 //? if >= 1.21.8 {
 
-/*import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gl.RenderPipelines;
 
-*///?}
+//?}
 
 /**
  * Enhanced Surface implementations for texture rendering with different scaling modes.
@@ -53,11 +53,11 @@ public final class TextureSurfaces {
             context.drawTexture(
                     //? if >=1.21.8 {
                     
-                    /*RenderPipelines.GUI_TEXTURED,
+                    RenderPipelines.GUI_TEXTURED,
                      
-                    *///?} else {
-                    RenderLayer::getGuiTextured,
-                    //?}
+                    //?} else {
+                    /*RenderLayer::getGuiTextured,
+                    *///?}
                     texture,
                     drawX, drawY,
                     0f, 0f,
@@ -99,11 +99,11 @@ public final class TextureSurfaces {
             context.drawTexture(
                     //? if >=1.21.8 {
                     
-                    /*RenderPipelines.GUI_TEXTURED,
+                    RenderPipelines.GUI_TEXTURED,
                      
-                    *///?} else {
-                    RenderLayer::getGuiTextured,
-                    //?}
+                    //?} else {
+                    /*RenderLayer::getGuiTextured,
+                    *///?}
                     texture,
                     drawX, drawY,
                     0f, 0f,
@@ -128,11 +128,11 @@ public final class TextureSurfaces {
             context.drawTexture(
                     //? if >=1.21.8 {
                     
-                    /*RenderPipelines.GUI_TEXTURED,
+                    RenderPipelines.GUI_TEXTURED,
                      
-                    *///?} else {
-                    RenderLayer::getGuiTextured,
-                    //?}
+                    //?} else {
+                    /*RenderLayer::getGuiTextured,
+                    *///?}
                     texture,
                     component.x(), component.y(),
                     0f, 0f,
@@ -170,11 +170,11 @@ public final class TextureSurfaces {
                     context.drawTexture(
                             //? if >=1.21.8 {
                             
-                            /*RenderPipelines.GUI_TEXTURED,
+                            RenderPipelines.GUI_TEXTURED,
                              
-                            *///?} else {
-                            RenderLayer::getGuiTextured,
-                            //?}
+                            //?} else {
+                            /*RenderLayer::getGuiTextured,
+                            *///?}
                             texture,
                             x, y,
                             0f, 0f,
@@ -213,11 +213,11 @@ public final class TextureSurfaces {
                     context.drawTexture(
                             //? if >=1.21.8 {
                             
-                            /*RenderPipelines.GUI_TEXTURED,
+                            RenderPipelines.GUI_TEXTURED,
                              
-                            *///?} else {
-                            RenderLayer::getGuiTextured,
-                            //?}
+                            //?} else {
+                            /*RenderLayer::getGuiTextured,
+                            *///?}
                             texture,
                             x, y,
                             0f, 0f,

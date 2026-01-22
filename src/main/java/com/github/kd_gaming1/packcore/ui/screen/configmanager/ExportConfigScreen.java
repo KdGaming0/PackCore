@@ -15,7 +15,11 @@ import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
+//? if >= 1.21.10 {
+import net.minecraft.text.StyleSpriteSource;
+//?}
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +103,10 @@ public class ExportConfigScreen extends BasePackCoreScreen {
     protected Component createTitleLabel() {
         return Components.label(
                 Text.literal("Export Configuration - " + getModpackInfo().getName())
-                        .styled(s -> s.withFont(net.minecraft.util.Identifier.of(MOD_ID, "gallaeciaforte")))
+                        //? if <= 1.21.8 {
+                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         *///?} else
+                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).color(color(TEXT_PRIMARY));
     }
 
@@ -654,7 +661,10 @@ public class ExportConfigScreen extends BasePackCoreScreen {
                         selectedDropdown.parent().removeChild(selectedDropdown);
                     });
                 }
-        ).zIndex(8);
+        //? if <=1.21.8 {
+        /*).zIndex(8);
+        *///?} else
+        );
     }
     private void openCustomResolutionDialog() {
         FlowLayout dialog = ScreenUIComponents.createDialog(
@@ -809,7 +819,9 @@ public class ExportConfigScreen extends BasePackCoreScreen {
                 (this.width - 350) / 2,
                 (this.height - 150) / 2
         ));
-        exportProgressDialog.zIndex(15);
+        //? if <=1.21.8 {
+        /*exportProgressDialog.zIndex(15);
+         *///?}
 
         exportProgressLabel = (LabelComponent) Components.label(Text.literal("Preparing export..."))
                 .color(color(TEXT_PRIMARY))
@@ -859,7 +871,9 @@ public class ExportConfigScreen extends BasePackCoreScreen {
                 (this.width - 350) / 2,
                 (this.height - 120) / 2
         ));
-        dialog.zIndex(20);
+        //? if <=1.21.8 {
+        /*dialog.zIndex(20);
+         *///?}
 
         dialog.child(ScreenUIComponents.createButton("OK",
                         btn -> rootComponent.removeChild(dialog), 80, 20)

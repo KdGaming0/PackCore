@@ -168,7 +168,10 @@ public class ItemBackgroundWizardPage extends BaseWizardPage {
                 .cursorStyle(CursorStyle.HAND);
 
         // Click handler
-        imageContainer.mouseDown().subscribe((mouseX, mouseY, button) -> {
+        //? if <= 1.21.8 {
+        /*imageContainer.mouseDown().subscribe((mouseX, mouseY, button) -> {
+         *///?} else
+        imageContainer.mouseDown().subscribe((click, doubled) -> {
             selectBackground(option.key);
             return true;
         });

@@ -5,7 +5,6 @@ import com.github.kd_gaming1.packcore.config.imports.ConfigImportService.Importa
 import com.github.kd_gaming1.packcore.config.model.ConfigMetadata;
 import com.github.kd_gaming1.packcore.ui.screen.base.BasePackCoreScreen;
 import com.github.kd_gaming1.packcore.ui.screen.components.ScreenUIComponents;
-import com.github.kd_gaming1.packcore.ui.surface.effects.TextureSurfaces;
 import com.github.kd_gaming1.packcore.util.task.ProgressListener;
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.CheckboxComponent;
@@ -13,10 +12,12 @@ import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
+//? if >= 1.21.10 {
+import net.minecraft.text.StyleSpriteSource;
+//?}
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -55,7 +56,10 @@ public class ImportConfigScreen extends BasePackCoreScreen {
     protected Component createTitleLabel() {
         return Components.label(
                 Text.literal("Import Configuration - " + getModpackInfo().getName())
-                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                        //? if <= 1.21.8 {
+                        /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                         *///?} else
+                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).color(color(TEXT_PRIMARY));
     }
 

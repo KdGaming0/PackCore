@@ -12,9 +12,15 @@ import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.gui.screen.Screen;
+//? if >= 1.21.10 {
+import net.minecraft.text.StyleSpriteSource;
+//?}
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 import java.util.List;
+
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 /**
  * Screen that displays a list of available guides for the user to browse and open.
@@ -36,10 +42,10 @@ public class GuideListScreen extends BasePackCoreScreen {
     protected Component createTitleLabel() {
         return Components.label(
                         Text.literal("Guides & Help")
-                                .styled(s -> s.withFont(
-                                        net.minecraft.util.Identifier.of(
-                                                com.github.kd_gaming1.packcore.PackCore.MOD_ID,
-                                                "gallaeciaforte")))
+                                //? if <= 1.21.8 {
+                                /*.styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
+                                *///?} else
+                                .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
                 ).color(Color.ofRgb(UITheme.ACCENT_SECONDARY))
                 .shadow(true)
                 .margins(Insets.of(0, 0, 4, 4));
