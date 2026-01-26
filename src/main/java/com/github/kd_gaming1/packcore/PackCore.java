@@ -5,7 +5,7 @@ import com.github.kd_gaming1.packcore.command.scamshield.ScamShieldCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.config.backup.ScheduledBackupManager;
 import com.github.kd_gaming1.packcore.crash.CrashBrandingLogger;
-import com.github.kd_gaming1.packcore.integration.skyblocker.DungeonMap;
+import com.github.kd_gaming1.packcore.integration.bobby.BobbyConfigModifier;
 import com.github.kd_gaming1.packcore.scamshield.ChatMessageInterceptor;
 import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
@@ -98,19 +98,11 @@ public class PackCore implements ClientModInitializer {
             LOGGER.error("Failed to show custom title screen: {}", e.getMessage());
         }
 
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-            client.execute(() -> {
-                try {
-                    if (!PackCoreConfig.haveSetDungeonMapConfig) {
-                        DungeonMap.disableDungeonMap();
-                        PackCoreConfig.haveSetDungeonMapConfig = true;
-                        PackCoreConfig.write(MOD_ID);
-                    }
-                } catch (Exception e) {
-                    LOGGER.warn("Failed to apply DungeonMap config after startup", e);
-                }
-            });
-        });
+        if (!PackCoreConfig.haveSetBobbyConfig) {
+            BobbyConfigModifier.enableDynamicMultiWorld();
+            PackCoreConfig.haveSetBobbyConfig = true;
+            PackCoreConfig.write(MOD_ID);
+        }
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
