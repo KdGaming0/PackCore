@@ -203,34 +203,23 @@ public class BackupManager {
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
                 Files.createDirectories(backupsDir);
 
-                // Generate backup ID (and zip filename)
                 String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-                String hint = sanitizeForBackupId(backupIdHint);
-
-                String backupId = type.name().toLowerCase()
-                        + (hint != null ? "_" + hint : "")
-                        + "_" + timestamp;
-
+                String backupId = type.name().toLowerCase() + "_" + timestamp;
                 Path backupZip = backupsDir.resolve(backupId + ".zip");
 
-                // Create temporary directory for backup content
-                Path tempDir = Files. createTempDirectory("packcore_backup");
+                Path tempDir = Files.createTempDirectory("packcore_backup");
 
                 try {
                     progressCallback.accept("Copying configuration files...");
 
-                    // Copy config-related files asynchronously
-                    copyConfigFilesAsync(gameDir, tempDir, progressCallback). join();
+                    copyConfigFilesAsync(gameDir, tempDir, progressCallback).join();
 
-                    progressCallback.accept("Calculating backup size...");
+                    // Avoid expensive directory-size walk on slow machines.
+                    // We'll store -1 and fall back to zip file size when reading metadata.
+                    long size = -1L;
 
-                    // Get current config info
                     ConfigMetadata currentConfig = ConfigFileRepository.getCurrentConfig();
 
-                    // Calculate size asynchronously
-                    long size = calculateDirectorySizeAsync(tempDir). join();
-
-                    // Create backup metadata
                     BackupInfo backupInfo = new BackupInfo(
                             backupId,
                             LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
@@ -242,31 +231,23 @@ public class BackupManager {
                             description
                     );
 
-                    // Write backup metadata
                     Path metadataPath = tempDir.resolve(METADATA_FILE);
                     Files.writeString(metadataPath, GSON.toJson(backupInfo), StandardCharsets.UTF_8);
 
                     progressCallback.accept("Creating backup archive...");
 
-                    // Create ZIP asynchronously
+                    // For speed: pass null progress callback to avoid the zip pre-scan (Files.walk) to compute total size.
                     ZipAsyncTask zipFiles = new ZipAsyncTask();
-                    zipFiles.zipDirectoryAsync(
-                            tempDir.toFile(),
-                            backupZip.toString(),
-                            (bytesProcessed, totalBytes, percentage) ->
-                                    progressCallback.accept(String.format("Zipping: %d%%", percentage))
-                    ).join();
+                    zipFiles.zipDirectoryAsync(tempDir.toFile(), backupZip.toString(), null).join();
 
                     LOGGER.info("Created {} backup: {}", type.getDisplayName().toLowerCase(), backupZip);
 
-                    // Clean up old backups in background
                     CompletableFuture.runAsync(() -> cleanupOldBackups(backupsDir), BACKUP_EXECUTOR);
 
                     progressCallback.accept("Backup complete!");
                     return backupZip;
 
                 } finally {
-                    // Clean up temp directory in background
                     CompletableFuture.runAsync(() -> {
                         try {
                             FileUtils.deleteDirectory(tempDir);
@@ -478,7 +459,24 @@ public class BackupManager {
 
             try (var inputStream = zip.getInputStream(metadataEntry)) {
                 String json = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-                return GSON.fromJson(json, BackupInfo.class);
+                BackupInfo info = GSON.fromJson(json, BackupInfo.class);
+
+                // If size wasn't known at creation time, fall back to actual zip file size.
+                if (info != null && info.sizeBytes() <= 0) {
+                    long zipSize = Files.size(backupZip);
+                    return new BackupInfo(
+                            info.backupId(),
+                            info.timestamp(),
+                            info.type(),
+                            info.configName(),
+                            info.configVersion(),
+                            zipSize,
+                            info.title(),
+                            info.description()
+                    );
+                }
+
+                return info;
             }
 
         } catch (Exception e) {
