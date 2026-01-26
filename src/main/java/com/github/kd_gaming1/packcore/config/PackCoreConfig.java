@@ -39,6 +39,9 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = CATEGORY_BACKUPS, name = "packcore.midnightconfig.backup_interval_days", min = 1, max = 14)
     public static int backupIntervalDays = 3;
 
+    @Entry(category = CATEGORY_BACKUPS, name = "packcore.midnightconfig.enable_backup_debug_logging")
+    public static boolean enableBackupDebugLogging = false;
+
     @Comment(category = CATEGORY_BACKUPS, name = "packcore.midnightconfig.backup_spacer_1")
     public static Comment backupSpacer;
 

@@ -54,28 +54,32 @@ public class ZipAsyncTask {
                              ProgressCallback progressCallback) throws IOException {
         Path basePath = dir.toPath();
 
-        // First, calculate total size for progress reporting
-        AtomicLong totalSize = new AtomicLong(0);
-        try (Stream<Path> walk = Files.walk(basePath)) {
-            walk.filter(Files::isRegularFile)
-                    .forEach(path -> {
-                        try {
-                            totalSize.addAndGet(Files.size(path));
-                        } catch (IOException e) {
-                            LOGGER.debug("Could not get size for: {}", path);
-                        }
-                    });
+        // Skip the expensive pre-scan if no progress callback
+        AtomicLong totalSize = new AtomicLong(-1); // -1 means unknown
+        if (progressCallback != null) {
+            try (Stream<Path> walk = Files.walk(basePath)) {
+                long size = walk.filter(Files::isRegularFile)
+                        .mapToLong(path -> {
+                            try {
+                                return Files.size(path);
+                            } catch (IOException e) {
+                                return 0L;
+                            }
+                        })
+                        .sum();
+                totalSize.set(size);
+            }
         }
 
         AtomicLong processedBytes = new AtomicLong(0);
-        int lastReportedProgress = 0;
+        int[] lastReportedProgress = {0}; // Use array for mutation in lambda
 
         try (FileOutputStream fos = new FileOutputStream(zipFilePath);
              BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
              ZipOutputStream zos = new ZipOutputStream(bos)) {
 
             // Set compression level for better performance
-            zos.setLevel(6); // Balance between speed and compression
+            zos.setLevel(3); // Balance between speed and compression
 
             byte[] buffer = new byte[BUFFER_SIZE];
 
@@ -120,7 +124,8 @@ public class ZipAsyncTask {
                             // Report progress (but not too frequently to avoid overhead)
                             if (progressCallback != null && totalSize.get() > 0) {
                                 int currentProgress = (int) ((processed * 100) / totalSize.get());
-                                if (currentProgress != lastReportedProgress) {
+                                if (currentProgress != lastReportedProgress[0]) {
+                                    lastReportedProgress[0] = currentProgress;
                                     progressCallback.onProgress(processed, totalSize.get(), currentProgress);
                                 }
                             }

@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -197,27 +198,48 @@ public class BackupManager {
             Path gameDir, BackupType type, String title, String description, String backupIdHint, Consumer<String> progressCallback) {
 
         return CompletableFuture.supplyAsync(() -> {
+            long startTime = System.currentTimeMillis();
+            boolean debug = PackCoreConfig.enableBackupDebugLogging;
+            
             try {
-                progressCallback.accept("Preparing backup.. .");
+                if (debug) {
+                    LOGGER.info("╔══════════════════════════════════════════════════════════════╗");
+                    LOGGER.info("║                   BACKUP STARTED (DEBUG)                     ║");
+                    LOGGER.info("╚══════════════════════════════════════════════════════════════╝");
+                }
+                progressCallback.accept("Preparing backup...");
 
+                // Phase 1: Create directories
+                long phaseStart = System.currentTimeMillis();
+                if (debug) LOGGER.info("[Backup] Phase 1: Creating backup directory...");
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
                 Files.createDirectories(backupsDir);
+                if (debug) LOGGER.info("[Backup] Phase 1 complete: {}ms", System.currentTimeMillis() - phaseStart);
 
                 String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
                 String backupId = type.name().toLowerCase() + "_" + timestamp;
                 Path backupZip = backupsDir.resolve(backupId + ".zip");
 
+                // Phase 2: Create temp directory
+                phaseStart = System.currentTimeMillis();
+                if (debug) LOGGER.info("[Backup] Phase 2: Creating temp directory...");
                 Path tempDir = Files.createTempDirectory("packcore_backup");
+                if (debug) LOGGER.info("[Backup] Phase 2 complete: {}ms (temp: {})", 
+                        System.currentTimeMillis() - phaseStart, tempDir);
 
                 try {
+                    // Phase 3: Copy config files
+                    phaseStart = System.currentTimeMillis();
+                    if (debug) LOGGER.info("[Backup] Phase 3: Copying configuration files...");
                     progressCallback.accept("Copying configuration files...");
 
-                    copyConfigFilesAsync(gameDir, tempDir, progressCallback).join();
+                    copyConfigFilesAsync(gameDir, tempDir, progressCallback, debug).join();
+                    if (debug) LOGGER.info("[Backup] Phase 3 complete: {}ms", System.currentTimeMillis() - phaseStart);
 
-                    // Avoid expensive directory-size walk on slow machines.
-                    // We'll store -1 and fall back to zip file size when reading metadata.
+                    // Phase 4: Write metadata
+                    phaseStart = System.currentTimeMillis();
+                    if (debug) LOGGER.info("[Backup] Phase 4: Writing metadata...");
                     long size = -1L;
-
                     ConfigMetadata currentConfig = ConfigFileRepository.getCurrentConfig();
 
                     BackupInfo backupInfo = new BackupInfo(
@@ -233,14 +255,25 @@ public class BackupManager {
 
                     Path metadataPath = tempDir.resolve(METADATA_FILE);
                     Files.writeString(metadataPath, GSON.toJson(backupInfo), StandardCharsets.UTF_8);
+                    if (debug) LOGGER.info("[Backup] Phase 4 complete: {}ms", System.currentTimeMillis() - phaseStart);
 
+                    // Phase 5: Create ZIP archive
+                    phaseStart = System.currentTimeMillis();
+                    if (debug) LOGGER.info("[Backup] Phase 5: Creating ZIP archive...");
                     progressCallback.accept("Creating backup archive...");
 
-                    // For speed: pass null progress callback to avoid the zip pre-scan (Files.walk) to compute total size.
                     ZipAsyncTask zipFiles = new ZipAsyncTask();
                     zipFiles.zipDirectoryAsync(tempDir.toFile(), backupZip.toString(), null).join();
+                    if (debug) LOGGER.info("[Backup] Phase 5 complete: {}ms", System.currentTimeMillis() - phaseStart);
 
-                    LOGGER.info("Created {} backup: {}", type.getDisplayName().toLowerCase(), backupZip);
+                    long totalTime = System.currentTimeMillis() - startTime;
+                    if (debug) {
+                        LOGGER.info("╔══════════════════════════════════════════════════════════════╗");
+                        LOGGER.info("║ BACKUP COMPLETE - Total time: {}ms", totalTime);
+                        LOGGER.info("╚══════════════════════════════════════════════════════════════╝");
+                    } else {
+                        LOGGER.info("Backup created in {}ms: {}", totalTime, backupZip.getFileName());
+                    }
 
                     CompletableFuture.runAsync(() -> cleanupOldBackups(backupsDir), BACKUP_EXECUTOR);
 
@@ -258,7 +291,8 @@ public class BackupManager {
                 }
 
             } catch (Exception e) {
-                LOGGER.error("Failed to create backup", e);
+                long totalTime = System.currentTimeMillis() - startTime;
+                LOGGER.error("[Backup] FAILED after {}ms: {}", totalTime, e.getMessage(), e);
                 progressCallback.accept("Backup failed: " + e.getMessage());
                 throw new RuntimeException("Backup creation failed", e);
             }
@@ -286,7 +320,7 @@ public class BackupManager {
      * Copy config-related files asynchronously with progress reporting
      */
     private static CompletableFuture<Void> copyConfigFilesAsync(
-            Path gameDir, Path backupDir, Consumer<String> progressCallback) {
+            Path gameDir, Path backupDir, Consumer<String> progressCallback, boolean debug) {
 
         return CompletableFuture.runAsync(() -> {
             try {
@@ -298,15 +332,21 @@ public class BackupManager {
                     if (Files.exists(sourcePath)) {
                         Path targetPath = backupDir.resolve(configPath);
 
+                        long folderStart = System.currentTimeMillis();
+                        if (debug) LOGGER.info("[Backup]   Copying: {}", configPath);
                         progressCallback.accept(String.format("Copying %s...", configPath));
 
                         if (Files.isDirectory(sourcePath)) {
-                            // Pass gameDir for proper exclusion checking
                             copyDirectoryWithExclusionsAsync(sourcePath, targetPath, gameDir).join();
                         } else {
                             Files.createDirectories(targetPath.getParent());
                             Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
                         }
+
+                        if (debug) LOGGER.info("[Backup]   Copied {} in {}ms", configPath,
+                                System.currentTimeMillis() - folderStart);
+                    } else {
+                        if (debug) LOGGER.debug("[Backup]   Skipped (not found): {}", configPath);
                     }
 
                     processed++;
@@ -320,46 +360,43 @@ public class BackupManager {
     }
 
     /**
-     * Copy directory asynchronously while excluding specified subfolders
+     * Copy directory asynchronously while excluding specified subfolders.
+     * Uses FileVisitor for streaming to avoid loading all paths into memory.
      */
     private static CompletableFuture<Void> copyDirectoryWithExclusionsAsync(Path source, Path target, Path gameDir) {
         return CompletableFuture.runAsync(() -> {
             try {
                 Files.createDirectories(target);
 
-                // Collect all paths first to avoid holding streams open
-                List<Path> pathsToCopy;
-                try (Stream<Path> paths = Files.walk(source)) {
-                    pathsToCopy = paths.toList();
-                }
-
-                // Process in batches for better performance
-                for (int i = 0; i < pathsToCopy.size(); i += BATCH_SIZE) {
-                    int end = Math.min(i + BATCH_SIZE, pathsToCopy.size());
-                    List<Path> batch = pathsToCopy.subList(i, end);
-
-                    // Process batch in parallel
-                    batch.parallelStream().forEach(sourcePath -> {
-                        try {
-                            // Use centralized exclusion check
-                            if (ExclusionPatterns.shouldExclude(gameDir, sourcePath)) {
-                                return; // Skip this path
-                            }
-
-                            Path relativePath = source.relativize(sourcePath);
-                            Path targetPath = target.resolve(relativePath);
-
-                            if (Files.isDirectory(sourcePath)) {
-                                Files.createDirectories(targetPath);
-                            } else {
-                                Files.createDirectories(targetPath.getParent());
-                                Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                            }
-                        } catch (IOException e) {
-                            LOGGER.warn("Failed to copy file during backup: {}", sourcePath, e);
+                Files.walkFileTree(source, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                            throws IOException {
+                        if (ExclusionPatterns.shouldExclude(gameDir, dir)) {
+                            return FileVisitResult.SKIP_SUBTREE;
                         }
-                    });
-                }
+                        Path targetDir = target.resolve(source.relativize(dir));
+                        Files.createDirectories(targetDir);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            throws IOException {
+                        if (ExclusionPatterns.shouldExclude(gameDir, file)) {
+                            return FileVisitResult.CONTINUE;
+                        }
+                        Path targetFile = target.resolve(source.relativize(file));
+                        Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                        LOGGER.warn("Failed to copy file during backup: {}", file, exc);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
             } catch (IOException e) {
                 throw new RuntimeException("Failed to copy directory", e);
             }

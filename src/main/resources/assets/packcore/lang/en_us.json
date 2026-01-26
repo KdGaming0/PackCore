@@ -20,7 +20,8 @@
   "packcore.midnightconfig.max_backups.tooltip": "Limits how many backups PackCore stores. It deletes the oldest when full.",
   "packcore.midnightconfig.backup_interval_days": "Backup interval (days)",
   "packcore.midnightconfig.backup_interval_days.tooltip": "Sets how long PackCore waits before creating the next scheduled backup.",
-
+  "packcore.midnightconfig.enable_backup_debug_logging": "Enable Backup Debug Logging",
+  "packcore.midnightconfig.enable_backup_debug_logging.tooltip": "Logs detailed timing information for each backup phase. Enable this if backups are slow to help diagnose the issue.",
   "packcore.midnightconfig.customization_spacer_1": "",
 
   "packcore.midnightconfig.server_address": "Server address for quick-join button",
