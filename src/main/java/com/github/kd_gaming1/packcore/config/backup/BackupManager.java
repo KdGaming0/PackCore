@@ -145,13 +145,23 @@ public class BackupManager {
     static CompletableFuture<Path> createBackupAsync(
             BackupType type, String title, String description, Consumer<String> progressCallback) {
 
+        return createBackupAsync(type, title, description, null, progressCallback);
+    }
+
+    /**
+     * Create a backup with metadata (async) with an optional hint that becomes part of the zip filename.
+     * Example backupId: "auto_prelaunch_resolution_apply_20260126_120102"
+     */
+    static CompletableFuture<Path> createBackupAsync(
+            BackupType type, String title, String description, String backupIdHint, Consumer<String> progressCallback) {
+
         return CompletableFuture.supplyAsync(() -> {
             try {
                 progressCallback.accept("Preparing backup...");
 
                 // Get game directory safely - works during pre-launch and post-launch
                 Path gameDir = getGameDirectory();
-                return createBackupAsyncInternal(gameDir, type, title, description, progressCallback). join();
+                return createBackupAsyncInternal(gameDir, type, title, description, backupIdHint, progressCallback).join();
 
             } catch (Exception e) {
                 LOGGER.error("Failed to create backup", e);
@@ -166,7 +176,17 @@ public class BackupManager {
      */
     public static CompletableFuture<Path> createBackupAsync(
             Path gameDir, BackupType type, String title, String description, Consumer<String> progressCallback) {
-        return createBackupAsyncInternal(gameDir, type, title, description, progressCallback);
+
+        return createBackupAsyncInternal(gameDir, type, title, description, null, progressCallback);
+    }
+
+    /**
+     * Create a backup with explicit game directory (pre-launch safe) + optional filename hint
+     */
+    public static CompletableFuture<Path> createBackupAsync(
+            Path gameDir, BackupType type, String title, String description, String backupIdHint, Consumer<String> progressCallback) {
+
+        return createBackupAsyncInternal(gameDir, type, title, description, backupIdHint, progressCallback);
     }
 
     /**
@@ -174,7 +194,7 @@ public class BackupManager {
      * This is the core implementation that doesn't depend on MinecraftClient
      */
     private static CompletableFuture<Path> createBackupAsyncInternal(
-            Path gameDir, BackupType type, String title, String description, Consumer<String> progressCallback) {
+            Path gameDir, BackupType type, String title, String description, String backupIdHint, Consumer<String> progressCallback) {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -183,9 +203,14 @@ public class BackupManager {
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
                 Files.createDirectories(backupsDir);
 
-                // Generate backup ID
+                // Generate backup ID (and zip filename)
                 String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-                String backupId = type.name().toLowerCase() + "_" + timestamp;
+                String hint = sanitizeForBackupId(backupIdHint);
+
+                String backupId = type.name().toLowerCase()
+                        + (hint != null ? "_" + hint : "")
+                        + "_" + timestamp;
+
                 Path backupZip = backupsDir.resolve(backupId + ".zip");
 
                 // Create temporary directory for backup content
@@ -225,10 +250,14 @@ public class BackupManager {
 
                     // Create ZIP asynchronously
                     ZipAsyncTask zipFiles = new ZipAsyncTask();
-                    zipFiles.zipDirectoryAsync(tempDir. toFile(), backupZip.toString(),
-                            (bytesProcessed, totalBytes, percentage) -> progressCallback.accept(String.format("Zipping: %d%%", percentage))).join();
+                    zipFiles.zipDirectoryAsync(
+                            tempDir.toFile(),
+                            backupZip.toString(),
+                            (bytesProcessed, totalBytes, percentage) ->
+                                    progressCallback.accept(String.format("Zipping: %d%%", percentage))
+                    ).join();
 
-                    LOGGER.info("Created {} backup: {}", type.getDisplayName(). toLowerCase(), backupZip);
+                    LOGGER.info("Created {} backup: {}", type.getDisplayName().toLowerCase(), backupZip);
 
                     // Clean up old backups in background
                     CompletableFuture.runAsync(() -> cleanupOldBackups(backupsDir), BACKUP_EXECUTOR);
@@ -249,10 +278,27 @@ public class BackupManager {
 
             } catch (Exception e) {
                 LOGGER.error("Failed to create backup", e);
-                progressCallback. accept("Backup failed: " + e.getMessage());
+                progressCallback.accept("Backup failed: " + e.getMessage());
                 throw new RuntimeException("Backup creation failed", e);
             }
         }, BACKUP_EXECUTOR);
+    }
+
+    private static String sanitizeForBackupId(String input) {
+        if (input == null) return null;
+
+        String s = input.trim().toLowerCase(Locale.ROOT);
+        if (s.isEmpty()) return null;
+
+        // Replace anything not [a-z0-9] with underscores, collapse repeats
+        s = s.replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
+        if (s.isEmpty()) return null;
+
+        // Keep filenames reasonable
+        int maxLen = 40;
+        if (s.length() > maxLen) s = s.substring(0, maxLen).replaceAll("_+$", "");
+
+        return s.isEmpty() ? null : s;
     }
 
     /**

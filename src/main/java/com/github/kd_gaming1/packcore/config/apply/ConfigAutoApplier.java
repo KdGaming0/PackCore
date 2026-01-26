@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.config.apply;
 
-import com.github.kd_gaming1.packcore.config.backup.LocalBackupOps;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.config.backup.BackupManager;
 import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
 import com.github.kd_gaming1.packcore.util.io.zip.UnzipService;
 import org.slf4j.Logger;
@@ -62,21 +63,30 @@ public class ConfigAutoApplier {
         return applyConfigDirect(bestMatch, gameDir);
     }
 
-    /**
-     * Apply a config directly during pre-launch (no restart needed)
-     * Uses the shared UnzipFiles utility and ConfigFileOperations
-     */
     private static boolean applyConfigDirect(ConfigFileRepository.ConfigFile config, Path gameDir) {
         LOGGER.info("Applying config: {}", config.getDisplayName());
 
         try {
-            // Create backup using shared utility
-            Path backup = LocalBackupOps.createBackup(gameDir);
-            if (backup != null) {
-                LOGGER.info("Backup created at: {}", backup);
+            // Create zip backup (pre-launch) with a filename that reflects why it's made
+            if (PackCoreConfig.enableAutoBackups) {
+                String title = "Auto backup before pre-launch auto-apply: " + config.getDisplayName();
+                String description = "Safety backup created before automatically applying a config based on screen resolution.";
+                String backupIdHint = "prelaunch_auto_apply_" + config.getDisplayName();
 
-                // Clean old backups, keep last 5
-                LocalBackupOps.cleanOldBackups(gameDir, 5);
+                Path backupZip = BackupManager.createBackupAsync(
+                        gameDir,
+                        BackupManager.BackupType.AUTO,
+                        title,
+                        description,
+                        backupIdHint,
+                        msg -> {}
+                ).join();
+
+                if (backupZip != null) {
+                    LOGGER.info("Backup ZIP created at: {}", backupZip);
+                }
+            } else {
+                LOGGER.debug("Auto-backups disabled; skipping pre-launch safety backup");
             }
 
             // Extract config using existing UnzipFiles utility
@@ -91,7 +101,6 @@ public class ConfigAutoApplier {
                     }
             );
 
-            // Save metadata using ConfigFileUtils
             ConfigFileRepository.saveCurrentConfig(config.metadata());
 
             LOGGER.info("Config applied successfully: {}", config.getDisplayName());
