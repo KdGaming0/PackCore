@@ -72,9 +72,6 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = CATEGORY_ADVANCED, name = "packcore.midnightconfig.welcome_wizard_shown")
     public static boolean haveShownWelcomeWizard = false;
 
-    @Entry(category = CATEGORY_ADVANCED, name = "packcore.midnightconfig.have_set_bobby_config")
-    public static boolean haveSetBobbyConfig = false;
-
     @Entry(category = CATEGORY_ADVANCED, name = "packcore.midnightconfig.have_set_skyblocker_dungeon_map_config")
     public static boolean haveSetDungeonMapConfig = false;
 

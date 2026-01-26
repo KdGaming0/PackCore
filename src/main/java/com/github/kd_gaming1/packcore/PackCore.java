@@ -11,7 +11,6 @@ import com.github.kd_gaming1.packcore.scamshield.ScamShieldChatHandler;
 import com.github.kd_gaming1.packcore.scamshield.detector.ScamDetector;
 import com.github.kd_gaming1.packcore.ui.screen.wizard.pages.WelcomeWizardPage;
 import com.github.kd_gaming1.packcore.ui.screen.title.SBEStyledTitleScreen;
-import com.github.kd_gaming1.packcore.integration.bobby.BobbyConfigModifier;
 import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.HypixelEventUtil;
 import com.github.kd_gaming1.packcore.util.update.modrinth.UpdateCache;
@@ -97,12 +96,6 @@ public class PackCore implements ClientModInitializer {
             }
         } catch (Exception e) {
             LOGGER.error("Failed to show custom title screen: {}", e.getMessage());
-        }
-
-        if (!PackCoreConfig.haveSetBobbyConfig) {
-            BobbyConfigModifier.enableDynamicMultiWorld();
-            PackCoreConfig.haveSetBobbyConfig = true;
-            PackCoreConfig.write(MOD_ID);
         }
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {

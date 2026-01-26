@@ -39,9 +39,6 @@
   "packcore.midnightconfig.welcome_wizard_shown": "Mark welcome wizard as shown",
   "packcore.midnightconfig.welcome_wizard_shown.tooltip": "Controls if the welcome wizard shows. Turn it off to show it again.",
 
-  "packcore.midnightconfig.have_set_bobby_config": "Mark Bobby config as applied",
-  "packcore.midnightconfig.have_set_bobby_config.tooltip": "Tracks if PackCore has applied Bobby’s settings. Change it to force the setup again.",
-
   "packcore.midnightconfig.have_set_skyblocker_dungeon_map_config": "Mark Skyblocker Dungeon Map config as applied",
   "packcore.midnightconfig.have_set_skyblocker_dungeon_map_config.tooltip": "Tracks if PackCore has applied Skyblocker Dungeon Map config",
 
