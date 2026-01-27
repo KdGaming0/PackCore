@@ -7,17 +7,17 @@ import com.github.kd_gaming1.packcore.util.io.file.FileUtils;
 import com.github.kd_gaming1.packcore.util.io.zip.UnzipAsyncTask;
 import com.github.kd_gaming1.packcore.config.storage.ConfigFileRepository;
 import com.github.kd_gaming1.packcore.config.model.ConfigMetadata;
-import com.github.kd_gaming1.packcore.util.io.zip.ZipAsyncTask;
 import com.google.gson.Gson;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -29,9 +29,11 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 /**
- * Enhanced backup manager with async operations and progress reporting
+ * Enhanced backup manager with async operations and progress reporting.
+ * Optimized to stream directly to ZIP to avoid double-copy overhead.
  */
 public class BackupManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(BackupManager.class);
@@ -44,7 +46,7 @@ public class BackupManager {
     // Async executor for background operations
     private static final ExecutorService BACKUP_EXECUTOR = Executors.newCachedThreadPool(r -> {
         Thread thread = new Thread(r);
-        thread.setName("BackupManager-" + thread.getId());
+        thread.setName("BackupManager-" + thread.threadId());
         thread.setDaemon(true);
         return thread;
     });
@@ -56,9 +58,6 @@ public class BackupManager {
             "servers.dat",
             "packcore/current_config.json"
     );
-
-    // Batch size for file operations
-    private static final int BATCH_SIZE = 50;
 
     public enum BackupType {
         AUTO("Auto"),
@@ -113,7 +112,6 @@ public class BackupManager {
 
     /**
      * Create an automatic backup (blocking fallback)
-     * Safe to call during pre-launch - uses game directory from FabricLoader if client not available
      */
     public static Path createAutoBackup() {
         try {
@@ -122,13 +120,6 @@ public class BackupManager {
             LOGGER.error("Failed to create auto backup", e);
             return null;
         }
-    }
-
-    /**
-     * Create a manual backup (async with progress)
-     */
-    public static void createManualBackup(String title, String description) {
-        createManualBackupAsync(title, description, msg -> LOGGER.info("Backup progress: {}", msg));
     }
 
     /**
@@ -141,17 +132,14 @@ public class BackupManager {
 
     /**
      * Create a backup with metadata (async)
-     * Safe to call during pre-launch - automatically determines game directory
      */
     static CompletableFuture<Path> createBackupAsync(
             BackupType type, String title, String description, Consumer<String> progressCallback) {
-
         return createBackupAsync(type, title, description, null, progressCallback);
     }
 
     /**
      * Create a backup with metadata (async) with an optional hint that becomes part of the zip filename.
-     * Example backupId: "auto_prelaunch_resolution_apply_20260126_120102"
      */
     static CompletableFuture<Path> createBackupAsync(
             BackupType type, String title, String description, String backupIdHint, Consumer<String> progressCallback) {
@@ -159,11 +147,8 @@ public class BackupManager {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 progressCallback.accept("Preparing backup...");
-
-                // Get game directory safely - works during pre-launch and post-launch
                 Path gameDir = getGameDirectory();
                 return createBackupAsyncInternal(gameDir, type, title, description, backupIdHint, progressCallback).join();
-
             } catch (Exception e) {
                 LOGGER.error("Failed to create backup", e);
                 progressCallback.accept("Backup failed: " + e.getMessage());
@@ -173,26 +158,30 @@ public class BackupManager {
     }
 
     /**
-     * Create a backup with explicit game directory (pre-launch safe)
+     * Create a backup with explicit game directory
      */
     public static CompletableFuture<Path> createBackupAsync(
             Path gameDir, BackupType type, String title, String description, Consumer<String> progressCallback) {
-
         return createBackupAsyncInternal(gameDir, type, title, description, null, progressCallback);
     }
 
-    /**
-     * Create a backup with explicit game directory (pre-launch safe) + optional filename hint
-     */
     public static CompletableFuture<Path> createBackupAsync(
             Path gameDir, BackupType type, String title, String description, String backupIdHint, Consumer<String> progressCallback) {
-
         return createBackupAsyncInternal(gameDir, type, title, description, backupIdHint, progressCallback);
     }
 
+    private static String formatBytes(long bytes) {
+        if (bytes <= 0) return "0 B";
+        final String[] units = {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
+        int digitGroups = (int) (Math.log10(bytes) / Math.log10(1024));
+        double value = bytes / Math.pow(1024, digitGroups);
+        DecimalFormat df = new DecimalFormat("#,##0.#");
+        return df.format(value) + " " + units[digitGroups];
+    }
+
     /**
-     * Internal backup creation method that accepts game directory
-     * This is the core implementation that doesn't depend on MinecraftClient
+     * Internal backup creation method.
+     * OPTIMIZED: Uses direct streaming to avoid temporary files.
      */
     private static CompletableFuture<Path> createBackupAsyncInternal(
             Path gameDir, BackupType type, String title, String description, String backupIdHint, Consumer<String> progressCallback) {
@@ -200,11 +189,11 @@ public class BackupManager {
         return CompletableFuture.supplyAsync(() -> {
             long startTime = System.currentTimeMillis();
             boolean debug = PackCoreConfig.enableBackupDebugLogging;
-            
+
             try {
                 if (debug) {
                     LOGGER.info("╔══════════════════════════════════════════════════════════════╗");
-                    LOGGER.info("║                   BACKUP STARTED (DEBUG)                     ║");
+                    LOGGER.info("║              BACKUP STARTED (Direct Streaming Mode)          ║");
                     LOGGER.info("╚══════════════════════════════════════════════════════════════╝");
                 }
                 progressCallback.accept("Preparing backup...");
@@ -217,78 +206,110 @@ public class BackupManager {
                 if (debug) LOGGER.info("[Backup] Phase 1 complete: {}ms", System.currentTimeMillis() - phaseStart);
 
                 String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-                String backupId = type.name().toLowerCase() + "_" + timestamp;
+                String backupId = (sanitizeForBackupId(backupIdHint) != null ? backupIdHint : type.name().toLowerCase()) + "_" + timestamp;
                 Path backupZip = backupsDir.resolve(backupId + ".zip");
 
-                // Phase 2: Create temp directory
+                // Prepare Metadata
+                ConfigMetadata currentConfig = ConfigFileRepository.getCurrentConfig();
+                BackupInfo backupInfo = new BackupInfo(
+                        backupId,
+                        LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        type,
+                        currentConfig != null ? currentConfig.getName() : "Unknown",
+                        currentConfig != null ? currentConfig.getVersion() : "1.0.0",
+                        -1, // Size calculated later or on read
+                        title != null ? title : "Manual backup",
+                        description
+                );
+                String metadataJson = GSON.toJson(backupInfo);
+
+                // Phase 2: Create ZIP archive directly from source
                 phaseStart = System.currentTimeMillis();
-                if (debug) LOGGER.info("[Backup] Phase 2: Creating temp directory...");
-                Path tempDir = Files.createTempDirectory("packcore_backup");
-                if (debug) LOGGER.info("[Backup] Phase 2 complete: {}ms (temp: {})", 
-                        System.currentTimeMillis() - phaseStart, tempDir);
+                if (debug) LOGGER.info("[Backup] Phase 2: Streaming files directly to ZIP");
+                progressCallback.accept("Creating backup archive...");
 
-                try {
-                    // Phase 3: Copy config files
-                    phaseStart = System.currentTimeMillis();
-                    if (debug) LOGGER.info("[Backup] Phase 3: Copying configuration files...");
-                    progressCallback.accept("Copying configuration files...");
+                try (FileOutputStream fos = new FileOutputStream(backupZip.toFile());
+                     BufferedOutputStream bos = new BufferedOutputStream(fos);
+                     ZipOutputStream zos = new ZipOutputStream(bos)) {
 
-                    copyConfigFilesAsync(gameDir, tempDir, progressCallback, debug).join();
-                    if (debug) LOGGER.info("[Backup] Phase 3 complete: {}ms", System.currentTimeMillis() - phaseStart);
+                    zos.setLevel(3); // Moderate compression for speed
 
-                    // Phase 4: Write metadata
-                    phaseStart = System.currentTimeMillis();
-                    if (debug) LOGGER.info("[Backup] Phase 4: Writing metadata...");
-                    long size = -1L;
-                    ConfigMetadata currentConfig = ConfigFileRepository.getCurrentConfig();
+                    // 1. Write Metadata
+                    ZipEntry metaEntry = new ZipEntry(METADATA_FILE);
+                    zos.putNextEntry(metaEntry);
+                    zos.write(metadataJson.getBytes(StandardCharsets.UTF_8));
+                    zos.closeEntry();
 
-                    BackupInfo backupInfo = new BackupInfo(
-                            backupId,
-                            LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                            type,
-                            currentConfig != null ? currentConfig.getName() : "Unknown",
-                            currentConfig != null ? currentConfig.getVersion() : "1.0.0",
-                            size,
-                            title != null ? title : "Manual backup",
-                            description
-                    );
+                    // 2. Stream config files directly
+                    byte[] buffer = new byte[32768];
+                    int pathsProcessed = 0;
 
-                    Path metadataPath = tempDir.resolve(METADATA_FILE);
-                    Files.writeString(metadataPath, GSON.toJson(backupInfo), StandardCharsets.UTF_8);
-                    if (debug) LOGGER.info("[Backup] Phase 4 complete: {}ms", System.currentTimeMillis() - phaseStart);
+                    for (String configPath : CONFIG_PATHS) {
+                        Path sourcePath = gameDir.resolve(configPath);
+                        if (!Files.exists(sourcePath)) continue;
 
-                    // Phase 5: Create ZIP archive
-                    phaseStart = System.currentTimeMillis();
-                    if (debug) LOGGER.info("[Backup] Phase 5: Creating ZIP archive...");
-                    progressCallback.accept("Creating backup archive...");
+                        progressCallback.accept("Backing up: " + configPath);
 
-                    ZipAsyncTask zipFiles = new ZipAsyncTask();
-                    zipFiles.zipDirectoryAsync(tempDir.toFile(), backupZip.toString(), null).join();
-                    if (debug) LOGGER.info("[Backup] Phase 5 complete: {}ms", System.currentTimeMillis() - phaseStart);
+                        if (Files.isDirectory(sourcePath)) {
+                            // Walk directory and zip
+                            Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
+                                @Override
+                                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                                    if (ExclusionPatterns.shouldExclude(gameDir, file)) return FileVisitResult.CONTINUE;
 
-                    long totalTime = System.currentTimeMillis() - startTime;
-                    if (debug) {
-                        LOGGER.info("╔══════════════════════════════════════════════════════════════╗");
-                        LOGGER.info("║ BACKUP COMPLETE - Total time: {}ms", totalTime);
-                        LOGGER.info("╚══════════════════════════════════════════════════════════════╝");
-                    } else {
-                        LOGGER.info("Backup created in {}ms: {}", totalTime, backupZip.getFileName());
-                    }
+                                    // Relativize path for ZIP entry
+                                    String relative = gameDir.relativize(file).toString().replace(File.separatorChar, '/');
+                                    ZipEntry entry = new ZipEntry(relative);
+                                    entry.setTime(attrs.lastModifiedTime().toMillis());
+                                    zos.putNextEntry(entry);
 
-                    CompletableFuture.runAsync(() -> cleanupOldBackups(backupsDir), BACKUP_EXECUTOR);
-
-                    progressCallback.accept("Backup complete!");
-                    return backupZip;
-
-                } finally {
-                    CompletableFuture.runAsync(() -> {
-                        try {
-                            FileUtils.deleteDirectory(tempDir);
-                        } catch (Exception e) {
-                            LOGGER.warn("Failed to clean up temp directory", e);
+                                    try (InputStream is = Files.newInputStream(file)) {
+                                        int read;
+                                        while ((read = is.read(buffer)) != -1) {
+                                            zos.write(buffer, 0, read);
+                                        }
+                                    }
+                                    zos.closeEntry();
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            });
+                        } else {
+                            // Zip single file
+                            String relative = configPath.replace(File.separatorChar, '/');
+                            ZipEntry entry = new ZipEntry(relative);
+                            entry.setTime(Files.getLastModifiedTime(sourcePath).toMillis());
+                            zos.putNextEntry(entry);
+                            try (InputStream is = Files.newInputStream(sourcePath)) {
+                                int read;
+                                while ((read = is.read(buffer)) != -1) {
+                                    zos.write(buffer, 0, read);
+                                }
+                            }
+                            zos.closeEntry();
                         }
-                    }, BACKUP_EXECUTOR);
+                        pathsProcessed++;
+                        int percentage = (pathsProcessed * 100) / CONFIG_PATHS.size();
+                        progressCallback.accept(String.format("Zipping: %d%%", percentage));
+                    }
                 }
+
+                if (debug) LOGGER.info("[Backup] Phase 2 complete: {}ms", System.currentTimeMillis() - phaseStart);
+
+                long totalTime = System.currentTimeMillis() - startTime;
+                if (debug) {
+                    long zipSize = Files.size(backupZip);
+                    LOGGER.info("╔══════════════════════════════════════════════════════════════╗");
+                    LOGGER.info("║ BACKUP COMPLETE (Direct streaming: 2 phases)                 ║");
+                    LOGGER.info("║ Total time: {}ms - Size: {}", totalTime, formatBytes(zipSize));
+                    LOGGER.info("╚══════════════════════════════════════════════════════════════╝");
+                } else {
+                    LOGGER.info("Backup created in {}ms: {}", totalTime, backupZip.getFileName());
+                }
+
+                CompletableFuture.runAsync(() -> cleanupOldBackups(backupsDir), BACKUP_EXECUTOR);
+
+                progressCallback.accept("Backup complete!");
+                return backupZip;
 
             } catch (Exception e) {
                 long totalTime = System.currentTimeMillis() - startTime;
@@ -301,131 +322,13 @@ public class BackupManager {
 
     private static String sanitizeForBackupId(String input) {
         if (input == null) return null;
-
         String s = input.trim().toLowerCase(Locale.ROOT);
         if (s.isEmpty()) return null;
-
-        // Replace anything not [a-z0-9] with underscores, collapse repeats
         s = s.replaceAll("[^a-z0-9]+", "_").replaceAll("^_+|_+$", "");
         if (s.isEmpty()) return null;
-
-        // Keep filenames reasonable
         int maxLen = 40;
         if (s.length() > maxLen) s = s.substring(0, maxLen).replaceAll("_+$", "");
-
         return s.isEmpty() ? null : s;
-    }
-
-    /**
-     * Copy config-related files asynchronously with progress reporting
-     */
-    private static CompletableFuture<Void> copyConfigFilesAsync(
-            Path gameDir, Path backupDir, Consumer<String> progressCallback, boolean debug) {
-
-        return CompletableFuture.runAsync(() -> {
-            try {
-                int total = CONFIG_PATHS.size();
-                int processed = 0;
-
-                for (String configPath : CONFIG_PATHS) {
-                    Path sourcePath = gameDir.resolve(configPath);
-                    if (Files.exists(sourcePath)) {
-                        Path targetPath = backupDir.resolve(configPath);
-
-                        long folderStart = System.currentTimeMillis();
-                        if (debug) LOGGER.info("[Backup]   Copying: {}", configPath);
-                        progressCallback.accept(String.format("Copying %s...", configPath));
-
-                        if (Files.isDirectory(sourcePath)) {
-                            copyDirectoryWithExclusionsAsync(sourcePath, targetPath, gameDir).join();
-                        } else {
-                            Files.createDirectories(targetPath.getParent());
-                            Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                        }
-
-                        if (debug) LOGGER.info("[Backup]   Copied {} in {}ms", configPath,
-                                System.currentTimeMillis() - folderStart);
-                    } else {
-                        if (debug) LOGGER.debug("[Backup]   Skipped (not found): {}", configPath);
-                    }
-
-                    processed++;
-                    int percentage = (processed * 100) / total;
-                    progressCallback.accept(String.format("Copying files: %d%%", percentage));
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to copy config files", e);
-            }
-        }, BACKUP_EXECUTOR);
-    }
-
-    /**
-     * Copy directory asynchronously while excluding specified subfolders.
-     * Uses FileVisitor for streaming to avoid loading all paths into memory.
-     */
-    private static CompletableFuture<Void> copyDirectoryWithExclusionsAsync(Path source, Path target, Path gameDir) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                Files.createDirectories(target);
-
-                Files.walkFileTree(source, new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                            throws IOException {
-                        if (ExclusionPatterns.shouldExclude(gameDir, dir)) {
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
-                        Path targetDir = target.resolve(source.relativize(dir));
-                        Files.createDirectories(targetDir);
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                            throws IOException {
-                        if (ExclusionPatterns.shouldExclude(gameDir, file)) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        Path targetFile = target.resolve(source.relativize(file));
-                        Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                        LOGGER.warn("Failed to copy file during backup: {}", file, exc);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to copy directory", e);
-            }
-        }, BACKUP_EXECUTOR);
-    }
-
-    /**
-     * Calculate directory size asynchronously
-     */
-    private static CompletableFuture<Long> calculateDirectorySizeAsync(Path directory) {
-        return CompletableFuture.supplyAsync(() -> {
-            AtomicLong totalSize = new AtomicLong(0);
-
-            try (Stream<Path> paths = Files.walk(directory)) {
-                paths.filter(Files::isRegularFile)
-                        .parallel()
-                        .forEach(path -> {
-                            try {
-                                totalSize.addAndGet(Files.size(path));
-                            } catch (IOException e) {
-                                LOGGER.debug("Could not get size for: {}", path);
-                            }
-                        });
-            } catch (IOException e) {
-                LOGGER.warn("Failed to calculate directory size", e);
-            }
-
-            return totalSize.get();
-        }, BACKUP_EXECUTOR);
     }
 
     /**
@@ -435,28 +338,17 @@ public class BackupManager {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Path backupsDir = gameDir.resolve(BACKUPS_DIR);
-
-                if (!Files.exists(backupsDir)) {
-                    return new ArrayList<>();
-                }
-
+                if (!Files.exists(backupsDir)) return new ArrayList<>();
                 List<BackupInfo> backups = new ArrayList<>();
-
                 try (Stream<Path> backupFiles = Files.list(backupsDir)) {
                     backupFiles.filter(path -> path.toString().endsWith(".zip"))
                             .forEach(backupZip -> {
                                 BackupInfo info = readBackupMetadata(backupZip);
-                                if (info != null) {
-                                    backups.add(info);
-                                }
+                                if (info != null) backups.add(info);
                             });
                 }
-
-                // Sort by timestamp (newest first)
                 backups.sort((a, b) -> b.timestamp.compareTo(a.timestamp));
-
                 return backups;
-
             } catch (IOException e) {
                 LOGGER.error("Failed to list backups", e);
                 return new ArrayList<>();
@@ -464,17 +356,10 @@ public class BackupManager {
         }, BACKUP_EXECUTOR);
     }
 
-    /**
-     * Get list of all backups with metadata (async)
-     * Automatically determines game directory
-     */
     public static CompletableFuture<List<BackupInfo>> getBackupsAsync() {
         return getBackupsAsync(getGameDirectory());
     }
 
-    /**
-     * Get list of all backups (blocking)
-     */
     public static List<BackupInfo> getBackups() {
         try {
             return getBackupsAsync().get();
@@ -484,77 +369,35 @@ public class BackupManager {
         }
     }
 
-    /**
-     * Read backup metadata from ZIP file
-     */
     private static BackupInfo readBackupMetadata(Path backupZip) {
         try (ZipFile zip = new ZipFile(backupZip.toFile())) {
             ZipEntry metadataEntry = zip.getEntry(METADATA_FILE);
-            if (metadataEntry == null) {
-                return createLegacyBackupInfo(backupZip);
-            }
+            if (metadataEntry == null) return createLegacyBackupInfo(backupZip);
 
-            try (var inputStream = zip.getInputStream(metadataEntry)) {
+            try (InputStream inputStream = zip.getInputStream(metadataEntry)) {
                 String json = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
                 BackupInfo info = GSON.fromJson(json, BackupInfo.class);
-
-                // If size wasn't known at creation time, fall back to actual zip file size.
                 if (info != null && info.sizeBytes() <= 0) {
                     long zipSize = Files.size(backupZip);
-                    return new BackupInfo(
-                            info.backupId(),
-                            info.timestamp(),
-                            info.type(),
-                            info.configName(),
-                            info.configVersion(),
-                            zipSize,
-                            info.title(),
-                            info.description()
-                    );
+                    return new BackupInfo(info.backupId(), info.timestamp(), info.type(), info.configName(), info.configVersion(), zipSize, info.title(), info.description());
                 }
-
                 return info;
             }
-
         } catch (Exception e) {
-            LOGGER.warn("Failed to read backup metadata: {}", backupZip, e);
             return createLegacyBackupInfo(backupZip);
         }
     }
 
-    /**
-     * Create backup info for legacy backups without metadata
-     */
     private static BackupInfo createLegacyBackupInfo(Path backupZip) {
         try {
             String fileName = backupZip.getFileName().toString();
             String backupId = fileName.replace(".zip", "");
-
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            if (fileName.contains("backup_")) {
-                try {
-                    String timestampPart = fileName.substring(fileName.lastIndexOf("_") + 1, fileName.lastIndexOf("."));
-                    LocalDateTime dateTime = LocalDateTime.parse(timestampPart, TIMESTAMP_FORMAT);
-                    timestamp = dateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                } catch (Exception ignored) {
-                }
-            }
-
+            // Primitive parsing attempt
+            if (fileName.contains("auto_")) timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             long size = Files.size(backupZip);
-
-            return new BackupInfo(
-                    backupId,
-                    timestamp,
-                    BackupType.AUTO,
-                    "Legacy Config",
-                    "Unknown",
-                    size,
-                    "Legacy backup (no metadata)",
-                    null
-            );
-
+            return new BackupInfo(backupId, timestamp, BackupType.MANUAL, "Legacy", "Unknown", size, "Legacy Backup", "No metadata");
         } catch (IOException e) {
-            LOGGER.error("Failed to create legacy backup info", e);
             return null;
         }
     }
@@ -572,50 +415,31 @@ public class BackupManager {
                 Path backupZip = backupsDir.resolve(backupInfo.backupId + ".zip");
 
                 if (!Files.exists(backupZip)) {
-                    LOGGER.error("Backup file not found: {}", backupZip);
-                    progressCallback.accept("Error: Backup file not found");
-                    return false;
+                    throw new FileNotFoundException("Backup file not found: " + backupInfo.backupId);
                 }
 
-                LOGGER.info("Restoring backup: {}", backupInfo.getDisplayName());
-                progressCallback.accept("Creating safety backup...");
-
-                // Create a backup of current state before restoring
-                createBackupAsync(
-                        gameDir,
-                        BackupType.AUTO,
-                        "Auto backup before restore",
-                        "Safety backup created before restoring: " + backupInfo.backupId,
-                        msg -> {}
-                ).join();
+                // Safety backup before restore
+                createBackupAsync(BackupType.AUTO, "Pre-restore safety backup", "Created before restoring " + backupInfo.backupId, progressCallback).join();
 
                 progressCallback.accept("Extracting backup...");
 
-                // Extract backup
+                // Extract backup to temp
                 Path tempDir = Files.createTempDirectory("packcore_restore");
                 try {
-                    var unzipper = new UnzipAsyncTask();
-                    unzipper.unzipAsync(backupZip. toString(), tempDir. toString(),
-                            (bytesProcessed, totalBytes, percentage) ->
-                                    progressCallback.accept(String.format("Extracting: %d%%", percentage))). join();
+                    UnzipAsyncTask unzipTask = new UnzipAsyncTask();
+                    unzipTask.unzipAsync(backupZip.toString(), tempDir.toString(), (p, t, percent) ->
+                            progressCallback.accept("Extracting: " + percent + "%")
+                    ).join();
 
-                    progressCallback.accept("Restoring files...");
-
-                    // Copy restored files back (excluding metadata)
+                    progressCallback.accept("Applying restored files...");
                     copyRestoredFilesAsync(tempDir, gameDir, progressCallback).join();
 
-                    progressCallback.accept("Restore complete!");
-                    LOGGER.info("Backup restored successfully");
                     return true;
-
                 } finally {
-                    // Clean up temp directory
                     CompletableFuture.runAsync(() -> {
                         try {
                             FileUtils.deleteDirectory(tempDir);
-                        } catch (Exception e) {
-                            LOGGER.warn("Failed to clean up temp directory", e);
-                        }
+                        } catch (Exception ignored) {}
                     }, BACKUP_EXECUTOR);
                 }
 
@@ -627,76 +451,49 @@ public class BackupManager {
         }, BACKUP_EXECUTOR);
     }
 
-    /**
-     * Restore a backup (blocking)
-     */
     public static boolean restoreBackup(BackupInfo backupInfo) {
         try {
-            return restoreBackupAsync(backupInfo, msg -> {
-            }).get();
+            return restoreBackupAsync(backupInfo, msg -> {}).get();
         } catch (Exception e) {
             LOGGER.error("Failed to restore backup", e);
             return false;
         }
     }
 
-    /**
-     * Copy restored files back to game directory asynchronously
-     */
     private static CompletableFuture<Void> copyRestoredFilesAsync(
             Path sourceDir, Path gameDir, Consumer<String> progressCallback) {
 
         return CompletableFuture.runAsync(() -> {
             try {
-                // Collect all paths first
                 List<Path> pathsToRestore;
                 try (Stream<Path> paths = Files.walk(sourceDir)) {
-                    pathsToRestore = paths
-                            .filter(path -> !path.equals(sourceDir))
-                            .filter(path -> !path.getFileName().toString().equals(METADATA_FILE))
+                    pathsToRestore = paths.filter(Files::isRegularFile)
+                            .filter(p -> !p.getFileName().toString().equals(METADATA_FILE))
                             .toList();
                 }
 
                 int total = pathsToRestore.size();
                 AtomicLong processed = new AtomicLong(0);
 
-                // Process in batches
-                for (int i = 0; i < pathsToRestore.size(); i += BATCH_SIZE) {
-                    int end = Math.min(i + BATCH_SIZE, pathsToRestore.size());
-                    List<Path> batch = pathsToRestore.subList(i, end);
+                for (Path sourcePath : pathsToRestore) {
+                    Path relativePath = sourceDir.relativize(sourcePath);
+                    Path targetPath = gameDir.resolve(relativePath);
 
-                    batch.parallelStream().forEach(sourcePath -> {
-                        try {
-                            Path relativePath = sourceDir.relativize(sourcePath);
-                            Path targetPath = gameDir.resolve(relativePath);
+                    Files.createDirectories(targetPath.getParent());
+                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-                            if (Files.isDirectory(sourcePath)) {
-                                Files.createDirectories(targetPath);
-                            } else {
-                                Files.createDirectories(targetPath.getParent());
-                                Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                            }
-
-                            long count = processed.incrementAndGet();
-                            if (count % 100 == 0) {
-                                int percentage = (int) ((count * 100) / total);
-                                progressCallback.accept(String.format("Restoring files: %d%%", percentage));
-                            }
-                        } catch (IOException e) {
-                            LOGGER.warn("Failed to restore file: {}", sourcePath, e);
-                        }
-                    });
+                    long current = processed.incrementAndGet();
+                    if (current % Math.max(1, total / 100) == 0 || current == total) {
+                        int percent = (int) ((current * 100) / total);
+                        progressCallback.accept("Restoring files: " + percent + "%");
+                    }
                 }
-
             } catch (IOException e) {
                 throw new RuntimeException("Failed to restore files", e);
             }
         }, BACKUP_EXECUTOR);
     }
 
-    /**
-     * Delete a backup
-     */
     public static boolean deleteBackup(BackupInfo backupInfo) {
         try {
             Path gameDir = getGameDirectory();
@@ -708,88 +505,62 @@ public class BackupManager {
                 LOGGER.info("Deleted backup: {}", backupInfo.getDisplayName());
                 return true;
             }
-
             return false;
-
         } catch (IOException e) {
             LOGGER.error("Failed to delete backup", e);
             return false;
         }
     }
 
-    /**
-     * Clean up old backups based on settings
-     */
     private static void cleanupOldBackups(Path backupsDir) {
         try {
-            // Extract gameDir from backupsDir
             Path gameDir = backupsDir.getParent().getParent();
-
             List<BackupInfo> backups = getBackupsAsync(gameDir).get();
-
-            // Separate auto and manual backups
             List<BackupInfo> autoBackups = backups.stream()
                     .filter(backup -> backup.type == BackupType.AUTO)
                     .toList();
 
-            // Only clean up auto backups, keep manual backups
             if (autoBackups.size() > PackCoreConfig.maxBackups) {
                 List<BackupInfo> toDelete = autoBackups.subList(PackCoreConfig.maxBackups, autoBackups.size());
-
                 for (BackupInfo backup : toDelete) {
                     try {
-                        Path backupZip = backupsDir. resolve(backup.backupId + ".zip");
+                        Path backupZip = backupsDir.resolve(backup.backupId + ".zip");
                         if (Files.exists(backupZip)) {
                             Files.delete(backupZip);
-                            LOGGER.info("Deleted old auto backup: {}", backup.getDisplayName());
+                            LOGGER.info("Deleted old auto backup: {}", backup.backupId);
                         }
                     } catch (IOException e) {
-                        LOGGER.warn("Failed to delete backup: {}", backup.backupId, e);
+                        LOGGER.warn("Failed to delete clean up backup", e);
                     }
                 }
-
-                LOGGER.info("Cleaned up {} old auto backups", toDelete.size());
             }
-
         } catch (Exception e) {
             LOGGER.error("Failed to cleanup old backups", e);
         }
     }
 
-    /**
-     * Open backups folder in file explorer
-     */
     public static void openBackupsFolder() {
         CompletableFuture.runAsync(() -> {
             try {
-                Path gameDir = getGameDirectory();
-                Path backupsDir = gameDir.resolve(BACKUPS_DIR);
+                Path backupsDir = getGameDirectory().resolve(BACKUPS_DIR);
                 Files.createDirectories(backupsDir);
-
-                java.awt.Desktop.getDesktop().open(backupsDir.toFile());
+                if (java.awt.Desktop.isDesktopSupported()) {
+                    java.awt.Desktop.getDesktop().open(backupsDir.toFile());
+                }
             } catch (Exception e) {
                 LOGGER.error("Failed to open backups folder", e);
             }
         }, BACKUP_EXECUTOR);
     }
 
-    /**
-     * Safely get game directory - works during pre-launch and post-launch
-     */
     private static Path getGameDirectory() {
-        // Try to get from MinecraftClient first (post-launch)
         MinecraftClient client = MinecraftClient.getInstance();
         if (client != null && client.runDirectory != null) {
-            return client.runDirectory. toPath();
+            return client.runDirectory.toPath();
         }
-
-        // Fallback to FabricLoader for pre-launch
         return FabricLoader.getInstance().getGameDir();
     }
 
-    /**
-     * Shutdown the executor (call on game close)
-     */
     public static void shutdown() {
         ScheduledBackupManager.shutdown();
         BACKUP_EXECUTOR.shutdown();

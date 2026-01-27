@@ -139,6 +139,10 @@ public class ConfigAutoApplier {
 
         LOGGER.info("Available configs:");
         for (ConfigFileRepository.ConfigFile config : configs) {
+            if (config.metadata() == null) {
+                LOGGER.warn("Config {} has no metadata, skipping", config.getDisplayName());
+                continue;
+            }
             String targetRes = config.metadata().getTargetResolution();
             Dimension configRes = parseResolution(targetRes);
             double distance = calculateDistance(detectedResolution, configRes);
@@ -151,6 +155,7 @@ public class ConfigAutoApplier {
         }
 
         ConfigFileRepository.ConfigFile selected = configs.stream()
+                .filter(c -> c.metadata() != null)
                 .min(createConfigComparator(detectedResolution))
                 .orElse(null);
 

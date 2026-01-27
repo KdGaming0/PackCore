@@ -12,15 +12,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import java.util.stream.Stream;
 
-/**
- * Async version of ZipFiles that performs zipping operations without blocking the main thread
- */
 public class ZipAsyncTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ZipAsyncTask.class);
-    private static final int BUFFER_SIZE = 16384; // Larger buffer for better performance
+    private static final int BUFFER_SIZE = 32768; // Increased buffer (32KB)
     private static final ExecutorService ZIP_EXECUTOR = Executors.newCachedThreadPool(r -> {
         Thread thread = new Thread(r);
         thread.setName("AsyncZip-" + thread.threadId());
@@ -32,9 +28,6 @@ public class ZipAsyncTask {
         void onProgress(long bytesProcessed, long totalBytes, int percentage);
     }
 
-    /**
-     * Asynchronously zip a directory with progress callback
-     */
     public CompletableFuture<Void> zipDirectoryAsync(File dir, String zipFilePath,
                                                      ProgressCallback progressCallback) {
         return CompletableFuture.runAsync(() -> {
@@ -46,49 +39,30 @@ public class ZipAsyncTask {
         }, ZIP_EXECUTOR);
     }
 
-    /**
-     * Zip the contents of the directory 'dir' into a zip file at 'zipFilePath'.
-     * Optimized for large directories with progress reporting.
-     */
     public void zipDirectory(File dir, String zipFilePath,
                              ProgressCallback progressCallback) throws IOException {
         Path basePath = dir.toPath();
 
-        // Skip the expensive pre-scan if no progress callback
-        AtomicLong totalSize = new AtomicLong(-1); // -1 means unknown
-        if (progressCallback != null) {
-            try (Stream<Path> walk = Files.walk(basePath)) {
-                long size = walk.filter(Files::isRegularFile)
-                        .mapToLong(path -> {
-                            try {
-                                return Files.size(path);
-                            } catch (IOException e) {
-                                return 0L;
-                            }
-                        })
-                        .sum();
-                totalSize.set(size);
-            }
-        }
+        // OPTIMIZATION: Removed the Files.walk pre-scan.
+        // It causes massive delays on large modpacks just to get a total size.
+        // We will report bytes processed, but total might be estimated or specific logic needed.
+        long estimatedTotal = -1;
 
         AtomicLong processedBytes = new AtomicLong(0);
-        int[] lastReportedProgress = {0}; // Use array for mutation in lambda
+        // Use an array to hold state regarding last progress report
+        int[] lastReportedProgress = {-1};
 
         try (FileOutputStream fos = new FileOutputStream(zipFilePath);
              BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
              ZipOutputStream zos = new ZipOutputStream(bos)) {
 
-            // Set compression level for better performance
-            zos.setLevel(3); // Balance between speed and compression
-
+            zos.setLevel(3);
             byte[] buffer = new byte[BUFFER_SIZE];
 
-            // Walk the directory tree and add entries
             Files.walkFileTree(basePath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
                         throws IOException {
-                    // Add directory entry
                     Path relativePath = basePath.relativize(dir);
                     if (!relativePath.toString().isEmpty()) {
                         String entryName = relativePath.toString().replace(File.separatorChar, '/') + '/';
@@ -103,120 +77,43 @@ public class ZipAsyncTask {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {
-                    // Add file entry
-                    Path relativePath = basePath.relativize(file);
-                    String entryName = relativePath.toString().replace(File.separatorChar, '/');
-
+                    String entryName = basePath.relativize(file).toString().replace(File.separatorChar, '/');
                     ZipEntry fileEntry = new ZipEntry(entryName);
                     fileEntry.setTime(attrs.lastModifiedTime().toMillis());
+                    // Storing size is optional but good for unzip progress later
                     fileEntry.setSize(attrs.size());
 
                     zos.putNextEntry(fileEntry);
 
-                    // Copy file content with progress tracking
                     try (InputStream is = Files.newInputStream(file, StandardOpenOption.READ)) {
                         int bytesRead;
                         while ((bytesRead = is.read(buffer)) > 0) {
                             zos.write(buffer, 0, bytesRead);
-
                             long processed = processedBytes.addAndGet(bytesRead);
 
-                            // Report progress (but not too frequently to avoid overhead)
-                            if (progressCallback != null && totalSize.get() > 0) {
-                                int currentProgress = (int) ((processed * 100) / totalSize.get());
-                                if (currentProgress != lastReportedProgress[0]) {
-                                    lastReportedProgress[0] = currentProgress;
-                                    progressCallback.onProgress(processed, totalSize.get(), currentProgress);
+                            // Progress logic: If we don't know total, just tick every 1MB or similar
+                            // Or relies on the callback handling unknown (-1) totals
+                            if (progressCallback != null) {
+                                // Rate limit updates to avoid spamming the UI thread (e.g. every 1MB)
+                                if (processed / (1024 * 1024) != (processed - bytesRead) / (1024 * 1024)) {
+                                    progressCallback.onProgress(processed, estimatedTotal, -1);
                                 }
                             }
                         }
                     }
-
                     zos.closeEntry();
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                    LOGGER.warn("Failed to zip file: {} - {}", file, exc.getMessage());
                     return FileVisitResult.CONTINUE;
                 }
             });
 
-            // Final progress callback
+            // Final callback
             if (progressCallback != null) {
-                progressCallback.onProgress(processedBytes.get(), totalSize.get(), 100);
+                progressCallback.onProgress(processedBytes.get(), processedBytes.get(), 100);
             }
-
             LOGGER.info("Successfully zipped {} to {}", dir.getAbsolutePath(), zipFilePath);
         }
     }
 
-    /**
-     * Asynchronously zip a single file
-     */
-    public CompletableFuture<Void> zipSingleFileAsync(File file, String zipFileName,
-                                                      ProgressCallback progressCallback) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                zipSingleFile(file, zipFileName, progressCallback);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to zip file", e);
-            }
-        }, ZIP_EXECUTOR);
-    }
-
-    /**
-     * Zip a single file with progress reporting
-     */
-    public void zipSingleFile(File file, String zipFileName,
-                              ProgressCallback progressCallback) throws IOException {
-        long totalSize = file.length();
-        AtomicLong processedBytes = new AtomicLong(0);
-        int lastReportedProgress = 0;
-
-        try (FileOutputStream fos = new FileOutputStream(zipFileName);
-             BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
-             ZipOutputStream zos = new ZipOutputStream(bos);
-             FileInputStream fis = new FileInputStream(file);
-             BufferedInputStream bis = new BufferedInputStream(fis, BUFFER_SIZE)) {
-
-            ZipEntry ze = new ZipEntry(file.getName());
-            ze.setTime(file.lastModified());
-            ze.setSize(file.length());
-            zos.putNextEntry(ze);
-
-            byte[] buffer = new byte[BUFFER_SIZE];
-            int bytesRead;
-
-            while ((bytesRead = bis.read(buffer)) > 0) {
-                zos.write(buffer, 0, bytesRead);
-
-                long processed = processedBytes.addAndGet(bytesRead);
-
-                if (progressCallback != null && totalSize > 0) {
-                    int currentProgress = (int) ((processed * 100) / totalSize);
-                    if (currentProgress != lastReportedProgress) {
-                        lastReportedProgress = currentProgress;
-                        progressCallback.onProgress(processed, totalSize, currentProgress);
-                    }
-                }
-            }
-
-            zos.closeEntry();
-
-            // Final progress callback
-            if (progressCallback != null) {
-                progressCallback.onProgress(totalSize, totalSize, 100);
-            }
-
-            LOGGER.info("Successfully zipped {} to {}", file.getCanonicalPath(), zipFileName);
-        }
-    }
-
-    /**
-     * Shutdown the executor service (call this when your application is closing)
-     */
     public static void shutdown() {
         ZIP_EXECUTOR.shutdown();
     }

@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore;
 import com.github.kd_gaming1.packcore.command.packcore.PackCoreCommand;
 import com.github.kd_gaming1.packcore.command.scamshield.ScamShieldCommand;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.config.backup.BackupManager;
 import com.github.kd_gaming1.packcore.config.backup.ScheduledBackupManager;
 import com.github.kd_gaming1.packcore.crash.CrashBrandingLogger;
 import com.github.kd_gaming1.packcore.integration.bobby.BobbyConfigModifier;
@@ -13,6 +14,8 @@ import com.github.kd_gaming1.packcore.ui.screen.wizard.pages.WelcomeWizardPage;
 import com.github.kd_gaming1.packcore.ui.screen.title.SBEStyledTitleScreen;
 import com.github.kd_gaming1.packcore.modpack.ModpackInfo;
 import com.github.kd_gaming1.packcore.util.HypixelEventUtil;
+import com.github.kd_gaming1.packcore.util.io.zip.UnzipAsyncTask;
+import com.github.kd_gaming1.packcore.util.io.zip.ZipAsyncTask;
 import com.github.kd_gaming1.packcore.util.update.modrinth.UpdateCache;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.api.ClientModInitializer;
@@ -56,6 +59,9 @@ public class PackCore implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             scamDetector.shutdown();
             ScamShieldChatHandler.getInstance().shutdown();
+            BackupManager.shutdown();
+            ZipAsyncTask.shutdown();
+            UnzipAsyncTask.shutdown();
         });
 
         try {
