@@ -53,9 +53,9 @@ Below are the main default keybinds included with the pack.
 - **B** – Barn Hotkey (Teleport to the Garden barn)  
 - **V** – Teleport Hotkey (Warp to nearest plot with pests)  
 
-{#275EF5}**Mining & Glaciate Mineshaft**{}  
-- **Y** – Share Waypoint Location (Corpse – Glaciate Mineshaft)  
-- **Z** – Next Spot Hotkey (Select next spot – Glaciate Mineshaft)  
+{#275EF5}**Mining & Glacite Mineshaft**{}  
+- **Y** – Share Waypoint Location (Corpse – Glacite Mineshaft)  
+- **Z** – Next Spot Hotkey (Select next spot – Glacite Mineshaft)  
 
 {#275EF5}**Fishing**{}  
 - **R** – Reset Timer Hotkey (Reset the fishing timer manually)  
