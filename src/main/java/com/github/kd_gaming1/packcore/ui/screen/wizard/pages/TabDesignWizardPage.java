@@ -179,10 +179,7 @@ public class TabDesignWizardPage extends BaseWizardPage {
         }
 
         // Click handler
-        //? if <= 1.21.8 {
-        imageContainer.mouseDown().subscribe((mouseX, mouseY, button) -> {
-         //?} else
-        //imageContainer.mouseDown().subscribe((click, doubled) -> {
+        imageContainer.mouseDown().subscribe((click, doubled) -> {
             selectDesign(option.key);
             return true;
         });

@@ -11,9 +11,7 @@ import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Style;
-//? if >= 1.21.10 {
-/*import net.minecraft.text.StyleSpriteSource;
-*///?}
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -50,10 +48,7 @@ public class ScamEducationScreen extends BasePackCoreScreen {
     protected Component createTitleLabel() {
         return Components.label(
                         Text.literal("Scam Protection Education")
-                                //? if <= 1.21.8 {
-                                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                                 //?} else
-                                //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                                .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
                 ).color(Color.ofRgb(ACCENT_SECONDARY))
                 .shadow(true)
                 .margins(Insets.of(0, 0, 4, 4));

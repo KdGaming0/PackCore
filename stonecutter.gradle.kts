@@ -1,6 +1,6 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("fabric-loom") version "1.13-SNAPSHOT" apply false
+    id("fabric-loom") version "1.15-SNAPSHOT" apply false
     id("me.modmuss50.mod-publish-plugin") version "1.0.+" apply false
 }
 
@@ -10,7 +10,7 @@ stonecutter tasks {
     order("publishCurseforge")
 }
 
-stonecutter active "1.21.5"
+stonecutter active "1.21.10"
 
 stonecutter parameters {
     swaps["mod_version"] = "\"" + property("mod.version") + "\";"

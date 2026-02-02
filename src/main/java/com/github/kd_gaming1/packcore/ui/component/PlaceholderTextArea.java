@@ -8,7 +8,7 @@ import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Extended TextAreaComponent that supports placeholder text
+ * Extended TextAreaUIComponent that supports placeholder text
  */
 public class PlaceholderTextArea extends TextAreaComponent {
     @Nullable
@@ -58,14 +58,14 @@ public class PlaceholderTextArea extends TextAreaComponent {
     }
 
     /**
-     * Factory method to create a new PlaceholderTextAreaComponent
+     * Factory method to create a new PlaceholderTextAreaUIComponent
      */
     public static PlaceholderTextArea create(Sizing horizontalSizing, Sizing verticalSizing) {
         return new PlaceholderTextArea(horizontalSizing, verticalSizing);
     }
 
     /**
-     * Factory method to create a new PlaceholderTextAreaComponent with placeholder text
+     * Factory method to create a new PlaceholderTextAreaUIComponent with placeholder text
      */
     public static PlaceholderTextArea create(Sizing horizontalSizing, Sizing verticalSizing, Text placeholder) {
         return new PlaceholderTextArea(horizontalSizing, verticalSizing).placeholder(placeholder);

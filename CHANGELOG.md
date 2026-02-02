@@ -1,9 +1,2 @@
-- chore: update to 1.21.10
-- fix: remove hyperlinks in resource pack markdown (they crashed the game when clicked)
-- feat: add modpack branding to crash reports and logs
-  - allows identifying the modpack version from logs and crash reports
-- feat: add low available memory warning
-- feat: improve version comparison handling
-- fix: restore backup restore bug (restores backups)
-- chore: remove Skyblocker DungeonMap config setter
-- feat: optimize backup process with direct streaming to ZIP and enhanced metadata handling
+- chore: update to 1.21.11
+- chore: removed 1.21.5/8 compatibly

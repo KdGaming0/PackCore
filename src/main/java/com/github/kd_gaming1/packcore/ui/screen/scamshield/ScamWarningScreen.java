@@ -164,11 +164,11 @@ public class ScamWarningScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     @Override
-    protected void build(FlowLayout rootComponent) {
-        rootComponent.alignment(HorizontalAlignment.CENTER, VerticalAlignment.CENTER).surface(Surface.VANILLA_TRANSLUCENT);
+    protected void build(FlowLayout rootUIComponent) {
+        rootUIComponent.alignment(HorizontalAlignment.CENTER, VerticalAlignment.CENTER).surface(Surface.VANILLA_TRANSLUCENT);
 
         FlowLayout content = createScrollableContent();
-        rootComponent.child(ScreenUIComponents.createScrollContainer(content));
+        rootUIComponent.child(ScreenUIComponents.createScrollContainer(content));
     }
 
     /**
@@ -388,21 +388,11 @@ public class ScamWarningScreen extends BaseOwoScreen<FlowLayout> {
 
         // Secondary action: Report Player
         buttonRow.child(ScreenUIComponents.createButton("📢 Report", btn -> {
-            //? if >=1.21.8 {
-            
-            /*if (MinecraftClient.getInstance().player != null) {
+            if (MinecraftClient.getInstance().player != null) {
                 MinecraftClient.getInstance().player.networkHandler.sendChatCommand(
                      "report " + warning.playerName() + " Scamming"
                  );
             }
-             
-            *///?} else {
-            if (MinecraftClient.getInstance().player != null) {
-                MinecraftClient.getInstance().player.networkHandler.sendCommand(
-                        "report " + warning.playerName() + " Scamming"
-                );
-            }
-            //?}
             dismiss();
         }, 110, 22));
 
@@ -479,9 +469,5 @@ public class ScamWarningScreen extends BaseOwoScreen<FlowLayout> {
     public void tick() {
         super.tick();
         tickCount++;
-
-        // Could add subtle animations here if desired
-        // Example: pulse effect on warning icon every 2 seconds
-        // if (tickCount % 40 == 0) { /* trigger animation */ }
     }
 }

@@ -215,23 +215,13 @@ public class ScreenUIComponents {
                 entry.surface(Surface.flat(ENTRY_BACKGROUND).and(Surface.outline(ENTRY_BORDER))));
 
         if (onSelect != null) {
-            //? if <= 1.21.8 {
-            entry.mouseDown().subscribe((x, y, button) -> {
-                if (button == 0) {
-                    onSelect.run();
-                    return true;
-                }
-                return false;
-            });
-            //?} else {
-            /*entry.mouseDown().subscribe((click, doubled) -> {
+            entry.mouseDown().subscribe((click, doubled) -> {
                 if (click.button() == 0) {
                     onSelect.run();
                     return true;
                 }
                 return false;
             });
-            *///?}
             entry.cursorStyle(CursorStyle.HAND);
         }
     }

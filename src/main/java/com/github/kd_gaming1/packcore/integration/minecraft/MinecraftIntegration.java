@@ -131,13 +131,7 @@ public class MinecraftIntegration {
         options.getMipmapLevels().setValue(4);
         options.getParticles().setValue(ParticlesMode.ALL); // particles:0 = ALL
         options.getCloudRenderMode().setValue(CloudRenderMode.FANCY); // renderClouds:"true"
-        //? if >=1.21.8 {
-        
-        /*options.getViewDistance().setValue(20); // renderDistance:20
-         
-        *///?} else {
-        options.getViewDistance().setValue(16); // renderDistance:16
-        //?}
+        options.getViewDistance().setValue(20); // renderDistance:20
         options.getSimulationDistance().setValue(12);
 
         LOGGER.debug("Applied Minecraft quality settings");

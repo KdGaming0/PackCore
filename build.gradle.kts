@@ -25,6 +25,7 @@ repositories {
     strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
     maven("https://maven.terraformersmc.com/")
     maven("https://maven.wispforest.io/releases/")
+    maven("https://jitpack.io")
     maven("https://maven.midnightdust.eu/releases")
     maven("https://repo.hypixel.net/repository/Hypixel/")
     exclusiveContent {
@@ -56,6 +57,7 @@ dependencies {
     modImplementation("maven.modrinth:iris:${property("deps.iris_version")}")
 
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
+    implementation("org.apache.httpcomponents:httpclient:4.5.13")
 }
 
 // Add this mixin configuration block
@@ -73,8 +75,7 @@ loom {
 
 java {
     withSourcesJar()
-    val java = if (stonecutter.eval(stonecutter.current.version, ">=1.20.5"))
-        JavaVersion.VERSION_21 else JavaVersion.VERSION_17
+    val java = JavaVersion.VERSION_21
     targetCompatibility = java
     sourceCompatibility = java
 }
@@ -125,6 +126,48 @@ tasks {
         )
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
         dependsOn("build")
+    }
+}
+
+stonecutter {
+    replacements.regex(current.parsed >= "1.21.11") {
+        // Match OWO import lines only
+        replace(
+            """(?m)^import\s+io\.wispforest\.owo\.ui\.component\.Components\b""" to
+                    "import io.wispforest.owo.ui.component.UIComponents",
+            """(?m)^import\s+io\.wispforest\.owo\.ui\.component\.UIComponents\b""" to
+                    "import io.wispforest.owo.ui.component.Components"
+        )
+        replace(
+            """(?m)^import\s+io\.wispforest\.owo\.ui\.container\.Containers\b""" to
+                    "import io.wispforest.owo.ui.container.UIContainers",
+            """(?m)^import\s+io\.wispforest\.owo\.ui\.container\.UIContainers\b""" to
+                    "import io.wispforest.owo.ui.container.Containers"
+        )
+
+        // Match fully-qualified OWO usages
+        replace(
+            """\bio\.wispforest\.owo\.ui\.component\.Components\b""" to
+                    "io.wispforest.owo.ui.component.UIComponents",
+            """\bio\.wispforest\.owo\.ui\.component\.UIComponents\b""" to
+                    "io.wispforest.owo.ui.component.Components"
+        )
+        replace(
+            """\bio\.wispforest\.owo\.ui\.container\.Containers\b""" to
+                    "io.wispforest.owo.ui.container.UIContainers",
+            """\bio\.wispforest\.owo\.ui\.container\.UIContainers\b""" to
+                    "io.wispforest.owo.ui.container.Containers"
+        )
+
+        // Match short-name usages ONLY after OWO imports
+        replace(
+            """(?<=io\.wispforest\.owo\.ui\.component\.UIComponents\b.*)\bComponents\b""" to "UIComponents",
+            """(?<=io\.wispforest\.owo\.ui\.component\.Components\b.*)\bUIComponents\b""" to "Components"
+        )
+        replace(
+            """(?<=io\.wispforest\.owo\.ui\.container\.UIContainers\b.*)\bContainers\b""" to "UIContainers",
+            """(?<=io\.wispforest\.owo\.ui\.container\.Containers\b.*)\bUIContainers\b""" to "Containers"
+        )
     }
 }
 

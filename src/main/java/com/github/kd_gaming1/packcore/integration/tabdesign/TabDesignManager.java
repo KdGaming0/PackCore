@@ -56,11 +56,6 @@ public class TabDesignManager {
         return false;
     }
 
-    public static void resetSkyHanniState() {
-        skyhanniConfigApplied.set(false);
-        pendingSkyHanniState = null;
-    }
-
     private static boolean isModLoaded(String modId) {
         return FabricLoader.getInstance().isModLoaded(modId);
     }
@@ -150,13 +145,7 @@ public class TabDesignManager {
         String command = "shconfig set config.gui.compactTabList.enabled " + enable;
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
         if (player == null) return;
-        //? if >=1.21.8 {
-        
-        /*player.networkHandler.sendChatCommand(command);
-        
-        *///?} else {
-        player.networkHandler.sendCommand(command);
-        //?}
+        player.networkHandler.sendChatCommand(command);
         PackCore.LOGGER.info("Executed SkyHanni command: /{}", command);
     }
 

@@ -99,10 +99,7 @@ public class WizardUIComponents {
                 .cursorStyle(CursorStyle.HAND);
 
         if (onClick != null) {
-            //? if <= 1.21.8 {
-            card.mouseDown().subscribe((x, y, button) -> {
-             //?} else
-            //card.mouseDown().subscribe((click, doubled) -> {
+            card.mouseDown().subscribe((click, doubled) -> {
                 onClick.accept(card);
                 return true;
             });
@@ -118,12 +115,12 @@ public class WizardUIComponents {
         FlowLayout wrapper = Containers.verticalFlow(Sizing.fill(98), Sizing.content())
                 .gap(4);
 
-        var markdownComponent = MARKDOWN_CACHE.computeIfAbsent(
+        var markdownUIComponent = MARKDOWN_CACHE.computeIfAbsent(
                 content,
                 MARKDOWN_PROCESSOR::process
         ).horizontalSizing(Sizing.fill(98));
 
-        wrapper.child(markdownComponent);
+        wrapper.child(markdownUIComponent);
 
         ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
                 Sizing.fill(100),
@@ -286,10 +283,7 @@ public class WizardUIComponents {
                 .cursorStyle(CursorStyle.HAND);
 
         if (onClick != null) {
-            //? if <= 1.21.8 {
-            imageContainer.mouseDown().subscribe((x, y, button) -> {
-             //?} else
-            //imageContainer.mouseDown().subscribe((click, doubled) -> {
+            imageContainer.mouseDown().subscribe((click, doubled) -> {
                 onClick.run();
                 return true;
             });

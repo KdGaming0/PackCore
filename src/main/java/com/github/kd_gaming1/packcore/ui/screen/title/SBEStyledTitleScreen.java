@@ -29,9 +29,7 @@ import net.minecraft.client.gui.screen.world.SelectWorldScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
-//? if >= 1.21.10 {
-/*import net.minecraft.text.StyleSpriteSource;
-*///?}
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
@@ -94,14 +92,14 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     @Override
-    protected void build(FlowLayout rootComponent) {
-        rootComponent.surface(TextureSurfaces.stretched(backgroundTexture, 1920, 1082));
+    protected void build(FlowLayout rootUIComponent) {
+        rootUIComponent.surface(TextureSurfaces.stretched(backgroundTexture, 1920, 1082));
 
         // Main components
-        rootComponent.child(createMainButtonAndTitle()).horizontalAlignment(HorizontalAlignment.CENTER);
-        rootComponent.child(createSocialButtons().positioning(Positioning.relative(0, 100)));
-        rootComponent.child(createSeeWhatIsNewButtons().positioning(Positioning.relative(100, 0)));
-        rootComponent.child(createModpackButtons().positioning(Positioning.relative(100, 100)));
+        rootUIComponent.child(createMainButtonAndTitle()).horizontalAlignment(HorizontalAlignment.CENTER);
+        rootUIComponent.child(createSocialButtons().positioning(Positioning.relative(0, 100)));
+        rootUIComponent.child(createSeeWhatIsNewButtons().positioning(Positioning.relative(100, 0)));
+        rootUIComponent.child(createModpackButtons().positioning(Positioning.relative(100, 100)));
 
         // Create changelog layout but don't add it initially
         changelogLayout = createChangelogPanel();
@@ -202,10 +200,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
     private ButtonComponent createButton(String text, ButtonComponent.PressAction action) {
         return (ButtonComponent) Components.button(
                         Text.literal(text)
-                                //? if <= 1.21.8 {
-                                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))),
-                                 //?} else
-                                //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))),
+                                .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))),
                         action::onPress
                 )
                 .renderer(ButtonComponent.Renderer.texture(
@@ -264,10 +259,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         LabelComponent versionLabel = Components.label(
                 Text.literal("Pack Version: " + currentVersion)
-                        //? if <= 1.21.8 {
-                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                         //?} else
-                        //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).color(Color.ofArgb(TEXT_DARK));
 
         mainLayout.child(versionLabel);
@@ -275,10 +267,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         if (updateAvailable) {
             LabelComponent updateAvailableLabel = Components.label(
                     Text.literal("Update Available: " + newVersion)
-                            //? if <= 1.21.8 {
-                            .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                             //?} else
-                            //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                            .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
             ).color(Color.ofArgb(TEXT_DARK));
             mainLayout.child(updateAvailableLabel);
         }
@@ -359,10 +348,7 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
 
         LabelComponent changelogLabel = Components.label(
                 Text.literal(changeLogInfoText)
-                        //? if <= 1.21.8 {
-                        .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte")))
-                         //?} else
-                        //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
+                        .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte"))))
         ).shadow(false);
 
         // Divider
@@ -378,18 +364,18 @@ public class SBEStyledTitleScreen extends BaseOwoScreen<FlowLayout> {
         String changelogContent = changelog != null ? changelog : "No changelog available.";
 
         // Process markdown
-        var markdownComponent = COMPONENT_CACHE.computeIfAbsent(
+        var markdownUIComponent = COMPONENT_CACHE.computeIfAbsent(
                 changelogContent,
                 MARKDOWN_PROCESSOR::process
         );
-        markdownComponent.horizontalSizing(Sizing.fill(98));
-        markdownComponent.padding(Insets.of(0, 4, 4, 4));
+        markdownUIComponent.horizontalSizing(Sizing.fill(98));
+        markdownUIComponent.padding(Insets.of(0, 4, 4, 4));
 
         // Scrollable content
         ScrollContainer<FlowLayout> scrollContainer = Containers.verticalScroll(
                 Sizing.fill(98),
                 Sizing.expand(),
-                (FlowLayout) markdownComponent
+                (FlowLayout) markdownUIComponent
         );
         scrollContainer.scrollbar(ScrollContainer.Scrollbar.vanilla());
         scrollContainer.margins(Insets.bottom(10));

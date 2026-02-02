@@ -14,9 +14,7 @@ import io.wispforest.owo.ui.container.StackLayout;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Style;
-//? if >= 1.21.10 {
-/*import net.minecraft.text.StyleSpriteSource;
-*///?}
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
@@ -102,10 +100,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                 .verticalAlignment(VerticalAlignment.CENTER);
 
         LabelComponent titleLabel = (LabelComponent) Components.label(pageInfo.title.copy()
-                //? if <= 1.21.8 {
-                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
-                 //?} else
-                //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))))
+                .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))))
                 .color(Color.ofRgb(ACCENT_SECONDARY))
                 .shadow(true)
                 .margins(Insets.of(0, 0, 4, 4));
@@ -117,10 +112,7 @@ public abstract class BaseWizardPage extends BaseOwoScreen<StackLayout> {
                 .verticalAlignment(VerticalAlignment.CENTER);
 
         progressIndicator.child(Components.label(Text.literal("| Step " + pageInfo.currentStep() + " of " + pageInfo.totalSteps())
-                //? if <= 1.21.8 {
-                .styled(s -> s.withFont(Identifier.of(MOD_ID, "gallaeciaforte"))))
-                 //?} else
-                //.styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))))
+                .styled(s -> s.withFont(new StyleSpriteSource.Font(Identifier.of(MOD_ID, "gallaeciaforte")))))
                 .color(Color.ofRgb(ACCENT_SECONDARY))
                 .shadow(true)
         );
