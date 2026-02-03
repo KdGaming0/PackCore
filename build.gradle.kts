@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.replace
+
 plugins {
     id("fabric-loom")
     id("me.modmuss50.mod-publish-plugin")
@@ -33,6 +35,7 @@ repositories {
         filter { includeGroup("net.azureaaron") }
     }
     maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
+    mavenLocal()
 }
 
 dependencies {
@@ -130,44 +133,14 @@ tasks {
 }
 
 stonecutter {
+    replacements.string(current.parsed >= "1.21.11") {
+        replace("ParentComponent", "ParentUIComponent")
+    }
+
     replacements.regex(current.parsed >= "1.21.11") {
-        // Match OWO import lines only
-        replace(
-            """(?m)^import\s+io\.wispforest\.owo\.ui\.component\.Components\b""" to
-                    "import io.wispforest.owo.ui.component.UIComponents",
-            """(?m)^import\s+io\.wispforest\.owo\.ui\.component\.UIComponents\b""" to
-                    "import io.wispforest.owo.ui.component.Components"
-        )
-        replace(
-            """(?m)^import\s+io\.wispforest\.owo\.ui\.container\.Containers\b""" to
-                    "import io.wispforest.owo.ui.container.UIContainers",
-            """(?m)^import\s+io\.wispforest\.owo\.ui\.container\.UIContainers\b""" to
-                    "import io.wispforest.owo.ui.container.Containers"
-        )
-
-        // Match fully-qualified OWO usages
-        replace(
-            """\bio\.wispforest\.owo\.ui\.component\.Components\b""" to
-                    "io.wispforest.owo.ui.component.UIComponents",
-            """\bio\.wispforest\.owo\.ui\.component\.UIComponents\b""" to
-                    "io.wispforest.owo.ui.component.Components"
-        )
-        replace(
-            """\bio\.wispforest\.owo\.ui\.container\.Containers\b""" to
-                    "io.wispforest.owo.ui.container.UIContainers",
-            """\bio\.wispforest\.owo\.ui\.container\.UIContainers\b""" to
-                    "io.wispforest.owo.ui.container.Containers"
-        )
-
-        // Match short-name usages ONLY after OWO imports
-        replace(
-            """(?<=io\.wispforest\.owo\.ui\.component\.UIComponents\b.*)\bComponents\b""" to "UIComponents",
-            """(?<=io\.wispforest\.owo\.ui\.component\.Components\b.*)\bUIComponents\b""" to "Components"
-        )
-        replace(
-            """(?<=io\.wispforest\.owo\.ui\.container\.UIContainers\b.*)\bContainers\b""" to "UIContainers",
-            """(?<=io\.wispforest\.owo\.ui\.container\.Containers\b.*)\bUIContainers\b""" to "Containers"
-        )
+        replace("\\bComponent\\b" to "UIComponent", "\\bUIComponent\\b" to "Component")
+        replace("\\bComponents\\b" to "UIComponents", "\\bUIComponents\\b" to "Components")
+        replace("\\bContainers\\b" to "UIContainers", "\\bUIContainers\\b" to "Containers")
     }
 }
 

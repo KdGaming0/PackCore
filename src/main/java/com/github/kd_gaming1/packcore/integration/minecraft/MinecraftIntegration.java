@@ -47,7 +47,11 @@ public class MinecraftIntegration {
             if (options == null) return false;
 
             // Reset to default values using getter methods
+            //? if >=1.21.11 {
+            /*options.applyGraphicsMode(GraphicsMode.FANCY);
+            *///?} else {
             options.getGraphicsMode().setValue(GraphicsMode.FANCY);
+             //?}
             options.getViewDistance().setValue(12);
             options.getSimulationDistance().setValue(12);
             options.getEntityDistanceScaling().setValue(1.0);
@@ -90,7 +94,11 @@ public class MinecraftIntegration {
         options.getEnableVsync().setValue(false);
         options.getEntityDistanceScaling().setValue(1.0);
         options.getEntityShadows().setValue(false);
-        options.getGraphicsMode().setValue(GraphicsMode.FAST); // graphicsMode:0 = FAST
+        //? if >=1.21.11 {
+        /*options.applyGraphicsMode(GraphicsMode.FAST);
+        *///?} else {
+        options.getGraphicsMode().setValue(GraphicsMode.FAST);
+         //?}
         options.getMaxFps().setValue(260);
         options.getMipmapLevels().setValue(2);
         options.getParticles().setValue(ParticlesMode.MINIMAL); // particles:2 = MINIMAL
@@ -108,7 +116,11 @@ public class MinecraftIntegration {
         options.getEnableVsync().setValue(false);
         options.getEntityDistanceScaling().setValue(1.0);
         options.getEntityShadows().setValue(true);
-        options.getGraphicsMode().setValue(GraphicsMode.FANCY); // graphicsMode:1 = FANCY
+        //? if >=1.21.11 {
+        /*options.applyGraphicsMode(GraphicsMode.FANCY);
+        *///?} else {
+        options.getGraphicsMode().setValue(GraphicsMode.FANCY);
+         //?}
         options.getMaxFps().setValue(260);
         options.getMipmapLevels().setValue(4);
         options.getParticles().setValue(ParticlesMode.ALL); // particles:0 = ALL
@@ -126,7 +138,11 @@ public class MinecraftIntegration {
         options.getEnableVsync().setValue(false);
         options.getEntityDistanceScaling().setValue(1.25);
         options.getEntityShadows().setValue(true);
-        options.getGraphicsMode().setValue(GraphicsMode.FABULOUS); // graphicsMode:2 = FABULOUS
+        //? if >=1.21.11 {
+        /*options.applyGraphicsMode(GraphicsMode.FABULOUS);
+        *///?} else {
+        options.getGraphicsMode().setValue(GraphicsMode.FABULOUS);
+         //?}
         options.getMaxFps().setValue(260);
         options.getMipmapLevels().setValue(4);
         options.getParticles().setValue(ParticlesMode.ALL); // particles:0 = ALL
