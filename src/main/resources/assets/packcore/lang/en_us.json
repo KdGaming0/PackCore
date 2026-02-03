@@ -10,6 +10,8 @@
   "packcore.midnightconfig.interface_info": "Interface settings for the PackCore mod.",
   "packcore.midnightconfig.enable_custom_menu": "Enable custom main menu",
   "packcore.midnightconfig.enable_custom_menu.tooltip": "Turns the PackCore custom main menu on or off.",
+  "packcore.midnightconfig.disable_command_confirmation": "Disable command confirmation",
+  "packcore.midnightconfig.disable_command_confirmation.tooltip": "Disables the command confirmation dialog that appears when executing certain commands.",
 
   "packcore.midnightconfig.backup_info": "Auto backups run when you apply configuration changes. Scheduled backups run at the interval below.",
   "packcore.midnightconfig.enable_auto_backups": "Enable auto backups",

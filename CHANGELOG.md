@@ -1,2 +1,2 @@
-- chore: update to 1.21.11
-- chore: removed 1.21.5/8 compatibly
+- feat: update to mc version 1.21.11
+- feat: add option to disable command confirmation

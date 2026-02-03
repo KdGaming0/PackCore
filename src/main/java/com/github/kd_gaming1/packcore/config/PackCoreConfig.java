@@ -20,6 +20,9 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = CATEGORY_INTERFACE, name = "packcore.midnightconfig.enable_custom_menu")
     public static boolean enableCustomMenu = true;
 
+    @Entry(category = CATEGORY_INTERFACE, name = "packcore.midnightconfig.disable_command_confirmation")
+    public static boolean disableCommandConfirmation = true;
+
     // ---------------------
     // Backups
     // ---------------------

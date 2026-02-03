@@ -55,6 +55,7 @@ dependencies {
     modImplementation("io.wispforest.lavender-md:owo-ui:${property("deps.lavender_md_version")}")
     include("io.wispforest.lavender-md:owo-ui:${property("deps.lavender_md_version")}")
     modImplementation("net.azureaaron:hm-api:1.0.1+1.21.2")
+    include("net.azureaaron:hm-api:1.0.1+1.21.2")
 
     modImplementation("maven.modrinth:sodium:${property("deps.sodium_version")}")
     modImplementation("maven.modrinth:iris:${property("deps.iris_version")}")
