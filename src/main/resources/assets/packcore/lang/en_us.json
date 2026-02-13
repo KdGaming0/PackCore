@@ -44,39 +44,5 @@
   "packcore.midnightconfig.have_set_bobby_config.tooltip": "Tracks if PackCore has applied Bobby’s settings. Change it to force the setup again.",
 
   "packcore.midnightconfig.setup_wizard_completed": "Mark setup wizard as completed",
-  "packcore.midnightconfig.setup_wizard_completed.tooltip": "Tracks if the setup wizard has been completed.",
-
-  "packcore.midnightconfig.scam_spacer_1": "",
-  "packcore.midnightconfig.scam_spacer_2": "",
-  "packcore.midnightconfig.scam_spacer_3": "",
-  "packcore.midnightconfig.scam_spacer_4": "",
-
-  "packcore.midnightconfig.enable_scamshield": "Enable ScamShield",
-  "packcore.midnightconfig.enable_scamshield.tooltip": "Turns ScamShield on or off.",
-  "packcore.midnightconfig.enable_scamshield_debugging": "Enable ScamShield debugging",
-  "packcore.midnightconfig.enable_scamshield_debugging.tooltip": "Shows debug info in chat for testing ScamShield.",
-
-  "packcore.midnightconfig.scamshield_trigger_threshold": "Trigger threshold",
-  "packcore.midnightconfig.scamshield_trigger_threshold.tooltip": "Sets how sensitive ScamShield is when scanning chat messages.",
-
-  "packcore.midnightconfig.scamshield_show_notifications": "Show ScamShield notifications",
-  "packcore.midnightconfig.scamshield_show_notifications.tooltip": "Shows alerts when ScamShield detects a risky message.",
-  "packcore.midnightconfig.scamshield_notification_cooldown": "Notification cooldown (seconds)",
-  "packcore.midnightconfig.scamshield_notification_cooldown.tooltip": "Sets how long ScamShield waits between notifications.",
-  "packcore.midnightconfig.scamshield_max_recent_detections": "Recent detections to show",
-  "packcore.midnightconfig.scamshield_max_recent_detections.tooltip": "Limits how many recent detections ScamShield tracks.",
-  "packcore.midnightconfig.scamshield_max_history_size": "Maximum history size",
-  "packcore.midnightconfig.scamshield_max_history_size.tooltip": "Sets the size of ScamShield’s message history.",
-  "packcore.midnightconfig.scamshield_regex_timeout_ms": "Regex timeout (ms)",
-  "packcore.midnightconfig.scamshield_regex_timeout_ms.tooltip": "Limits how long ScamShield can spend scanning messages.",
-  "packcore.midnightconfig.scamshield_cache_size": "Cache size (entries)",
-  "packcore.midnightconfig.scamshield_cache_size.tooltip": "Sets how many scan results ScamShield stores in cache.",
-  "packcore.midnightconfig.scamshield_cache_ttl_seconds": "Cache TTL (seconds)",
-  "packcore.midnightconfig.scamshield_cache_ttl_seconds.tooltip": "Controls how long cached scan data stays valid.",
-  "packcore.midnightconfig.scamshield_conversation_timeout_minutes": "Conversation timeout (minutes)",
-  "packcore.midnightconfig.scamshield_conversation_timeout_minutes.tooltip": "Sets when ScamShield counts a chat as a new conversation.",
-  "packcore.midnightconfig.scamshield_max_messages_per_user": "Max messages per user",
-  "packcore.midnightconfig.scamshield_max_messages_per_user.tooltip": "Limits how many messages per user ScamShield scans in each conversation.",
-  "packcore.midnightconfig.scamshield_max_progression_bonus": "Max progression bonus",
-  "packcore.midnightconfig.scamshield_max_progression_bonus.tooltip": "Controls how much ScamShield can increase detection strength during a conversation."
+  "packcore.midnightconfig.setup_wizard_completed.tooltip": "Tracks if the setup wizard has been completed."
 }

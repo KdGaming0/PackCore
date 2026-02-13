@@ -3,7 +3,7 @@
   "id": "${id}",
   "version": "${version}",
   "name": "${name}",
-  "description": "PackCore is a companion mod for SkyBlock Enhanced modpacks, featuring a Hypixel SkyBlock-themed start menu, plus more!",
+  "description": "PackCore is a companion mod for the SkyBlock Enhanced modpacks, featuring a Hypixel SkyBlock-themed start menu, plus more!",
   "authors": ["Kd_Gaming1"],
   "contact": {
     "homepage": "https://modrinth.com/project/V3FnL7QV",
@@ -22,7 +22,7 @@
   },
   "mixins": [ "packcore.mixins.json" ],
   "depends": {
-    "fabricloader": ">=0.17.3",
+    "fabricloader": ">=${fabric_loader}",
     "minecraft": "${minecraft}",
     "midnightlib": ">=${midnightlib_version}",
     "owo": ">=${owo_version}"

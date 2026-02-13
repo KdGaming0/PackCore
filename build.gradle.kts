@@ -1,14 +1,6 @@
-import org.gradle.kotlin.dsl.replace
-
 plugins {
     id("fabric-loom")
     id("me.modmuss50.mod-publish-plugin")
-}
-repositories {
-    maven("https://maven.wispforest.io/releases/")
-    maven("https://api.modrinth.com/maven")
-    maven ("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
-    maven ("https://maven.azureaaron.net/releases")
 }
 
 version = "${property("mod.version")}+${stonecutter.current.version}"
@@ -92,6 +84,7 @@ tasks {
         inputs.property("minecraft", project.property("mod.mc_dep"))
         inputs.property("owo_version", project.property("deps.owo_version"))
         inputs.property("iris_version", project.property("deps.iris_version"))
+        inputs.property("fabric_loader", project.property("deps.fabric_loader"))
         inputs.property("sodium_version", project.property("deps.sodium_version"))
         inputs.property("modmenu_version", project.property("deps.modmenu_version"))
         inputs.property("midnightlib_version", project.property("deps.midnightlib_version"))
@@ -104,6 +97,7 @@ tasks {
             "minecraft" to project.property("mod.mc_dep"),
             "owo_version" to project.property("deps.owo_version"),
             "iris_version" to project.property("deps.iris_version"),
+            "fabric_loader" to project.property("deps.fabric_loader"),
             "sodium_version" to project.property("deps.sodium_version"),
             "modmenu_version" to project.property("deps.modmenu_version"),
             "lavender_md_version" to project.property("deps.lavender_md_version"),
