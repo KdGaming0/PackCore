@@ -1,2 +1,1 @@
-- feat: update to mc version 1.21.11
-- refactor: removed ScamShield, didn't work as well as hoped, and a better mod exists now Scam Screene for Hypixel.
+- fix: bug that disabled fancy tab and hud in Skyblocker when selecting Skyhanni compact tab in welcome wizard

@@ -7,8 +7,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Utility for applying the selected Tab Design (SkyHanni or Skyblocker)
@@ -16,19 +16,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class TabDesignManager {
 
-    // Track whether we've already applied SkyHanni config to prevent re-application
-    private static final AtomicBoolean skyhanniConfigApplied = new AtomicBoolean(false);
-
-    // Store the pending enable state
-    private static volatile Boolean pendingSkyHanniState = null;
+    // Store the pending enable state atomically to avoid race conditions
+    private static final AtomicReference<Boolean> pendingSkyHanniState = new AtomicReference<>(null);
 
     // Register the join listener once on class initialization
     static {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, clientPlayNetworkHandler) -> {
-            // Only execute if we have a pending state and haven't applied yet
-            if (pendingSkyHanniState != null && skyhanniConfigApplied.compareAndSet(false, true)) {
-                boolean enable = pendingSkyHanniState;
-                scheduleDelayedCommand(enable);
+            Boolean state = pendingSkyHanniState.getAndSet(null);
+            if (state != null) {
+                scheduleDelayedCommand(state);
             }
         });
     }
@@ -40,20 +36,7 @@ public class TabDesignManager {
             return false;
         }
 
-        boolean skyblockerPresent = isModLoaded("skyblocker");
-        boolean skyhanniPresent = isModLoaded("skyhanni");
-
-        if ("skyblocker".equalsIgnoreCase(tabDesign) && skyblockerPresent) {
-            boolean changed = enableSkyblockerTabList(true);
-            if (skyhanniPresent) enableSkyHanniTabList(false);
-            return changed;
-        } else if ("skyhanni".equalsIgnoreCase(tabDesign) && skyhanniPresent) {
-            boolean changed = enableSkyHanniTabList(true);
-            if (skyblockerPresent) enableSkyblockerTabList(false);
-            return changed;
-        }
-
-        return false;
+        return applyTabDesign(tabDesign);
     }
 
     private static boolean isModLoaded(String modId) {
@@ -62,15 +45,15 @@ public class TabDesignManager {
 
     // ===== Skyblocker (using reflection) =====
 
-    private static boolean enableSkyblockerTabList(boolean enable) {
+    private static boolean enableSkyblockerTabList(boolean skyblockerSelected) {
         try {
             Class<?> configManager = Class.forName("de.hysky.skyblocker.config.SkyblockerConfigManager");
-            Method updateMethod = configManager.getDeclaredMethod("update", java.util.function.Consumer.class);
+            java.lang.reflect.Method updateMethod = configManager.getDeclaredMethod("update", java.util.function.Consumer.class);
 
-            java.util.function.Consumer<Object> consumer = config -> updateSkyblockerConfig(config, enable);
+            java.util.function.Consumer<Object> consumer = config -> updateSkyblockerConfig(config, skyblockerSelected);
 
             updateMethod.invoke(null, consumer);
-            PackCore.LOGGER.info("Set Skyblocker TabHud enabled = {}", enable);
+            PackCore.LOGGER.info("Set Skyblocker TabHud: tabHudEnabled=true, showVanillaTabByDefault={}", !skyblockerSelected);
             return true;
 
         } catch (ClassNotFoundException e) {
@@ -82,13 +65,16 @@ public class TabDesignManager {
         }
     }
 
-    private static void updateSkyblockerConfig(Object config, boolean enable) {
+    private static void updateSkyblockerConfig(Object config, boolean skyblockerSelected) {
         try {
             Object uiAndVisuals = config.getClass().getField("uiAndVisuals").get(config);
             Object tabHud = uiAndVisuals.getClass().getField("tabHud").get(uiAndVisuals);
 
-            tabHud.getClass().getField("tabHudEnabled").setBoolean(tabHud, enable);
-            tabHud.getClass().getField("showVanillaTabByDefault").setBoolean(tabHud, !enable);
+            // tabHudEnabled is ALWAYS true — Skyblocker's tab must stay enabled regardless.
+            // When SkyHanni is selected, showVanillaTabByDefault=true lets vanilla (SkyHanni) show through.
+            // When Skyblocker is selected, showVanillaTabByDefault=false so Skyblocker renders its own tab.
+            tabHud.getClass().getField("tabHudEnabled").setBoolean(tabHud, true);
+            tabHud.getClass().getField("showVanillaTabByDefault").setBoolean(tabHud, !skyblockerSelected);
         } catch (Exception e) {
             PackCore.LOGGER.warn("Failed to update Skyblocker TabHud config", e);
         }
@@ -100,15 +86,13 @@ public class TabDesignManager {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
 
-            // If player is already in a world, run with delay
             if (client.player != null) {
                 scheduleDelayedCommand(enable);
-                skyhanniConfigApplied.set(true);
                 return true;
             }
 
-            // Otherwise, set pending state and wait for join event
-            pendingSkyHanniState = enable;
+            // Reset so the JOIN listener will fire again
+            pendingSkyHanniState.set(enable);
             PackCore.LOGGER.info("Queued SkyHanni command to run on world join");
             return true;
 
@@ -121,22 +105,19 @@ public class TabDesignManager {
     private static void scheduleDelayedCommand(boolean enable) {
         MinecraftClient client = MinecraftClient.getInstance();
 
-        // Schedule command execution after a delay
         new Thread(() -> {
             try {
-                Thread.sleep(2000); // Wait 2 seconds for full initialization
+                Thread.sleep(2000);
                 client.execute(() -> {
                     try {
                         executeSkyHanniCommand(enable);
                         PackCore.LOGGER.info("Executed SkyHanni command after delay");
                     } catch (Exception e) {
                         PackCore.LOGGER.warn("Failed to execute SkyHanni command", e);
-                        skyhanniConfigApplied.set(false);
                     }
                 });
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                skyhanniConfigApplied.set(false);
             }
         }, "SkyHanni-Config-Delay").start();
     }
@@ -195,16 +176,14 @@ public class TabDesignManager {
         boolean skyhanniPresent = isModLoaded("skyhanni");
 
         if ("skyblocker".equalsIgnoreCase(design) && skyblockerPresent) {
+            // skyblockerSelected=true → tabHudEnabled=true, showVanillaTabByDefault=false
             boolean changed = enableSkyblockerTabList(true);
-            if (skyhanniPresent) {
-                enableSkyHanniTabList(false);
-            }
+            if (skyhanniPresent) enableSkyHanniTabList(false);
             return changed;
         } else if ("skyhanni".equalsIgnoreCase(design) && skyhanniPresent) {
+            // skyblockerSelected=false → tabHudEnabled=true, showVanillaTabByDefault=true
             boolean changed = enableSkyHanniTabList(true);
-            if (skyblockerPresent) {
-                enableSkyblockerTabList(false);
-            }
+            if (skyblockerPresent) enableSkyblockerTabList(false);
             return changed;
         }
 
