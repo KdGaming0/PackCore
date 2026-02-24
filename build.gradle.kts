@@ -7,56 +7,37 @@ version = "${property("mod.version")}+${stonecutter.current.version}"
 base.archivesName = property("mod.id") as String
 
 repositories {
-    /**
-     * Restricts dependency search of the given [groups] to the [maven URL][url],
-     * improving the setup speed.
-     */
+    mavenCentral()
     fun strictMaven(url: String, alias: String, vararg groups: String) = exclusiveContent {
         forRepository { maven(url) { name = alias } }
         filter { groups.forEach(::includeGroup) }
     }
-    strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
     strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
-    maven("https://maven.terraformersmc.com/")
-    maven("https://maven.wispforest.io/releases/")
-    maven("https://jitpack.io")
-    maven("https://maven.midnightdust.eu/releases")
-    maven("https://repo.hypixel.net/repository/Hypixel/")
+    maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
     exclusiveContent {
         forRepository { maven("https://maven.azureaaron.net/releases") }
         filter { includeGroup("net.azureaaron") }
     }
-    maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
-    mavenLocal()
 }
 
 dependencies {
     minecraft("com.mojang:minecraft:${stonecutter.current.version}")
-    mappings("net.fabricmc:yarn:${property("deps.yarn_mappings")}:v2")
+    mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("deps.fabric_api")}")
 
-    modImplementation("eu.midnightdust:midnightlib:${property("deps.midnightlib_version")}")
-    include("eu.midnightdust:midnightlib:${property("deps.midnightlib_version")}")
+    modImplementation("maven.modrinth:midnightlib:${property("deps.midnightlib_version")}")
+    include("maven.modrinth:midnightlib:${property("deps.midnightlib_version")}")
 
-    modImplementation("com.terraformersmc:modmenu:${property("deps.modmenu_version")}")
-    modRuntimeOnly("com.terraformersmc:modmenu:${property("deps.modmenu_version")}")
-    modImplementation("io.wispforest:owo-lib:${property("deps.owo_version")}")
-    modImplementation("io.wispforest.lavender-md:core:${property("deps.lavender_md_version")}")
-    include("io.wispforest.lavender-md:core:${property("deps.lavender_md_version")}")
-    modImplementation("io.wispforest.lavender-md:owo-ui:${property("deps.lavender_md_version")}")
-    include("io.wispforest.lavender-md:owo-ui:${property("deps.lavender_md_version")}")
-    modImplementation("net.azureaaron:hm-api:1.0.1+1.21.2")
-    include("net.azureaaron:hm-api:1.0.1+1.21.2")
+    modImplementation("maven.modrinth:ui-lib:${property("deps.uilib_version")}")
 
-    modImplementation("maven.modrinth:sodium:${property("deps.sodium_version")}")
-    modImplementation("maven.modrinth:iris:${property("deps.iris_version")}")
+    modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
+    include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
 
-    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
-    implementation("org.apache.httpcomponents:httpclient:4.5.13")
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
+    modRuntimeOnly("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
 }
 
-// Add this mixin configuration block
 loom {
     decompilerOptions.named("vineflower") {
         options.put("mark-corresponding-synthetics", "1") // Adds names to lambdas - useful for mixins
@@ -80,28 +61,20 @@ tasks {
     processResources {
         inputs.property("id", project.property("mod.id"))
         inputs.property("name", project.property("mod.name"))
+        inputs.property("hm_api", project.property("deps.hm_api"))
         inputs.property("version", project.property("mod.version"))
         inputs.property("minecraft", project.property("mod.mc_dep"))
-        inputs.property("owo_version", project.property("deps.owo_version"))
-        inputs.property("iris_version", project.property("deps.iris_version"))
-        inputs.property("fabric_loader", project.property("deps.fabric_loader"))
-        inputs.property("sodium_version", project.property("deps.sodium_version"))
-        inputs.property("modmenu_version", project.property("deps.modmenu_version"))
-        inputs.property("midnightlib_version", project.property("deps.midnightlib_version"))
-        inputs.property("lavender_md_version", project.property("deps.lavender_md_version"))
+        inputs.property("fabric_api", project.property("deps.fabric_api"))
+        inputs.property("fabricloader", project.property("deps.fabric_loader"))
 
         val props = mapOf(
             "id" to project.property("mod.id"),
             "name" to project.property("mod.name"),
+            "hm_api" to project.property("deps.hm_api"),
             "version" to project.property("mod.version"),
             "minecraft" to project.property("mod.mc_dep"),
-            "owo_version" to project.property("deps.owo_version"),
-            "iris_version" to project.property("deps.iris_version"),
-            "fabric_loader" to project.property("deps.fabric_loader"),
-            "sodium_version" to project.property("deps.sodium_version"),
-            "modmenu_version" to project.property("deps.modmenu_version"),
-            "lavender_md_version" to project.property("deps.lavender_md_version"),
-            "midnightlib_version" to project.property("deps.midnightlib_version")
+            "fabric_api" to project.property("deps.fabric_api"),
+            "fabricloader" to project.property("deps.fabric_loader")
         )
 
         filesMatching("fabric.mod.json") {
@@ -127,18 +100,6 @@ tasks {
     }
 }
 
-stonecutter {
-    replacements.string(current.parsed >= "1.21.11") {
-        replace("ParentComponent", "ParentUIComponent")
-    }
-
-    replacements.regex(current.parsed >= "1.21.11") {
-        replace("\\bComponent\\b" to "UIComponent", "\\bUIComponent\\b" to "Component")
-        replace("\\bComponents\\b" to "UIComponents", "\\bUIComponents\\b" to "Components")
-        replace("\\bContainers\\b" to "UIContainers", "\\bUIContainers\\b" to "Containers")
-    }
-}
-
 publishMods {
     file = tasks.remapJar.map { it.archiveFile.get() }
     additionalFiles.from(tasks.remapSourcesJar.map { it.archiveFile.get() })
@@ -159,7 +120,7 @@ publishMods {
             slug = "P7dR8mSH" // Fabric API
         }
         requires {
-            slug = "ccKDOlHs" // OwO Lib
+            slug = "AOEDs9Al" // UI Lib
         }
         optional {
             slug = "mOgUt4GM" // ModMenu
@@ -174,7 +135,7 @@ publishMods {
             slug = "fabric-api"
         }
         requires {
-            slug = "owo-lib"
+            slug = "ui"
         }
         optional {
             slug = "modmenu"
