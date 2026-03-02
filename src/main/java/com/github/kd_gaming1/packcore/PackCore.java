@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.command.PackCoreCommands;
+import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;
@@ -18,6 +19,8 @@ public class PackCore implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         LOGGER.info("[PackCore] Initialized");
+
+        UpdateChecker.checkAsync();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
                 PackCoreCommands.register(dispatcher)

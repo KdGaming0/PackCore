@@ -1,4 +1,4 @@
-package com.github.kd_gaming1.packcore.modpack;
+package com.github.kd_gaming1.packcore.metadata;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

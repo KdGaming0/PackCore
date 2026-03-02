@@ -6,12 +6,17 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackExtractor;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackMeta;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
+import com.github.kd_gaming1.packcore.update.UpdateCache;
+import com.github.kd_gaming1.packcore.update.UpdateChecker;
+import com.github.kd_gaming1.packcore.update.UpdateStatus;
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
@@ -30,6 +35,16 @@ public class PackCoreCommands {
                             extract(ctx.getSource());
                             return 1;
                         }))
+                        .then(literal("update")
+                                .then(literal("check").executes(ctx -> {
+                                    checkUpdate(ctx.getSource());
+                                    return 1;
+                                }))
+                                .then(literal("reset").executes(ctx -> {
+                                    resetUpdateCache(ctx.getSource());
+                                    return 1;
+                                }))
+                        )
         );
     }
 
@@ -70,6 +85,40 @@ public class PackCoreCommands {
         } catch (Exception e) {
             sendError(source, "Extract failed: " + e.getMessage());
         }
+    }
+
+    private static void checkUpdate(FabricClientCommandSource source) {
+        send(source, "Checking for updates...");
+
+        CompletableFuture<UpdateStatus> future = UpdateChecker.checkAsync();
+
+        future.thenAccept(status -> {
+            Minecraft.getInstance().execute(() -> {
+                switch (status.state()) {
+                    case UP_TO_DATE -> {
+                        send(source, "You are up to date! Version: " + status.installedVersion());
+                    }
+                    case UPDATE_AVAILABLE -> {
+                        send(source, "Update available!");
+                        send(source, "Installed: " + status.installedVersion());
+                        send(source, "Latest: " + status.latestVersion());
+
+                        if (status.changelog() != null && !status.changelog().isBlank()) {
+                            send(source, "Changelog:");
+                            send(source, status.changelog());
+                        }
+                    }
+                    case UNKNOWN -> {
+                        sendError(source, "Could not determine update status.");
+                    }
+                }
+            });
+        });
+    }
+
+    private static void resetUpdateCache(FabricClientCommandSource source) {
+        UpdateCache.invalidate();
+        send(source, "Update cache cleared. Next check will fetch from Modrinth.");
     }
 
     private static void send(FabricClientCommandSource source, String message) {
