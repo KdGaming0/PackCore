@@ -13,6 +13,7 @@ repositories {
         filter { groups.forEach(::includeGroup) }
     }
     strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
+    strictMaven("https://maven.daqem.com/releases", "DAQEM Studios", "com.daqem", "com.daqem.uilib")
     maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
     exclusiveContent {
         forRepository { maven("https://maven.azureaaron.net/releases") }
@@ -29,7 +30,7 @@ dependencies {
     modImplementation("maven.modrinth:midnightlib:${property("deps.midnightlib_version")}")
     include("maven.modrinth:midnightlib:${property("deps.midnightlib_version")}")
 
-    modImplementation("maven.modrinth:ui-lib:${property("deps.uilib_version")}")
+    modImplementation("com.daqem.uilib:uilib-fabric:${property("deps.uilib_version")}")
 
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
     include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
@@ -61,20 +62,26 @@ tasks {
     processResources {
         inputs.property("id", project.property("mod.id"))
         inputs.property("name", project.property("mod.name"))
-        inputs.property("hm_api", project.property("deps.hm_api"))
         inputs.property("version", project.property("mod.version"))
         inputs.property("minecraft", project.property("mod.mc_dep"))
+        inputs.property("ui_lib", project.property("deps.uilib_version"))
+        inputs.property("hm_api", project.property("deps.hm_api_version"))
         inputs.property("fabric_api", project.property("deps.fabric_api"))
         inputs.property("fabricloader", project.property("deps.fabric_loader"))
+        inputs.property("uilib_version", project.property("deps.uilib_version"))
+        inputs.property("modmenu_version", project.property("deps.modmenu_version"))
 
         val props = mapOf(
             "id" to project.property("mod.id"),
             "name" to project.property("mod.name"),
-            "hm_api" to project.property("deps.hm_api"),
             "version" to project.property("mod.version"),
             "minecraft" to project.property("mod.mc_dep"),
+            "ui_lib" to project.property("deps.uilib_version"),
+            "hm_api" to project.property("deps.hm_api_version"),
             "fabric_api" to project.property("deps.fabric_api"),
-            "fabricloader" to project.property("deps.fabric_loader")
+            "fabricloader" to project.property("deps.fabric_loader"),
+            "uilib_version" to project.property("deps.uilib_version"),
+            "modmenu_version" to project.property("deps.modmenu_version")
         )
 
         filesMatching("fabric.mod.json") {
