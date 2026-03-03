@@ -30,7 +30,7 @@ public final class ConfigPackMeta {
         this.name = builder.name;
         this.description = builder.description;
         this.author = builder.author;
-        this.mods = builder.mods != null ? List.copyOf(builder.mods) : null;
+        this.mods = builder.mods != null ? List.copyOf(builder.mods) : List.of();
         this.createdDate = Instant.now().toString();
     }
 
@@ -61,7 +61,7 @@ public final class ConfigPackMeta {
         private String name;
         private String description;
         private String author;
-        private List<String> mods;
+        private List<String> mods = List.of();
 
         private Builder(String version, int targetWidth, int targetHeight) {
             this.version      = version;
@@ -72,7 +72,10 @@ public final class ConfigPackMeta {
         public Builder name(String name) {this.name = name; return this;}
         public Builder description(String description) {this.description = description; return this;}
         public Builder author(String author) {this.author = author; return this;}
-        public Builder mods(List<String> mods) {this.mods = mods; return this;}
+        public Builder mods(List<String> mods) {
+            this.mods = mods != null ? mods : List.of();
+            return this;
+        }
 
         public ConfigPackMeta build() {
             return new ConfigPackMeta(this);

@@ -7,10 +7,15 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public final class UpdateChecker {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/UpdateChecker");
+
+    // Dedicated executor for network I/O operations
+    private static final Executor NETWORK_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private UpdateChecker() {}
 
@@ -19,7 +24,7 @@ public final class UpdateChecker {
      * Usage: UpdateChecker.checkAsync().thenAccept(status -> { ... });
      */
     public static CompletableFuture<UpdateStatus> checkAsync() {
-        return CompletableFuture.supplyAsync(UpdateChecker::check);
+        return CompletableFuture.supplyAsync(UpdateChecker::check, NETWORK_EXECUTOR);
     }
 
     public static UpdateStatus check() {
@@ -57,7 +62,7 @@ public final class UpdateChecker {
         return status;
     }
 
-    private static boolean isNewerVersion(String available, String installed) {
+    public static boolean isNewerVersion(String available, String installed) {
         String[] availableParts = available.split("\\.");
         String[] installedParts = installed.split("\\.");
 

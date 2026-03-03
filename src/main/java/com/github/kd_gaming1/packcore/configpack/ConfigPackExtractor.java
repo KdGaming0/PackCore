@@ -50,7 +50,7 @@ public class ConfigPackExtractor {
 
     private static boolean isTargetedEntry(String entryName, Collection<String> targetPaths) {
         for (String target : targetPaths) {
-            if (entryName.equals(target) || entryName.startsWith(target)) {
+            if (entryName.equals(target) || entryName.startsWith(target + "/")) {
                 return true;
             }
         }
@@ -76,6 +76,10 @@ public class ConfigPackExtractor {
     private static void writeEntry(ZipFile zipFile, ZipEntry entry, Path targetPath, OverwriteMode overwriteMode) throws IOException {
         if (overwriteMode == OverwriteMode.SKIP_EXISTING && Files.exists(targetPath)) return;
 
+        if (overwriteMode == OverwriteMode.FAIL_IF_EXISTS && Files.exists(targetPath)) {
+            throw new FileAlreadyExistsException(targetPath.toString());
+        }
+
         CopyOption[] options = (overwriteMode == OverwriteMode.REPLACE_EXISTING)
                 ? new CopyOption[]{ StandardCopyOption.REPLACE_EXISTING }
                 : new CopyOption[0];
@@ -86,6 +90,11 @@ public class ConfigPackExtractor {
     }
 
     public enum OverwriteMode {
-        SKIP_EXISTING, REPLACE_EXISTING, FAIL_IF_EXISTS
+        /** Skip extraction if the target file already exists. */
+        SKIP_EXISTING,
+        /** Replace the target file if it already exists. */
+        REPLACE_EXISTING,
+        /** Fail with FileAlreadyExistsException if the target file already exists. */
+        FAIL_IF_EXISTS
     }
 }

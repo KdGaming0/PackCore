@@ -20,7 +20,21 @@ public class PackCore implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("[PackCore] Initialized");
 
-        UpdateChecker.checkAsync();
+        UpdateChecker.checkAsync().thenAccept(status -> {
+                    switch (status.state()) {
+                        case UPDATE_AVAILABLE ->
+                                LOGGER.info("Update available: {} -> {} | Changelog: {}",
+                                        status.installedVersion(), status.latestVersion(), status.changelog());
+                        case UP_TO_DATE ->
+                                LOGGER.info("Modpack is up to date: {}", status.installedVersion());
+                        case UNKNOWN ->
+                                LOGGER.debug("Unable to determine update status");
+                    }
+                })
+                .exceptionally(throwable -> {
+                    LOGGER.error("Failed to check for updates", throwable);
+                    return null;
+                });
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
                 PackCoreCommands.register(dispatcher)

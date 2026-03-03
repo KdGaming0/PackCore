@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.util.*;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
@@ -61,7 +62,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             if (installedVersion.isEmpty()) {
                 LOGGER.info("No config applied yet, performing full extraction.");
                 ConfigPackExtractor.extractAll(selectedPack.zipPath(), packcoreDir, ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
-            } else if (isNewerVersion(packVersion, installedVersion)) {
+            } else if (UpdateChecker.isNewerVersion(packVersion, installedVersion)) {
                 LOGGER.info("Newer config available ({} -> {}), applying with SKIP_EXISTING.", installedVersion, packVersion);
                 ConfigPackExtractor.extractAll(selectedPack.zipPath(), packcoreDir, ConfigPackExtractor.OverwriteMode.SKIP_EXISTING);
             } else {
@@ -109,32 +110,5 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         }
 
         return selectedPack;
-    }
-
-    private boolean isNewerVersion(String available, String applied) {
-        String[] availableParts = available.split("\\.");
-        String[] appliedParts = applied.split("\\.");
-
-        int segmentCount = Math.max(availableParts.length, appliedParts.length);
-
-        for (int i = 0; i < segmentCount; i++) {
-            int availableSegment = i < availableParts.length ? parseVersionSegment(availableParts[i]) : 0;
-            int appliedSegment = i < appliedParts.length ? parseVersionSegment(appliedParts[i]) : 0;
-
-            if (availableSegment != appliedSegment) {
-                return availableSegment > appliedSegment;
-            }
-        }
-
-        return false; // Versions are equal
-    }
-
-    private int parseVersionSegment(String segment) {
-        try {
-            return Integer.parseInt(segment.trim());
-        } catch (NumberFormatException e) {
-            LOGGER.warn("Unparseable version segment '{}', treating as 0", segment);
-            return 0;
-        }
     }
 }

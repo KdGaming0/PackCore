@@ -24,24 +24,24 @@ public final class ModrinthClient {
 
     public record VersionInfo(String versionNumber, String changelog) {}
 
-    /**
-     * Fetches the latest version info for the given project ID.
-     * Calls /project/{id} first to get the version list, then /version/{id} for the details.
-     */
     public static Optional<VersionInfo> fetchLatestVersion(String projectId) {
-        Optional<JsonObject> project = fetchProject(projectId);
-        if (project.isEmpty()) return Optional.empty();
+        return get(API_BASE + "/project/" + projectId + "/version")
+                .flatMap(element -> {
+                    JsonArray versions = element.getAsJsonArray();
+                    if (versions.isEmpty()) {
+                        LOGGER.warn("Modrinth project '{}' has no versions listed.", projectId);
+                        return Optional.empty();
+                    }
 
-        JsonArray versionIds = project.get().getAsJsonArray("versions");
-        if (versionIds == null || versionIds.isEmpty()) {
-            LOGGER.warn("Modrinth project '{}' has no versions listed.", projectId);
-            return Optional.empty();
-        }
+                    JsonObject latest = versions.get(0).getAsJsonObject();
 
-        // Versions are listed oldest to latest, last entry is the newest
-        String latestVersionId = versionIds.get(versionIds.size() - 1).getAsString();
+                    String versionNumber = latest.get("version_number").getAsString();
+                    String changelog = latest.has("changelog") && !latest.get("changelog").isJsonNull()
+                            ? latest.get("changelog").getAsString()
+                            : null;
 
-        return fetchVersionInfo(latestVersionId);
+                    return Optional.of(new VersionInfo(versionNumber, changelog));
+                });
     }
 
     public static Optional<JsonObject> fetchProject(String projectId) {
@@ -49,22 +49,10 @@ public final class ModrinthClient {
                 .map(JsonElement::getAsJsonObject);
     }
 
-    private static Optional<VersionInfo> fetchVersionInfo(String versionId) {
-        return get(API_BASE + "/version/" + versionId).map(element -> {
-            JsonObject version = element.getAsJsonObject();
-
-            String versionNumber = version.get("version_number").getAsString();
-            String changelog = version.has("changelog") && !version.get("changelog").isJsonNull()
-                    ? version.get("changelog").getAsString()
-                    : null;
-
-            return new VersionInfo(versionNumber, changelog);
-        });
-    }
-
     private static Optional<JsonElement> get(String url) {
+        HttpURLConnection connection = null;
         try {
-            HttpURLConnection connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
+            connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("User-Agent", USER_AGENT);
             connection.setConnectTimeout(TIMEOUT_MS);
@@ -88,6 +76,10 @@ public final class ModrinthClient {
         } catch (Exception e) {
             LOGGER.warn("Failed to reach Modrinth API: {}", e.getMessage());
             return Optional.empty();
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 }
