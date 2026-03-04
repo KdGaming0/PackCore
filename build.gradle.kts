@@ -32,6 +32,8 @@ dependencies {
 
     modImplementation("com.daqem.uilib:uilib-fabric:${property("deps.uilib_version")}")
 
+    modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
+
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
     include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
 

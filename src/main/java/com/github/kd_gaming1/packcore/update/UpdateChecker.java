@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class UpdateChecker {
 
@@ -17,17 +18,30 @@ public final class UpdateChecker {
     // Dedicated executor for network I/O operations
     private static final Executor NETWORK_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
+    private static final AtomicReference<UpdateStatus> CACHED_STATUS = new AtomicReference<>(UpdateStatus.unknown());
+
     private UpdateChecker() {}
+
+    /**
+     * Returns the last known status without triggering a new check.
+     */
+    public static UpdateStatus getCachedStatus() {
+        return CACHED_STATUS.get();
+    }
 
     /**
      * Runs the update check on a background thread — never blocks the game thread.
      * Usage: UpdateChecker.checkAsync().thenAccept(status -> { ... });
      */
     public static CompletableFuture<UpdateStatus> checkAsync() {
-        return CompletableFuture.supplyAsync(UpdateChecker::check, NETWORK_EXECUTOR);
+        return CompletableFuture.supplyAsync(UpdateChecker::check, NETWORK_EXECUTOR)
+                .thenApply(status -> {
+                    CACHED_STATUS.set(status);
+                    return status;
+                });
     }
 
-    public static UpdateStatus check() {
+    private static UpdateStatus check() {
         ModpackMetadata metadata = ModpackMetadata.getInstance();
         String projectId = metadata.getModrinthProjectId();
         String installedVersion = metadata.getModpackVersion();

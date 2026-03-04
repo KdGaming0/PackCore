@@ -1,10 +1,14 @@
 package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.command.PackCoreCommands;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.gui.screen.SBETitleScreen;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.gui.screens.TitleScreen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,24 +24,18 @@ public class PackCore implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("[PackCore] Initialized");
 
-        UpdateChecker.checkAsync().thenAccept(status -> {
-                    switch (status.state()) {
-                        case UPDATE_AVAILABLE ->
-                                LOGGER.info("Update available: {} -> {} | Changelog: {}",
-                                        status.installedVersion(), status.latestVersion(), status.changelog());
-                        case UP_TO_DATE ->
-                                LOGGER.info("Modpack is up to date: {}", status.installedVersion());
-                        case UNKNOWN ->
-                                LOGGER.debug("Unable to determine update status");
-                    }
-                })
-                .exceptionally(throwable -> {
-                    LOGGER.error("Failed to check for updates", throwable);
-                    return null;
-                });
+        UpdateChecker.checkAsync();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
                 PackCoreCommands.register(dispatcher)
         );
+
+        if (PackCoreConfig.enableCustomTitleScreen) {
+            ScreenEvents.BEFORE_INIT.register(((client, screen, scaledWidth, scaledHeight) -> {
+                if (screen instanceof TitleScreen) {
+                    client.execute(() -> client.setScreen(new SBETitleScreen()));
+                }
+            }));
+        }
     }
 }

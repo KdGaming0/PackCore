@@ -1,48 +1,15 @@
 {
   "packcore.midnightconfig.title": "PackCore Configuration",
 
-  "packcore.midnightconfig.category.interface": "User Interface",
-  "packcore.midnightconfig.category.backups": "Backups",
-  "packcore.midnightconfig.category.customization": "Customization & Updates",
-  "packcore.midnightconfig.category.scam_protection": "Scam protection",
-  "packcore.midnightconfig.category.advanced": "Advanced",
-
-  "packcore.midnightconfig.interface_info": "Interface settings for the PackCore mod.",
-  "packcore.midnightconfig.enable_custom_menu": "Enable custom main menu",
-  "packcore.midnightconfig.enable_custom_menu.tooltip": "Turns the PackCore custom main menu on or off.",
-
-  "packcore.midnightconfig.backup_info": "Auto backups run when you apply configuration changes. Scheduled backups run at the interval below.",
-  "packcore.midnightconfig.enable_auto_backups": "Enable auto backups",
-  "packcore.midnightconfig.enable_auto_backups.tooltip": "Creates a backup each time you apply new settings.",
-  "packcore.midnightconfig.enable_scheduled_backups": "Enable scheduled backups",
-  "packcore.midnightconfig.enable_scheduled_backups.tooltip": "Creates backups at regular times.",
-  "packcore.midnightconfig.max_backups": "Maximum number of backups to keep",
-  "packcore.midnightconfig.max_backups.tooltip": "Limits how many backups PackCore stores. It deletes the oldest when full.",
-  "packcore.midnightconfig.backup_interval_days": "Backup interval (days)",
-  "packcore.midnightconfig.backup_interval_days.tooltip": "Sets how long PackCore waits before creating the next scheduled backup.",
-  "packcore.midnightconfig.enable_backup_debug_logging": "Enable Backup Debug Logging",
-  "packcore.midnightconfig.enable_backup_debug_logging.tooltip": "Logs detailed timing information for each backup phase. Enable this if backups are slow to help diagnose the issue.",
-  "packcore.midnightconfig.customization_spacer_1": "",
-
-  "packcore.midnightconfig.server_address": "Server address for quick-join button",
-  "packcore.midnightconfig.server_address.tooltip": "Sets the server used by the Quick Join button.",
-  "packcore.midnightconfig.enable_update_notifications": "Enable update notifications",
-  "packcore.midnightconfig.enable_update_notifications.tooltip": "Shows a message in chat when the modpack has updates.",
-  "packcore.midnightconfig.show_update_notifications_title": "Show update notifications on title screen",
-  "packcore.midnightconfig.show_update_notifications_title.tooltip": "Shows update notices on the title screen.",
-  "packcore.midnightconfig.show_low_memory_warning": "Show Low Memory Warning",
-  "packcore.midnightconfig.show_low_memory_warning.tooltip": "Show a warning on the main menu if allocated RAM is below the minimum",
-  "packcore.midnightconfig.minimum_ram_gb": "Minimum RAM (GB)",
-  "packcore.midnightconfig.minimum_ram_gb.tooltip": "Minimum amount of RAM in GB before showing a warning",
-
-  "packcore.midnightconfig.first_startup": "Treat next launch as first startup",
-  "packcore.midnightconfig.first_startup.tooltip": "Controls whether PackCore runs its first-time setup. Turn this on if you want the modpack to run the setup steps again.",
-  "packcore.midnightconfig.welcome_wizard_shown": "Mark welcome wizard as shown",
-  "packcore.midnightconfig.welcome_wizard_shown.tooltip": "Controls if the welcome wizard shows. Turn it off to show it again.",
-
-  "packcore.midnightconfig.have_set_bobby_config": "Mark Bobby config as applied",
-  "packcore.midnightconfig.have_set_bobby_config.tooltip": "Tracks if PackCore has applied Bobby’s settings. Change it to force the setup again.",
-
-  "packcore.midnightconfig.setup_wizard_completed": "Mark setup wizard as completed",
-  "packcore.midnightconfig.setup_wizard_completed.tooltip": "Tracks if the setup wizard has been completed."
+  "gui.packcore.button.join_hypixel": "Join Hypixel",
+  "gui.packcore.button.modmenu": "Mod Menu",
+  "gui.packcore.tooltip.discord": "Join our Discord server",
+  "gui.packcore.tooltip.modrinth": "View on Modrinth",
+  "gui.packcore.tooltip.github": "View source on GitHub",
+  "gui.packcore.tooltip.modpack_config": "Open Configuration menu for the modpack",
+  "gui.packcore.tooltip.modpack_update": "See what's new in the modpack.",
+  "gui.packcore.tooltip.update_available": "Update available: v%s",
+  "gui.packcore.tooltip.changelog": "View Changelog",
+  "gui.packcore.overlay.changelog.title": "Changelog — v%s",
+  "gui.packcore.overlay.changelog.close": "Close"
 }
