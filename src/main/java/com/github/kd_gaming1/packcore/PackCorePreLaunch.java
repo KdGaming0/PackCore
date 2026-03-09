@@ -13,21 +13,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 public class PackCorePreLaunch implements PreLaunchEntrypoint {
-
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/PreLaunch");
 
     @Override
     public void onPreLaunch() {
         Path packcoreDir = PackCore.PACKCORE_DIR;
-        Path configsDir = packcoreDir.resolve("configs");
+        Path configsDir  = packcoreDir.resolve("configs");
 
         MidnightConfig.init("packcore", PackCoreConfig.class);
 
+        // ── Priority path: user explicitly chose a config from the wizard GUI ──
+        // If pendingConfigPack is set, apply that pack unconditionally (bypasses
+        // resolution auto-detection) and clear the flag, then return early.
+        if (!PackCoreConfig.pendingConfigPack.isBlank()) {
+            applyPendingConfig(packcoreDir, configsDir);
+            return;
+        }
+
+        // ── Normal path: auto-detect the best resolution match ─────────────────
         ScreenResolution.ScreenSize screen = ScreenResolution.detect();
 
         ConfigPackScanner scanner = new ConfigPackScanner();
@@ -52,21 +61,111 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        JsonObject config = selectedPack.config();
-        String packVersion = config.has("version") ? config.get("version").getAsString() : "";
-        String installedVersion = PackCoreConfig.lastAppliedVersion;
+        extractIfNeeded(selectedPack, packcoreDir);
+    }
 
-        LOGGER.info("Best match: {} (version: {})", selectedPack.zipPath().getFileName(), packVersion);
+    // ── Pending (user-selected) config ────────────────────────────────────────
+
+    /**
+     * Applies the pack whose filename is stored in {@link PackCoreConfig#pendingConfigPack}.
+     *
+     * Always uses {@link ConfigPackExtractor.OverwriteMode#REPLACE_EXISTING} because
+     * the user explicitly asked to switch, so we want a clean application of the new pack.
+     * The pending flag is cleared regardless of success or failure.
+     */
+    private void applyPendingConfig(Path packcoreDir, Path configsDir) {
+        String pendingFile = PackCoreConfig.pendingConfigPack;
+        LOGGER.info("Pending config switch requested: {}", pendingFile);
+
+        // Locate the zip in the configs directory
+        Path zipPath = configsDir.resolve(pendingFile);
+        if (!Files.exists(zipPath)) {
+            LOGGER.error("Pending config zip not found at: {}", zipPath);
+            clearPending();
+            return;
+        }
+
+        // Re-scan so we get the ConfigPackEntry (with the parsed JsonObject)
+        ConfigPackScanner scanner = new ConfigPackScanner();
+        List<ConfigPackEntry> packs;
+        try {
+            packs = scanner.scanFolder(configsDir);
+        } catch (IOException e) {
+            LOGGER.error("Failed to scan configs for pending pack: {}", e.getMessage());
+            clearPending();
+            return;
+        }
+
+        ConfigPackEntry entry = packs.stream()
+                .filter(p -> p.zipPath().getFileName().toString().equals(pendingFile))
+                .findFirst()
+                .orElse(null);
+
+        if (entry == null) {
+            LOGGER.error("Could not locate pending config entry after scan: {}", pendingFile);
+            clearPending();
+            return;
+        }
+
+        // Extract — full replace, since the user intentionally chose this pack
+        try {
+            ConfigPackExtractor.extractAll(
+                    entry.zipPath(), packcoreDir,
+                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
+            );
+        } catch (IOException e) {
+            LOGGER.error("Failed to extract pending config pack '{}': {}", pendingFile, e.getMessage());
+            clearPending();
+            return;
+        }
+
+        JsonObject config      = entry.config();
+        String     packVersion = config.has("version") ? config.get("version").getAsString() : "";
+
+        PackCoreConfig.lastAppliedVersion  = packVersion;
+        PackCoreConfig.lastAppliedPackFile = pendingFile;
+        PackCoreConfig.pendingConfigPack   = "";
+        MidnightConfig.write("packcore");
+
+        LOGGER.info("Successfully applied pending config: {} (version: {})", pendingFile, packVersion);
+    }
+
+    /** Clears {@code pendingConfigPack} and persists the change. */
+    private static void clearPending() {
+        PackCoreConfig.pendingConfigPack = "";
+        MidnightConfig.write("packcore");
+    }
+
+    // ── Auto-detect helpers ───────────────────────────────────────────────────
+
+    /**
+     * Extracts {@code selectedPack} if it is newer than the installed version,
+     * or if no version has been applied yet.
+     */
+    private void extractIfNeeded(ConfigPackEntry selectedPack, Path packcoreDir) {
+        JsonObject config           = selectedPack.config();
+        String     packVersion      = config.has("version") ? config.get("version").getAsString() : "";
+        String     installedVersion = PackCoreConfig.lastAppliedVersion;
+
+        LOGGER.info("Best resolution match: {} (version: {})",
+                selectedPack.zipPath().getFileName(), packVersion);
 
         try {
             if (installedVersion.isEmpty()) {
-                LOGGER.info("No config applied yet, performing full extraction.");
-                ConfigPackExtractor.extractAll(selectedPack.zipPath(), packcoreDir, ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
+                LOGGER.info("No config applied yet — performing full extraction.");
+                ConfigPackExtractor.extractAll(
+                        selectedPack.zipPath(), packcoreDir,
+                        ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
+                );
             } else if (UpdateChecker.isNewerVersion(packVersion, installedVersion)) {
-                LOGGER.info("Newer config available ({} -> {}), applying with SKIP_EXISTING.", installedVersion, packVersion);
-                ConfigPackExtractor.extractAll(selectedPack.zipPath(), packcoreDir, ConfigPackExtractor.OverwriteMode.SKIP_EXISTING);
+                LOGGER.info("Newer config available ({} → {}), applying with SKIP_EXISTING.",
+                        installedVersion, packVersion);
+                ConfigPackExtractor.extractAll(
+                        selectedPack.zipPath(), packcoreDir,
+                        ConfigPackExtractor.OverwriteMode.SKIP_EXISTING
+                );
             } else {
-                LOGGER.info("Config is up to date (version: {}), skipping.", installedVersion);
+                LOGGER.info("Config up to date (version: {}), skipping.", installedVersion);
                 return;
             }
         } catch (IOException e) {
@@ -74,19 +173,21 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        PackCoreConfig.lastAppliedVersion = packVersion;
+        PackCoreConfig.lastAppliedVersion  = packVersion;
+        PackCoreConfig.lastAppliedPackFile = selectedPack.zipPath().getFileName().toString();
         MidnightConfig.write("packcore");
 
         LOGGER.info("Successfully applied config version: {}", packVersion);
     }
 
     /**
-     * Returns the pack whose target resolution is closest to the screen resolution.
-     * Uses squared Euclidean distance
+     * Returns the pack whose target resolution is closest to the screen resolution
+     * using squared Euclidean distance.
      */
-    private ConfigPackEntry findBestResolutionMatch(List<ConfigPackEntry> packs, int screenWidth, int screenHeight) {
-        ConfigPackEntry selectedPack = null;
-        long bestDistanceSquared = Long.MAX_VALUE;
+    private ConfigPackEntry findBestResolutionMatch(List<ConfigPackEntry> packs,
+                                                    int screenWidth, int screenHeight) {
+        ConfigPackEntry selectedPack       = null;
+        long            bestDistanceSquared = Long.MAX_VALUE;
 
         for (ConfigPackEntry pack : packs) {
             JsonObject config = pack.config();
@@ -96,16 +197,13 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
                 continue;
             }
 
-            int packWidth = config.get("targetWidth").getAsInt();
-            int packHeight = config.get("targetHeight").getAsInt();
+            long widthDiff  = config.get("targetWidth").getAsInt()  - screenWidth;
+            long heightDiff = config.get("targetHeight").getAsInt() - screenHeight;
+            long distSq     = widthDiff * widthDiff + heightDiff * heightDiff;
 
-            long widthDiff = packWidth - screenWidth;
-            long heightDiff = packHeight - screenHeight;
-            long distanceSquared = (widthDiff * widthDiff) + (heightDiff * heightDiff);
-
-            if (distanceSquared < bestDistanceSquared) {
-                bestDistanceSquared = distanceSquared;
-                selectedPack = pack;
+            if (distSq < bestDistanceSquared) {
+                bestDistanceSquared = distSq;
+                selectedPack        = pack;
             }
         }
 

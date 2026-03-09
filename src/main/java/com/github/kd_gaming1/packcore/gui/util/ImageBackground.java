@@ -6,30 +6,30 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 /**
- * Custom background that renders a texture/image
+ * Custom background that renders a texture using one of four layout modes.
  */
 public class ImageBackground extends AbstractBackground {
+
+    public enum BackgroundMode {
+        /** Stretch image to fill entire screen. */
+        STRETCH,
+        /** Tile image across screen. */
+        TILE,
+        /** Center image at its natural size. */
+        CENTER,
+        /** Scale to fit screen while maintaining aspect ratio. */
+        FIT
+    }
 
     private final Identifier texture;
     private final int textureWidth;
     private final int textureHeight;
     private final BackgroundMode mode;
 
-    // Cached computed layout — invalidated when screen size changes
+    // Cached layout — invalidated when screen size changes
     private int cachedScreenWidth = -1;
     private int cachedScreenHeight = -1;
     private int cachedX, cachedY, cachedW, cachedH;
-
-    public enum BackgroundMode {
-        /** Stretch image to fill entire screen */
-        STRETCH,
-        /** Tile image across screen */
-        TILE,
-        /** Center image (no scaling) */
-        CENTER,
-        /** Scale to fit screen while maintaining aspect ratio */
-        FIT
-    }
 
     public ImageBackground(Identifier texture, int textureWidth, int textureHeight, BackgroundMode mode) {
         this.texture = texture;
@@ -39,23 +39,19 @@ public class ImageBackground extends AbstractBackground {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        int screenWidth = guiGraphics.guiWidth();
-        int screenHeight = guiGraphics.guiHeight();
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int screenWidth = graphics.guiWidth();
+        int screenHeight = graphics.guiHeight();
 
         switch (mode) {
-            case STRETCH -> renderStretched(guiGraphics, screenWidth, screenHeight);
-            case TILE    -> renderTiled(guiGraphics, screenWidth, screenHeight);
-            case CENTER  -> renderCentered(guiGraphics, screenWidth, screenHeight);
-            case FIT     -> renderFit(guiGraphics, screenWidth, screenHeight);
+            case STRETCH -> renderStretched(graphics, screenWidth, screenHeight);
+            case TILE -> renderTiled(graphics, screenWidth, screenHeight);
+            case CENTER -> renderCentered(graphics, screenWidth, screenHeight);
+            case FIT -> renderFit(graphics, screenWidth, screenHeight);
         }
     }
 
-    /**
-     * Invalidates the layout cache if the screen has been resized.
-     * Returns true if the cache was already valid.
-     */
-    private boolean needsRecalculation(int screenWidth, int screenHeight) {
+    private boolean cacheIsStale(int screenWidth, int screenHeight) {
         return screenWidth != cachedScreenWidth || screenHeight != cachedScreenHeight;
     }
 
@@ -68,8 +64,8 @@ public class ImageBackground extends AbstractBackground {
         cachedH = h;
     }
 
-    private void renderStretched(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
-        guiGraphics.blit(
+    private void renderStretched(GuiGraphics graphics, int screenWidth, int screenHeight) {
+        graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
                 texture,
                 0, 0,
@@ -80,10 +76,10 @@ public class ImageBackground extends AbstractBackground {
         );
     }
 
-    private void renderTiled(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+    private void renderTiled(GuiGraphics graphics, int screenWidth, int screenHeight) {
         for (int tx = 0; tx * textureWidth < screenWidth; tx++) {
             for (int ty = 0; ty * textureHeight < screenHeight; ty++) {
-                guiGraphics.blit(
+                graphics.blit(
                         RenderPipelines.GUI_TEXTURED,
                         texture,
                         tx * textureWidth, ty * textureHeight,
@@ -96,14 +92,14 @@ public class ImageBackground extends AbstractBackground {
         }
     }
 
-    private void renderCentered(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
-        if (needsRecalculation(screenWidth, screenHeight)) {
+    private void renderCentered(GuiGraphics graphics, int screenWidth, int screenHeight) {
+        if (cacheIsStale(screenWidth, screenHeight)) {
             int x = (screenWidth - textureWidth) / 2;
             int y = (screenHeight - textureHeight) / 2;
             updateCache(screenWidth, screenHeight, x, y, textureWidth, textureHeight);
         }
 
-        guiGraphics.blit(
+        graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
                 texture,
                 cachedX, cachedY,
@@ -114,8 +110,8 @@ public class ImageBackground extends AbstractBackground {
         );
     }
 
-    private void renderFit(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
-        if (needsRecalculation(screenWidth, screenHeight)) {
+    private void renderFit(GuiGraphics graphics, int screenWidth, int screenHeight) {
+        if (cacheIsStale(screenWidth, screenHeight)) {
             float scale = Math.min(
                     (float) screenWidth / textureWidth,
                     (float) screenHeight / textureHeight
@@ -127,7 +123,7 @@ public class ImageBackground extends AbstractBackground {
             updateCache(screenWidth, screenHeight, x, y, w, h);
         }
 
-        guiGraphics.blit(
+        graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
                 texture,
                 cachedX, cachedY,

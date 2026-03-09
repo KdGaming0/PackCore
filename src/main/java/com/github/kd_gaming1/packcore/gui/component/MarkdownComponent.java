@@ -15,10 +15,10 @@ import net.minecraft.network.chat.Style;
  */
 public class MarkdownComponent extends AbstractComponent {
 
-    private static final int HEADER_SPACING    = 4;
+    private static final int HEADER_SPACING = 4;
     private static final int PARAGRAPH_SPACING = 2;
     private static final int EMPTY_LINE_SPACING = 5;
-    private static final int BULLET_INDENT     = 8;
+    private static final int BULLET_INDENT = 8;
 
     private String markdown;
     private int maxWidth;
@@ -30,8 +30,8 @@ public class MarkdownComponent extends AbstractComponent {
 
     public MarkdownComponent(int x, int y, int maxWidth, String markdown, int defaultColor) {
         super(x, y, maxWidth, 0);
-        this.markdown     = markdown;
-        this.maxWidth     = maxWidth;
+        this.markdown = markdown;
+        this.maxWidth = maxWidth;
         this.defaultColor = defaultColor;
         rebuild();
     }
@@ -122,10 +122,10 @@ public class MarkdownComponent extends AbstractComponent {
      * Supports nesting — e.g. ***bold italic***.
      */
     private MutableComponent parseInline(String text) {
-        MutableComponent root   = Component.empty();
-        StringBuilder   buffer  = new StringBuilder(text.length());
-        boolean         bold    = false;
-        boolean         italic  = false;
+        MutableComponent root = Component.empty();
+        StringBuilder buffer = new StringBuilder(text.length());
+        boolean bold = false;
+        boolean italic = false;
 
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
@@ -150,12 +150,11 @@ public class MarkdownComponent extends AbstractComponent {
         return root;
     }
 
-    private void flushBuffer(MutableComponent root, StringBuilder buffer,
-                             boolean bold, boolean italic) {
+    private void flushBuffer(MutableComponent root, StringBuilder buffer, boolean bold, boolean italic) {
         if (buffer.isEmpty()) return;
 
         Style style = Style.EMPTY;
-        if (bold)   style = style.withBold(true);
+        if (bold) style = style.withBold(true);
         if (italic) style = style.withItalic(true);
 
         root.append(Component.literal(buffer.toString()).setStyle(style));
@@ -182,10 +181,10 @@ public class MarkdownComponent extends AbstractComponent {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY,
+    public void render(GuiGraphics graphics, int mouseX, int mouseY,
                        float partialTick, int parentWidth, int parentHeight) {
         for (IComponent child : this.getComponents()) {
-            child.render(guiGraphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
+            child.render(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
         }
     }
 }

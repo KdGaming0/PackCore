@@ -15,4 +15,11 @@ public class PackCoreConfig extends MidnightConfig {
     @Hidden
     @Entry(category = META)
     public static String lastAppliedVersion = "";
+
+    @Hidden
+    @Entry(category = META)
+    public static String lastAppliedPackFile = "";
+
+    @Entry(category = META)
+    public static String pendingConfigPack = "";
 }

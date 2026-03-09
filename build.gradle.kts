@@ -37,6 +37,9 @@ dependencies {
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
     include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
 
+    modImplementation("maven.modrinth:sodium:${property("deps.sodium_version")}")
+    modImplementation("maven.modrinth:iris:${property("deps.iris_version")}")
+
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
     modRuntimeOnly("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
 }
@@ -69,8 +72,10 @@ tasks {
         inputs.property("ui_lib", project.property("deps.uilib_version"))
         inputs.property("hm_api", project.property("deps.hm_api_version"))
         inputs.property("fabric_api", project.property("deps.fabric_api"))
+        inputs.property("iris_version", project.property("deps.iris_version"))
         inputs.property("fabricloader", project.property("deps.fabric_loader"))
         inputs.property("uilib_version", project.property("deps.uilib_version"))
+        inputs.property("sodium_version", project.property("deps.sodium_version"))
         inputs.property("modmenu_version", project.property("deps.modmenu_version"))
 
         val props = mapOf(
@@ -81,8 +86,10 @@ tasks {
             "ui_lib" to project.property("deps.uilib_version"),
             "hm_api" to project.property("deps.hm_api_version"),
             "fabric_api" to project.property("deps.fabric_api"),
+            "iris_version" to project.property("deps.iris_version"),
             "fabricloader" to project.property("deps.fabric_loader"),
             "uilib_version" to project.property("deps.uilib_version"),
+            "sodium_version" to project.property("deps.sodium_version"),
             "modmenu_version" to project.property("deps.modmenu_version")
         )
 
