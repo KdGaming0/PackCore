@@ -63,6 +63,7 @@ public class WizardButtonBar extends EmptyComponent {
 
     private final WizardNavigator navigator;
     private Runnable onFinish;
+    private Runnable onSkipFinish;
 
     private final ButtonWidget backButton;
     private final ButtonWidget skipButton;
@@ -100,21 +101,30 @@ public class WizardButtonBar extends EmptyComponent {
                 width - BTN_WIDTH - BTN_GAP, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.continue"),
                 CONTINUE_BUTTON,
-                btn -> navigator.nextPage()
+                btn -> {
+                    // Unfocus immediately so the hover sprite doesn't persist on the next page
+                    btn.setFocused(false);
+                    navigator.nextPage();
+                }
         );
 
         backButton = new CustomButtonWidget(
                 width - BTN_WIDTH * 2 - BTN_GAP * 2, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.back"),
                 PREVIOUS_BUTTON,
-                btn -> navigator.previousPage()
+                btn -> {
+                    btn.setFocused(false);
+                    navigator.previousPage();
+                }
         );
 
+        // Skip is only shown on the last page as a "skip applying" escape hatch.
+        // It marks the wizard complete without applying settings.
         skipButton = new CustomButtonWidget(
                 width - BTN_WIDTH * 2 - BTN_GAP * 2, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.skip"),
                 BLANK_BUTTON,
-                btn -> { if (navigator.hasNext()) navigator.nextPage(); }
+                btn -> { if (onSkipFinish != null) onSkipFinish.run(); }
         );
 
         finishButton = new CustomButtonWidget(
@@ -135,11 +145,17 @@ public class WizardButtonBar extends EmptyComponent {
         refresh();
     }
 
-    /** Syncs button visibility and active state with the current navigator position. */
+    /** Syncs button visibility, position, and active state with the current navigator position. */
     public void refresh() {
         boolean hasBack = navigator.hasPrevious();
         boolean isLastPage = navigator.isOnLastPage();
-        boolean canSkip = navigator.canSkip() && !isLastPage;
+
+        // Clear any focus carried over from the previous page so no button
+        // stays stuck in the hover/focused sprite after a page transition.
+        backButton.setFocused(false);
+        continueButton.setFocused(false);
+        skipButton.setFocused(false);
+        finishButton.setFocused(false);
 
         backButton.visible = hasBack;
         backButton.active = hasBack;
@@ -147,22 +163,41 @@ public class WizardButtonBar extends EmptyComponent {
         continueButton.visible = !isLastPage;
         continueButton.active = !isLastPage;
 
-        // Shift skip left when back is hidden to keep it visually consistent
-        int skipX = hasBack
-                ? getWidth() - BTN_WIDTH * 3 - BTN_GAP * 3
-                : getWidth() - BTN_WIDTH * 2 - BTN_GAP * 2;
-        skipButton.setX(getTotalX() + skipX);
+        // Skip is only shown on the last page as a "skip applying" escape hatch.
+        skipButton.visible = isLastPage;
+        skipButton.active = isLastPage;
 
-        skipButton.visible = canSkip;
-        skipButton.active = canSkip;
-
+        // Finish is shown on the last page but starts locked — enabled via setFinishEnabled().
         finishButton.visible = isLastPage;
-        finishButton.active = isLastPage;
+        // active is intentionally not set here; setFinishEnabled() owns it.
+
+        // On the last page the right side has three buttons: [Back] [Skip] [Finish].
+        // Back must shift one slot further left to make room for Skip in the middle.
+        // On all other pages Back stays in its normal two-button slot.
+        if (isLastPage) {
+            skipButton.setX(getTotalX() + getWidth() - BTN_WIDTH * 3 - BTN_GAP * 3);
+            backButton.setX(getTotalX() + getWidth() - BTN_WIDTH * 2 - BTN_GAP * 2);
+        } else {
+            backButton.setX(getTotalX() + getWidth() - BTN_WIDTH * 2 - BTN_GAP * 2);
+        }
+    }
+
+    /**
+     * Enables or disables the Finish button.
+     * Called by the screen once ConfirmApplyPage reports a successful apply.
+     */
+    public void setFinishEnabled(boolean enabled) {
+        finishButton.active = enabled;
     }
 
     /** Registers a callback invoked when the user presses Finish. */
     public void setOnFinish(Runnable callback) {
         this.onFinish = callback;
+    }
+
+    /** Registers a callback invoked when the user presses Skip on the last page. */
+    public void setOnSkipFinish(Runnable callback) {
+        this.onSkipFinish = callback;
     }
 
     private static void openUrlSafely(String url) {

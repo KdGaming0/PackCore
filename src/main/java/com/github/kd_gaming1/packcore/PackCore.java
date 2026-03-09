@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.command.PackCoreCommands;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.gui.screen.SBETitleScreen;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import net.fabricmc.api.ClientModInitializer;
@@ -33,7 +34,11 @@ public class PackCore implements ClientModInitializer {
         if (PackCoreConfig.enableCustomTitleScreen) {
             ScreenEvents.BEFORE_INIT.register(((client, screen, scaledWidth, scaledHeight) -> {
                 if (screen instanceof TitleScreen) {
-                    client.execute(() -> client.setScreen(new WelcomeWizardScreen(screen)));
+                    if (!PackCoreConfig.successfulWelcomeWizard) {
+                        client.execute(() -> client.setScreen(new WelcomeWizardScreen(screen)));
+                    } else if (PackCoreConfig.enableCustomTitleScreen) {
+                        client.setScreen(new SBETitleScreen());
+                    }
                 }
             }));
         }

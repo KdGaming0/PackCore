@@ -92,6 +92,12 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     private CustomButtonWidget applyButton = null;
     private String globalErrorMessage = null;
+    private Runnable onApplySucceeded = null;
+
+    /** Called by the screen after wiring to unlock the Finish button on success. */
+    public void setOnApplySucceeded(Runnable callback) {
+        this.onApplySucceeded = callback;
+    }
 
     public ConfirmApplyPage(WizardState state, WizardNavigator navigator, int width, int height) {
         super(state, navigator, width, height);
@@ -237,7 +243,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
                 () -> applyResourcePacks(state.getSelectedResourcePacks()));
 
         if (!anyError) {
-            applyButton.active = false; // prevent double-apply
+            applyButton.active = false;
+            if (onApplySucceeded != null) onApplySucceeded.run();
             LOGGER.info("All settings applied successfully.");
         } else {
             globalErrorMessage = "Some settings failed to apply — see highlighted rows and check logs.";

@@ -20,6 +20,10 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = META)
     public static String lastAppliedPackFile = "";
 
+    @Hidden
     @Entry(category = META)
     public static String pendingConfigPack = "";
+
+    @Entry(category = META)
+    public static boolean successfulWelcomeWizard =  false;
 }

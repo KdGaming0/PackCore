@@ -16,6 +16,7 @@ import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
@@ -38,26 +39,14 @@ import java.util.function.Function;
  */
 public class MultiSelectList<T> extends EmptyComponent {
 
-    private static final int ROW_GAP = 4;
-    private static final int ROW_PADDING_X = 10;
-    private static final int ROW_PADDING_Y = 8;
-    private static final int SCROLL_BAR_WIDTH = 8;
-    private static final int INDICATOR_WIDTH = 3;
-    private static final int INDICATOR_GAP = 8;
+    private static final int ROW_GAP             = 4;
+    private static final int ROW_PADDING_X        = 10;
+    private static final int ROW_PADDING_Y        = 8;
+    private static final int SCROLL_BAR_WIDTH     = 8;
+    private static final int INDICATOR_WIDTH      = 3;
+    private static final int INDICATOR_GAP        = 8;
     private static final int CHECKMARK_RIGHT_MARGIN = 8;
-    private static final int CHECKMARK_SIZE = 9;
-
-    private static final int COLOR_ROW_BACKGROUND = 0x22FFFFFF;
-    private static final int COLOR_ROW_SELECTED = 0x33FFFFFF;
-    private static final int COLOR_INDICATOR_SELECTED = 0xFF2196F3;
-    private static final int COLOR_BORDER_SELECTED = 0xFF2196F3;
-    private static final int COLOR_BORDER_HOVERED = 0x88FFFFFF;
-    private static final int COLOR_BORDER_IDLE = 0x44FFFFFF;
-    private static final int COLOR_NAME_SELECTED = 0xFF2196F3;
-    private static final int COLOR_NAME_DEFAULT = 0xFFCCCCCC;
-    private static final int COLOR_DESCRIPTION = 0xFF777777;
-    private static final int COLOR_CHECKMARK_BOX = 0xFF2196F3;
-    private static final int COLOR_CHECKMARK_TICK = 0xFFFFFFFF;
+    private static final int CHECKMARK_SIZE       = 9;
 
     private final List<T> options;
     private final RowDescriptor<T> descriptor;
@@ -106,7 +95,7 @@ public class MultiSelectList<T> extends EmptyComponent {
             int descHeight = 0;
             Component desc = descriptor.description(option);
             if (desc != null) {
-                MultiLineTextComponent probe = new MultiLineTextComponent(0, 0, textWidth, desc, COLOR_DESCRIPTION);
+                MultiLineTextComponent probe = new MultiLineTextComponent(0, 0, textWidth, desc, GuiColors.DESCRIPTION);
                 descHeight = probe.getHeight();
             }
 
@@ -194,17 +183,17 @@ public class MultiSelectList<T> extends EmptyComponent {
 
             childComponents.add(new ColorComponent(
                     0, 0, width, height,
-                    isSelected ? COLOR_ROW_SELECTED : COLOR_ROW_BACKGROUND
+                    isSelected ? GuiColors.ROW_SELECTED : GuiColors.ROW_BACKGROUND
             ));
 
             if (isSelected) {
-                childComponents.add(new ColorComponent(0, 0, INDICATOR_WIDTH, height, COLOR_INDICATOR_SELECTED));
+                childComponents.add(new ColorComponent(0, 0, INDICATOR_WIDTH, height, GuiColors.INDICATOR_SELECTED));
             }
 
             TextComponent nameText = new TextComponent(
                     textX, ROW_PADDING_Y,
                     descriptor.name(option),
-                    isSelected ? COLOR_NAME_SELECTED : COLOR_NAME_DEFAULT
+                    isSelected ? GuiColors.NAME_SELECTED : GuiColors.NAME_DEFAULT
             );
             nameText.setDrawShadow(true);
             childComponents.add(nameText);
@@ -213,7 +202,7 @@ public class MultiSelectList<T> extends EmptyComponent {
             if (desc != null) {
                 childComponents.add(new MultiLineTextComponent(
                         textX, ROW_PADDING_Y + lineHeight + 2,
-                        textWidth, desc, COLOR_DESCRIPTION
+                        textWidth, desc, GuiColors.DESCRIPTION
                 ));
             }
         }
@@ -225,9 +214,9 @@ public class MultiSelectList<T> extends EmptyComponent {
             int rowWidth = getWidth();
             int rowHeight = getHeight();
 
-            int borderColor = isSelected ? COLOR_BORDER_SELECTED
-                    : isHovered() ? COLOR_BORDER_HOVERED
-                    : COLOR_BORDER_IDLE;
+            int borderColor = isSelected ? GuiColors.BORDER_SELECTED
+                    : isHovered() ? GuiColors.BORDER_HOVERED
+                    : GuiColors.BORDER_IDLE;
             drawBorder(graphics, rowLeft, rowTop, rowWidth, rowHeight, borderColor);
 
             for (IComponent component : childComponents) {
@@ -250,19 +239,19 @@ public class MultiSelectList<T> extends EmptyComponent {
         }
 
         private static void drawCheckbox(GuiGraphics graphics, int x, int y, boolean checked) {
-            graphics.fill(x, y, x + CHECKMARK_SIZE, y + 1, COLOR_BORDER_IDLE);
-            graphics.fill(x, y + CHECKMARK_SIZE - 1, x + CHECKMARK_SIZE, y + CHECKMARK_SIZE, COLOR_BORDER_IDLE);
-            graphics.fill(x, y, x + 1, y + CHECKMARK_SIZE, COLOR_BORDER_IDLE);
-            graphics.fill(x + CHECKMARK_SIZE - 1, y, x + CHECKMARK_SIZE, y + CHECKMARK_SIZE, COLOR_BORDER_IDLE);
+            graphics.fill(x, y, x + CHECKMARK_SIZE, y + 1, GuiColors.BORDER_IDLE);
+            graphics.fill(x, y + CHECKMARK_SIZE - 1, x + CHECKMARK_SIZE, y + CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
+            graphics.fill(x, y, x + 1, y + CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
+            graphics.fill(x + CHECKMARK_SIZE - 1, y, x + CHECKMARK_SIZE, y + CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
 
             if (checked) {
-                graphics.fill(x + 1, y + 1, x + CHECKMARK_SIZE - 1, y + CHECKMARK_SIZE - 1, COLOR_CHECKMARK_BOX);
+                graphics.fill(x + 1, y + 1, x + CHECKMARK_SIZE - 1, y + CHECKMARK_SIZE - 1, GuiColors.CHECKMARK_BOX);
                 graphics.drawCenteredString(
                         Minecraft.getInstance().font,
                         "✓",
                         x + CHECKMARK_SIZE / 2,
                         y + (CHECKMARK_SIZE - Minecraft.getInstance().font.lineHeight) / 2,
-                        COLOR_CHECKMARK_TICK
+                        GuiColors.CHECKMARK_TICK
                 );
             }
         }

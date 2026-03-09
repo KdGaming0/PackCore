@@ -7,6 +7,7 @@ import com.daqem.uilib.gui.component.color.ColorComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
+import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
@@ -30,20 +31,12 @@ import java.util.function.ToIntFunction;
 
 public class OptionCardGrid<T> extends EmptyComponent {
 
-    private static final int SCROLL_BAR_WIDTH = 8;
-    private static final int PREVIEW_ASPECT_W = 16;
-    private static final int PREVIEW_ASPECT_H = 9;
-    private static final int BORDER_THICKNESS = 1;
-    private static final int LABEL_PADDING = 6;
-    private static final int BADGE_SIZE = 10;
-
-    private static final int COLOR_CARD_BACKGROUND = 0x22FFFFFF;
-    private static final int COLOR_BORDER_SELECTED = 0xFF2196F3;
-    private static final int COLOR_BORDER_HOVERED = 0x88FFFFFF;
-    private static final int COLOR_BORDER_IDLE = 0x44FFFFFF;
-    private static final int COLOR_LABEL_SELECTED = 0xFF2196F3;
-    private static final int COLOR_LABEL_DEFAULT = 0xFFCCCCCC;
-    private static final int COLOR_DESCRIPTION = 0xFF777777;
+    private static final int SCROLL_BAR_WIDTH  = 8;
+    private static final int PREVIEW_ASPECT_W  = 16;
+    private static final int PREVIEW_ASPECT_H  = 9;
+    private static final int BORDER_THICKNESS  = 1;
+    private static final int LABEL_PADDING     = 6;
+    private static final int BADGE_SIZE        = 10;
 
     private final int columns;
     private final int cardGap;
@@ -96,7 +89,6 @@ public class OptionCardGrid<T> extends EmptyComponent {
                     option, descriptor, isSelected,
                     clicked -> {
                         String clickedId = descriptor.id(clicked);
-                        // Toggle selection: clicking the active card deselects it
                         if (clickedId.equals(this.selectedId)) {
                             this.selectedId = null;
                             this.onSelect.accept(null);
@@ -126,7 +118,7 @@ public class OptionCardGrid<T> extends EmptyComponent {
         int maxHeight = 0;
         for (T option : options) {
             MultiLineTextComponent probe = new MultiLineTextComponent(
-                    0, 0, textWidth, descriptor.description(option), COLOR_DESCRIPTION
+                    0, 0, textWidth, descriptor.description(option), GuiColors.DESCRIPTION
             );
             maxHeight = Math.max(maxHeight, probe.getHeight());
         }
@@ -168,11 +160,7 @@ public class OptionCardGrid<T> extends EmptyComponent {
         private final Consumer<T> onClick;
         private final List<IComponent> childComponents = new ArrayList<>();
 
-        OptionCard(
-                int x, int y, int width, int height, int previewHeight,
-                T option, CardDescriptor<T> descriptor, boolean isSelected,
-                Consumer<T> onClick
-        ) {
+        OptionCard(int x, int y, int width, int height, int previewHeight, T option, CardDescriptor<T> descriptor, boolean isSelected, Consumer<T> onClick) {
             super(x, y, width, height, Component.empty());
             this.previewHeight = previewHeight;
             this.option = option;
@@ -184,23 +172,23 @@ public class OptionCardGrid<T> extends EmptyComponent {
         }
 
         private void setupChildComponents(int width, int height) {
+            childComponents.add(new ColorComponent(0, 0, width, height, GuiColors.ROW_BACKGROUND));
+
             int textWidth = width - (LABEL_PADDING * 2);
             int labelsStartY = BORDER_THICKNESS + previewHeight + LABEL_PADDING;
             int lineHeight = Minecraft.getInstance().font.lineHeight;
 
-            childComponents.add(new ColorComponent(0, 0, width, height, COLOR_CARD_BACKGROUND));
-
             TextComponent nameText = new TextComponent(
                     LABEL_PADDING, labelsStartY,
                     descriptor.name(option),
-                    isSelected ? COLOR_LABEL_SELECTED : COLOR_LABEL_DEFAULT
+                    isSelected ? GuiColors.NAME_SELECTED : GuiColors.NAME_DEFAULT
             );
             nameText.setDrawShadow(true);
             childComponents.add(nameText);
 
             childComponents.add(new MultiLineTextComponent(
                     LABEL_PADDING, labelsStartY + lineHeight + 2,
-                    textWidth, descriptor.description(option), COLOR_DESCRIPTION
+                    textWidth, descriptor.description(option), GuiColors.DESCRIPTION
             ));
         }
 
@@ -211,7 +199,9 @@ public class OptionCardGrid<T> extends EmptyComponent {
             int cardWidth = getWidth();
             int cardHeight = getHeight();
 
-            int borderColor = isSelected ? COLOR_BORDER_SELECTED : isHovered() ? COLOR_BORDER_HOVERED : COLOR_BORDER_IDLE;
+            int borderColor = isSelected ? GuiColors.BORDER_SELECTED
+                    : isHovered() ? GuiColors.BORDER_HOVERED
+                    : GuiColors.BORDER_IDLE;
             drawBorder(graphics, cardLeft, cardTop, cardWidth, cardHeight, borderColor);
 
             graphics.blit(
@@ -244,13 +234,13 @@ public class OptionCardGrid<T> extends EmptyComponent {
         }
 
         private void drawCheckmarkBadge(GuiGraphics graphics, int badgeX, int badgeY) {
-            graphics.fill(badgeX, badgeY, badgeX + BADGE_SIZE, badgeY + BADGE_SIZE, COLOR_BORDER_SELECTED);
+            graphics.fill(badgeX, badgeY, badgeX + BADGE_SIZE, badgeY + BADGE_SIZE, GuiColors.BORDER_SELECTED);
             graphics.drawCenteredString(
                     Minecraft.getInstance().font,
                     "✓",
                     badgeX + BADGE_SIZE / 2,
                     badgeY + 1,
-                    0xFFFFFFFF
+                    GuiColors.CHECKMARK_TICK
             );
         }
 

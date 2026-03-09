@@ -3,7 +3,10 @@ package com.github.kd_gaming1.packcore.gui.screen;
 import com.daqem.uilib.gui.AbstractScreen;
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.github.kd_gaming1.packcore.gui.wizard.*;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.wizard.page.*;
+import eu.midnightdust.lib.config.MidnightConfig;
+import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -21,6 +24,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private WizardHeaderComponent headerComponent;
     private WizardContentPanel contentPanel;
     private WizardButtonBar buttonBar;
+    private ConfirmApplyPage confirmApplyPage;
 
     @Nullable
     private final Screen lastScreen;
@@ -32,11 +36,20 @@ public class WelcomeWizardScreen extends AbstractScreen {
 
     @Override
     protected void init() {
-        wizardState = new WizardState();
-        navigator = new WizardNavigator(wizardState);
+        // init() is called on every window resize as well as on first open.
+        // Only create the wizard state, navigator, and pages on first open.
+        // On resize we rebuild the layout geometry and re-wire callbacks,
+        // but leave the navigator's current page index and state untouched.
+        boolean firstOpen = wizardState == null;
 
-        registerPages();
-        navigator.initialize();
+        if (firstOpen) {
+            wizardState = new WizardState();
+            navigator = new WizardNavigator(wizardState);
+            registerPages();
+            navigator.initialize();
+        } else {
+            resizePages();
+        }
 
         buildLayout();
         wireEvents();
@@ -55,7 +68,23 @@ public class WelcomeWizardScreen extends AbstractScreen {
         navigator.addPage(new ItemBackgroundPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new StorageDesignPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new ResourcePackPage(wizardState, navigator, contentWidth, contentHeight));
-        navigator.addPage(new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight));
+
+        confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
+        navigator.addPage(confirmApplyPage);
+    }
+
+    /** Updates the size of each existing page after a window resize, then re-enters the current page. */
+    private void resizePages() {
+        int contentWidth = width - PANEL_PADDING * 2;
+        int contentHeight = height - HEADER_HEIGHT - FOOTER_HEIGHT;
+
+        for (BaseWizardPage page : navigator.getPages()) {
+            page.setWidth(contentWidth);
+            page.setHeight(contentHeight);
+        }
+
+        // Re-enter the current page so it rebuilds its child components at the new size
+        navigator.getCurrentPage().onEnter();
     }
 
     private void buildLayout() {
@@ -78,12 +107,31 @@ public class WelcomeWizardScreen extends AbstractScreen {
     }
 
     private void wireEvents() {
-        buttonBar.setOnFinish(() -> Minecraft.getInstance().setScreen(lastScreen));
+        // When apply succeeds, unlock the Finish button
+        confirmApplyPage.setOnApplySucceeded(() -> buttonBar.setFinishEnabled(true));
+
+        // Finish — settings have been applied; mark complete and close
+        buttonBar.setOnFinish(() -> {
+            markWizardComplete();
+            Minecraft.getInstance().setScreen(lastScreen);
+        });
+
+        // Skip on last page — close without applying; still marks complete
+        buttonBar.setOnSkipFinish(() -> {
+            markWizardComplete();
+            Minecraft.getInstance().setScreen(lastScreen);
+        });
 
         navigator.setOnPageChange(event -> {
             headerComponent.onPageChanged();
             buttonBar.refresh();
         });
+    }
+
+    /** Writes the wizard-complete flag to the config and saves it. */
+    private void markWizardComplete() {
+        PackCoreConfig.successfulWelcomeWizard = true;
+        MidnightConfig.write("packcore");
     }
 
     @Override
