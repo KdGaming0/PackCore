@@ -15,7 +15,7 @@ import net.minecraft.resources.Identifier;
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 /**
- * A toggleable overlay panel with a title, scrollable markdown body, and a close button.
+ * A toggleable overlay panel with a title, scrollable Markdown body, and a close button.
  */
 public class OverlayComponent extends AbstractComponent {
 
@@ -34,7 +34,6 @@ public class OverlayComponent extends AbstractComponent {
 
     private boolean shown = false;
 
-    private final MarkdownComponent markdownComponent;
     private final ScrollContainerWidget scrollContainer;
     private final ButtonWidget closeButton;
 
@@ -52,7 +51,7 @@ public class OverlayComponent extends AbstractComponent {
         titleComp.setDrawShadow(true);
         this.addComponent(titleComp);
 
-        markdownComponent = new MarkdownComponent(0, 0, innerWidth - 8, markdown);
+        MarkdownComponent markdownComponent = new MarkdownComponent(0, 0, innerWidth - 8, markdown);
         scrollContainer = new ScrollContainerWidget(innerWidth, scrollHeight);
         scrollContainer.addComponent(markdownComponent);
 

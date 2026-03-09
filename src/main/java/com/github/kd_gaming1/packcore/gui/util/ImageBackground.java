@@ -11,13 +11,13 @@ import net.minecraft.resources.Identifier;
 public class ImageBackground extends AbstractBackground {
 
     public enum BackgroundMode {
-        /** Stretch image to fill entire screen. */
+        /** Stretch the image to fill the entire screen. */
         STRETCH,
-        /** Tile image across screen. */
+        /** Tile the image across the screen. */
         TILE,
         /** Center image at its natural size. */
         CENTER,
-        /** Scale to fit screen while maintaining aspect ratio. */
+        /** Scale to fit the screen while maintaining an aspect ratio. */
         FIT
     }
 

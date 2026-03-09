@@ -15,7 +15,7 @@
   "gui.packcore.overlay.changelog.title": "Changelog — v%s",
   "gui.packcore.overlay.changelog.close": "Close",
 
-  "gui.packcore.wizard.title": "Welcome to SkyBlock Enhanced",
+  "gui.packcore.wizard.title": "Welcome to v%s",
 
   "gui.packcore.wizard.button.back": "Back",
   "gui.packcore.wizard.button.continue": "Continue",
@@ -27,39 +27,45 @@
 
   "gui.packcore.wizard.card.config.applied": "✓ Applied: %s",
   "gui.packcore.wizard.card.config.error": "No Config Applied",
-  "gui.packcore.wizard.card.config.error.hint": "Run the setup wizard to apply a config",
+  "gui.packcore.wizard.card.config.error.hint": "Restart the game to automatically try again, or manually apply a config from the list below.",
 
   "gui.packcore.wizard.card.configs.heading": "Available Configurations",
-  "gui.packcore.wizard.card.configs.hint": "Want to switch from the auto-selected one? ↓",
+  "gui.packcore.wizard.card.configs.hint": "Want to switch from the auto-selected one?",
 
   "gui.packcore.wizard.page.main_menu_design.title": "Main Menu Design",
   "gui.packcore.wizard.page.main_menu_design.subtitle": "Choose a style for your main menu.",
-  "gui.packcore.wizard.page.main_menu_design.explanation": "Choose how your main menu looks. If you use mods that add buttons to the main menu, choose the Vanilla option. Otherwise, Modern is recommended as it gives the game a SkyBlock feel.",
+  "gui.packcore.wizard.page.main_menu_design.explanation": "Select how your main menu should look. If you use mods that add buttons to the main menu, choose the Vanilla option. Otherwise, the Modern design is recommended to give the game a SkyBlock style and let you join Hypixel with a single button.",
 
   "gui.packcore.wizard.menu_design.vanilla.name": "Vanilla",
   "gui.packcore.wizard.menu_design.vanilla.desc": "The default Minecraft main menu.",
+
   "gui.packcore.wizard.menu_design.modern.name": "Modern",
-  "gui.packcore.wizard.menu_design.modern.desc": "A clean, modern redesign.",
+  "gui.packcore.wizard.menu_design.modern.desc": "A fully custom main menu designed to give the game the look and feel of the official Hypixel SkyBlock game rather than Minecraft.",
+
   "gui.packcore.wizard.menu_design.minimal.name": "Minimal",
-  "gui.packcore.wizard.menu_design.minimal.desc": "A stripped-back minimal layout.",
+  "gui.packcore.wizard.menu_design.minimal.desc": "A custom main menu based on the vanilla style, with a few improvements.",
 
   "gui.packcore.wizard.page.performance.title": "Performance",
   "gui.packcore.wizard.page.performance.subtitle": "Optimize FPS & quality",
 
   "gui.packcore.wizard.performance.max_fps.name": "Max FPS",
-  "gui.packcore.wizard.performance.max_fps.desc": "Disables all shaders and reduces visual quality to squeeze out the most frames possible.",
+  "gui.packcore.wizard.performance.max_fps.desc": "Reduces visual quality to maximize frame rate.",
+
   "gui.packcore.wizard.performance.balanced.name": "Balanced",
-  "gui.packcore.wizard.performance.balanced.desc": "A middle ground between performance and visuals. Good for most systems.",
+  "gui.packcore.wizard.performance.balanced.desc": "A balance between performance and visuals. Recommended for most systems.",
+
   "gui.packcore.wizard.performance.quality.name": "Quality",
-  "gui.packcore.wizard.performance.quality.desc": "Prioritises visual quality over frame rate. Recommended for higher-end hardware.",
+  "gui.packcore.wizard.performance.quality.desc": "Prioritizes visual quality over frame rate. Recommended for mid-range hardware.",
+
   "gui.packcore.wizard.performance.quality_performance_shaders.name": "Quality + Performance Shaders",
-  "gui.packcore.wizard.performance.quality_performance_shaders.desc": "Quality settings with lightweight shaders that add visual polish without a heavy FPS cost.",
+  "gui.packcore.wizard.performance.quality_performance_shaders.desc": "Quality settings with lightweight shaders that add visual polish with minimal FPS impact.",
+
   "gui.packcore.wizard.performance.quality_quality_shaders.name": "Quality + Quality Shaders",
-  "gui.packcore.wizard.performance.quality_quality_shaders.desc": "Full quality settings with demanding shaders. Requires a capable GPU.",
+  "gui.packcore.wizard.performance.quality_quality_shaders.desc": "High quality settings with demanding shaders. Requires a powerful GPU.",
 
   "gui.packcore.wizard.page.tab_design.title": "Tab List Design",
   "gui.packcore.wizard.page.tab_design.subtitle": "Choose how your tab list looks.",
-  "gui.packcore.wizard.page.tab_design.explanation": "Choose a tab list style. Compact comes from SkyHanni and shows more information in a condensed layout. Fancy comes from Skyblocker and uses a more decorative, styled display.",
+  "gui.packcore.wizard.page.tab_design.explanation": "Choose a tab list style. Compact (from SkyHanni) shows more information in a condensed layout with a vanilla look. Fancy (from Skyblocker) uses a more decorative and styled display.",
 
   "gui.packcore.wizard.tab_design.compact.name": "Compact",
   "gui.packcore.wizard.tab_design.compact.desc": "A condensed tab list from SkyHanni.",
@@ -68,33 +74,35 @@
 
   "gui.packcore.wizard.page.item_background.title": "Item Background",
   "gui.packcore.wizard.page.item_background.subtitle": "Choose a background style for items.",
-  "gui.packcore.wizard.page.item_background.explanation": "Choose how items appear in your inventory. All options come from Skyblocker. None uses the default Minecraft look, while Circle and Square add a styled background behind each item slot.",
+  "gui.packcore.wizard.page.item_background.explanation": "Choose how items appear in your inventory. All options come from Skyblocker. None keeps the default Minecraft look, while Circle and Square add a styled background behind each item slot that matches the item rarity color.",
 
   "gui.packcore.wizard.item_background.none.name": "None",
   "gui.packcore.wizard.item_background.none.desc": "Default Minecraft item appearance with no background.",
+
   "gui.packcore.wizard.item_background.circle.name": "Circle",
-  "gui.packcore.wizard.item_background.circle.desc": "A circular background behind each item from Skyblocker.",
+  "gui.packcore.wizard.item_background.circle.desc": "Adds a circular background behind each item.",
+
   "gui.packcore.wizard.item_background.square.name": "Square",
-  "gui.packcore.wizard.item_background.square.desc": "A square background behind each item from Skyblocker.",
+  "gui.packcore.wizard.item_background.square.desc": "Adds a square background behind each item.",
 
   "gui.packcore.wizard.page.storage_design.title": "Storage Design",
   "gui.packcore.wizard.page.storage_design.subtitle": "Choose how your storage looks.",
-  "gui.packcore.wizard.page.storage_design.explanation": "Choose how your SkyBlock storage is displayed. Overlay shows a full storage GUI with all pages visible at once. Vanilla keeps the default chest look but adds tooltips showing what each page contains when you hover over it.",
+  "gui.packcore.wizard.page.storage_design.explanation": "Choose how your SkyBlock storage is displayed. Overlay shows a full storage interface with all pages visible at once. Vanilla keeps the default chest look but adds tooltips that show what each page contains when you hover over it.",
 
   "gui.packcore.wizard.storage_design.overlay.name": "Overlay",
-  "gui.packcore.wizard.storage_design.overlay.desc": "A full storage overlay showing all pages and their contents at once.",
+  "gui.packcore.wizard.storage_design.overlay.desc": "A full storage interface with all pages and their contents visible at once.",
+
   "gui.packcore.wizard.storage_design.vanilla.name": "Vanilla",
-  "gui.packcore.wizard.storage_design.vanilla.desc": "Default chest appearance with tooltips showing each page's contents on hover.",
+  "gui.packcore.wizard.storage_design.vanilla.desc": "Default chest appearance with tooltips that show each page's contents on hover.",
 
   "gui.packcore.wizard.page.resource_pack.title": "Resource Packs",
   "gui.packcore.wizard.page.resource_pack.subtitle": "Choose which resource packs to enable.",
-  "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resourcepacks folder. Add some .zip files there and reopen the wizard.",
+  "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resourcepacks folder. Add .zip files there and reopen the wizard.",
   "gui.packcore.wizard.resource_pack.no_description": "No description provided.",
 
   "gui.packcore.wizard.page.confirm.title": "Confirm & Apply",
-  "gui.packcore.wizard.page.confirm.subtitle": "Review your selections",
+  "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",
+  "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
   "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world.",
-  "gui.packcore.wizard.apply_all_configs": "Apply Settings",
-  "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
-  "gui.packcore.wizard.confirm.title": "Review your selections before applying:"
+  "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings"
 }

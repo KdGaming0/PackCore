@@ -6,6 +6,7 @@ import net.minecraft.resources.Identifier;
 /**
  * Utility for creating and positioning sprites with responsive scaling.
  */
+@SuppressWarnings("unused")
 public class SpriteHelper {
 
     /** Holds the calculated position and size of a sprite. */
@@ -23,7 +24,7 @@ public class SpriteHelper {
         return new SpriteDimensions(x, y, scaledWidth, scaledHeight);
     }
 
-    /** Scale and center horizontally on screen. */
+    /** Scale and center horizontally on the screen. */
     public static SpriteDimensions scaleAndCenter(
             int screenWidth, int screenHeight,
             int originalWidth, int originalHeight,

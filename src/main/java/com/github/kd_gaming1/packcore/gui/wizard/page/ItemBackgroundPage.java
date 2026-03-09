@@ -34,10 +34,8 @@ public class ItemBackgroundPage extends BaseWizardPage {
     }
 
     @Override public Component getTitle() { return PAGE_TITLE; }
-    @Override public Component getSubtitle() { return PAGE_SUBTITLE; }
     @Override public boolean validate() { return true; }
     @Override public void onExit() { }
-    @Override public boolean canSkip() { return true; }
 
     @Override
     public void onEnter() {

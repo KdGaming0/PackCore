@@ -54,41 +54,27 @@ public class WizardNavigator {
         }
     }
 
-    public boolean nextPage() {
+    public void nextPage() {
         if (!canProceed()) {
             LOGGER.warn("Cannot proceed from page {}", getCurrentPageNumber());
-            return false;
+            return;
         }
-        return navigateTo(currentPageIndex + 1, NavigationDirection.FORWARD);
+        navigateTo(currentPageIndex + 1, NavigationDirection.FORWARD);
     }
 
-    public boolean previousPage() {
+    public void previousPage() {
         if (!hasPrevious()) {
             LOGGER.warn("Already on first page");
-            return false;
+            return;
         }
         if (!getCurrentPage().canGoBack()) {
             LOGGER.warn("Back navigation disabled on page {}", getCurrentPageNumber());
-            return false;
+            return;
         }
-        return navigateTo(currentPageIndex - 1, NavigationDirection.BACKWARD);
+        navigateTo(currentPageIndex - 1, NavigationDirection.BACKWARD);
     }
 
-    public boolean jumpToPage(int index) {
-        if (index < 0 || index >= pages.size()) {
-            LOGGER.warn("Jump target {} out of bounds", index);
-            return false;
-        }
-        if (index == currentPageIndex) return true;
-
-        NavigationDirection direction = index > currentPageIndex
-                ? NavigationDirection.FORWARD
-                : NavigationDirection.BACKWARD;
-
-        return navigateTo(index, direction);
-    }
-
-    private boolean navigateTo(int newIndex, NavigationDirection direction) {
+    private void navigateTo(int newIndex, NavigationDirection direction) {
         validateIndex(newIndex);
 
         int previousIndex = currentPageIndex;
@@ -101,16 +87,12 @@ public class WizardNavigator {
 
         firePageChangeEvent(previousIndex, newIndex, direction);
         LOGGER.debug("Navigated to page {}/{}", getCurrentPageNumber(), getPageCount());
-        return true;
     }
 
     public boolean hasPrevious() { return currentPageIndex > 0; }
     public boolean hasNext() { return currentPageIndex < pages.size() - 1; }
-    public boolean isOnFirstPage() { return currentPageIndex == 0; }
     public boolean isOnLastPage() { return currentPageIndex == pages.size() - 1; }
     public boolean canProceed() { return hasNext() && getCurrentPage().validate(); }
-    public boolean canSkip() { return hasNext() && getCurrentPage().canSkip(); }
-    public int getLastPageIndex() { return pages.size() - 1; }
     public WizardState getState() { return state; }
 
     public void initialize() {
@@ -123,22 +105,6 @@ public class WizardNavigator {
         LOGGER.info("Wizard initialized with {} pages", pages.size());
     }
 
-    public void reset() {
-        if (!pages.isEmpty()) getCurrentPage().onExit();
-
-        currentPageIndex = 0;
-        state.reset();
-        for (BaseWizardPage page : pages) page.resetVisited();
-
-        if (!pages.isEmpty()) {
-            BaseWizardPage firstPage = getCurrentPage();
-            firstPage.onEnter();
-            firstPage.markAsVisited();
-        }
-
-        LOGGER.info("Wizard reset");
-    }
-
     public void setOnPageChange(Consumer<PageChangeEvent> callback) {
         this.onPageChange = callback;
     }
@@ -149,10 +115,7 @@ public class WizardNavigator {
         }
     }
 
-    public record PageChangeEvent(int fromIndex, int toIndex, NavigationDirection direction) {
-        public int getFromPageNumber() { return fromIndex + 1; }
-        public int getToPageNumber() { return toIndex + 1; }
-    }
+    public record PageChangeEvent(int fromIndex, int toIndex, NavigationDirection direction) { }
 
     public enum NavigationDirection {
         FORWARD,

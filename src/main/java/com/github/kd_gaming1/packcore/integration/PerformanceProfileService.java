@@ -48,7 +48,7 @@ public class PerformanceProfileService {
         boolean iris = true;
         if (FabricLoader.getInstance().isModLoaded("iris")) {
             iris = switch (profile) {
-                case SHADERS_PERFORMANCE -> IrisConfigurator.setShaderPack("ComplementaryReimagined");
+                case SHADERS_PERFORMANCE -> IrisConfigurator.setShaderPack("MakeUp-UltraFast");
                 case SHADERS_QUALITY -> IrisConfigurator.setShaderPack("ComplementaryUnbound");
                 default -> IrisConfigurator.disableShaders();
             };

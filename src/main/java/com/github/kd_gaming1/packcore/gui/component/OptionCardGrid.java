@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -252,10 +253,15 @@ public class OptionCardGrid<T> extends EmptyComponent {
         }
 
         @Override protected int contentHeight() { return 0; }
+
         @Override protected double scrollRate() { return 0; }
+
         @Override protected void updateWidgetNarration(@NotNull NarrationElementOutput narrationOutput) { }
+
         @Override public @NotNull ScreenRectangle getBorderForArrowNavigation(@NotNull ScreenDirection direction) { return getRectangle(); }
+
         @Override public @NotNull List<? extends GuiEventListener> children() { return List.of(); }
-        @Override public @NotNull Collection<? extends net.minecraft.client.gui.narration.NarratableEntry> getNarratables() { return List.of(); }
+
+        @Override public @NotNull Collection<? extends NarratableEntry> getNarratables() { return List.of(); }
     }
 }

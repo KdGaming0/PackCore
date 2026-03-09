@@ -30,7 +30,7 @@ import java.util.Set;
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 /**
- * Final wizard step — shows a summary of all selections and applies them.
+ * The final wizard step — shows a summary of all selections and applies them.
  * <p>
  * Each apply method is a stub. Replace the LOGGER.info body with the real
  * implementation one at a time; the rest of the page doesn't need to change.
@@ -104,7 +104,6 @@ public class ConfirmApplyPage extends BaseWizardPage {
     }
 
     @Override public Component getTitle() { return PAGE_TITLE; }
-    @Override public Component getSubtitle() { return PAGE_SUBTITLE; }
     @Override public boolean validate() { return true; }
     @Override public void onExit() { }
 
@@ -255,8 +254,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
     }
 
     /**
-     * Runs a single apply step, recording success or failure against the given key.
-     * Returns true if the step threw.
+     * Runs a single applied step, recording success or failure against the given key.
      */
     private boolean runStep(String key, Runnable step) {
         try {

@@ -5,12 +5,12 @@ import com.daqem.uilib.gui.component.EmptyComponent;
 import com.github.kd_gaming1.packcore.gui.wizard.*;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.wizard.page.*;
+import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import eu.midnightdust.lib.config.MidnightConfig;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
 
 public class WelcomeWizardScreen extends AbstractScreen {
 
@@ -22,24 +22,18 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private WizardNavigator navigator;
 
     private WizardHeaderComponent headerComponent;
-    private WizardContentPanel contentPanel;
     private WizardButtonBar buttonBar;
     private ConfirmApplyPage confirmApplyPage;
 
-    @Nullable
     private final Screen lastScreen;
 
-    public WelcomeWizardScreen(@Nullable Screen lastScreen) {
-        super(Component.translatable("gui.packcore.wizard.title"));
+    public WelcomeWizardScreen(Screen lastScreen) {
+        super(Component.translatable("gui.packcore.wizard.title", ModpackMetadata.getInstance().getModpackName()));
         this.lastScreen = lastScreen;
     }
 
     @Override
     protected void init() {
-        // init() is called on every window resize as well as on first open.
-        // Only create the wizard state, navigator, and pages on first open.
-        // On resize we rebuild the layout geometry and re-wire callbacks,
-        // but leave the navigator's current page index and state untouched.
         boolean firstOpen = wizardState == null;
 
         if (firstOpen) {
@@ -91,7 +85,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
         headerComponent = new WizardHeaderComponent(0, 0, width, HEADER_HEIGHT, navigator);
         addComponent(headerComponent);
 
-        contentPanel = new WizardContentPanel(
+        WizardContentPanel contentPanel = new WizardContentPanel(
                 PANEL_PADDING, HEADER_HEIGHT,
                 width - PANEL_PADDING * 2,
                 height - HEADER_HEIGHT - FOOTER_HEIGHT,
@@ -116,7 +110,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
             Minecraft.getInstance().setScreen(lastScreen);
         });
 
-        // Skip on last page — close without applying; still marks complete
+        // Skip on the last page — close without applying; still marks complete
         buttonBar.setOnSkipFinish(() -> {
             markWizardComplete();
             Minecraft.getInstance().setScreen(lastScreen);
@@ -146,9 +140,5 @@ public class WelcomeWizardScreen extends AbstractScreen {
     @Override
     public void onClose() {
         Minecraft.getInstance().setScreen(lastScreen);
-    }
-
-    public WizardState getWizardState() {
-        return wizardState;
     }
 }

@@ -47,14 +47,7 @@ public class OptionSelectList<T> extends EmptyComponent {
     private String selectedId;
     private ScrollContainerWidget scrollContainer;
 
-    public OptionSelectList(
-            int x, int y,
-            int width, int height,
-            List<T> options,
-            RowDescriptor<T> descriptor,
-            String selectedId,
-            Consumer<T> onSelect
-    ) {
+    public OptionSelectList(int x, int y, int width, int height, List<T> options, RowDescriptor<T> descriptor, String selectedId, Consumer<T> onSelect) {
         super(x, y, width, height);
         this.options = options;
         this.descriptor = descriptor;
@@ -198,9 +191,7 @@ public class OptionSelectList<T> extends EmptyComponent {
             int rowWidth = getWidth();
             int rowHeight = getHeight();
 
-            int borderColor = isSelected ? GuiColors.BORDER_SELECTED
-                    : isHovered() ? GuiColors.BORDER_HOVERED
-                    : GuiColors.BORDER_IDLE;
+            int borderColor = isSelected ? GuiColors.BORDER_SELECTED : isHovered() ? GuiColors.BORDER_HOVERED : GuiColors.BORDER_IDLE;
             drawBorder(graphics, rowLeft, rowTop, rowWidth, rowHeight, borderColor);
 
             for (IComponent component : childComponents) {

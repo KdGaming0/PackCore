@@ -53,15 +53,15 @@ public class WelcomePage extends BaseWizardPage {
     private ScrollContainerWidget leftScroll;
     private ScrollContainerWidget rightScroll;
 
+    private MarkdownComponent markdownComp;
+
     public WelcomePage(WizardState state, WizardNavigator navigator, int width, int height) {
         super(state, navigator, width, height);
     }
 
     @Override public Component getTitle() { return TITLE; }
-    @Override public Component getSubtitle() { return SUBTITLE; }
     @Override public boolean validate() { return true; }
     @Override public void onExit() { }
-    @Override public boolean canSkip() { return true; }
 
     @Override
     public void onEnter() {
@@ -92,7 +92,7 @@ public class WelcomePage extends BaseWizardPage {
     }
 
     private void buildLeftColumn(EmptyComponent column, int columnWidth, int columnHeight) {
-        MarkdownComponent markdownComp = new MarkdownComponent(
+        markdownComp = new MarkdownComponent(         // <-- field, not local var
                 0, 0, columnWidth - SCROLL_BAR_ROOM - (PADDING / 2), loadMarkdown()
         );
         leftScroll = new ScrollContainerWidget(columnWidth, columnHeight);
