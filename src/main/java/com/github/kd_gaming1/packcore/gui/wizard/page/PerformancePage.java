@@ -26,7 +26,6 @@ public class PerformancePage extends BaseWizardPage {
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/PerformancePage");
 
     private static final Component PAGE_TITLE = Component.translatable("gui.packcore.wizard.page.performance.title");
-    private static final Component PAGE_SUBTITLE = Component.translatable("gui.packcore.wizard.page.performance.subtitle");
 
     public static final String STATE_KEY = "performanceProfile";
 

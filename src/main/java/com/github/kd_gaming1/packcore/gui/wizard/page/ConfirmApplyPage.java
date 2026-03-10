@@ -40,7 +40,6 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/ConfirmApplyPage");
 
     private static final Component PAGE_TITLE = Component.translatable("gui.packcore.wizard.page.confirm.title");
-    private static final Component PAGE_SUBTITLE = Component.translatable("gui.packcore.wizard.page.confirm.subtitle");
 
     private static final int PADDING = 16;
     private static final int ROW_HEIGHT = 30;

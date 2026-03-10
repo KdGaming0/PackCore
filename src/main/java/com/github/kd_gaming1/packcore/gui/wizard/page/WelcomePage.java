@@ -30,7 +30,6 @@ public class WelcomePage extends BaseWizardPage {
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/WelcomePage");
 
     private static final Component TITLE = Component.translatable("gui.packcore.wizard.page.welcome.title");
-    private static final Component SUBTITLE = Component.translatable("gui.packcore.wizard.page.welcome.subtitle");
 
     private static final int PADDING = 16;
     private static final int COLUMN_GAP = 14;
@@ -52,8 +51,6 @@ public class WelcomePage extends BaseWizardPage {
 
     private ScrollContainerWidget leftScroll;
     private ScrollContainerWidget rightScroll;
-
-    private MarkdownComponent markdownComp;
 
     public WelcomePage(WizardState state, WizardNavigator navigator, int width, int height) {
         super(state, navigator, width, height);
@@ -92,7 +89,7 @@ public class WelcomePage extends BaseWizardPage {
     }
 
     private void buildLeftColumn(EmptyComponent column, int columnWidth, int columnHeight) {
-        markdownComp = new MarkdownComponent(         // <-- field, not local var
+        MarkdownComponent markdownComp = new MarkdownComponent(
                 0, 0, columnWidth - SCROLL_BAR_ROOM - (PADDING / 2), loadMarkdown()
         );
         leftScroll = new ScrollContainerWidget(columnWidth, columnHeight);

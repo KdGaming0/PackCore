@@ -30,7 +30,6 @@ public class ResourcePackPage extends BaseWizardPage {
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/ResourcePackPage");
 
     private static final Component PAGE_TITLE = Component.translatable("gui.packcore.wizard.page.resource_pack.title");
-    private static final Component PAGE_SUBTITLE = Component.translatable("gui.packcore.wizard.page.resource_pack.subtitle");
 
     private static final int PADDING = 16;
     private static final int COLUMN_GAP = 14;

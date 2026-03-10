@@ -18,7 +18,6 @@ import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 public class ItemBackgroundPage extends BaseWizardPage {
 
     private static final Component PAGE_TITLE = Component.translatable("gui.packcore.wizard.page.item_background.title");
-    private static final Component PAGE_SUBTITLE = Component.translatable("gui.packcore.wizard.page.item_background.subtitle");
     private static final Component EXPLANATION = Component.translatable("gui.packcore.wizard.page.item_background.explanation");
 
     public static final String STATE_KEY = "itemBackground";

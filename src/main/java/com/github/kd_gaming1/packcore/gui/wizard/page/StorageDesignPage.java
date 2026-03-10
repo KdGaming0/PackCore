@@ -18,7 +18,6 @@ import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 public class StorageDesignPage extends BaseWizardPage {
 
     private static final Component PAGE_TITLE = Component.translatable("gui.packcore.wizard.page.storage_design.title");
-    private static final Component PAGE_SUBTITLE = Component.translatable("gui.packcore.wizard.page.storage_design.subtitle");
     private static final Component EXPLANATION = Component.translatable("gui.packcore.wizard.page.storage_design.explanation");
 
     public static final String STATE_KEY = "storageDesign";
