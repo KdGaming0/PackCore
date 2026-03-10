@@ -56,9 +56,10 @@ public class ResourcePackManager {
         client.options.resourcePacks.addAll(finalOrder);
         client.options.save();
 
-        client.reloadResourcePacks().exceptionally(e -> {
-            PackCore.LOGGER.error("ResourcePack: reload failed", e);
-            return null;
+        client.reloadResourcePacks().whenComplete((res, ex) -> {
+            if (ex != null) {
+                PackCore.LOGGER.error("ResourcePack: reload failed", ex);
+            }
         });
     }
 }

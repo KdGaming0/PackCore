@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * Lightweight Markdown renderer built on UILib's component system.
- *
+ * <p>
  * Supported syntax:
  *   Headings     # through ######
  *   Bullet list  - or *
@@ -257,8 +257,7 @@ public class MarkdownComponent extends AbstractComponent {
 
     /**
      * Wraps a MultiLineTextComponent and applies a pose-matrix scale when rendering,
-     * so heading text appears visually larger. The logical height accounts for the scale
-     * so layout is correct.
+     * so heading text appears visually larger. The logical height accounts for the scale, so the layout is correct.
      */
     private static class ScaledTextComponent extends AbstractComponent {
 

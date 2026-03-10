@@ -26,13 +26,6 @@ public class PerformanceProfileService {
 
         public String id() { return id; }
         public String getDisplayName() { return displayName; }
-
-        public static PerformanceProfile fromId(String id) {
-            for (PerformanceProfile p : values()) {
-                if (p.id.equalsIgnoreCase(id)) return p;
-            }
-            return BALANCED;
-        }
     }
 
     public static boolean applyAll(PerformanceProfile profile) {

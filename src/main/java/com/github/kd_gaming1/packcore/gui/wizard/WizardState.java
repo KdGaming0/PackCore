@@ -7,8 +7,6 @@ public class WizardState {
     private final Map<String, String> selections = new HashMap<>();
     private final Set<String> selectedResourcePacks = new HashSet<>();
 
-    private boolean settingsApplied = false;
-
     // Selections
     public void setSelection(String key, String value) {
         selections.put(key, value);
@@ -31,15 +29,9 @@ public class WizardState {
         selectedResourcePacks.remove(packId);
     }
 
-    // Lifecycle
-    public void reset() {
-        selections.clear();
-        selectedResourcePacks.clear();
-        settingsApplied = false;
-    }
-
     @Override
     public String toString() {
+        boolean settingsApplied = false;
         return "WizardState{" +
                 "selections=" + selections +
                 ", resourcePacks=" + selectedResourcePacks +

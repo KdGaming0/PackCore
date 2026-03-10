@@ -22,7 +22,7 @@ public class ItemBackgroundManager {
             return false;
         }
 
-        // NONE means disable rarity backgrounds entirely, others map to Skyblocker enum values
+        // NONE means disable rarity backgrounds entirely; others map to Skyblocker enum values
         String skyblockerStyle = switch (background) {
             case NONE -> null;
             case CIRCLE -> "CIRCULAR";
@@ -56,7 +56,8 @@ public class ItemBackgroundManager {
 
             if (skyblockerStyle != null) {
                 Class<?> styleEnum = Class.forName(ITEM_BACKGROUND_ENUM_CLASS);
-                Object enumValue = Enum.valueOf((Class<Enum>) styleEnum, skyblockerStyle);
+                Method valueOfMethod = styleEnum.getMethod("valueOf", String.class);
+                Object enumValue = valueOfMethod.invoke(null, skyblockerStyle);
                 itemInfoDisplay.getClass().getField("itemBackgroundStyle").set(itemInfoDisplay, enumValue);
                 itemInfoDisplay.getClass().getField("itemBackgroundOpacity").setFloat(itemInfoDisplay, DEFAULT_OPACITY);
             }
