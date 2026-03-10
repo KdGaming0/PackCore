@@ -28,9 +28,6 @@ import java.util.List;
 /**
  * Lightweight Markdown renderer built on UILib's component system.
  *
- * Link hit regions are computed by splitting the paragraph's styled FormattedText
- * (not plain strings) so that bold/italic glyph widths are measured correctly.
- *
  * Supported syntax:
  *   Headings     # through ######
  *   Bullet list  - or *
@@ -44,13 +41,15 @@ import java.util.List;
  */
 public class MarkdownComponent extends AbstractComponent {
 
-    private static final int SPACING_AFTER_HEADING = 4;
-    private static final int SPACING_AFTER_PARAGRAPH = 2;
+    // Spacing constants
+    private static final int SPACING_HEADING = 4;
+    private static final int SPACING_PARAGRAPH = 2;
     private static final int SPACING_EMPTY_LINE = 5;
-    private static final int SPACING_AFTER_IMAGE = 6;
-    private static final int SPACING_AFTER_RULE = 6;
-    private static final int SPACING_AFTER_BLOCKQUOTE = 3;
+    private static final int SPACING_IMAGE = 6;
+    private static final int SPACING_RULE = 6;
+    private static final int SPACING_BLOCKQUOTE = 3;
 
+    // Layout constants
     private static final int BULLET_INDENT = 8;
     private static final int BLOCKQUOTE_INDENT = 10;
     private static final int BLOCKQUOTE_BAR_WIDTH = 2;
@@ -58,6 +57,7 @@ public class MarkdownComponent extends AbstractComponent {
     private static final int RULE_HEIGHT = 1;
     private static final int DEFAULT_IMAGE_HEIGHT = 80;
 
+    // Colors
     private static final int COLOR_RULE = 0xFF444444;
     private static final int COLOR_LINK = 0xFF55AAFF;
     private static final int COLOR_BLOCKQUOTE = 0xFFAAAAAA;
@@ -67,16 +67,7 @@ public class MarkdownComponent extends AbstractComponent {
 
     private record ImageInfo(Identifier location, int width, int height) {}
 
-    /**
-     * A parsed inline link.
-     *
-     * styledBefore: the fully-styled MutableComponent of all content before this
-     *               link in the paragraph (used for accurate width measurement).
-     * styledThrough: styledBefore + the link label span (used to find the end line).
-     * label: the link's display text.
-     * url: the link destination.
-     */
-    private record ParsedLink(MutableComponent styledBefore, MutableComponent styledThrough,
+    private record ParsedLink(MutableComponent textBefore, MutableComponent textThrough,
                               String label, String url) {}
 
     private final String markdown;
@@ -151,33 +142,37 @@ public class MarkdownComponent extends AbstractComponent {
         setHeight(currentY);
     }
 
+    // -------------------------------------------------------------------------
+    // Block builders
+    // -------------------------------------------------------------------------
+
     private int buildHeading(String line, int level, int y) {
         String content = line.substring(level + 1).trim();
         MutableComponent text = parseInline(content);
         text.withStyle(s -> s.withBold(true).withColor(getHeadingColor(level)));
 
-        MultiLineTextComponent comp = new MultiLineTextComponent(0, y, (int) (maxWidth / getHeadingScale(level)), text);
+        float scale = getHeadingScale(level);
+        int unscaledWidth = (int) (maxWidth / scale);
+        ScaledTextComponent comp = new ScaledTextComponent(0, y, unscaledWidth, text, scale);
         addComponent(comp);
 
-        return (int) (comp.getHeight() * getHeadingScale(level)) + SPACING_AFTER_HEADING;
+        return comp.getScaledHeight() + SPACING_HEADING;
     }
 
     private int buildBullet(String line, int y) {
         String content = line.substring(2).trim();
         List<ParsedLink> links = new ArrayList<>();
 
-        // Build the bullet prefix as a styled component so its width is measured correctly
-        MutableComponent prefixComp = Component.literal("• ")
-                .withStyle(Style.EMPTY.withColor(defaultColor));
-        MutableComponent contentComp = parseInlineWithLinks(content, links, prefixComp, defaultColor);
-        MutableComponent bullet = prefixComp.copy().append(contentComp);
+        MutableComponent bullet = Component.literal("• ").withStyle(Style.EMPTY.withColor(defaultColor));
+        MutableComponent body = parseInlineWithLinks(content, links, bullet, defaultColor);
+        MutableComponent combined = bullet.copy().append(body);
 
         int textWidth = maxWidth - BULLET_INDENT;
-        MultiLineTextComponent comp = new MultiLineTextComponent(BULLET_INDENT, y, textWidth, bullet, defaultColor);
+        MultiLineTextComponent comp = new MultiLineTextComponent(BULLET_INDENT, y, textWidth, combined, defaultColor);
         addComponent(comp);
 
         registerLinkWidgets(links, BULLET_INDENT, y, textWidth);
-        return comp.getHeight() + SPACING_AFTER_PARAGRAPH;
+        return comp.getHeight() + SPACING_PARAGRAPH;
     }
 
     private int buildParagraph(String line, int y) {
@@ -188,7 +183,7 @@ public class MarkdownComponent extends AbstractComponent {
         addComponent(comp);
 
         registerLinkWidgets(links, 0, y, maxWidth);
-        return comp.getHeight() + SPACING_AFTER_PARAGRAPH;
+        return comp.getHeight() + SPACING_PARAGRAPH;
     }
 
     private int buildBlockquote(String line, int y) {
@@ -197,9 +192,8 @@ public class MarkdownComponent extends AbstractComponent {
         int textWidth = maxWidth - textX;
 
         List<ParsedLink> links = new ArrayList<>();
-        // Pass the blockquote base style so all widths are measured as italic
-        MutableComponent text = parseInlineWithLinks(content, links, Component.empty(),
-                COLOR_BLOCKQUOTE, Style.EMPTY.withColor(COLOR_BLOCKQUOTE).withItalic(true));
+        Style italicStyle = Style.EMPTY.withColor(defaultColor).withItalic(true);
+        MutableComponent text = parseInlineWithLinks(content, links, Component.empty(), defaultColor, italicStyle);
         text.withStyle(s -> s.withColor(COLOR_BLOCKQUOTE).withItalic(true));
 
         MultiLineTextComponent comp = new MultiLineTextComponent(textX, y, textWidth, text, COLOR_BLOCKQUOTE);
@@ -207,32 +201,24 @@ public class MarkdownComponent extends AbstractComponent {
         blockquoteBars.add(new int[]{BLOCKQUOTE_INDENT, y, comp.getHeight()});
 
         registerLinkWidgets(links, textX, y, textWidth);
-        return comp.getHeight() + SPACING_AFTER_BLOCKQUOTE;
+        return comp.getHeight() + SPACING_BLOCKQUOTE;
     }
 
     private int buildHorizontalRule(int y) {
         horizontalRules.add(new int[]{y});
-        return RULE_HEIGHT + SPACING_AFTER_RULE;
+        return RULE_HEIGHT + SPACING_RULE;
     }
 
     private int buildImage(ImageInfo info, int y) {
         images.add(info);
         imagePositions.add(new int[]{0, y, info.width(), info.height()});
-        return info.height() + SPACING_AFTER_IMAGE;
+        return info.height() + SPACING_IMAGE;
     }
 
-    /**
-     * Computes each link's pixel-accurate hit region using styled FormattedText.
-     *
-     * For each link we have:
-     *   styledBefore  — the styled component of all text preceding the link
-     *   styledThrough — styledBefore + the link label
-     *
-     * We split both through the font splitter at the column width, then compare
-     * line counts to find which wrapped line the link starts on and what the
-     * pixel X offset is. Styled splitting means bold/italic character widths are
-     * measured correctly, matching what MultiLineTextComponent actually renders.
-     */
+    // -------------------------------------------------------------------------
+    // Link hit-region registration
+    // -------------------------------------------------------------------------
+
     private void registerLinkWidgets(List<ParsedLink> links, int columnX, int blockY, int columnWidth) {
         if (links.isEmpty()) return;
 
@@ -240,25 +226,19 @@ public class MarkdownComponent extends AbstractComponent {
         int lineHeight = font.lineHeight;
 
         for (ParsedLink link : links) {
-            List<FormattedText> wrappedBefore = font.getSplitter()
-                    .splitLines(link.styledBefore(), columnWidth, Style.EMPTY);
-            List<FormattedText> wrappedThrough = font.getSplitter()
-                    .splitLines(link.styledThrough(), columnWidth, Style.EMPTY);
+            List<FormattedText> wrappedBefore = font.getSplitter().splitLines(link.textBefore(), columnWidth, Style.EMPTY);
+            List<FormattedText> wrappedThrough = font.getSplitter().splitLines(link.textThrough(), columnWidth, Style.EMPTY);
 
-            int linkLine = wrappedBefore.size() - 1;
+            int linkStartLine = wrappedBefore.size() - 1;
+            int linkStartX = columnX + font.width(wrappedBefore.get(linkStartLine));
 
-            // X = column start + width of the text on the link's line before the link begins
-            String textBeforeLinkOnItsLine = wrappedBefore.get(linkLine).getString();
-            int linkX = columnX + font.width(wrappedBefore.get(linkLine));
-
-            // Register one hit region per wrapped line the link occupies
-            for (int lineIdx = linkLine; lineIdx < wrappedThrough.size(); lineIdx++) {
+            for (int lineIdx = linkStartLine; lineIdx < wrappedThrough.size(); lineIdx++) {
                 int hitX;
                 int hitWidth;
 
-                if (lineIdx == linkLine) {
-                    hitX = linkX;
-                    hitWidth = font.width(wrappedThrough.get(lineIdx)) - font.width(wrappedBefore.get(linkLine));
+                if (lineIdx == linkStartLine) {
+                    hitX = linkStartX;
+                    hitWidth = font.width(wrappedThrough.get(lineIdx)) - font.width(wrappedBefore.get(linkStartLine));
                 } else {
                     hitX = columnX;
                     hitWidth = font.width(wrappedThrough.get(lineIdx));
@@ -268,6 +248,54 @@ public class MarkdownComponent extends AbstractComponent {
 
                 addWidget(new LinkWidget(this, hitX, blockY + lineIdx * lineHeight, hitWidth, lineHeight, link.url()));
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // ScaledTextComponent
+    // -------------------------------------------------------------------------
+
+    /**
+     * Wraps a MultiLineTextComponent and applies a pose-matrix scale when rendering,
+     * so heading text appears visually larger. The logical height accounts for the scale
+     * so layout is correct.
+     */
+    private static class ScaledTextComponent extends AbstractComponent {
+
+        private final MultiLineTextComponent inner;
+        private final float scale;
+        private final int scaledHeight;
+
+        ScaledTextComponent(int x, int y, int unscaledWidth, MutableComponent text, float scale) {
+            super(x, y, (int) (unscaledWidth * scale), 0);
+            this.scale = scale;
+            this.inner = new MultiLineTextComponent(0, 0, unscaledWidth, text);
+            this.scaledHeight = (int) (inner.getHeight() * scale);
+            setHeight(scaledHeight);
+        }
+
+        int getScaledHeight() {
+            return scaledHeight;
+        }
+
+        @Override
+        public void render(GuiGraphics graphics, int mouseX, int mouseY,
+                           float partialTick, int parentWidth, int parentHeight) {
+            int drawX = getTotalX();
+            int drawY = getTotalY();
+
+            graphics.pose().pushMatrix();
+            graphics.pose().translate((float) drawX, (float) drawY);
+            graphics.pose().scale(scale, scale);
+
+            int scaledParentWidth = (int) (parentWidth / scale);
+            int scaledParentHeight = (int) (parentHeight / scale);
+
+            inner.updateParentPosition(0, 0, scaledParentWidth, scaledParentHeight);
+            inner.render(graphics, (int) (mouseX / scale), (int) (mouseY / scale),
+                    partialTick, scaledParentWidth, scaledParentHeight);
+
+            graphics.pose().popMatrix();
         }
     }
 
@@ -293,9 +321,9 @@ public class MarkdownComponent extends AbstractComponent {
             graphics.fill(baseX, baseY + rule[0], baseX + maxWidth, baseY + rule[0] + RULE_HEIGHT, COLOR_RULE);
         }
 
-        for (int idx = 0; idx < images.size(); idx++) {
-            ImageInfo info = images.get(idx);
-            int[] pos = imagePositions.get(idx);
+        for (int i = 0; i < images.size(); i++) {
+            ImageInfo info = images.get(i);
+            int[] pos = imagePositions.get(i);
             graphics.blit(
                     RenderPipelines.GUI_TEXTURED,
                     info.location(),
@@ -386,23 +414,10 @@ public class MarkdownComponent extends AbstractComponent {
         return parseInlineWithLinks(text, links, prefix, color, Style.EMPTY.withColor(color));
     }
 
-    /**
-     * Parses inline markdown and collects ParsedLink entries.
-     *
-     * Each ParsedLink carries fully-styled MutableComponents for the content
-     * before it and through it, so font.getSplitter().splitLines() will measure
-     * bold/italic widths correctly when computing hit regions.
-     *
-     * @param prefix       styled content that precedes all text in this block (e.g. "• ")
-     * @param baseStyle    the style applied to plain text in this block (e.g. italic for blockquotes)
-     */
     private MutableComponent parseInlineWithLinks(String text, List<ParsedLink> links,
-                                                  MutableComponent prefix, int color,
-                                                  Style baseStyle) {
+                                                  MutableComponent prefix, int color, Style baseStyle) {
         MutableComponent root = Component.empty();
-        // Accumulates the styled content built so far — used to snapshot styledBefore for each link
-        MutableComponent styledAccumulator = prefix.copy();
-
+        MutableComponent accumulator = prefix.copy();
         StringBuilder buffer = new StringBuilder();
         boolean bold = false;
         boolean italic = false;
@@ -410,19 +425,17 @@ public class MarkdownComponent extends AbstractComponent {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
 
-            // Inline image — alt text only, no styled accumulation needed for hit regions
+            // Inline image — render as italic alt text
             if (c == '!' && i + 1 < text.length() && text.charAt(i + 1) == '[') {
                 int closeBracket = text.indexOf(']', i + 2);
                 if (closeBracket != -1 && closeBracket + 1 < text.length() && text.charAt(closeBracket + 1) == '(') {
                     int closeParen = text.indexOf(')', closeBracket + 2);
                     if (closeParen != -1) {
-                        MutableComponent flushed = flushBufferToComponent(buffer, bold, italic, baseStyle, color);
-                        if (flushed != null) { root.append(flushed); styledAccumulator.append(flushed.copy()); }
-                        String alt = text.substring(i + 2, closeBracket);
-                        MutableComponent altComp = Component.literal("[" + alt + "]")
+                        appendFlushed(root, accumulator, flushBuffer(buffer, bold, italic, baseStyle, color));
+                        MutableComponent altText = Component.literal("[" + text.substring(i + 2, closeBracket) + "]")
                                 .withStyle(Style.EMPTY.withItalic(true).withColor(COLOR_BLOCKQUOTE));
-                        root.append(altComp);
-                        styledAccumulator.append(altComp.copy());
+                        root.append(altText);
+                        accumulator.append(altText.copy());
                         i = closeParen;
                         continue;
                     }
@@ -435,23 +448,17 @@ public class MarkdownComponent extends AbstractComponent {
                 if (closeBracket != -1 && closeBracket + 1 < text.length() && text.charAt(closeBracket + 1) == '(') {
                     int closeParen = text.indexOf(')', closeBracket + 2);
                     if (closeParen != -1) {
-                        MutableComponent flushed = flushBufferToComponent(buffer, bold, italic, baseStyle, color);
-                        if (flushed != null) { root.append(flushed); styledAccumulator.append(flushed.copy()); }
+                        appendFlushed(root, accumulator, flushBuffer(buffer, bold, italic, baseStyle, color));
 
                         String label = text.substring(i + 1, closeBracket);
                         String url = text.substring(closeBracket + 2, closeParen);
 
-                        // Snapshot styledBefore — everything styled up to (not including) this link
-                        MutableComponent styledBefore = styledAccumulator.copy();
-
+                        MutableComponent textBefore = accumulator.copy();
                         MutableComponent linkSpan = buildLinkSpan(label, bold, italic);
                         root.append(linkSpan);
-                        styledAccumulator.append(linkSpan.copy());
+                        accumulator.append(linkSpan.copy());
 
-                        // styledThrough = styledBefore + linkSpan
-                        MutableComponent styledThrough = styledBefore.copy().append(linkSpan.copy());
-
-                        links.add(new ParsedLink(styledBefore, styledThrough, label, url));
+                        links.add(new ParsedLink(textBefore, textBefore.copy().append(linkSpan.copy()), label, url));
                         i = closeParen;
                         continue;
                     }
@@ -460,8 +467,7 @@ public class MarkdownComponent extends AbstractComponent {
 
             // Bold
             if (c == '*' && i + 1 < text.length() && text.charAt(i + 1) == '*') {
-                MutableComponent flushed = flushBufferToComponent(buffer, bold, italic, baseStyle, color);
-                if (flushed != null) { root.append(flushed); styledAccumulator.append(flushed.copy()); }
+                appendFlushed(root, accumulator, flushBuffer(buffer, bold, italic, baseStyle, color));
                 bold = !bold;
                 i++;
                 continue;
@@ -469,8 +475,7 @@ public class MarkdownComponent extends AbstractComponent {
 
             // Italic
             if (c == '*') {
-                MutableComponent flushed = flushBufferToComponent(buffer, bold, italic, baseStyle, color);
-                if (flushed != null) { root.append(flushed); styledAccumulator.append(flushed.copy()); }
+                appendFlushed(root, accumulator, flushBuffer(buffer, bold, italic, baseStyle, color));
                 italic = !italic;
                 continue;
             }
@@ -478,10 +483,14 @@ public class MarkdownComponent extends AbstractComponent {
             buffer.append(c);
         }
 
-        MutableComponent flushed = flushBufferToComponent(buffer, bold, italic, baseStyle, color);
-        if (flushed != null) { root.append(flushed); styledAccumulator.append(flushed.copy()); }
-
+        appendFlushed(root, accumulator, flushBuffer(buffer, bold, italic, baseStyle, color));
         return root;
+    }
+
+    private void appendFlushed(MutableComponent root, MutableComponent accumulator, MutableComponent flushed) {
+        if (flushed == null) return;
+        root.append(flushed);
+        accumulator.append(flushed.copy());
     }
 
     private MutableComponent parseInline(String text) {
@@ -496,13 +505,8 @@ public class MarkdownComponent extends AbstractComponent {
                 .withItalic(italic));
     }
 
-    /**
-     * Flushes the buffer into a styled component, or returns null if the buffer is empty.
-     * The baseStyle carries block-level styling (e.g. italic for blockquotes) which is
-     * merged with any inline bold/italic toggles.
-     */
-    private MutableComponent flushBufferToComponent(StringBuilder buffer, boolean bold, boolean italic,
-                                                    Style baseStyle, int color) {
+    private MutableComponent flushBuffer(StringBuilder buffer, boolean bold, boolean italic,
+                                         Style baseStyle, int color) {
         if (buffer.isEmpty()) return null;
         Style style = baseStyle.withColor(color);
         if (bold) style = style.withBold(true);
@@ -510,16 +514,6 @@ public class MarkdownComponent extends AbstractComponent {
         MutableComponent comp = Component.literal(buffer.toString()).setStyle(style);
         buffer.setLength(0);
         return comp;
-    }
-
-    // Keep old flushBuffer signature for non-link paths (headings etc.)
-    private void flushBuffer(MutableComponent root, StringBuilder buffer, boolean bold, boolean italic) {
-        if (buffer.isEmpty()) return;
-        Style style = Style.EMPTY.withColor(defaultColor);
-        if (bold) style = style.withBold(true);
-        if (italic) style = style.withItalic(true);
-        root.append(Component.literal(buffer.toString()).setStyle(style));
-        buffer.setLength(0);
     }
 
     // -------------------------------------------------------------------------
@@ -557,18 +551,18 @@ public class MarkdownComponent extends AbstractComponent {
         int renderWidth = maxWidth;
         int renderHeight = DEFAULT_IMAGE_HEIGHT;
 
-        int dimensionSep = inner.lastIndexOf(' ');
-        if (dimensionSep != -1) {
-            String maybeDims = inner.substring(dimensionSep + 1);
-            int xSep = maybeDims.indexOf('x');
-            if (xSep > 0) {
+        int dimSepIdx = inner.lastIndexOf(' ');
+        if (dimSepIdx != -1) {
+            String maybeDims = inner.substring(dimSepIdx + 1);
+            int xSepIdx = maybeDims.indexOf('x');
+            if (xSepIdx > 0) {
                 try {
-                    int w = Integer.parseInt(maybeDims.substring(0, xSep));
-                    int h = Integer.parseInt(maybeDims.substring(xSep + 1));
+                    int w = Integer.parseInt(maybeDims.substring(0, xSepIdx));
+                    int h = Integer.parseInt(maybeDims.substring(xSepIdx + 1));
                     if (w > maxWidth) { h = h * maxWidth / w; w = maxWidth; }
                     renderWidth = w;
                     renderHeight = h;
-                    resourcePath = inner.substring(0, dimensionSep).trim();
+                    resourcePath = inner.substring(0, dimSepIdx).trim();
                 } catch (NumberFormatException ignored) {}
             }
         }
@@ -581,10 +575,20 @@ public class MarkdownComponent extends AbstractComponent {
     }
 
     private float getHeadingScale(int level) {
-        return switch (level) { case 1 -> 2.0f; case 2 -> 1.5f; case 3 -> 1.25f; default -> 1.0f; };
+        return switch (level) {
+            case 1 -> 1.75f;
+            case 2 -> 1.35f;
+            case 3 -> 1.15f;
+            default -> 1.0f;
+        };
     }
 
     private int getHeadingColor(int level) {
-        return switch (level) { case 1 -> COLOR_HEADING_1; case 2 -> COLOR_HEADING_2; case 3 -> COLOR_HEADING_3; default -> defaultColor; };
+        return switch (level) {
+            case 1 -> COLOR_HEADING_1;
+            case 2 -> COLOR_HEADING_2;
+            case 3 -> COLOR_HEADING_3;
+            default -> defaultColor;
+        };
     }
 }
