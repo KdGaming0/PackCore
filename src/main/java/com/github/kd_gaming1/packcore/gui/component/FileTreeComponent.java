@@ -108,8 +108,26 @@ public class FileTreeComponent extends EmptyComponent {
             if (isHovered()) graphics.fill(x, y, x + w, y + h, COLOR_HOVER);
 
             if (node.isDirectory()) {
+                int checkSize = 8;
+                int checkX = x + indent;
+                int checkY = y + (h - checkSize) / 2;
+
+                // Draw directory checkbox border
+                graphics.fill(checkX, checkY, checkX + checkSize, checkY + 1, COLOR_CHECKBOX_BORDER);
+                graphics.fill(checkX, checkY + checkSize - 1, checkX + checkSize, checkY + checkSize, COLOR_CHECKBOX_BORDER);
+                graphics.fill(checkX, checkY, checkX + 1, checkY + checkSize, COLOR_CHECKBOX_BORDER);
+                graphics.fill(checkX + checkSize - 1, checkY, checkX + checkSize, checkY + checkSize, COLOR_CHECKBOX_BORDER);
+
+                if (node.isAllSelected()) {
+                    // Fully selected: solid fill
+                    graphics.fill(checkX + 1, checkY + 1, checkX + checkSize - 1, checkY + checkSize - 1, COLOR_CHECKBOX_FILL);
+                } else if (node.isAnySelected()) {
+                    // Partially selected: dimmer fill to indicate indeterminate
+                    graphics.fill(checkX + 2, checkY + 2, checkX + checkSize - 2, checkY + checkSize - 2, COLOR_CHECKBOX_FILL);
+                }
+
                 String prefix = node.isExpanded() ? "v " : "> ";
-                graphics.drawString(font, prefix + node.name(), x + indent, midY, COLOR_TEXT_DIR, false);
+                graphics.drawString(font, prefix + node.name(), checkX + checkSize + 3, midY, COLOR_TEXT_DIR, false);
             } else {
                 int checkSize = 8;
                 int checkX = x + indent;
@@ -132,8 +150,17 @@ public class FileTreeComponent extends EmptyComponent {
         @Override
         public boolean mouseClicked(@NotNull MouseButtonEvent event, boolean bl) {
             if (event.button() != 0 || !isMouseOver(event.x(), event.y())) return false;
+            int indent = INDENT_WIDTH * depth + 4;
+            int checkX = getX() + indent;
+            int checkSize = 8;
+
             if (node.isDirectory()) {
-                node.setExpanded(!node.isExpanded());
+                if (event.x() >= checkX && event.x() < checkX + checkSize) {
+                    node.setSelectedRecursive(!node.isAllSelected());
+                    if (onSelectionChanged != null) onSelectionChanged.run();
+                } else {
+                    node.setExpanded(!node.isExpanded());
+                }
             } else {
                 node.setSelected(!node.isSelected());
                 if (onSelectionChanged != null) onSelectionChanged.run();

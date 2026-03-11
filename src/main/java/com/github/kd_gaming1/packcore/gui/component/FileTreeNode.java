@@ -45,4 +45,16 @@ public final class FileTreeNode {
         if (!directory) this.selected = selected;
         for (FileTreeNode child : children) child.setSelectedRecursive(selected);
     }
+
+    public boolean isAllSelected() {
+        if (!directory) return selected;
+        if (children.isEmpty()) return false;
+        return children.stream().allMatch(FileTreeNode::isAllSelected);
+    }
+
+    public boolean isAnySelected() {
+        if (!directory) return selected;
+        return children.stream().anyMatch(FileTreeNode::isAnySelected);
+    }
+
 }
