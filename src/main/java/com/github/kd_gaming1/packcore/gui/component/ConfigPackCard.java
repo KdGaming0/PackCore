@@ -38,12 +38,14 @@ public class ConfigPackCard extends AbstractComponent {
 
     private final ConfigPackEntry entry;
     private final boolean isActive;
+    private final String badgeText;
     private final Consumer<ConfigPackEntry> onSelect;
 
-    public ConfigPackCard(int x, int y, int width, ConfigPackEntry entry, boolean isActive, Consumer<ConfigPackEntry> onSelect) {
+    public ConfigPackCard(int x, int y, int width, ConfigPackEntry entry, boolean isActive, String badgeText, Consumer<ConfigPackEntry> onSelect) {
         super(x, y, width, 0);
         this.entry = entry;
         this.isActive = isActive;
+        this.badgeText = badgeText;
         this.onSelect = onSelect;
         this.build();
     }
@@ -95,9 +97,8 @@ public class ConfigPackCard extends AbstractComponent {
         drawOutline(graphics, cardX, cardY, cardWidth, cardHeight, borderColor);
         graphics.fill(cardX, cardY, cardX + ACCENT_BAR_WIDTH, cardY + cardHeight, accentColor);
 
-        if (isActive) {
+        if (isActive && badgeText != null && !badgeText.isBlank()) {
             var font = Minecraft.getInstance().font;
-            String badgeText = "✓ Active";
 
             int badgeWidth = font.width(badgeText) + (BADGE_PADDING * 2);
             int badgeHeight = font.lineHeight + BADGE_PADDING;

@@ -146,6 +146,7 @@ public class WelcomePage extends BaseWizardPage {
                     0, cardY,
                     columnWidth - SCROLL_BAR_ROOM,
                     pack, isActivePack,
+                    "✓ Active",
                     clickedPack -> {
                         if (isSamePack(activePack, clickedPack)) return;
                         overlay.show(activePack, clickedPack);

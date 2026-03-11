@@ -97,5 +97,59 @@
   "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",
   "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
   "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world.",
-  "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings"
+  "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
+
+  "gui.packcore.config.title": "Modpack Configuration",
+
+  "gui.packcore.config.tab.configuration": "Configuration",
+  "gui.packcore.config.tab.export": "Export",
+  "gui.packcore.config.tab.backups": "Backups",
+  "gui.packcore.config.tab.import": "Import",
+
+  "gui.packcore.config.files.heading": "Files in Config Preset",
+  "gui.packcore.config.files.hint": "Select a config preset on the right to browse its files.",
+  "gui.packcore.config.presets.heading": "Available Presets",
+
+  "gui.packcore.config.button.apply_selected": "Apply Selected",
+  "gui.packcore.config.button.apply_all": "Apply All",
+
+  "gui.packcore.export.metadata.heading": "Export Metadata",
+  "gui.packcore.export.files.heading": "Select Files to Export",
+  "gui.packcore.export.field.name": "Config Name",
+  "gui.packcore.export.field.version": "Version",
+  "gui.packcore.export.field.author": "Author",
+  "gui.packcore.export.field.description": "Description",
+  "gui.packcore.export.field.resolution": "Resolution (e.g. 1920x1080)",
+  "gui.packcore.export.button.export": "Export Config Pack",
+
+  "gui.packcore.backups.heading": "Backups",
+  "gui.packcore.backups.empty": "No backups found. Create one with the button above.",
+  "gui.packcore.backups.button.create": "Create Backup Now",
+  "gui.packcore.backups.button.restore": "Restore",
+
+  "gui.packcore.import.files.heading": "Files in Import",
+  "gui.packcore.import.files.hint": "Select an import on the right to browse its files.",
+  "gui.packcore.import.list.heading": "Imported Configs",
+  "gui.packcore.import.button.open_folder": "Open Imports Folder",
+
+  "gui.packcore.config.tooltip.apply_selected": "Apply only the files you have checked in the file tree.",
+  "gui.packcore.config.tooltip.apply_all": "Apply every file in this preset, overwriting existing ones.",
+  "gui.packcore.export.button.open_folder": "Open Exports Folder",
+
+  "gui.packcore.export.tooltip.missing_name": "Enter a config name.",
+  "gui.packcore.export.tooltip.missing_version": "Fix the version format (e.g. 1.0.0).",
+  "gui.packcore.export.tooltip.missing_resolution": "Fix the resolution format (e.g. 1920x1080).",
+  "gui.packcore.export.tooltip.missing_files": "Select at least one file to export.",
+  "gui.packcore.config.source.official": "Official",
+  "gui.packcore.config.source.my_exports": "My Exports",
+
+  "gui.packcore.overlay.restore.title": "Restore Backup?",
+  "gui.packcore.overlay.restore.button.cancel": "Cancel",
+  "gui.packcore.overlay.restore.button.confirm": "Restore on Restart",
+  "gui.packcore.overlay.restore.warning1": "⚠ This will overwrite your current config.",
+  "gui.packcore.overlay.restore.warning2": "Any unsaved changes since this backup will be lost.",
+  "gui.packcore.overlay.restore.note": "The game will close to apply the restore.",
+  "gui.packcore.import.list.empty": "No imports found",
+  "gui.packcore.import.list.empty.hint": "Place a config pack .zip file in the imports folder"
+
 }

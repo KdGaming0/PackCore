@@ -28,9 +28,13 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         MidnightConfig.init("packcore", PackCoreConfig.class);
 
-        // ── Priority path: user explicitly chose a config from the wizard GUI ──
-        // If pendingConfigPack is set, apply that pack unconditionally (bypasses
-        // resolution auto-detection) and clear the flag, then return early.
+        // Highest priority: restore a backup if one is pending
+        if (!PackCoreConfig.pendingRestoreBackup.isBlank()) {
+            applyPendingRestore(packcoreDir);
+            return;
+        }
+
+        // Next priority: the user explicitly chose a config from the wizard GUI
         if (!PackCoreConfig.pendingConfigPack.isBlank()) {
             applyPendingConfig(packcoreDir, configsDir);
             return;
@@ -68,7 +72,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
     /**
      * Applies the pack whose filename is stored in {@link PackCoreConfig#pendingConfigPack}.
-     *
+     * <p>
      * Always uses {@link ConfigPackExtractor.OverwriteMode#REPLACE_EXISTING} because
      * the user explicitly asked to switch, so we want a clean application of the new pack.
      * The pending flag is cleared regardless of success or failure.
@@ -107,7 +111,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        // Extract — full replace, since the user intentionally chose this pack
+        // Extract — fully replace
         try {
             ConfigPackExtractor.extractAll(
                     entry.zipPath(), packcoreDir,
@@ -128,6 +132,36 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         MidnightConfig.write("packcore");
 
         LOGGER.info("Successfully applied pending config: {} (version: {})", pendingFile, packVersion);
+    }
+
+    private void applyPendingRestore(Path packcoreDir) {
+        String backupFile = PackCoreConfig.pendingRestoreBackup;
+        Path backupPath = packcoreDir.resolve("backups").resolve(backupFile);
+
+        LOGGER.info("Pending backup restore requested: {}", backupFile);
+
+        if (!Files.exists(backupPath)) {
+            LOGGER.error("Pending restore backup not found: {}", backupPath);
+            clearPendingRestore();
+            return;
+        }
+
+        try {
+            // Backup files are relative to the game dir, so extract there
+            ConfigPackExtractor.extractAll(backupPath, packcoreDir.getParent(),
+                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
+            LOGGER.info("Successfully restored backup: {}", backupFile);
+        } catch (IOException e) {
+            LOGGER.error("Failed to restore backup '{}': {}", backupFile, e.getMessage());
+        }
+
+        clearPendingRestore();
+    }
+
+    /** Clears {@code applyPendingRestore} and persists the change. */
+    private static void clearPendingRestore() {
+        PackCoreConfig.pendingRestoreBackup = "";
+        MidnightConfig.write("packcore");
     }
 
     /** Clears {@code pendingConfigPack} and persists the change. */

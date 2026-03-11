@@ -7,6 +7,7 @@ import com.daqem.uilib.gui.widget.ButtonWidget;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.component.OverlayComponent;
+import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.gui.util.ImageBackground;
 import com.github.kd_gaming1.packcore.gui.util.SpriteHelper;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
@@ -282,10 +283,7 @@ public class SBETitleScreen extends AbstractScreen {
                 ICON_BUTTON_SIZE,
                 Component.empty(),
                 createIconSprites("menu/settings_icon"),
-                btn -> {
-                    // TODO: Open modpack config screen
-                    Minecraft.getInstance().setScreen(new OptionsScreen(this, Minecraft.getInstance().options));
-                }
+                btn -> Minecraft.getInstance().setScreen(new ConfigScreen())
         );
         button.setTooltip(Tooltip.create(Component.translatable("gui.packcore.tooltip.modpack_config")));
         return button;

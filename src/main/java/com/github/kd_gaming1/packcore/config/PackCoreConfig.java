@@ -24,6 +24,10 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = META)
     public static String pendingConfigPack = "";
 
+    @Hidden
+    @Entry(category = META)
+    public static String pendingRestoreBackup = "";
+
     @Entry(category = META)
     public static boolean successfulWelcomeWizard =  false;
 }

@@ -26,13 +26,6 @@ public class ConfigPackBuilder {
 
     private ConfigPackBuilder() {}
 
-    /**
-     * Zips an entire folder into a new zip, including a generated pack.json.
-     *
-     * @param sourceFolder  The folder to zip.
-     * @param outputZipName The name of the zip file to create (e.g. "my_config.zip").
-     * @param meta          Metadata to write as pack.json inside the zip.
-     */
     public static void zipFolder(Path sourceFolder, String outputZipName, ConfigPackMeta meta) throws IOException {
         if (!Files.isDirectory(sourceFolder)) {
             throw new IllegalArgumentException("Expected a directory: " + sourceFolder);
@@ -43,42 +36,37 @@ public class ConfigPackBuilder {
             files = stream.filter(Files::isRegularFile).toList();
         }
 
-        Path outputZip = prepareOutputPath(outputZipName);
+        Files.createDirectories(OUTPUT_DIR);
+        Path outputZip = OUTPUT_DIR.resolve(outputZipName);
 
         try (ZipOutputStream zip = openZip(outputZip)) {
             writeMetaEntry(zip, meta);
-
             for (Path file : files) {
-                Path entryName = sourceFolder.relativize(file);
-                writeEntry(zip, file, entryName.toString());
+                writeEntry(zip, file, sourceFolder.relativize(file).toString());
             }
         }
 
         LOGGER.info("Created zip '{}' from folder '{}'", outputZip.getFileName(), sourceFolder.getFileName());
     }
 
-    /**
-     * Zips specific files (relative to a root) into a new zip, including a generated pack.json.
-     *
-     * @param root          The root folder all relative paths are relative to.
-     * @param relativePaths Relative file paths to include (e.g. "options.txt", "mods/sodium.json").
-     * @param outputZipName The name of the zip file to create.
-     * @param meta          Metadata to write as pack.json inside the zip.
-     */
+    /** Writes selected files to a zip in the default user_configs output directory. */
     public static void zipFiles(Path root, Collection<String> relativePaths, String outputZipName, ConfigPackMeta meta) throws IOException {
-        Path outputZip = prepareOutputPath(outputZipName);
+        zipFiles(root, relativePaths, OUTPUT_DIR, outputZipName, meta);
+    }
+
+    /** Writes selected files to a zip in the given output directory. */
+    public static void zipFiles(Path root, Collection<String> relativePaths, Path outputDir, String outputZipName, ConfigPackMeta meta) throws IOException {
+        Files.createDirectories(outputDir);
+        Path outputZip = outputDir.resolve(outputZipName);
 
         try (ZipOutputStream zip = openZip(outputZip)) {
             writeMetaEntry(zip, meta);
-
             for (String relative : relativePaths) {
                 Path file = root.resolve(relative);
-
                 if (!Files.isRegularFile(file)) {
                     LOGGER.warn("Skipping '{}' — not a regular file or does not exist", relative);
                     continue;
                 }
-
                 writeEntry(zip, file, relative);
             }
         }
@@ -86,16 +74,13 @@ public class ConfigPackBuilder {
         LOGGER.info("Created zip '{}' with {} file(s)", outputZip.getFileName(), relativePaths.size());
     }
 
-    /** Builds pack.json from the metadata and writes it as an in-memory zip entry. */
     private static void writeMetaEntry(ZipOutputStream zip, ConfigPackMeta meta) throws IOException {
         JsonObject json = new JsonObject();
-
-        json.addProperty("version",      meta.version());
-        json.addProperty("targetWidth",  meta.targetWidth());
+        json.addProperty("version", meta.version());
+        json.addProperty("targetWidth", meta.targetWidth());
         json.addProperty("targetHeight", meta.targetHeight());
-        json.addProperty("createdDate",  meta.createdDate());
+        json.addProperty("createdDate", meta.createdDate());
 
-        // Optional fields — only written if provided
         if (meta.name() != null) json.addProperty("name", meta.name());
         if (meta.description() != null) json.addProperty("description", meta.description());
         if (meta.author() != null) json.addProperty("author", meta.author());
@@ -107,16 +92,9 @@ public class ConfigPackBuilder {
         }
 
         byte[] bytes = GSON.toJson(json).getBytes(StandardCharsets.UTF_8);
-
         zip.putNextEntry(new ZipEntry("pack.json"));
         zip.write(bytes);
         zip.closeEntry();
-    }
-
-    /** Ensures the output directory exists and returns the full output path. */
-    private static Path prepareOutputPath(String zipName) throws IOException {
-        Files.createDirectories(OUTPUT_DIR);
-        return OUTPUT_DIR.resolve(zipName);
     }
 
     private static ZipOutputStream openZip(Path zipPath) throws IOException {
@@ -124,12 +102,8 @@ public class ConfigPackBuilder {
         return new ZipOutputStream(fileOut);
     }
 
-    /** Writes one file from disk into the open ZipOutputStream. */
     private static void writeEntry(ZipOutputStream zip, Path file, String entryName) throws IOException {
-        // Zip spec requires forward slashes
-        String normalisedName = entryName.replace('\\', '/');
-
-        zip.putNextEntry(new ZipEntry(normalisedName));
+        zip.putNextEntry(new ZipEntry(entryName.replace('\\', '/')));
         Files.copy(file, zip);
         zip.closeEntry();
     }
