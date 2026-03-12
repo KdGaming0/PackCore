@@ -65,10 +65,8 @@ public class MarkdownComponent extends AbstractComponent {
     private static final int COLOR_HEADING_2 = 0xFFFFAA55;
     private static final int COLOR_HEADING_3 = 0xFFFF5555;
 
-    private record ImageInfo(Identifier location, int width, int height) {}
-
-    private record ParsedLink(MutableComponent textBefore, MutableComponent textThrough,
-                              String label, String url) {}
+    private record ImageInfo(Identifier location, int renderWidth, int renderHeight, int texWidth, int texHeight) {}
+    private record ParsedLink(MutableComponent textBefore, MutableComponent textThrough, String label, String url) {}
 
     private final String markdown;
     private final int maxWidth;
@@ -211,8 +209,8 @@ public class MarkdownComponent extends AbstractComponent {
 
     private int buildImage(ImageInfo info, int y) {
         images.add(info);
-        imagePositions.add(new int[]{0, y, info.width(), info.height()});
-        return info.height() + SPACING_IMAGE;
+        imagePositions.add(new int[]{0, y, info.renderWidth(), info.renderHeight()});
+        return info.renderHeight() + SPACING_IMAGE;
     }
 
     // -------------------------------------------------------------------------
@@ -229,8 +227,10 @@ public class MarkdownComponent extends AbstractComponent {
             List<FormattedText> wrappedBefore = font.getSplitter().splitLines(link.textBefore(), columnWidth, Style.EMPTY);
             List<FormattedText> wrappedThrough = font.getSplitter().splitLines(link.textThrough(), columnWidth, Style.EMPTY);
 
-            int linkStartLine = wrappedBefore.size() - 1;
-            int linkStartX = columnX + font.width(wrappedBefore.get(linkStartLine));
+            if (wrappedThrough.isEmpty()) continue;
+
+            int linkStartLine = wrappedBefore.isEmpty() ? 0 : wrappedBefore.size() - 1;
+            int linkStartX = wrappedBefore.isEmpty() ? columnX : columnX + font.width(wrappedBefore.get(linkStartLine));
 
             for (int lineIdx = linkStartLine; lineIdx < wrappedThrough.size(); lineIdx++) {
                 int hitX;
@@ -238,7 +238,7 @@ public class MarkdownComponent extends AbstractComponent {
 
                 if (lineIdx == linkStartLine) {
                     hitX = linkStartX;
-                    hitWidth = font.width(wrappedThrough.get(lineIdx)) - font.width(wrappedBefore.get(linkStartLine));
+                    hitWidth = font.width(wrappedThrough.get(lineIdx)) - (linkStartX - columnX);
                 } else {
                     hitX = columnX;
                     hitWidth = font.width(wrappedThrough.get(lineIdx));
@@ -329,8 +329,8 @@ public class MarkdownComponent extends AbstractComponent {
                     baseX + pos[0], baseY + pos[1],
                     0.0f, 0.0f,
                     pos[2], pos[3],
-                    info.width(), info.height(),
-                    info.width(), info.height()
+                    info.texWidth(), info.texHeight(),
+                    info.texWidth(), info.texHeight()
             );
         }
 
@@ -549,6 +549,8 @@ public class MarkdownComponent extends AbstractComponent {
         String resourcePath = inner;
         int renderWidth = maxWidth;
         int renderHeight = DEFAULT_IMAGE_HEIGHT;
+        int texWidth = maxWidth;
+        int texHeight = DEFAULT_IMAGE_HEIGHT;
 
         int dimSepIdx = inner.lastIndexOf(' ');
         if (dimSepIdx != -1) {
@@ -558,16 +560,21 @@ public class MarkdownComponent extends AbstractComponent {
                 try {
                     int w = Integer.parseInt(maybeDims.substring(0, xSepIdx));
                     int h = Integer.parseInt(maybeDims.substring(xSepIdx + 1));
-                    if (w > maxWidth) { h = h * maxWidth / w; w = maxWidth; }
+                    texWidth = w;
+                    texHeight = h;
                     renderWidth = w;
                     renderHeight = h;
+                    if (renderWidth > maxWidth) {
+                        renderHeight = renderHeight * maxWidth / renderWidth;
+                        renderWidth = maxWidth;
+                    }
                     resourcePath = inner.substring(0, dimSepIdx).trim();
                 } catch (NumberFormatException ignored) {}
             }
         }
 
         try {
-            return new ImageInfo(Identifier.parse(resourcePath), renderWidth, renderHeight);
+            return new ImageInfo(Identifier.parse(resourcePath), renderWidth, renderHeight, texWidth, texHeight); // ← add texWidth, texHeight
         } catch (Exception e) {
             return null;
         }

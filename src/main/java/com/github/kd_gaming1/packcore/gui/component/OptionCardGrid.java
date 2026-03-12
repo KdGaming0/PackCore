@@ -65,7 +65,9 @@ public class OptionCardGrid<T> extends EmptyComponent {
         int gridHeight = getHeight();
 
         int cardWidth = (gridWidth - SCROLL_BAR_WIDTH - (cardGap * (columns - 1))) / columns;
-        int previewHeight = cardWidth * PREVIEW_ASPECT_H / PREVIEW_ASPECT_W;
+        int texW = descriptor.previewTextureWidth(options.getFirst());
+        int texH = descriptor.previewTextureHeight(options.getFirst());
+        int previewHeight = cardWidth * texH / texW;
         int textWidth = cardWidth - (LABEL_PADDING * 2);
         int lineHeight = Minecraft.getInstance().font.lineHeight;
 

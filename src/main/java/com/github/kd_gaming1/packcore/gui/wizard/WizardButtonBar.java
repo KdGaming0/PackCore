@@ -5,6 +5,7 @@ import com.daqem.uilib.gui.widget.ButtonWidget;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -122,6 +123,8 @@ public class WizardButtonBar extends EmptyComponent {
                 btn -> { if (onFinish != null) onFinish.run(); }
         );
         finishButton.active = false;
+        finishButton.setTooltip(Tooltip.create(
+                Component.translatable("gui.packcore.wizard.button.finish.locked_tooltip")));
 
         this.addWidget(discord);
         this.addWidget(modrinth);
@@ -164,6 +167,8 @@ public class WizardButtonBar extends EmptyComponent {
      */
     public void setFinishEnabled(boolean enabled) {
         finishButton.active = enabled;
+        finishButton.setTooltip(enabled ? null : Tooltip.create(
+                Component.translatable("gui.packcore.wizard.button.finish.locked_tooltip")));
     }
 
     /** Registers a callback invoked when the user presses Finish. */
