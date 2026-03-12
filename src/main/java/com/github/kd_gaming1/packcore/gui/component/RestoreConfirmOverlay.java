@@ -4,16 +4,13 @@ import com.daqem.uilib.gui.component.AbstractComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.configpack.BackupEntry;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 
 import java.util.List;
-
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class RestoreConfirmOverlay extends AbstractComponent {
 
@@ -32,12 +29,6 @@ public class RestoreConfirmOverlay extends AbstractComponent {
     private static final int COLOR_WARNING_BG = 0x33FFAA00;
     private static final int COLOR_NOTE = 0xFF666666;
 
-    private static final WidgetSprites BUTTON_SPRITES = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
-    );
-
     private boolean visible = false;
     private BackupEntry backup;
     private Runnable onClose;
@@ -54,11 +45,11 @@ public class RestoreConfirmOverlay extends AbstractComponent {
 
         cancelButton = new CustomButtonWidget(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.overlay.restore.button.cancel"),
-                BUTTON_SPRITES, btn -> setVisible(false));
+                GuiHelper.BLANK_BUTTON_SPRITES, btn -> setVisible(false));
 
         confirmButton = new CustomButtonWidget(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.overlay.restore.button.confirm"),
-                BUTTON_SPRITES, btn -> confirmRestore());
+                GuiHelper.BLANK_BUTTON_SPRITES, btn -> confirmRestore());
 
         addWidgets(List.of(cancelButton, confirmButton));
         setVisible(false);
@@ -170,9 +161,6 @@ public class RestoreConfirmOverlay extends AbstractComponent {
     }
 
     private void drawBorder(GuiGraphics graphics) {
-        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + 1, COLOR_BORDER);
-        graphics.fill(panelX, panelY + panelHeight - 1, panelX + PANEL_WIDTH, panelY + panelHeight, COLOR_BORDER);
-        graphics.fill(panelX, panelY, panelX + 1, panelY + panelHeight, COLOR_BORDER);
-        graphics.fill(panelX + PANEL_WIDTH - 1, panelY, panelX + PANEL_WIDTH, panelY + panelHeight, COLOR_BORDER);
+        GuiHelper.drawBorder(graphics, panelX, panelY, PANEL_WIDTH, panelHeight, COLOR_BORDER);
     }
 }

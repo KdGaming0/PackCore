@@ -8,6 +8,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Navigation state machine for the setup wizard.
+ *
+ * <p>Pages are registered with {@link #addPage(BaseWizardPage)} in order, then
+ * {@link #initialize()} activates the first page. {@link #nextPage()} and
+ * {@link #previousPage()} guard every transition: they check
+ * {@link BaseWizardPage#validate()}, {@link BaseWizardPage#canGoBack()}, and bounds
+ * before calling {@link BaseWizardPage#onExit()} / {@link BaseWizardPage#onEnter()}
+ * on the outgoing and incoming pages respectively. A {@link PageChangeEvent} is
+ * fired after every successful navigation so the host screen can update its
+ * header and button bar.
+ */
 public class WizardNavigator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/WizardNavigator");

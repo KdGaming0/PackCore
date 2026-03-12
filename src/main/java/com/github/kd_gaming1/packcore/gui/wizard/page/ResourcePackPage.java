@@ -2,10 +2,10 @@ package com.github.kd_gaming1.packcore.gui.wizard.page;
 
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
-import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.component.MultiSelectList;
 import com.github.kd_gaming1.packcore.gui.component.MarkdownComponent;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
@@ -16,8 +16,6 @@ import net.minecraft.server.packs.repository.PackSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
@@ -65,15 +63,10 @@ public class ResourcePackPage extends BaseWizardPage {
 
     private void setupMarkdownColumn(EmptyComponent column, int width, int height) {
         MarkdownComponent markdownComp = new MarkdownComponent(
-                0, 0, width - SCROLL_BAR_WIDTH - (PADDING / 2), loadMarkdown()
+                0, 0, width - SCROLL_BAR_WIDTH - (PADDING / 2), GuiHelper.loadMarkdown(MARKDOWN_PATH, FALLBACK_MARKDOWN, LOGGER)
         );
-
-        ScrollContainerWidget scroll = new ScrollContainerWidget(width, height);
-        scroll.addComponent(markdownComp);
-
-        EmptyComponent wrapper = new EmptyComponent(0, 0, width, height);
-        wrapper.addWidget(scroll);
-        column.addComponent(wrapper);
+        column.addComponent(GuiHelper.scrollWrapped(0, 0, width, height,
+                scroll -> scroll.addComponent(markdownComp)));
     }
 
     private void setupSelectionColumn(EmptyComponent column, int width, int height) {
@@ -117,16 +110,6 @@ public class ResourcePackPage extends BaseWizardPage {
     private boolean isUserSelectablePack(Pack pack) {
         // Only show packs manually added by the user — exclude the built-in vanilla assets
         return pack.getPackSource() == PackSource.DEFAULT && !pack.getId().equals("vanilla");
-    }
-
-    private String loadMarkdown() {
-        if (!Files.exists(MARKDOWN_PATH)) return FALLBACK_MARKDOWN;
-        try {
-            return Files.readString(MARKDOWN_PATH);
-        } catch (IOException e) {
-            LOGGER.error("Failed to read resource_packs.md", e);
-            return FALLBACK_MARKDOWN;
-        }
     }
 
     public record ResourcePackEntry(String id, Component name, Component description) {

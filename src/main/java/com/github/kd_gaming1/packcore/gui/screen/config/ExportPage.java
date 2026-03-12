@@ -12,14 +12,13 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackMeta;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeBuilder;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeComponent;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeNode;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.util.ScreenResolution;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class ExportPage extends BaseConfigPage {
 
@@ -55,12 +52,6 @@ public class ExportPage extends BaseConfigPage {
     private static final Set<String> HIDDEN_PATHS = Set.of(
             "logs", "crash-reports", "screenshots", "saves", "packcore",
             "replay_recordings", "debug", ".fabric", "resourcepacks", "shaderpacks"
-    );
-
-    private static final WidgetSprites BLANK_BUTTON = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
     );
 
     private EditBoxWidget nameField;
@@ -149,7 +140,7 @@ public class ExportPage extends BaseConfigPage {
         int exportBtnY = scrollY + scrollHeight + PADDING;
         exportBtn = new CustomButtonWidget(exportBtnX, exportBtnY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.export.button.export"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> doExport());
         exportBtn.active = false;
         panel.addWidget(exportBtn);
@@ -182,7 +173,7 @@ public class ExportPage extends BaseConfigPage {
         int openBtnY = currentY + treeHeight + PADDING;
         panel.addWidget(new CustomButtonWidget(openBtnX, openBtnY, OPEN_BTN_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.export.button.open_folder"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> openExportsFolder()));
     }
 

@@ -5,6 +5,7 @@ import com.daqem.uilib.gui.component.text.TruncatedTextComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.widget.ButtonWidget;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -111,10 +112,7 @@ public class ConfigPackCard extends AbstractComponent {
     }
 
     private void drawOutline(GuiGraphics graphics, int x, int y, int width, int height, int color) {
-        graphics.fill(x, y, x + width, y + 1, color);
-        graphics.fill(x, y + height - 1, x + width, y + height, color);
-        graphics.fill(x, y, x + 1, y + height, color);
-        graphics.fill(x + width - 1, y, x + width, y + height, color);
+        GuiHelper.drawBorder(graphics, x, y, width, height, color);
     }
 
     private String formatResolution(JsonObject config) {

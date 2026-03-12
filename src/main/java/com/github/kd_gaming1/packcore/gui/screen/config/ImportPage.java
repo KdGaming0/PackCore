@@ -14,12 +14,11 @@ import com.github.kd_gaming1.packcore.gui.component.ConfigPackCard;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeBuilder;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeComponent;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeNode;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +27,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class ImportPage extends BaseConfigPage {
 
@@ -48,12 +45,6 @@ public class ImportPage extends BaseConfigPage {
     private static final int COLOR_LABEL = 0xFFCCCCCC;
     private static final int COLOR_HINT = 0xFF666666;
     private static final int COLOR_ERROR = 0xFFFF5555;
-
-    private static final WidgetSprites BLANK_BUTTON = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
-    );
 
     private ConfigPackEntry selectedImport;
     private EmptyComponent leftPanel;
@@ -122,7 +113,7 @@ public class ImportPage extends BaseConfigPage {
         CustomButtonWidget applySelectedBtn = new CustomButtonWidget(
                 buttonsStartX, buttonsY, ACTION_BTN_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.config.button.apply_selected"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> applyFiles(fileTree.getSelectedPaths()));
         applySelectedBtn.active = false;
         applySelectedBtn.setTooltip(Tooltip.create(
@@ -131,7 +122,7 @@ public class ImportPage extends BaseConfigPage {
         CustomButtonWidget applyAllBtn = new CustomButtonWidget(
                 buttonsStartX + ACTION_BTN_WIDTH + BUTTON_GAP, buttonsY, ACTION_BTN_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.config.button.apply_all"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> applyAll());
         applyAllBtn.setTooltip(Tooltip.create(
                 Component.translatable("gui.packcore.config.tooltip.apply_all")));
@@ -203,7 +194,7 @@ public class ImportPage extends BaseConfigPage {
         int openBtnY = currentY + listHeight + PADDING;
         panel.addWidget(new CustomButtonWidget(openBtnX, openBtnY, OPEN_BTN_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.import.button.open_folder"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> openImportsFolder()));
     }
 

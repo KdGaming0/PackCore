@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.gui.wizard;
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.widget.ButtonWidget;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
@@ -24,12 +25,6 @@ public class WizardButtonBar extends EmptyComponent {
     private static final int BTN_HEIGHT = 18;
     private static final int ICON_SIZE = 20;
     private static final int BTN_GAP = 6;
-
-    private static final WidgetSprites BLANK_BUTTON = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
-    );
 
     private static final WidgetSprites CONTINUE_BUTTON = new WidgetSprites(
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/continue_gray_button"),
@@ -116,14 +111,14 @@ public class WizardButtonBar extends EmptyComponent {
         skipButton = new CustomButtonWidget(
                 width - BTN_WIDTH * 2 - BTN_GAP * 2, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.skip"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> { if (onSkipFinish != null) onSkipFinish.run(); }
         );
 
         finishButton = new CustomButtonWidget(
                 width - BTN_WIDTH - BTN_GAP, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.finish"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> { if (onFinish != null) onFinish.run(); }
         );
         finishButton.active = false;

@@ -7,6 +7,7 @@ import com.daqem.uilib.gui.component.color.ColorComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
@@ -217,7 +218,7 @@ public class MultiSelectList<T> extends EmptyComponent {
             int borderColor = isSelected ? GuiColors.BORDER_SELECTED
                     : isHovered() ? GuiColors.BORDER_HOVERED
                     : GuiColors.BORDER_IDLE;
-            drawBorder(graphics, rowLeft, rowTop, rowWidth, rowHeight, borderColor);
+            GuiHelper.drawBorder(graphics, rowLeft, rowTop, rowWidth, rowHeight, borderColor);
 
             for (IComponent component : childComponents) {
                 component.updateParentPosition(rowLeft, rowTop, rowWidth, rowHeight);
@@ -239,10 +240,7 @@ public class MultiSelectList<T> extends EmptyComponent {
         }
 
         private static void drawCheckbox(GuiGraphics graphics, int x, int y, boolean checked) {
-            graphics.fill(x, y, x + CHECKMARK_SIZE, y + 1, GuiColors.BORDER_IDLE);
-            graphics.fill(x, y + CHECKMARK_SIZE - 1, x + CHECKMARK_SIZE, y + CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
-            graphics.fill(x, y, x + 1, y + CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
-            graphics.fill(x + CHECKMARK_SIZE - 1, y, x + CHECKMARK_SIZE, y + CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
+            GuiHelper.drawBorder(graphics, x, y, CHECKMARK_SIZE, CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
 
             if (checked) {
                 graphics.fill(x + 1, y + 1, x + CHECKMARK_SIZE - 1, y + CHECKMARK_SIZE - 1, GuiColors.CHECKMARK_BOX);
@@ -254,13 +252,6 @@ public class MultiSelectList<T> extends EmptyComponent {
                         GuiColors.CHECKMARK_TICK
                 );
             }
-        }
-
-        private static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {
-            graphics.fill(x, y, x + width, y + 1, color);
-            graphics.fill(x, y + height - 1, x + width, y + height, color);
-            graphics.fill(x, y, x + 1, y + height, color);
-            graphics.fill(x + width - 1, y, x + width, y + height, color);
         }
 
         @Override protected int contentHeight() { return 0; }

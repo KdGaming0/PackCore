@@ -8,6 +8,7 @@ import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
@@ -210,10 +211,7 @@ public class OptionSelectList<T> extends EmptyComponent {
         }
 
         private static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {
-            graphics.fill(x, y, x + width, y + 1, color);
-            graphics.fill(x, y + height - 1, x + width, y + height, color);
-            graphics.fill(x, y, x + 1, y + height, color);
-            graphics.fill(x + width - 1, y, x + width, y + height, color);
+            GuiHelper.drawBorder(graphics, x, y, width, height, color);
         }
 
         @Override protected int contentHeight() { return 0; }

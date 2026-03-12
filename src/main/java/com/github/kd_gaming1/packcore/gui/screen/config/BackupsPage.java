@@ -8,19 +8,16 @@ import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.configpack.BackupEntry;
 import com.github.kd_gaming1.packcore.configpack.BackupManager;
 import com.github.kd_gaming1.packcore.gui.component.RestoreConfirmOverlay;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
-
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class BackupsPage extends BaseConfigPage {
 
@@ -38,12 +35,6 @@ public class BackupsPage extends BaseConfigPage {
     private static final int COLOR_CARD_BG = 0x22FFFFFF;
     private static final int COLOR_CARD_BORDER = 0xFF333333;
     private static final int COLOR_TIMESTAMP = 0xFFAAAAAA;
-
-    private static final WidgetSprites BLANK_BUTTON = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
-    );
 
     private RestoreConfirmOverlay restoreOverlay;
     private ScrollContainerWidget backupListScroll;
@@ -66,7 +57,7 @@ public class BackupsPage extends BaseConfigPage {
         int createBtnY = getHeight() - BUTTON_HEIGHT - PADDING;
         createBackupButton = new CustomButtonWidget(createBtnX, createBtnY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.backups.button.create"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> createBackupAndRefresh());
         this.addWidget(createBackupButton);
 
@@ -121,7 +112,7 @@ public class BackupsPage extends BaseConfigPage {
                     cardY + (cardHeight - BUTTON_HEIGHT) / 2,
                     RESTORE_BTN_WIDTH, BUTTON_HEIGHT,
                     Component.translatable("gui.packcore.backups.button.restore"),
-                    BLANK_BUTTON,
+                    GuiHelper.BLANK_BUTTON_SPRITES,
                     btn -> {
                         if (backupListScroll != null) backupListScroll.active = false;
                         if (createBackupButton != null) createBackupButton.visible = false;

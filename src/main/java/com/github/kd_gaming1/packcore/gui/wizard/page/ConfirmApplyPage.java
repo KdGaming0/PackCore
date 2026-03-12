@@ -3,7 +3,7 @@ package com.github.kd_gaming1.packcore.gui.wizard.page;
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
-import com.daqem.uilib.gui.widget.ScrollContainerWidget;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
@@ -195,12 +195,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
         rowContainer.setHeight(currentY);
 
-        ScrollContainerWidget scrollContainer = new ScrollContainerWidget(availableWidth, scrollHeight);
-        scrollContainer.addComponent(rowContainer);
-
-        EmptyComponent scrollWrapper = new EmptyComponent(PADDING, scrollTop, availableWidth, scrollHeight);
-        scrollWrapper.addWidget(scrollContainer);
-        addComponent(scrollWrapper);
+        addComponent(GuiHelper.scrollWrapped(PADDING, scrollTop, availableWidth, scrollHeight,
+                scroll -> scroll.addComponent(rowContainer)));
 
         // Apply button
         applyButton = new CustomButtonWidget(
@@ -445,11 +441,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
                     : COLOR_BORDER_IDLE;
 
             graphics.fill(x + leftInset, y, x + w, y + h, COLOR_ROW_BACKGROUND);
-            // Border
-            graphics.fill(x + leftInset, y, x + w, y + 1, borderColor);
-            graphics.fill(x + leftInset, y + h - 1, x + w, y + h, borderColor);
-            graphics.fill(x + leftInset, y, x + leftInset + 1, y + h, borderColor);
-            graphics.fill(x + w - 1, y, x + w, y + h, borderColor);
+            GuiHelper.drawBorder(graphics, x + leftInset, y, w - leftInset, h, borderColor);
 
             var font = Minecraft.getInstance().font;
             int textY = y + (h - font.lineHeight) / 2;

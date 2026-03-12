@@ -17,12 +17,10 @@ public class ConfigPackExtractor {
 
     private ConfigPackExtractor() {}
 
-    /** Extracts the entire ZIP to the destination. */
     public static void extractAll(Path zipPath, Path extractionRoot, OverwriteMode overwriteMode) throws IOException {
         extractFromZip(zipPath, extractionRoot, overwriteMode, null);
     }
 
-    /** Extracts only the specified internal ZIP paths (files or directories). */
     public static void extractSelective(Path zipPath, Path extractionRoot, OverwriteMode overwriteMode, Collection<String> targets) throws IOException {
         extractFromZip(zipPath, extractionRoot, overwriteMode, targets);
     }

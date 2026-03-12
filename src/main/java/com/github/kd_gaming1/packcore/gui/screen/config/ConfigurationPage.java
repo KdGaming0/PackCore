@@ -13,13 +13,12 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackExtractor;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
 import com.github.kd_gaming1.packcore.gui.component.*;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class ConfigurationPage extends BaseConfigPage {
 
@@ -74,12 +71,6 @@ public class ConfigurationPage extends BaseConfigPage {
         this.addComponent(rightPanel);
     }
 
-    private static final WidgetSprites BLANK_BUTTON = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
-    );
-
     private void buildLeftPanel() {
         leftPanel.clearComponents();
         var font = Minecraft.getInstance().font;
@@ -120,16 +111,16 @@ public class ConfigurationPage extends BaseConfigPage {
         CustomButtonWidget applySelectedBtn = new CustomButtonWidget(
                 buttonsStartX, buttonsY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.config.button.apply_selected"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> applyFiles(fileTree.getSelectedPaths()));
-        applySelectedBtn.active = false; // locked until the user ticks at least one file
+        applySelectedBtn.active = false;
         applySelectedBtn.setTooltip(Tooltip.create(
                 Component.translatable("gui.packcore.config.tooltip.apply_selected")));
 
         CustomButtonWidget applyAllBtn = new CustomButtonWidget(
                 buttonsStartX + BUTTON_WIDTH + BUTTON_GAP, buttonsY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.config.button.apply_all"),
-                BLANK_BUTTON,
+                GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> applyAll());
         applyAllBtn.setTooltip(Tooltip.create(
                 Component.translatable("gui.packcore.config.tooltip.apply_all")));

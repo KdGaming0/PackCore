@@ -8,6 +8,7 @@ import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
@@ -73,7 +74,6 @@ public class OptionCardGrid<T> extends EmptyComponent {
         int cardLabelHeight = LABEL_PADDING + lineHeight + 2 + maxDescriptionHeight + LABEL_PADDING;
         int cardHeight = previewHeight + cardLabelHeight;
 
-        ScrollContainerWidget scrollContainer = new ScrollContainerWidget(gridWidth, gridHeight);
         EmptyComponent cardGrid = new EmptyComponent(0, 0, gridWidth - SCROLL_BAR_WIDTH, 0);
 
         for (int i = 0; i < options.size(); i++) {
@@ -106,11 +106,8 @@ public class OptionCardGrid<T> extends EmptyComponent {
         int totalRows = (int) Math.ceil((double) options.size() / columns);
         cardGrid.setHeight(totalRows * (cardHeight + cardGap));
 
-        scrollContainer.addComponent(cardGrid);
-
-        EmptyComponent scrollWrapper = new EmptyComponent(0, 0, gridWidth, gridHeight);
-        scrollWrapper.addWidget(scrollContainer);
-        this.addComponent(scrollWrapper);
+        this.addComponent(GuiHelper.scrollWrapped(0, 0, gridWidth, gridHeight,
+                scroll -> scroll.addComponent(cardGrid)));
 
         this.updateParentPosition(getParentX(), getParentY(), gridWidth, gridHeight);
     }
@@ -246,10 +243,7 @@ public class OptionCardGrid<T> extends EmptyComponent {
         }
 
         private static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {
-            graphics.fill(x, y, x + width, y + 1, color);
-            graphics.fill(x, y + height - 1, x + width, y + height, color);
-            graphics.fill(x, y, x + 1, y + height, color);
-            graphics.fill(x + width - 1, y, x + width, y + height, color);
+            GuiHelper.drawBorder(graphics, x, y, width, height, color);
         }
 
         @Override protected int contentHeight() { return 0; }

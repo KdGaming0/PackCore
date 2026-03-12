@@ -5,17 +5,14 @@ import com.daqem.uilib.gui.widget.ButtonWidget;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.util.ScreenResolution;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 
 import java.util.List;
-
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 public class ConfigSwitchOverlay extends AbstractComponent {
 
@@ -39,12 +36,6 @@ public class ConfigSwitchOverlay extends AbstractComponent {
     private static final int COLOR_WARNING_BACKGROUND = 0x33FFAA00;
     private static final int COLOR_WARNING = 0xFFFFAA00;
 
-    private static final WidgetSprites BUTTON_SPRITES = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
-    );
-
     private boolean visible = false;
 
     private ConfigPackEntry currentPack;
@@ -65,10 +56,10 @@ public class ConfigSwitchOverlay extends AbstractComponent {
         super(0, 0, width, height);
 
         cancelButton = new CustomButtonWidget(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-                Component.literal("Cancel"), BUTTON_SPRITES, button -> setVisible(false));
+                Component.literal("Cancel"), GuiHelper.BLANK_BUTTON_SPRITES, button -> setVisible(false));
 
         applyButton = new CustomButtonWidget(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
-                Component.literal("Yes, apply on restart"), BUTTON_SPRITES, button -> applyConfig());
+                Component.literal("Yes, apply on restart"), GuiHelper.BLANK_BUTTON_SPRITES, button -> applyConfig());
 
         addWidgets(List.of(cancelButton, applyButton));
         setVisible(false);
@@ -213,9 +204,6 @@ public class ConfigSwitchOverlay extends AbstractComponent {
     }
 
     private void drawBorder(GuiGraphics graphics, int x, int y, int height) {
-        graphics.fill(x, y, x + PANEL_WIDTH, y + 1, COLOR_BORDER);
-        graphics.fill(x, y + height - 1, x + PANEL_WIDTH, y + height, COLOR_BORDER);
-        graphics.fill(x, y, x + 1, y + height, COLOR_BORDER);
-        graphics.fill(x + PANEL_WIDTH - 1, y, x + PANEL_WIDTH, y + height, COLOR_BORDER);
+        GuiHelper.drawBorder(graphics, x, y, PANEL_WIDTH, height, COLOR_BORDER);
     }
 }

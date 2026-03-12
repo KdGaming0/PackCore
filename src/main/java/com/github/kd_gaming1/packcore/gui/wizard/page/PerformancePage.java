@@ -1,10 +1,10 @@
 package com.github.kd_gaming1.packcore.gui.wizard.page;
 
 import com.daqem.uilib.gui.component.EmptyComponent;
-import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.component.MarkdownComponent;
 import com.github.kd_gaming1.packcore.gui.component.OptionSelectList;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
@@ -12,8 +12,6 @@ import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -64,14 +62,10 @@ public class PerformancePage extends BaseWizardPage {
 
     private void buildLeftColumn(EmptyComponent column, int columnWidth, int columnHeight) {
         MarkdownComponent markdownComp = new MarkdownComponent(
-                0, 0, columnWidth - SCROLL_BAR_WIDTH - (PADDING / 2), loadMarkdown()
+                0, 0, columnWidth - SCROLL_BAR_WIDTH - (PADDING / 2), GuiHelper.loadMarkdown(MARKDOWN_PATH, FALLBACK_MARKDOWN, LOGGER)
         );
-        ScrollContainerWidget scroll = new ScrollContainerWidget(columnWidth, columnHeight);
-        scroll.addComponent(markdownComp);
-
-        EmptyComponent scrollWrapper = new EmptyComponent(0, 0, columnWidth, columnHeight);
-        scrollWrapper.addWidget(scroll);
-        column.addComponent(scrollWrapper);
+        column.addComponent(GuiHelper.scrollWrapped(0, 0, columnWidth, columnHeight,
+                scroll -> scroll.addComponent(markdownComp)));
     }
 
     private void buildRightColumn(EmptyComponent column, int columnWidth, int columnHeight) {
@@ -87,19 +81,6 @@ public class PerformancePage extends BaseWizardPage {
                 selected -> state.setSelection(STATE_KEY, selected.id())
         );
         column.addComponent(list);
-    }
-
-    private static String loadMarkdown() {
-        if (!Files.exists(MARKDOWN_PATH)) {
-            LOGGER.warn("performance.md not found at {}", MARKDOWN_PATH);
-            return FALLBACK_MARKDOWN;
-        }
-        try {
-            return Files.readString(MARKDOWN_PATH);
-        } catch (IOException e) {
-            LOGGER.error("Failed to read performance.md: {}", e.getMessage());
-            return FALLBACK_MARKDOWN;
-        }
     }
 
     public record PerformanceProfile(String id, Component name, Component description) {

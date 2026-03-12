@@ -49,12 +49,10 @@ public class ConfigPackBuilder {
         LOGGER.info("Created zip '{}' from folder '{}'", outputZip.getFileName(), sourceFolder.getFileName());
     }
 
-    /** Writes selected files to a zip in the default user_configs output directory. */
     public static void zipFiles(Path root, Collection<String> relativePaths, String outputZipName, ConfigPackMeta meta) throws IOException {
         zipFiles(root, relativePaths, OUTPUT_DIR, outputZipName, meta);
     }
 
-    /** Writes selected files to a zip in the given output directory. */
     public static void zipFiles(Path root, Collection<String> relativePaths, Path outputDir, String outputZipName, ConfigPackMeta meta) throws IOException {
         Files.createDirectories(outputDir);
         Path outputZip = outputDir.resolve(outputZipName);

@@ -31,11 +31,9 @@ public class WizardState {
 
     @Override
     public String toString() {
-        boolean settingsApplied = false;
         return "WizardState{" +
                 "selections=" + selections +
                 ", resourcePacks=" + selectedResourcePacks +
-                ", settingsApplied=" + settingsApplied +
                 '}';
     }
 }

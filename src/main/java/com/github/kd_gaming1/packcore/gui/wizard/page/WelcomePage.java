@@ -8,6 +8,7 @@ import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
 import com.github.kd_gaming1.packcore.gui.component.*;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
@@ -18,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -90,7 +90,7 @@ public class WelcomePage extends BaseWizardPage {
 
     private void buildLeftColumn(EmptyComponent column, int columnWidth, int columnHeight) {
         MarkdownComponent markdownComp = new MarkdownComponent(
-                0, 0, columnWidth - SCROLL_BAR_ROOM - (PADDING / 2), loadMarkdown()
+                0, 0, columnWidth - SCROLL_BAR_ROOM - (PADDING / 2), GuiHelper.loadMarkdown(MARKDOWN_PATH, FALLBACK_MARKDOWN, LOGGER)
         );
         leftScroll = new ScrollContainerWidget(columnWidth, columnHeight);
         leftScroll.addComponent(markdownComp);
@@ -189,19 +189,6 @@ public class WelcomePage extends BaseWizardPage {
         } catch (IOException e) {
             LOGGER.error("Failed to scan config packs: {}", e.getMessage());
             return List.of();
-        }
-    }
-
-    private static String loadMarkdown() {
-        if (!Files.exists(MARKDOWN_PATH)) {
-            LOGGER.warn("welcome.md not found at {}", MARKDOWN_PATH);
-            return FALLBACK_MARKDOWN;
-        }
-        try {
-            return Files.readString(MARKDOWN_PATH);
-        } catch (IOException e) {
-            LOGGER.error("Failed to read welcome.md: {}", e.getMessage());
-            return FALLBACK_MARKDOWN;
         }
     }
 }
