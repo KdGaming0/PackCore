@@ -42,7 +42,7 @@ public class MainMenuDesignPage extends BaseCardGridPage<MainMenuDesignPage.Menu
             Identifier previewTexture, int previewTextureWidth, int previewTextureHeight
     ) {
         public static List<MenuDesignOption> all() {
-            return List.of(fromId("vanilla"), fromId("modern"), fromId("minimal"));
+            return List.of(fromId("modern"), fromId("modern_minimal"), fromId("minimal"));
         }
 
         private static MenuDesignOption fromId(String id) {
@@ -50,7 +50,7 @@ public class MainMenuDesignPage extends BaseCardGridPage<MainMenuDesignPage.Menu
                     id,
                     Component.translatable("gui.packcore.wizard.menu_design." + id + ".name"),
                     Component.translatable("gui.packcore.wizard.menu_design." + id + ".desc"),
-                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/wizard/menu_preview/" + id + ".png"),
+                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/sprites/wizard/menu_preview/" + id + ".png"),
                     PREVIEW_WIDTH, PREVIEW_HEIGHT
             );
         }

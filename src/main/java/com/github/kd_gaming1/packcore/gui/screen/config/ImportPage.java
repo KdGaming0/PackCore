@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class ImportPage extends BaseConfigPage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/ImportPage");
@@ -225,7 +227,7 @@ public class ImportPage extends BaseConfigPage {
             PackCoreConfig.lastAppliedVersion = selectedImport.config().get("version").getAsString();
         }
         PackCoreConfig.lastAppliedPackFile = selectedImport.zipPath().getFileName().toString();
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
     }
 
     private void openImportsFolder() {

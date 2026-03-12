@@ -17,6 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/PreLaunch");
@@ -129,7 +131,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         PackCoreConfig.lastAppliedVersion  = packVersion;
         PackCoreConfig.lastAppliedPackFile = pendingFile;
         PackCoreConfig.pendingConfigPack   = "";
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
 
         LOGGER.info("Successfully applied pending config: {} (version: {})", pendingFile, packVersion);
     }
@@ -161,13 +163,13 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
     /** Clears {@code applyPendingRestore} and persists the change. */
     private static void clearPendingRestore() {
         PackCoreConfig.pendingRestoreBackup = "";
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
     }
 
     /** Clears {@code pendingConfigPack} and persists the change. */
     private static void clearPending() {
         PackCoreConfig.pendingConfigPack = "";
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
     }
 
     // ── Auto-detect helpers ───────────────────────────────────────────────────
@@ -209,7 +211,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         PackCoreConfig.lastAppliedVersion  = packVersion;
         PackCoreConfig.lastAppliedPackFile = selectedPack.zipPath().getFileName().toString();
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
 
         LOGGER.info("Successfully applied config version: {}", packVersion);
     }

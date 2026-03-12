@@ -30,7 +30,7 @@ public final class UpdateChecker {
     }
 
     /**
-     * Runs the update check on a background thread — never blocks the game thread.
+     * Runs the update check on a background_old thread — never blocks the game thread.
      * Usage: UpdateChecker.checkAsync().thenAccept(status -> { ... });
      */
     public static CompletableFuture<UpdateStatus> checkAsync() {

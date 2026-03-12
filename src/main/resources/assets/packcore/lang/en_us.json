@@ -1,5 +1,28 @@
 {
-  "packcore.midnightconfig.title": "PackCore Configuration",
+  "packcore.midnightconfig.title": "PackCore Settings",
+
+  "packcore.midnightconfig.category.toast": "Notifications",
+  "packcore.midnightconfig.category.menu": "Main Menu",
+  "packcore.midnightconfig.category.meta": "Internal",
+
+  "packcore.midnightconfig.showRamWarningToast": "Low RAM Warning",
+  "packcore.midnightconfig.showRamWarningToast.tooltip": "Show a toast when less than 3GB of RAM is allocated.",
+
+  "packcore.midnightconfig.showUpdateToast": "Update Notification",
+  "packcore.midnightconfig.showUpdateToast.tooltip": "Show a toast when a modpack update is available.",
+
+  "packcore.midnightconfig.showBackupToast": "Backup Notification",
+  "packcore.midnightconfig.showBackupToast.tooltip": "Show a toast when an automatic backup is created.",
+
+  "packcore.midnightconfig.menuStyle": "Menu Style (requires restart)",
+  "packcore.midnightconfig.menuStyle.tooltip": "Controls which title screen style is used.\nModern: fully custom branded screen with a custom background.\nModern Minimal: fully custom branded screen with the vanilla panorama.\nMinimal: vanilla-style screen with quick-join and social buttons added.",
+
+  "packcore.midnightconfig.enum.MenuStyle.MODERN": "Modern",
+  "packcore.midnightconfig.enum.MenuStyle.MODERN_MINIMAL": "Modern Minimal",
+  "packcore.midnightconfig.enum.MenuStyle.MINIMAL": "Minimal",
+
+  "packcore.midnightconfig.serverAddressForQuickJoinButton": "Quick Join Address",
+  "packcore.midnightconfig.serverAddressForQuickJoinButton.tooltip": "The server address used by the Join button on the main menu.",
 
   "gui.packcore.button.join_hypixel": "Join Hypixel",
   "gui.packcore.button.modmenu": "Mod Menu",
@@ -32,16 +55,16 @@
   "gui.packcore.wizard.card.configs.hint": "Want to switch from the auto-selected one?",
 
   "gui.packcore.wizard.page.main_menu_design.title": "Main Menu Design",
-  "gui.packcore.wizard.page.main_menu_design.explanation": "Select how your main menu should look. If you use mods that add buttons to the main menu, choose the Vanilla option. Otherwise, the Modern design is recommended to give the game a SkyBlock style and let you join Hypixel with a single button.",
-
-  "gui.packcore.wizard.menu_design.vanilla.name": "Vanilla",
-  "gui.packcore.wizard.menu_design.vanilla.desc": "The default Minecraft main menu.",
+  "gui.packcore.wizard.page.main_menu_design.explanation": "Select how your main menu should look. Modern gives the game a custom SkyBlock-branded look. Modern Minimal uses the same layout but with the vanilla panorama background. Minimal adds quick-join and social buttons to the standard Minecraft menu.",
 
   "gui.packcore.wizard.menu_design.modern.name": "Modern",
   "gui.packcore.wizard.menu_design.modern.desc": "A fully custom main menu designed to give the game the look and feel of the official Hypixel SkyBlock game rather than Minecraft.",
 
+  "gui.packcore.wizard.menu_design.modern_minimal.name": "Modern Minimal",
+  "gui.packcore.wizard.menu_design.modern_minimal.desc": "The same custom layout as Modern, but uses the vanilla Minecraft panorama instead of a custom background image.",
+
   "gui.packcore.wizard.menu_design.minimal.name": "Minimal",
-  "gui.packcore.wizard.menu_design.minimal.desc": "A custom main menu based on the vanilla style, with a few improvements.",
+  "gui.packcore.wizard.menu_design.minimal.desc": "A custom main menu based on the vanilla style, with quick-join, social, and update buttons added.",
 
   "gui.packcore.wizard.page.performance.title": "Performance",
 
@@ -150,6 +173,12 @@
   "gui.packcore.overlay.restore.warning2": "Any unsaved changes since this backup will be lost.",
   "gui.packcore.overlay.restore.note": "The game will close to apply the restore.",
   "gui.packcore.import.list.empty": "No imports found",
-  "gui.packcore.import.list.empty.hint": "Place a config pack .zip file in the imports folder"
+  "gui.packcore.import.list.empty.hint": "Place a config pack .zip file in the imports folder",
 
+  "gui.packcore.toast.update.title": "Update Available",
+  "gui.packcore.toast.update.message": "PackCore %s is available!",
+  "gui.packcore.toast.backup.title": "Backup Created",
+  "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
+  "gui.packcore.toast.ram.title": "Low Memory Warning",
+  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance."
 }

@@ -39,7 +39,7 @@ public class ItemBackgroundPage extends BaseCardGridPage<ItemBackgroundPage.Item
             Identifier previewTexture, int previewTextureWidth, int previewTextureHeight
     ) {
         public static List<ItemBackgroundOption> all() {
-            return List.of(fromId("none"), fromId("circle"), fromId("square"));
+            return List.of(fromId("item_bg_none"), fromId("item_bg_circle"), fromId("item_bg_square"));
         }
 
         private static ItemBackgroundOption fromId(String id) {
@@ -47,7 +47,7 @@ public class ItemBackgroundPage extends BaseCardGridPage<ItemBackgroundPage.Item
                     id,
                     Component.translatable("gui.packcore.wizard.item_background." + id + ".name"),
                     Component.translatable("gui.packcore.wizard.item_background." + id + ".desc"),
-                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/wizard/item_background_preview/" + id + ".png"),
+                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/sprites/wizard/item_background_preview/" + id + ".png"),
                     320, 180
             );
         }

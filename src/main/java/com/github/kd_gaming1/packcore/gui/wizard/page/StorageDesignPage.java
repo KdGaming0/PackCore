@@ -47,7 +47,7 @@ public class StorageDesignPage extends BaseCardGridPage<StorageDesignPage.Storag
                     id,
                     Component.translatable("gui.packcore.wizard.storage_design." + id + ".name"),
                     Component.translatable("gui.packcore.wizard.storage_design." + id + ".desc"),
-                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/wizard/storage_preview/" + id + ".png"),
+                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/sprites/wizard/storage_preview/" + id + ".png"),
                     320, 180
             );
         }

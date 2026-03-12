@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.gui.screen;
 
 import com.daqem.uilib.gui.AbstractScreen;
+import com.daqem.uilib.gui.background.PanoramaBackground;
 import com.daqem.uilib.gui.component.sprite.SpriteComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.widget.ButtonWidget;
@@ -10,6 +11,7 @@ import com.github.kd_gaming1.packcore.gui.component.OverlayComponent;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.gui.util.ImageBackground;
 import com.github.kd_gaming1.packcore.gui.util.SpriteHelper;
+import com.github.kd_gaming1.packcore.gui.util.ToastHelper;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.update.UpdateStatus;
@@ -37,15 +39,15 @@ import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 public class SBETitleScreen extends AbstractScreen {
 
     // Logo dimensions and positioning
-    private static final int LOGO_ORIGINAL_WIDTH = 1476;
-    private static final int LOGO_ORIGINAL_HEIGHT = 157;
+    private static final int LOGO_ORIGINAL_WIDTH = 1020;
+    private static final int LOGO_ORIGINAL_HEIGHT = 77;
     private static final double LOGO_SCALE = 0.8;
     private static final int LOGO_Y_POSITION = 20;
 
     // Main menu button dimensions
     private static final int BUTTON_WIDTH = 200;
     private static final int BUTTON_HEIGHT = 20;
-    private static final int BUTTON_SPACING = 4;
+    private static final int BUTTON_SPACING = 6;
     private static final int LOGO_TO_BUTTONS_GAP = 40;
 
     // Icon button dimensions
@@ -65,18 +67,36 @@ public class SBETitleScreen extends AbstractScreen {
     private ButtonWidget optionsButton;
     private ButtonWidget quitButton;
 
+    private static boolean updateToastShown = false;
+
     public SBETitleScreen() {
+        this(true);
+    }
+
+    public SBETitleScreen(boolean useCustomBackground) {
         super(Component.literal("Title Screen"));
-        this.setBackground(new ImageBackground(
-                Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/title_menu_background.png"),
-                1920,
-                1080,
-                ImageBackground.BackgroundMode.STRETCH
-        ));
+        if (useCustomBackground) {
+            this.setBackground(new ImageBackground(
+                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/title_menu_background.png"),
+                    1920,
+                    1080,
+                    ImageBackground.BackgroundMode.STRETCH
+            ));
+        } else {
+            this.setBackground(new PanoramaBackground());
+        }
     }
 
     @Override
     protected void init() {
+        if (!updateToastShown) {
+            UpdateStatus status = UpdateChecker.getCachedStatus();
+            if (status.isUpdateAvailable()) {
+                ToastHelper.showUpdateAvailable(status.latestVersion());
+            }
+            updateToastShown = true;
+        }
+
         // === LOGO ===
         SpriteComponent titleSprite = createLogo();
 
@@ -165,7 +185,7 @@ public class SBETitleScreen extends AbstractScreen {
                 LOGO_ORIGINAL_HEIGHT,
                 LOGO_SCALE,
                 LOGO_Y_POSITION,
-                Identifier.fromNamespaceAndPath(MOD_ID, "title/title")
+                Identifier.fromNamespaceAndPath(MOD_ID, "title/SkyBlockEnhanced_title1")
         );
     }
 

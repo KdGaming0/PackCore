@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.gui.wizard.page;
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
@@ -12,6 +13,7 @@ import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
+import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -280,9 +282,16 @@ public class ConfirmApplyPage extends BaseWizardPage {
     // --- Stubs — replace each body with the real implementation ---
 
     private void applyMainMenuDesign(String selectedId) {
-        if (selectedId == null) { LOGGER.info("[stub] mainMenuDesign: skipped"); return; }
-        LOGGER.info("[stub] applyMainMenuDesign(\"{}\")", selectedId);
-        // TODO: apply main menu design
+        if (selectedId == null) { LOGGER.info("mainMenuDesign: skipped"); return; }
+
+        PackCoreConfig.menuStyle = switch (selectedId) {
+            case "modern"         -> PackCoreConfig.MenuStyle.MODERN;
+            case "modern_minimal" -> PackCoreConfig.MenuStyle.MODERN_MINIMAL;
+            case "minimal"        -> PackCoreConfig.MenuStyle.MINIMAL;
+            default -> throw new RuntimeException("Unknown menu design ID: " + selectedId);
+        };
+        MidnightConfig.write(MOD_ID);
+        LOGGER.info("Applied menu design: {}", selectedId);
     }
 
     private void applyPerformanceProfile(String selectedId) {
@@ -329,7 +338,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     private void applyItemBackground(String selectedId) {
         if (selectedId == null) {
-            LOGGER.info("Item background: skipped");
+            LOGGER.info("Item background_old: skipped");
             return;
         }
 
@@ -337,12 +346,12 @@ public class ConfirmApplyPage extends BaseWizardPage {
             case "none" -> ItemBackgroundManager.ItemBackground.NONE;
             case "circle" -> ItemBackgroundManager.ItemBackground.CIRCLE;
             case "square" -> ItemBackgroundManager.ItemBackground.SQUARE;
-            default -> throw new RuntimeException("Unknown item background ID: " + selectedId);
+            default -> throw new RuntimeException("Unknown item background_old ID: " + selectedId);
         };
 
         boolean success = ItemBackgroundManager.apply(background);
         if (!success) {
-            throw new RuntimeException("Failed to apply item background: " + selectedId);
+            throw new RuntimeException("Failed to apply item background_old: " + selectedId);
         }
     }
 

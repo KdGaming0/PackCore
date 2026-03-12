@@ -12,6 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class WelcomeWizardScreen extends AbstractScreen {
 
     private static final int HEADER_HEIGHT = 30;
@@ -125,7 +127,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
     /** Writes the wizard-complete flag to the config and saves it. */
     private void markWizardComplete() {
         PackCoreConfig.successfulWelcomeWizard = true;
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
     }
 
     @Override

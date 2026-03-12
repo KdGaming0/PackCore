@@ -2,11 +2,16 @@ package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.command.PackCoreCommands;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.gui.screen.PackCoreTitleScreen;
 import com.github.kd_gaming1.packcore.gui.screen.SBETitleScreen;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
+import com.github.kd_gaming1.packcore.playtime.PlaytimeTracker;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
+import com.github.kd_gaming1.packcore.util.RamWarningHelper;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -27,20 +32,28 @@ public class PackCore implements ClientModInitializer {
 
         UpdateChecker.checkAsync();
 
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-                PackCoreCommands.register(dispatcher)
-        );
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> PackCoreCommands.register(dispatcher));
 
-        if (PackCoreConfig.enableCustomTitleScreen) {
-            ScreenEvents.BEFORE_INIT.register(((client, screen, scaledWidth, scaledHeight) -> {
-                if (screen instanceof TitleScreen) {
-                    if (!PackCoreConfig.successfulWelcomeWizard) {
-                        client.execute(() -> client.setScreen(new WelcomeWizardScreen(screen)));
-                    } else if (PackCoreConfig.enableCustomTitleScreen) {
-                        client.setScreen(new SBETitleScreen());
-                    }
-                }
-            }));
-        }
+        ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (screen.getClass() != TitleScreen.class) return;
+
+            RamWarningHelper.onMainMenu();
+
+            if (!PackCoreConfig.successfulWelcomeWizard) {
+                client.execute(() -> client.setScreen(new WelcomeWizardScreen(screen)));
+                return;
+            }
+
+            switch (PackCoreConfig.menuStyle) {
+                case MODERN         -> client.execute(() -> client.setScreen(new SBETitleScreen()));
+                case MODERN_MINIMAL -> client.execute(() -> client.setScreen(new SBETitleScreen(false)));
+                case MINIMAL        -> client.execute(() -> client.setScreen(new PackCoreTitleScreen()));
+            }
+        });
+
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(RamWarningHelper::onWorldJoin));
+
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> PlaytimeTracker.onSessionStart());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> PlaytimeTracker.onSessionEnd());
     }
 }

@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class ConfigurationPage extends BaseConfigPage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/ConfigurationPage");
@@ -248,7 +250,7 @@ public class ConfigurationPage extends BaseConfigPage {
             PackCoreConfig.lastAppliedVersion = selectedPreset.config().get("version").getAsString();
         }
         PackCoreConfig.lastAppliedPackFile = selectedPreset.zipPath().getFileName().toString();
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
     }
 
     private List<ConfigPackEntry> scanPacks() {

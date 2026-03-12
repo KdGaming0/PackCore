@@ -12,6 +12,8 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
+import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+
 public class RestoreConfirmOverlay extends AbstractComponent {
 
     private static final int PANEL_WIDTH = 310;
@@ -107,7 +109,7 @@ public class RestoreConfirmOverlay extends AbstractComponent {
     private void confirmRestore() {
         if (backup == null) return;
         PackCoreConfig.pendingRestoreBackup = backup.zipPath().getFileName().toString();
-        MidnightConfig.write("packcore");
+        MidnightConfig.write(MOD_ID);
         Minecraft.getInstance().stop();
     }
 

@@ -20,10 +20,8 @@ public class ModpackMetadata {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final JsonObject DEFAULTS = buildDefaults();
     private static final String FILE_NAME = "modpack.json";
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getGameDir()
-            .resolve("packcore").resolve(FILE_NAME);
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getGameDir().resolve("packcore").resolve(FILE_NAME);
 
-    // Initialization-on-demand holder — lazy, thread-safe, no synchronization needed
     private static final class Holder {
         static final ModpackMetadata INSTANCE = new ModpackMetadata();
     }

@@ -15,7 +15,7 @@ public final class GuiColors {
     // --- Borders ---
     public static final int BORDER_SELECTED = 0xFF2196F3;
     public static final int BORDER_HOVERED = 0xFFFFAA00;
-    public static final int BORDER_IDLE = 0xFF222222;
+    public static final int BORDER_IDLE = 0xFF333333;
 
     // --- Selection indicator (left bar in list rows) ---
     public static final int INDICATOR_SELECTED = 0xFF2196F3;

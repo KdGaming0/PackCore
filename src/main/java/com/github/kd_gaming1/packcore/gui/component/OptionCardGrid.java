@@ -169,7 +169,15 @@ public class OptionCardGrid<T> extends EmptyComponent {
         }
 
         private void setupChildComponents(int width, int height) {
-            childComponents.add(new ColorComponent(0, 0, width, height, GuiColors.ROW_BACKGROUND));
+            int labelAreaY = BORDER_THICKNESS + previewHeight;
+            int labelAreaHeight = height - labelAreaY - BORDER_THICKNESS;
+            childComponents.add(new ColorComponent(
+                    BORDER_THICKNESS,
+                    labelAreaY,
+                    width - BORDER_THICKNESS * 2,
+                    labelAreaHeight,
+                    GuiColors.ROW_BACKGROUND
+            ));
 
             int textWidth = width - (LABEL_PADDING * 2);
             int labelsStartY = BORDER_THICKNESS + previewHeight + LABEL_PADDING;

@@ -47,7 +47,7 @@ public class TabDesignPage extends BaseCardGridPage<TabDesignPage.TabDesignOptio
                     id,
                     Component.translatable("gui.packcore.wizard.tab_design." + id + ".name"),
                     Component.translatable("gui.packcore.wizard.tab_design." + id + ".desc"),
-                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/wizard/tab_preview/" + id + ".png"),
+                    Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/sprites/wizard/tab_preview/" + id + ".png"),
                     320, 180
             );
         }

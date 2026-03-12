@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 /**
- * Custom background that renders a texture using one of four layout modes.
+ * Custom background_old that renders a texture using one of four layout modes.
  */
 public class ImageBackground extends AbstractBackground {
 
