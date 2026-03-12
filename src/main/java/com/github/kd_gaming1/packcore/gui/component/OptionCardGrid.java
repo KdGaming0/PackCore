@@ -6,7 +6,6 @@ import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.color.ColorComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
-import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
