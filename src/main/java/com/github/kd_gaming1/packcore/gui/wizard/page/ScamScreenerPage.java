@@ -203,16 +203,16 @@ public class ScamScreenerPage extends BaseWizardPage {
         private static String prettyLabel(String id) {
             String[] parts = id.split("_");
             StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < parts.length; i++) {
-                if (parts[i].isEmpty()) {
+            for (String s : parts) {
+                if (s.isEmpty()) {
                     continue;
                 }
 
-                if (builder.length() > 0) {
+                if (!builder.isEmpty()) {
                     builder.append(' ');
                 }
 
-                String part = parts[i].toLowerCase(Locale.ROOT);
+                String part = s.toLowerCase(Locale.ROOT);
                 builder.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
             }
             return builder.toString();

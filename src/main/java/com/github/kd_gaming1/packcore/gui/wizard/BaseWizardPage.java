@@ -42,4 +42,7 @@ public abstract class BaseWizardPage extends EmptyComponent {
     public boolean canGoBack() {
         return true;
     }
+
+    /** Called once at wizard init to pre-load any GPU resources. Default no-op. */
+    public void preloadAssets() {}
 }

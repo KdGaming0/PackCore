@@ -30,6 +30,8 @@ public class PackCore implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("[PackCore] Initialized");
 
+        RamWarningHelper.init();
+
         UpdateChecker.checkAsync();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> PackCoreCommands.register(dispatcher));

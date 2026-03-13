@@ -44,11 +44,6 @@ public final class ModrinthClient {
                 });
     }
 
-    public static Optional<JsonObject> fetchProject(String projectId) {
-        return get(API_BASE + "/project/" + projectId)
-                .map(JsonElement::getAsJsonObject);
-    }
-
     private static Optional<JsonElement> get(String url) {
         HttpURLConnection connection = null;
         try {
