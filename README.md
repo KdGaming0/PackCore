@@ -40,12 +40,19 @@ It helps you get the right settings quickly, keeps your configs organized, and m
 
 ## Screenshots
 
-> Replace these with your real Modrinth CDN image URLs.
+<details>
+<summary>Spoiler</summary>
 
-![Welcome Wizard](https://cdn.modrinth.com/data/YOUR_PROJECT_ID/images/welcome_wizard.webp)
-![Config Management Screen](https://cdn.modrinth.com/data/YOUR_PROJECT_ID/images/config_screen.webp)
-![Export / Import / Backups](https://cdn.modrinth.com/data/YOUR_PROJECT_ID/images/tools_tabs.webp)
+![Welcome Wizard](https://cdn.modrinth.com/data/cached_images/9d5e0aea01e6a172db4fae0f1e5b84298df26e52_0.webp)
 
+![Main Menu 2](https://cdn.modrinth.com/data/cached_images/ce96d20952d72c9c1b96536371c36b6cd93d64bf.jpeg)
+
+![Config Management Screen](https://cdn.modrinth.com/data/cached_images/dcc548c5174059c8936e296eb7a85a8a2ce7b89a.png)
+![Export Screen](https://cdn.modrinth.com/data/cached_images/131e07c3a30898e626237697868d4819cc1df0a7.png)
+![Backups Screen](https://cdn.modrinth.com/data/cached_images/ea80ee5f9faa6c20a14d8e87abe9f45818e60b0d.png)
+![Import Screen](https://cdn.modrinth.com/data/cached_images/40ca70bdd1837feee1f475485779a0d5c448161c.png)
+
+</details>
 ---
 
 ## Quick Commands (Optional)
