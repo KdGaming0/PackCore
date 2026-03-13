@@ -49,8 +49,13 @@ public class ConfigurationPage extends BaseConfigPage {
     private EmptyComponent leftPanel;
     private int panelWidth;
     private double rightPanelScrollAmount = 0;
+
     private enum PresetsSource { OFFICIAL, MY_EXPORTS }
     private PresetsSource presetsSource = PresetsSource.OFFICIAL;
+
+    // Cached per page-open session; invalidated on enter and on source switch
+    private List<ConfigPackEntry> cachedPacks = null;
+    private PresetsSource cachedPacksSource = null;
 
     public ConfigurationPage(int width, int height) {
         super(width, height);
@@ -59,6 +64,8 @@ public class ConfigurationPage extends BaseConfigPage {
     @Override
     public void onEnter() {
         this.clearComponents();
+        cachedPacks = null;
+        cachedPacksSource = null;
 
         panelWidth = (getWidth() - PANEL_GAP) / 2;
         int panelHeight = getHeight();
@@ -127,7 +134,6 @@ public class ConfigurationPage extends BaseConfigPage {
         applyAllBtn.setTooltip(Tooltip.create(
                 Component.translatable("gui.packcore.config.tooltip.apply_all")));
 
-        // Enable Apply Selected whenever the selection changes
         fileTree.setOnSelectionChanged(() ->
                 applySelectedBtn.active = !fileTree.getSelectedPaths().isEmpty());
 
@@ -170,21 +176,22 @@ public class ConfigurationPage extends BaseConfigPage {
                 if (presetsSource != src) {
                     presetsSource = src;
                     selectedPreset = null;
+                    cachedPacks = null;
+                    cachedPacksSource = null;
                     buildLeftPanel();
                     buildRightPanel(panel);
                     leftPanel.updateParentPosition(leftPanel.getParentX(), leftPanel.getParentY(), getWidth(), getHeight());
                     panel.updateParentPosition(panel.getParentX(), panel.getParentY(), getWidth(), getHeight());
                 }
             }) {
-                @Override protected void renderContents(@NonNull GuiGraphics graphics, int mx, int my, float pt) {} // invisible, just hit-box
+                @Override protected void renderContents(@NonNull GuiGraphics graphics, int mx, int my, float pt) {}
             });
         }
 
-        // List below the tabs
         int listY = PADDING + SUB_TAB_HEIGHT + LABEL_GAP;
         int listHeight = getHeight() - listY - PADDING;
 
-        List<ConfigPackEntry> packs = scanPacks();
+        List<ConfigPackEntry> packs = getScannedPacks();
 
         ScrollContainerWidget scroll = new ScrollContainerWidget(panelWidth - PADDING * 3, listHeight);
         EmptyComponent scrollWrapper = new EmptyComponent(PADDING, listY, panelWidth - PADDING * 2, listHeight);
@@ -199,11 +206,9 @@ public class ConfigurationPage extends BaseConfigPage {
                     null,
                     clicked -> {
                         rightPanelScrollAmount = scroll.scrollAmount();
-
                         selectedPreset = clicked;
                         buildLeftPanel();
                         buildRightPanel(panel);
-
                         leftPanel.updateParentPosition(
                                 leftPanel.getParentX(), leftPanel.getParentY(),
                                 getWidth(), getHeight());
@@ -221,6 +226,15 @@ public class ConfigurationPage extends BaseConfigPage {
         scroll.setScrollAmount(rightPanelScrollAmount);
         scrollWrapper.addWidget(scroll);
         panel.addComponent(scrollWrapper);
+    }
+
+    /** Returns cached packs for the current source, scanning from disk only when the cache is stale. */
+    private List<ConfigPackEntry> getScannedPacks() {
+        if (cachedPacks == null || cachedPacksSource != presetsSource) {
+            cachedPacks = scanPacks();
+            cachedPacksSource = presetsSource;
+        }
+        return cachedPacks;
     }
 
     private void applyFiles(List<String> paths) {
@@ -264,5 +278,4 @@ public class ConfigurationPage extends BaseConfigPage {
             return List.of();
         }
     }
-
 }

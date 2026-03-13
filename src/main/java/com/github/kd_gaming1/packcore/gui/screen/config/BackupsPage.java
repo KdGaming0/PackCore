@@ -19,10 +19,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class BackupsPage extends BaseConfigPage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/BackupsPage");
+
+    private static final Executor IO_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private static final int PADDING = 10;
     private static final int BUTTON_HEIGHT = 18;
@@ -53,7 +58,7 @@ public class BackupsPage extends BaseConfigPage {
         createBackupButton = new CustomButtonWidget(createBtnX, createBtnY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.backups.button.create"),
                 GuiHelper.BLANK_BUTTON_SPRITES,
-                btn -> createBackupAndRefresh());
+                btn -> createBackupAsync());
         addWidget(createBackupButton);
 
         restoreOverlay = new RestoreConfirmOverlay(getWidth(), getHeight());
@@ -120,14 +125,23 @@ public class BackupsPage extends BaseConfigPage {
         addComponent(scrollWrapper);
     }
 
-    private void createBackupAndRefresh() {
-        try {
-            BackupManager.createBackup(FabricLoader.getInstance().getGameDir());
+    /** Disables the button immediately, runs the backup on a background thread, then refreshes the page. */
+    private void createBackupAsync() {
+        createBackupButton.active = false;
+
+        CompletableFuture.runAsync(
+                () -> {
+                    try {
+                        BackupManager.createBackup(FabricLoader.getInstance().getGameDir());
+                    } catch (IOException e) {
+                        LOGGER.error("Failed to create backup: {}", e.getMessage());
+                    }
+                },
+                IO_EXECUTOR
+        ).thenRun(() -> Minecraft.getInstance().execute(() -> {
             onEnter();
             updateParentPosition(getParentX(), getParentY(), getWidth(), getHeight());
-        } catch (IOException e) {
-            LOGGER.error("Failed to create backup: {}", e.getMessage());
-        }
+        }));
     }
 
     public boolean handleEsc() {

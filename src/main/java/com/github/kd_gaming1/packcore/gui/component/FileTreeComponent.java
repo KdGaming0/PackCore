@@ -157,20 +157,16 @@ public class FileTreeComponent extends EmptyComponent {
             if (node.isDirectory()) {
                 if (event.x() >= checkboxX && event.x() < checkboxX + checkboxSize) {
                     node.setSelectedRecursive(!node.isAllSelected());
-                    if (onSelectionChanged != null) {
-                        onSelectionChanged.run();
-                    }
+                    if (onSelectionChanged != null) onSelectionChanged.run();
                 } else {
                     node.setExpanded(!node.isExpanded());
+                    FileTreeComponent.this.build();
                 }
             } else {
                 node.setSelected(!node.isSelected());
-                if (onSelectionChanged != null) {
-                    onSelectionChanged.run();
-                }
+                if (onSelectionChanged != null) onSelectionChanged.run();
             }
 
-            FileTreeComponent.this.build();
             return true;
         }
 

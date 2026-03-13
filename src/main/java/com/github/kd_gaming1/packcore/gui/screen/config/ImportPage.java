@@ -53,6 +53,8 @@ public class ImportPage extends BaseConfigPage {
     private int panelWidth;
     private double rightPanelScrollAmount = 0;
 
+    private List<ConfigPackEntry> cachedImports = null;
+
     public ImportPage(int width, int height) {
         super(width, height);
     }
@@ -60,6 +62,7 @@ public class ImportPage extends BaseConfigPage {
     @Override
     public void onEnter() {
         this.clearComponents();
+        cachedImports = null; // Force fresh scan on each page entry
 
         ensureImportsDirExists();
 
@@ -146,7 +149,12 @@ public class ImportPage extends BaseConfigPage {
                 Component.translatable("gui.packcore.import.list.heading"), COLOR_LABEL));
         currentY += font.lineHeight + LABEL_GAP;
 
-        List<ConfigPackEntry> imports = scanImports();
+        // Use cached imports — avoids a full disk scan on every card click
+        if (cachedImports == null) {
+            cachedImports = scanImports();
+        }
+        List<ConfigPackEntry> imports = cachedImports;
+
         int buttonAreaHeight = BUTTON_HEIGHT + PADDING * 2;
         int listHeight = getHeight() - currentY - buttonAreaHeight;
 

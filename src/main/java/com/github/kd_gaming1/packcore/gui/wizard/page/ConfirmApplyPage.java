@@ -354,7 +354,9 @@ public class ConfirmApplyPage extends BaseWizardPage {
         private final boolean isSubRow;
 
         private RowStatus status;
-        private String errorMessage;
+        private String cachedRightText;
+        private int cachedRightColor;
+        private int cachedRightWidth;
 
         SummaryRowComponent(int x, int y, int width, int height,
                             String key, String label, Component value, int valueColor, boolean isSubRow) {
@@ -364,13 +366,24 @@ public class ConfirmApplyPage extends BaseWizardPage {
             this.value = value;
             this.valueColor = valueColor;
             this.isSubRow = isSubRow;
+            cacheRightSide(value.getString(), valueColor);
         }
 
         String getKey() { return key; }
 
         void setStatus(RowStatus newStatus, String error) {
             status = newStatus;
-            errorMessage = error;
+            if (newStatus == RowStatus.ERROR && error != null && !isSubRow) {
+                cacheRightSide("Error: " + error, GuiColors.ERROR);
+            } else {
+                cacheRightSide(value.getString(), valueColor);
+            }
+        }
+
+        private void cacheRightSide(String text, int color) {
+            cachedRightText = text;
+            cachedRightColor = color;
+            cachedRightWidth = Minecraft.getInstance().font.width(text);
         }
 
         @Override
@@ -395,13 +408,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
                 graphics.drawString(font, label, x + leftInset + 8, textY, GuiColors.NAME_DEFAULT, false);
             }
 
-            if (status == RowStatus.ERROR && errorMessage != null && !isSubRow) {
-                String errText = "Error: " + errorMessage;
-                graphics.drawString(font, errText, x + w - font.width(errText) - 8, textY, GuiColors.ERROR, false);
-            } else {
-                String valueStr = value.getString();
-                graphics.drawString(font, valueStr, x + w - font.width(valueStr) - 8, textY, valueColor, false);
-            }
+            graphics.drawString(font, cachedRightText, x + w - cachedRightWidth - 8, textY, cachedRightColor, false);
         }
     }
 }

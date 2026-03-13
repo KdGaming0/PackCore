@@ -11,7 +11,6 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackBuilder;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackMeta;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeBuilder;
 import com.github.kd_gaming1.packcore.gui.component.FileTreeComponent;
-import com.github.kd_gaming1.packcore.gui.component.FileTreeNode;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.util.ScreenResolution;
@@ -29,6 +28,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 public class ExportPage extends BaseConfigPage {
@@ -36,6 +38,8 @@ public class ExportPage extends BaseConfigPage {
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/ExportPage");
 
     private static final Path EXPORTS_DIR = PackCore.PACKCORE_DIR.resolve("user_configs");
+
+    private static final Executor IO_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private static final int PANEL_GAP = 12;
     private static final int PADDING = 10;
@@ -48,11 +52,12 @@ public class ExportPage extends BaseConfigPage {
 
     private static final int COLOR_LABEL = 0xFFCCCCCC;
     private static final int COLOR_SECTION = 0xFF888888;
+    private static final int COLOR_HINT = 0xFF666666;
+    private static final int COLOR_ERROR = 0xFFFF5555;
 
     /**
      * Top-level folders and files hidden from the export file tree.
-     * Dot-folders (e.g. .fabric, .git) are hidden automatically by FileTreeBuilder
-     * and do not need to be listed here.
+     * Dot-folders (e.g. .fabric, .git) are hidden automatically by FileTreeBuilder.
      */
     private static final Set<String> HIDDEN_PATHS = Set.of(
             "logs", "crash-reports", "screenshots", "saves", "packcore",
@@ -81,6 +86,7 @@ public class ExportPage extends BaseConfigPage {
     @Override
     public void onEnter() {
         this.clearComponents();
+        fileTree = null;
 
         int panelWidth = (getWidth() - PANEL_GAP) / 2;
 
@@ -171,6 +177,7 @@ public class ExportPage extends BaseConfigPage {
         panel.addWidget(exportBtn);
     }
 
+    /** Builds the right panel immediately with a loading placeholder, then fills the tree async. */
     private void buildRightPanel(EmptyComponent panel, int width) {
         var font = Minecraft.getInstance().font;
         int currentY = PADDING;
@@ -181,18 +188,10 @@ public class ExportPage extends BaseConfigPage {
 
         int treeHeight = getHeight() - currentY - BUTTON_HEIGHT - PADDING * 2;
 
-        FileTreeNode root;
-        try {
-            root = FileTreeBuilder.fromDirectory(FabricLoader.getInstance().getGameDir(), HIDDEN_PATHS);
-        } catch (IOException e) {
-            LOGGER.error("Failed to build directory tree: {}", e.getMessage());
-            panel.addComponent(new TextComponent(PADDING, currentY,
-                    Component.literal("Error reading game folder."), 0xFFFF5555));
-            return;
-        }
-
-        fileTree = new FileTreeComponent(PADDING, currentY, width - PADDING * 3, treeHeight, root);
-        panel.addComponent(fileTree);
+        // Slot that will be swapped out once the async scan finishes
+        EmptyComponent treeSlot = new EmptyComponent(PADDING, currentY, width - PADDING * 2, treeHeight);
+        treeSlot.addComponent(new TextComponent(0, 0, Component.literal("Loading files…"), COLOR_HINT));
+        panel.addComponent(treeSlot);
 
         int openBtnX = PADDING + (width - PADDING * 2 - OPEN_BTN_WIDTH) / 2;
         int openBtnY = currentY + treeHeight + PADDING;
@@ -200,6 +199,38 @@ public class ExportPage extends BaseConfigPage {
                 Component.translatable("gui.packcore.export.button.open_folder"),
                 GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> openExportsFolder()));
+
+        final int capturedTreeWidth = width - PADDING * 3;
+        final int capturedTreeHeight = treeHeight;
+
+        CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return FileTreeBuilder.fromDirectory(FabricLoader.getInstance().getGameDir(), HIDDEN_PATHS);
+                    } catch (IOException e) {
+                        LOGGER.error("Failed to build directory tree: {}", e.getMessage());
+                        return null;
+                    }
+                },
+                IO_EXECUTOR
+        ).thenAccept(root -> Minecraft.getInstance().execute(() -> {
+            treeSlot.clearComponents();
+            treeSlot.clearOnlyWidgets();
+
+            if (root == null) {
+                treeSlot.addComponent(new TextComponent(0, 0,
+                        Component.literal("Error reading game folder."), COLOR_ERROR));
+            } else {
+                fileTree = new FileTreeComponent(0, 0, capturedTreeWidth, capturedTreeHeight, root);
+                fileTree.setOnSelectionChanged(this::updateExportButton);
+                treeSlot.addComponent(fileTree);
+                updateExportButton();
+            }
+
+            treeSlot.updateParentPosition(
+                    treeSlot.getParentX(), treeSlot.getParentY(),
+                    treeSlot.getWidth(), treeSlot.getHeight());
+        }));
     }
 
     private EditBoxWidget addValidatedField(EmptyComponent panel, int fieldWidth, int y,

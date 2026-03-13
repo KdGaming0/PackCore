@@ -5,6 +5,7 @@ import com.github.kd_gaming1.packcore.configpack.BackupManager;
 import com.github.kd_gaming1.packcore.gui.util.ToastHelper;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
@@ -23,6 +26,8 @@ public final class PlaytimeTracker {
 
     private static final DateTimeFormatter BACKUP_NAME_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault());
+
+    private static final Executor BACKUP_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private PlaytimeTracker() {}
 
@@ -44,7 +49,7 @@ public final class PlaytimeTracker {
         MidnightConfig.write(MOD_ID);
 
         if (shouldAutoBackup) {
-            triggerAutoBackup();
+            triggerAutoBackupAsync();
         }
     }
 
@@ -53,15 +58,17 @@ public final class PlaytimeTracker {
         MidnightConfig.write(MOD_ID);
     }
 
-    private static void triggerAutoBackup() {
+    private static void triggerAutoBackupAsync() {
         String backupName = "auto_" + BACKUP_NAME_FORMAT.format(Instant.now()) + ".zip";
-        LOGGER.info("Creating automatic backup: {}", backupName);
+        LOGGER.info("Scheduling automatic backup: {}", backupName);
 
-        try {
-            BackupManager.createBackup(FabricLoader.getInstance().getGameDir());
-            ToastHelper.showBackupCreated(backupName);
-        } catch (IOException e) {
-            LOGGER.error("Automatic backup failed: {}", e.getMessage());
-        }
+        BACKUP_EXECUTOR.execute(() -> {
+            try {
+                BackupManager.createBackup(FabricLoader.getInstance().getGameDir());
+                Minecraft.getInstance().execute(() -> ToastHelper.showBackupCreated(backupName));
+            } catch (IOException e) {
+                LOGGER.error("Automatic backup failed: {}", e.getMessage());
+            }
+        });
     }
 }
