@@ -112,6 +112,26 @@
   "gui.packcore.wizard.storage_design.vanilla.name": "Vanilla",
   "gui.packcore.wizard.storage_design.vanilla.desc": "Default chest appearance with tooltips that show each page's contents on hover.",
 
+  "gui.packcore.wizard.page.scamscreener.title": "ScamScreener",
+  "gui.packcore.wizard.page.scamscreener.explanation": "Configure how aggressively ScamScreener should warn and whether warning messages should ping you in chat.",
+  "gui.packcore.wizard.scamscreener.alerts.heading": "Minimum Alert Level",
+  "gui.packcore.wizard.scamscreener.pings.heading": "Warning Pings",
+  "gui.packcore.wizard.scamscreener.pings.hint": "Choose which ScamScreener warning types should play a ping in chat.",
+
+  "gui.packcore.wizard.scamscreener.minimum_risk.LOW.name": "Low",
+  "gui.packcore.wizard.scamscreener.minimum_risk.LOW.desc": "Show all ScamScreener warnings, including low-confidence alerts. ⚠ Higher chance of false positives!",
+  "gui.packcore.wizard.scamscreener.minimum_risk.MEDIUM.name": "Medium (Recommended)",
+  "gui.packcore.wizard.scamscreener.minimum_risk.MEDIUM.desc": "Hide low-confidence alerts and only warn when risk is medium or higher. Best default for most players.",
+  "gui.packcore.wizard.scamscreener.minimum_risk.HIGH.name": "High",
+  "gui.packcore.wizard.scamscreener.minimum_risk.HIGH.desc": "Only surface stronger warnings with a lower chance of false positives.",
+  "gui.packcore.wizard.scamscreener.minimum_risk.CRITICAL.name": "Critical",
+  "gui.packcore.wizard.scamscreener.minimum_risk.CRITICAL.desc": "Only show the most severe warnings.",
+
+  "gui.packcore.wizard.scamscreener.pings.risk.name": "Ping On Risk Warning",
+  "gui.packcore.wizard.scamscreener.pings.risk.desc": "Enable the chat ping when ScamScreener raises a normal risk warning.",
+  "gui.packcore.wizard.scamscreener.pings.blacklist.name": "Ping On Blacklist Warning",
+  "gui.packcore.wizard.scamscreener.pings.blacklist.desc": "Enable the chat ping when ScamScreener detects a blacklist warning.",
+
   "gui.packcore.wizard.page.resource_pack.title": "Resource Packs",
   "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resource packs folder. Add resource packs there and reopen the wizard.",
   "gui.packcore.wizard.resource_pack.no_description": "No description provided.",

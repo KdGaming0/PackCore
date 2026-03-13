@@ -63,6 +63,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
         navigator.addPage(new TabDesignPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new ItemBackgroundPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new StorageDesignPage(wizardState, navigator, contentWidth, contentHeight));
+        navigator.addPage(new ScamScreenerPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new ResourcePackPage(wizardState, navigator, contentWidth, contentHeight));
 
         confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
