@@ -72,8 +72,14 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
+        if (isUpgradeFromV3()) {
+            migrateFromV3(selectedPack, gameDir);
+            return;
+        }
+
         extractIfNeeded(selectedPack, gameDir);
     }
+
 
     /**
      * Applies the pack whose filename is stored in {@link PackCoreConfig#pendingConfigPack}.
@@ -232,6 +238,41 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         LOGGER.info("Successfully applied config version: {}", packVersion);
     }
 
+    private void migrateFromV3(ConfigPackEntry selectedPack, Path gameDir) {
+        JsonObject config = selectedPack.config();
+        String selectedPackFile = selectedPack.zipPath().getFileName().toString();
+        String packVersion = readPackVersionOrFallback(config);
+
+        LOGGER.info(
+                "Detected v3 upgrade. Backfilling PackCore v4 metadata using '{}' (version: {}) with SKIP_EXISTING.",
+                selectedPackFile,
+                packVersion
+        );
+
+        try {
+            ConfigPackExtractor.extractAll(
+                    selectedPack.zipPath(),
+                    gameDir,
+                    ConfigPackExtractor.OverwriteMode.SKIP_EXISTING
+            );
+        } catch (IOException e) {
+            LOGGER.error("Failed to migrate v3 install using '{}': {}", selectedPackFile, e.getMessage());
+            return;
+        }
+
+        PackCoreConfig.lastAppliedVersion = packVersion;
+        PackCoreConfig.lastAppliedPackFile = selectedPackFile;
+        PackCoreConfig.isFirstStartup = false;
+        MidnightConfig.write(MOD_ID);
+
+        LOGGER.info(
+                "Successfully migrated v3 install. Stored applied pack '{}' at version '{}'.",
+                selectedPackFile,
+                packVersion
+        );
+    }
+
+
     /**
      * Returns the pack whose target resolution is closest to the current screen
      * using squared Euclidean distance. Ties are resolved by higher guiScale.
@@ -264,4 +305,21 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         return bestPack;
     }
+
+    private static boolean isUpgradeFromV3() {
+        return !PackCoreConfig.isFirstStartup
+                && PackCoreConfig.lastAppliedPackFile.isBlank()
+                && PackCoreConfig.lastAppliedVersion.isBlank();
+    }
+
+    private static String readPackVersionOrFallback(JsonObject config) {
+        if (config.has("version")) {
+            String version = config.get("version").getAsString();
+            if (!version.isBlank()) {
+                return version;
+            }
+        }
+        return "0.0.0";
+    }
+
 }
