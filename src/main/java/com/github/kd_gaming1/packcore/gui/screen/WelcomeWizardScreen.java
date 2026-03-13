@@ -113,7 +113,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
         // Finish — settings have been applied; mark complete and close
         buttonBar.setOnFinish(() -> {
             markWizardComplete();
-            Minecraft.getInstance().setScreen(lastScreen);
+            Minecraft.getInstance().setScreen(resolvePostWizardScreen());
         });
 
         // Skip on the last page — close without applying; still marks complete
@@ -132,6 +132,14 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private void markWizardComplete() {
         PackCoreConfig.successfulWelcomeWizard = true;
         MidnightConfig.write(MOD_ID);
+    }
+
+    private Screen resolvePostWizardScreen() {
+        return switch (PackCoreConfig.menuStyle) {
+            case MODERN -> new SBETitleScreen();
+            case MODERN_MINIMAL -> new SBETitleScreen(false);
+            case MINIMAL -> new PackCoreTitleScreen();
+        };
     }
 
     @Override

@@ -33,10 +33,10 @@ public class WizardButtonBar extends EmptyComponent {
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_continue_gray_button"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_continue_gray_button")
     );
-    private static final WidgetSprites PRIMARY_CONTINUE_BUTTON = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_red_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_red_button"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_red_button")
+    private static final WidgetSprites SCAM_SCREENER_CONTINUE_BUTTON = new WidgetSprites(
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/continue_gray_button"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/continue_gray_button"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_continue_gray_button")
     );
 
     private static final WidgetSprites PREVIOUS_BUTTON = new WidgetSprites(
@@ -70,7 +70,7 @@ public class WizardButtonBar extends EmptyComponent {
     private final ButtonWidget backButton;
     private final ButtonWidget skipButton;
     private final ButtonWidget continueButton;
-    private final ButtonWidget primaryContinueButton;
+    private final ButtonWidget scamScreenerContinueButton;
     private final ButtonWidget finishButton;
 
     public WizardButtonBar(WizardNavigator navigator, int width, int height) {
@@ -106,10 +106,10 @@ public class WizardButtonBar extends EmptyComponent {
                 CONTINUE_BUTTON,
                 btn -> navigator.nextPage()
         );
-        primaryContinueButton = new CustomButtonWidget(
+        scamScreenerContinueButton = new CustomButtonWidget(
                 width - BTN_WIDTH - BTN_GAP, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.continue"),
-                PRIMARY_CONTINUE_BUTTON,
+                SCAM_SCREENER_CONTINUE_BUTTON,
                 btn -> navigator.nextPage()
         );
 
@@ -145,7 +145,7 @@ public class WizardButtonBar extends EmptyComponent {
         this.addWidget(skipButton);
         this.addWidget(backButton);
         this.addWidget(continueButton);
-        this.addWidget(primaryContinueButton);
+        this.addWidget(scamScreenerContinueButton);
         this.addWidget(finishButton);
 
         refresh();
@@ -155,16 +155,16 @@ public class WizardButtonBar extends EmptyComponent {
     public void refresh() {
         boolean hasBack = navigator.hasPrevious();
         boolean isLastPage = navigator.isOnLastPage();
-        boolean usePrimaryContinue = navigator.getCurrentPage() instanceof ScamScreenerPage;
+        boolean isScamScreenerPage = navigator.getCurrentPage() instanceof ScamScreenerPage;
 
         backButton.visible = hasBack;
         backButton.active = hasBack;
 
-        continueButton.visible = !isLastPage && !usePrimaryContinue;
-        continueButton.active = !isLastPage && !usePrimaryContinue;
+        continueButton.visible = !isLastPage && !isScamScreenerPage;
+        continueButton.active = !isLastPage && !isScamScreenerPage;
 
-        primaryContinueButton.visible = !isLastPage && usePrimaryContinue;
-        primaryContinueButton.active = !isLastPage && usePrimaryContinue;
+        scamScreenerContinueButton.visible = !isLastPage && isScamScreenerPage;
+        scamScreenerContinueButton.active = !isLastPage && isScamScreenerPage;
 
         skipButton.visible = isLastPage;
         skipButton.active = isLastPage;
