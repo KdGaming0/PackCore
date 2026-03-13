@@ -33,14 +33,22 @@ public final class PlaytimeTracker {
 
     public static void onSessionStart() {
         long now = System.currentTimeMillis();
+
+        if (!PackCoreConfig.autoBackupEnabled) {
+            PackCoreConfig.lastSeenEpochMs = now;
+            MidnightConfig.write(MOD_ID);
+            return;
+        }
+
+        long intervalMs = PackCoreConfig.autoBackupIntervalDays * 24L * 60 * 60 * 1_000;
         long lastBackup = PackCoreConfig.lastBackupEpochMs;
-        long lastSeen = PackCoreConfig.lastSeenEpochMs;
-        long msSinceBackup = now - lastBackup;
+        long lastSeen   = PackCoreConfig.lastSeenEpochMs;
+        long msSinceBackup   = now - lastBackup;
         long msSinceLastSeen = now - lastSeen;
 
         boolean shouldAutoBackup = lastBackup > 0
-                && msSinceBackup >= BACKUP_INTERVAL_MS
-                && msSinceLastSeen < BACKUP_INTERVAL_MS;
+                && msSinceBackup    >= intervalMs
+                && msSinceLastSeen  <  intervalMs;
 
         PackCoreConfig.lastSeenEpochMs = now;
         if (shouldAutoBackup) {

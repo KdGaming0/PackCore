@@ -4,8 +4,9 @@ import eu.midnightdust.lib.config.MidnightConfig;
 
 public class PackCoreConfig extends MidnightConfig {
 
-    public static final String TOAST = "toast";
     public static final String MENU = "menu";
+    public static final String BACKUP = "backup";
+    public static final String TOAST = "toast";
     public static final String META = "meta";
 
     // ── Toast ─────────────────────────────────────────────────────────────────
@@ -32,6 +33,14 @@ public class PackCoreConfig extends MidnightConfig {
         MODERN_MINIMAL,
         MINIMAL
     }
+
+    // ── Backup ────────────────────────────────────────────────────────────────
+
+    @Entry(category = BACKUP)
+    public static boolean autoBackupEnabled = true;
+
+    @Entry(category = BACKUP, min = 1, max = 90)
+    public static int autoBackupIntervalDays = 3;
 
     // ── Meta (hidden) ─────────────────────────────────────────────────────────
 

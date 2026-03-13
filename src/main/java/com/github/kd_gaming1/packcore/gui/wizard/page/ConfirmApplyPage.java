@@ -16,6 +16,7 @@ import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.ScamScreenerConfigurator;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
+import com.github.kd_gaming1.packcore.util.JvmArgs;
 import com.github.kd_gaming1.scaleme.config.ScaleMeConfig;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
@@ -27,12 +28,8 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
@@ -85,9 +82,11 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private final List<SummaryRowComponent> scamPingRows = new ArrayList<>();
 
     private CustomButtonWidget applyButton;
-    private String globalErrorMessage;
+    private static String globalErrorMessage;
     private Runnable onApplySucceeded;
     private boolean applyCompleted;
+
+    private static String resourcePackWarningMessage;
 
     public void setOnApplySucceeded(Runnable callback) {
         onApplySucceeded = callback;
@@ -108,6 +107,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
         rowStatuses.clear();
         rowErrors.clear();
         globalErrorMessage = null;
+        resourcePackWarningMessage = null;
     }
 
     @Override
@@ -118,6 +118,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
         packRows.clear();
         scamPingRows.clear();
         globalErrorMessage = null;
+        resourcePackWarningMessage = null;
 
         if (!applyCompleted) {
             rowStatuses.clear();
@@ -243,7 +244,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
                     state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)));
         }
 
-        anyError |= runStep(RESOURCE_PACKS_KEY, () -> applyResourcePacks(state.getSelectedResourcePacks()));
+        anyError |= runStep(RESOURCE_PACKS_KEY, () -> applyResourcePacksGuarded(state.getSelectedResourcePacks()));
 
         applyCompleted = !anyError;
 
@@ -359,14 +360,49 @@ public class ConfirmApplyPage extends BaseWizardPage {
         }
     }
 
-    private void applyResourcePacks(Set<String> packIds) {
+    private void applyResourcePacksGuarded(Set<String> packIds) {
         if (packIds.isEmpty()) return;
+
+        Set<String> hypixel = packIds.stream()
+                .filter(this::isHypixelPlusId)
+                .collect(Collectors.toSet());
+
+        boolean missingXss = !JvmArgs.hasXssAtLeast(4L * 1024 * 1024);
+
+        if (missingXss && !hypixel.isEmpty()) {
+            // Build a detailed error that names the launcher and gives fix steps.
+            JvmArgs.Launcher launcher = JvmArgs.detectLauncher();
+            String instructions = JvmArgs.xss4MInstructions(launcher);
+
+            Set<String> filtered = new LinkedHashSet<>(packIds);
+            filtered.removeAll(hypixel);
+
+            if (!filtered.isEmpty()) {
+                ResourcePackManager.apply(filtered);
+                // Partial apply — warn but don't throw; other packs succeeded.
+                resourcePackWarningMessage =
+                        "Hypixel+ was skipped because -Xss4M is not set.\n" +
+                                instructions;
+            } else {
+                // Nothing was applied — surface as a hard error so the row goes red.
+                throw new RuntimeException(
+                        "Hypixel+ could not be applied — -Xss4M JVM argument is missing.\n" +
+                                instructions
+                );
+            }
+            return;
+        }
+
         ResourcePackManager.apply(packIds);
     }
 
     private boolean requiresWorldJoin() {
         return (state.getSelection(TabDesignPage.STATE_KEY) != null && FabricLoader.getInstance().isModLoaded("skyhanni"))
                 || (state.getSelection(StorageDesignPage.STATE_KEY) != null && FabricLoader.getInstance().isModLoaded("firmament"));
+    }
+
+    private boolean isHypixelPlusId(String packId) {
+        return packId != null && packId.toLowerCase(Locale.ROOT).contains("hypixel");
     }
 
     @Override
@@ -420,27 +456,31 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
-            int x = getTotalX();
-            int y = getTotalY();
-            int w = getWidth();
-            int h = getHeight();
-            int leftInset = isSubRow ? 20 : 0;
-
-            int borderColor = status == RowStatus.SUCCESS ? GuiColors.SUCCESS
-                    : status == RowStatus.ERROR ? GuiColors.ERROR
-                    : GuiColors.BORDER_IDLE;
-
-            graphics.fill(x + leftInset, y, x + w, y + h, GuiColors.ROW_BACKGROUND);
-            GuiHelper.drawBorder(graphics, x + leftInset, y, w - leftInset, h, borderColor);
-
             var font = Minecraft.getInstance().font;
-            int textY = y + (h - font.lineHeight) / 2;
 
-            if (!label.isEmpty()) {
-                graphics.drawString(font, label, x + leftInset + 8, textY, GuiColors.NAME_DEFAULT, false);
+            // Global error (some steps failed)
+            if (globalErrorMessage != null) {
+                int errorY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT + BUTTON_HEIGHT + 4;
+                graphics.drawCenteredString(font, globalErrorMessage, getTotalX() + getWidth() / 2, errorY, GuiColors.ERROR);
             }
 
-            graphics.drawString(font, cachedRightText, x + w - cachedRightWidth - 8, textY, cachedRightColor, false);
+            // Resource-pack partial-apply warning (some packs applied, Hypixel+ skipped)
+            if (resourcePackWarningMessage != null) {
+                int warningY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT + BUTTON_HEIGHT + 4
+                        + (globalErrorMessage != null ? font.lineHeight + 2 : 0);
+
+                // Render each line of the multi-line instructions string
+                String[] lines = resourcePackWarningMessage.split("\n");
+                int lineY = warningY;
+                for (String line : lines) {
+                    if (line.isBlank()) {
+                        lineY += font.lineHeight / 2;
+                        continue;
+                    }
+                    graphics.drawCenteredString(font, line.trim(), getTotalX() + getWidth() / 2, lineY, GuiColors.WARNING);
+                    lineY += font.lineHeight + 1;
+                }
+            }
         }
     }
 }

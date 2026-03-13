@@ -3,6 +3,7 @@
 
   "packcore.midnightconfig.category.toast": "Notifications",
   "packcore.midnightconfig.category.menu": "Main Menu",
+  "packcore.midnightconfig.category.backup": "Automatic Backups",
   "packcore.midnightconfig.category.meta": "Internal",
 
   "packcore.midnightconfig.showRamWarningToast": "Low RAM Warning",
@@ -23,6 +24,12 @@
 
   "packcore.midnightconfig.serverAddressForQuickJoinButton": "Quick Join Address",
   "packcore.midnightconfig.serverAddressForQuickJoinButton.tooltip": "The server address used by the Join button on the main menu.",
+
+  "packcore.midnightconfig.autoBackupEnabled": "Automatic Backups",
+  "packcore.midnightconfig.autoBackupEnabled.tooltip": "Automatically create a backup when you log in after not playing for a while.",
+
+  "packcore.midnightconfig.autoBackupIntervalDays": "Backup Interval (days)",
+  "packcore.midnightconfig.autoBackupIntervalDays.tooltip": "How many days must pass before a new automatic backup is triggered (1–90).",
 
   "gui.packcore.button.join_hypixel": "Join Hypixel",
   "gui.packcore.button.modmenu": "Mod Menu",
@@ -138,12 +145,37 @@
   "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resource packs folder. Add resource packs there and reopen the wizard.",
   "gui.packcore.wizard.resource_pack.no_description": "No description provided.",
 
+  "gui.packcore.wizard.resource_pack.xss_warning": "⚠ Disabled — add -Xss4M JVM argument to enable.",
+
+  "gui.packcore.wizard.resource_pack.xss_banner_header": "⚠ Hypixel+ requires the JVM argument -Xss4M, which is not currently set.",
+  "gui.packcore.wizard.resource_pack.xss_banner_launcher": "Detected launcher: %s",
+
+  "gui.packcore.wizard.resource_pack.xss_fix.prism": "Fix: right-click instance → Edit → Settings → Java → add -Xss4M to JVM Arguments.",
+  "gui.packcore.wizard.resource_pack.xss_fix.curseforge": "Fix: profile ⋯ → Profile Options → Additional Java Arguments → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.atlauncher": "Fix: Settings → Java/Minecraft → Extra Java Parameters → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.modrinth": "Fix: instance ⋯ → Edit → Java Settings → Java arguments → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.official": "Fix: Installations → edit profile → More Options → JVM Arguments → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.unknown": "Fix: open your launcher's instance/profile settings, find the JVM Arguments field, and add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.restart": "Restart the game after saving to enable Hypixel+.",
+
   "gui.packcore.wizard.page.confirm.title": "Confirm & Apply",
   "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",
   "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
   "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world/server. Please do so immediately, and do NOT close the game first.",
   "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
   "gui.packcore.wizard.button.finish.locked_tooltip": "Click \"Apply Settings\" to apply your selections before finishing.",
+
+  "gui.packcore.wizard.confirm.resource_pack.xss_partial_apply": "Hypixel+ was skipped — -Xss4M is missing. Other selected packs were applied.",
+  "gui.packcore.wizard.confirm.resource_pack.xss_blocked": "Hypixel+ was not applied — -Xss4M JVM argument is missing.",
+
+  "gui.packcore.wizard.page.sword_block.title": "Sword Block",
+  "gui.packcore.wizard.page.sword_block.explanation": "Choose whether to enable the sword blocking animation from ScaleMe. When enabled, holding right click with a sword will display the classic blocking pose from 1.8.9.",
+
+  "gui.packcore.wizard.sword_block.enabled.name": "Enabled",
+  "gui.packcore.wizard.sword_block.enabled.desc": "Holding right click with a sword will show the blocking animation.",
+
+  "gui.packcore.wizard.sword_block.disabled.name": "Disabled",
+  "gui.packcore.wizard.sword_block.disabled.desc": "No blocking animation will be shown when holding right click with a sword.",
 
   "gui.packcore.config.title": "Modpack Configuration",
 
@@ -166,7 +198,21 @@
   "gui.packcore.export.field.author": "Author",
   "gui.packcore.export.field.description": "Description",
   "gui.packcore.export.field.resolution": "Resolution (e.g. 1920x1080)",
+  "gui.packcore.export.field.gui_scale": "GUI Scale",
   "gui.packcore.export.button.export": "Export Config Pack",
+  "gui.packcore.export.button.open_folder": "Open Exports Folder",
+
+  "gui.packcore.export.tooltip.missing_name": "Enter a config name.",
+  "gui.packcore.export.tooltip.missing_version": "Fix the version format (e.g. 1.0.0).",
+  "gui.packcore.export.tooltip.missing_resolution": "Fix the resolution format (e.g. 1920x1080).",
+  "gui.packcore.export.tooltip.missing_gui_scale": "GUI scale must be a whole number (0 = Auto)",
+  "gui.packcore.export.tooltip.missing_files": "Select at least one file to export.",
+
+  "gui.packcore.config.source.official": "Official",
+  "gui.packcore.config.source.my_exports": "My Exports",
+
+  "gui.packcore.config.tooltip.apply_selected": "Apply only the files you have checked in the file tree.",
+  "gui.packcore.config.tooltip.apply_all": "Apply every file in this preset, overwriting existing ones.",
 
   "gui.packcore.backups.heading": "Backups",
   "gui.packcore.backups.empty": "No backups found. Create one with the button above.",
@@ -176,18 +222,9 @@
   "gui.packcore.import.files.heading": "Files in Import",
   "gui.packcore.import.files.hint": "Select an import on the right to browse its files.",
   "gui.packcore.import.list.heading": "Imported Configs",
+  "gui.packcore.import.list.empty": "No imports found",
+  "gui.packcore.import.list.empty.hint": "Place a config pack .zip file in the imports folder",
   "gui.packcore.import.button.open_folder": "Open Imports Folder",
-
-  "gui.packcore.config.tooltip.apply_selected": "Apply only the files you have checked in the file tree.",
-  "gui.packcore.config.tooltip.apply_all": "Apply every file in this preset, overwriting existing ones.",
-  "gui.packcore.export.button.open_folder": "Open Exports Folder",
-
-  "gui.packcore.export.tooltip.missing_name": "Enter a config name.",
-  "gui.packcore.export.tooltip.missing_version": "Fix the version format (e.g. 1.0.0).",
-  "gui.packcore.export.tooltip.missing_resolution": "Fix the resolution format (e.g. 1920x1080).",
-  "gui.packcore.export.tooltip.missing_files": "Select at least one file to export.",
-  "gui.packcore.config.source.official": "Official",
-  "gui.packcore.config.source.my_exports": "My Exports",
 
   "gui.packcore.overlay.restore.title": "Restore Backup?",
   "gui.packcore.overlay.restore.button.cancel": "Cancel",
@@ -195,25 +232,11 @@
   "gui.packcore.overlay.restore.warning1": "⚠ This will overwrite your current config.",
   "gui.packcore.overlay.restore.warning2": "Any unsaved changes since this backup will be lost.",
   "gui.packcore.overlay.restore.note": "The game will close to apply the restore.",
-  "gui.packcore.import.list.empty": "No imports found",
-  "gui.packcore.import.list.empty.hint": "Place a config pack .zip file in the imports folder",
 
   "gui.packcore.toast.update.title": "Update Available",
   "gui.packcore.toast.update.message": "PackCore %s is available!",
   "gui.packcore.toast.backup.title": "Backup Created",
   "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
   "gui.packcore.toast.ram.title": "Low Memory Warning",
-  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance.",
-
-  "gui.packcore.export.field.gui_scale": "GUI Scale",
-  "gui.packcore.export.tooltip.missing_gui_scale": "GUI scale must be a whole number (0 = Auto)",
-
-  "gui.packcore.wizard.page.sword_block.title": "Sword Block",
-  "gui.packcore.wizard.page.sword_block.explanation": "Choose whether to enable the sword blocking animation from ScaleMe. When enabled, holding right click with a sword will display the classic blocking pose from 1.8.9.",
-
-  "gui.packcore.wizard.sword_block.enabled.name": "Enabled",
-  "gui.packcore.wizard.sword_block.enabled.desc": "Holding right click with a sword will show the blocking animation.",
-
-  "gui.packcore.wizard.sword_block.disabled.name": "Disabled",
-  "gui.packcore.wizard.sword_block.disabled.desc": "No blocking animation will be shown when holding right click with a sword."
+  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance."
 }
