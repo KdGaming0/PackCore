@@ -7,15 +7,13 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * A simple vanilla screen that displays changelog markdown as scrollable plain text.
- * Basic markdown (headings, bullets, inline code) is stripped to clean text.
- */
 public class ChangelogScreen extends Screen {
 
     private static final int PADDING = 16;
@@ -36,10 +34,13 @@ public class ChangelogScreen extends Screen {
     private final List<RenderedLine> lines = new ArrayList<>();
     private int scrollOffset = 0;
     private int maxScroll = 0;
+    private int totalContentHeight = 0;
 
     public ChangelogScreen(Screen parent, UpdateStatus status) {
-        super(Component.translatable("gui.packcore.overlay.changelog.title",
-                status.latestVersion() != null ? status.latestVersion() : ""));
+        super(Component.translatable(
+                "gui.packcore.overlay.changelog.title",
+                status.latestVersion() != null ? status.latestVersion() : ""
+        ));
         this.parent = parent;
         this.rawChangelog = status.changelog() != null ? status.changelog() : "";
     }
@@ -48,6 +49,7 @@ public class ChangelogScreen extends Screen {
     protected void init() {
         lines.clear();
         scrollOffset = 0;
+        totalContentHeight = 0;
 
         int contentWidth = this.width - PADDING * 2 - BOX_PADDING * 2;
 
@@ -55,16 +57,14 @@ public class ChangelogScreen extends Screen {
             parseAndAddLine(raw.stripTrailing(), contentWidth);
         }
 
-        int lineHeight = this.font.lineHeight + LINE_SPACING;
-        int viewHeight = getViewHeight();
-        int totalHeight = lines.stream().mapToInt(line -> line.height).sum();
-        maxScroll = Math.max(0, totalHeight - viewHeight);
+        totalContentHeight = lines.stream().mapToInt(RenderedLine::height).sum();
+        maxScroll = Math.max(0, totalContentHeight - getViewHeight());
 
         int closeX = this.width / 2 - CLOSE_BUTTON_WIDTH / 2;
         int closeY = this.height - PADDING * 2 - CLOSE_BUTTON_HEIGHT;
         addRenderableWidget(Button.builder(
                 Component.translatable("gui.done"),
-                btn -> onClose()
+                button -> onClose()
         ).bounds(closeX, closeY, CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT).build());
     }
 
@@ -97,18 +97,14 @@ public class ChangelogScreen extends Screen {
 
         graphics.disableScissor();
 
-        // Draw scrollbar only if content overflows
-        if (maxScroll > 0) {
+        if (maxScroll > 0 && totalContentHeight > 0) {
             int scrollbarX = boxX + boxWidth - BOX_PADDING / 2 - 2;
             int scrollbarHeight = scrollbarBottom - scrollbarTop;
 
-            // Track (background_old)
             graphics.fill(scrollbarX, scrollbarTop, scrollbarX + 3, scrollbarBottom, 0x44FFFFFF);
 
-            // Thumb (draggable indicator)
             int viewHeight = getViewHeight();
-            int totalHeight = lines.stream().mapToInt(RenderedLine::height).sum();
-            float thumbRatio = (float) viewHeight / totalHeight;
+            float thumbRatio = (float) viewHeight / totalContentHeight;
             int thumbHeight = Math.max(20, (int) (scrollbarHeight * thumbRatio));
             int thumbY = scrollbarTop + (int) ((scrollbarHeight - thumbHeight) * ((float) scrollOffset / maxScroll));
 
@@ -171,19 +167,17 @@ public class ChangelogScreen extends Screen {
             color = COLOR_CONTENT;
         }
 
-        // Strip inline markdown: **bold**, *italic*, `code`
         text = text
                 .replaceAll("\\*\\*(.+?)\\*\\*", "$1")
                 .replaceAll("\\*(.+?)\\*", "$1")
                 .replaceAll("`(.+?)`", "$1");
 
-        // Word-wrap long lines
         if (this.font.width(text) > maxWidth) {
-            for (net.minecraft.network.chat.FormattedText segment :
-                    this.font.getSplitter().splitLines(
-                            net.minecraft.network.chat.FormattedText.of(text),
-                            maxWidth,
-                            net.minecraft.network.chat.Style.EMPTY)) {
+            for (FormattedText segment : this.font.getSplitter().splitLines(
+                    FormattedText.of(text),
+                    maxWidth,
+                    Style.EMPTY
+            )) {
                 lines.add(new RenderedLine(segment.getString(), color, lineHeight));
             }
         } else {

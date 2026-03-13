@@ -35,16 +35,13 @@ public class ConfigPackScanner {
 
         List<ConfigPackEntry> results = new ArrayList<>();
 
-        // Walk top-level files only (non-recursive)
         try (Stream<Path> entries = Files.list(folderPath)) {
-            List<Path> zipFiles = entries
-                    .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".zip"))
-                    .toList();
-
-            for (Path zipPath : zipFiles) {
-                readConfigFromZip(zipPath).ifPresent(json -> results.add(new ConfigPackEntry(zipPath, json)));
-            }
+            entries.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".zip"))
+                    .forEach(zipPath ->
+                            readConfigFromZip(zipPath).ifPresent(json ->
+                                    results.add(new ConfigPackEntry(zipPath, json))
+                            ));
         }
 
         return results;
@@ -53,18 +50,16 @@ public class ConfigPackScanner {
     private Optional<JsonObject> readConfigFromZip(Path zipPath) {
         try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
             ZipEntry configEntry = zipFile.getEntry(CONFIG_FILE_NAME);
-
             if (configEntry == null) {
                 return Optional.empty();
             }
 
             try (InputStream stream = zipFile.getInputStream(configEntry);
                  InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-
                 return Optional.of(JsonParser.parseReader(reader).getAsJsonObject());
             }
         } catch (IOException | JsonParseException e) {
-            LOGGER.warn("Failed to read zip: {} — {}", zipPath, e.getMessage());
+            LOGGER.warn("Failed to read zip: {} - {}", zipPath, e.getMessage());
             return Optional.empty();
         }
     }

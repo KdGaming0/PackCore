@@ -14,31 +14,39 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class UpdateChecker {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/UpdateChecker");
-
-    // Dedicated executor for network I/O operations
     private static final Executor NETWORK_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
-    private static final AtomicReference<UpdateStatus> CACHED_STATUS = new AtomicReference<>(UpdateStatus.unknown());
+    private static final AtomicReference<UpdateStatus> CACHED_STATUS =
+            new AtomicReference<>(UpdateStatus.unknown());
+    private static final AtomicReference<CompletableFuture<UpdateStatus>> IN_FLIGHT =
+            new AtomicReference<>();
 
     private UpdateChecker() {}
 
-    /**
-     * Returns the last known status without triggering a new check.
-     */
     public static UpdateStatus getCachedStatus() {
         return CACHED_STATUS.get();
     }
 
-    /**
-     * Runs the update check on a background_old thread — never blocks the game thread.
-     * Usage: UpdateChecker.checkAsync().thenAccept(status -> { ... });
-     */
     public static CompletableFuture<UpdateStatus> checkAsync() {
-        return CompletableFuture.supplyAsync(UpdateChecker::check, NETWORK_EXECUTOR)
+        CompletableFuture<UpdateStatus> existing = IN_FLIGHT.get();
+        if (existing != null) {
+            return existing;
+        }
+
+        CompletableFuture<UpdateStatus> created = CompletableFuture
+                .supplyAsync(UpdateChecker::check, NETWORK_EXECUTOR)
                 .thenApply(status -> {
                     CACHED_STATUS.set(status);
                     return status;
-                });
+                })
+                .whenComplete((result, throwable) -> IN_FLIGHT.set(null));
+
+        if (IN_FLIGHT.compareAndSet(null, created)) {
+            return created;
+        }
+
+        CompletableFuture<UpdateStatus> winner = IN_FLIGHT.get();
+        return winner != null ? winner : created;
     }
 
     private static UpdateStatus check() {
@@ -59,7 +67,9 @@ public final class UpdateChecker {
             LOGGER.info("Using cached latest version: {}", versionInfo.versionNumber());
         } else {
             Optional<VersionInfo> fetched = ModrinthClient.fetchLatestVersion(projectId);
-            if (fetched.isEmpty()) return UpdateStatus.unknown();
+            if (fetched.isEmpty()) {
+                return UpdateStatus.unknown();
+            }
 
             versionInfo = fetched.get();
             UpdateCache.set(versionInfo);
@@ -70,9 +80,12 @@ public final class UpdateChecker {
                 ? UpdateStatus.updateAvailable(installedVersion, versionInfo.versionNumber(), versionInfo.changelog())
                 : UpdateStatus.upToDate(installedVersion);
 
-        LOGGER.info("Update check result: {} (installed: {}, latest: {})",
-                status.state(), installedVersion, versionInfo.versionNumber());
-
+        LOGGER.info(
+                "Update check result: {} (installed: {}, latest: {})",
+                status.state(),
+                installedVersion,
+                versionInfo.versionNumber()
+        );
         return status;
     }
 

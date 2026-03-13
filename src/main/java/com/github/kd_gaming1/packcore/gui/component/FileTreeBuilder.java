@@ -8,6 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipFile;
 
@@ -19,10 +22,13 @@ public final class FileTreeBuilder {
         FileTreeNode root = new FileTreeNode("root", "", true);
         root.setExpanded(true);
 
+        Map<FileTreeNode, Map<String, FileTreeNode>> childIndex = new IdentityHashMap<>();
+        childIndex.put(root, new HashMap<>());
+
         try (ZipFile zip = new ZipFile(zipPath.toFile())) {
             zip.entries().asIterator().forEachRemaining(entry -> {
                 if (!entry.getName().equals("pack.json")) {
-                    insertPath(root, entry.getName(), entry.isDirectory());
+                    insertPath(root, entry.getName(), entry.isDirectory(), childIndex);
                 }
             });
         }
@@ -36,23 +42,32 @@ public final class FileTreeBuilder {
         FileTreeNode root = new FileTreeNode(dirName, "", true);
         root.setExpanded(true);
 
-        if (!Files.exists(dir)) return root;
+        if (!Files.exists(dir)) {
+            return root;
+        }
+
+        Map<FileTreeNode, Map<String, FileTreeNode>> childIndex = new IdentityHashMap<>();
+        childIndex.put(root, new HashMap<>());
 
         Files.walkFileTree(dir, new SimpleFileVisitor<>() {
 
             @Override
             public @NonNull FileVisitResult preVisitDirectory(@NonNull Path path, @NonNull BasicFileAttributes attrs) {
-                if (path.equals(dir)) return FileVisitResult.CONTINUE;
+                if (path.equals(dir)) {
+                    return FileVisitResult.CONTINUE;
+                }
 
                 String rel = dir.relativize(path).toString().replace('\\', '/');
                 String topLevel = rel.split("/")[0];
 
-                if (topLevel.startsWith(".")) return FileVisitResult.SKIP_SUBTREE;
+                if (topLevel.startsWith(".")) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
                 if (hidden != null && hidden.stream().anyMatch(h -> rel.equals(h) || rel.startsWith(h + "/"))) {
                     return FileVisitResult.SKIP_SUBTREE;
                 }
 
-                insertPath(root, rel, true);
+                insertPath(root, rel, true, childIndex);
                 return FileVisitResult.CONTINUE;
             }
 
@@ -61,12 +76,14 @@ public final class FileTreeBuilder {
                 String rel = dir.relativize(path).toString().replace('\\', '/');
                 String topLevel = rel.split("/")[0];
 
-                if (topLevel.startsWith(".")) return FileVisitResult.CONTINUE;
+                if (topLevel.startsWith(".")) {
+                    return FileVisitResult.CONTINUE;
+                }
                 if (hidden != null && hidden.stream().anyMatch(h -> rel.equals(h) || rel.startsWith(h + "/"))) {
                     return FileVisitResult.CONTINUE;
                 }
 
-                insertPath(root, rel, false);
+                insertPath(root, rel, false, childIndex);
                 return FileVisitResult.CONTINUE;
             }
 
@@ -80,30 +97,41 @@ public final class FileTreeBuilder {
         return root;
     }
 
-    private static void insertPath(FileTreeNode root, String path, boolean isDir) {
+    private static void insertPath(
+            FileTreeNode root,
+            String path,
+            boolean isDirectory,
+            Map<FileTreeNode, Map<String, FileTreeNode>> childIndex
+    ) {
         String[] parts = path.split("/");
         FileTreeNode current = root;
-        StringBuilder accum = new StringBuilder();
+        StringBuilder accumulatedPath = new StringBuilder();
 
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
-            if (part.isEmpty()) continue;
+            if (part.isEmpty()) {
+                continue;
+            }
 
-            if (!accum.isEmpty()) accum.append('/');
-            accum.append(part);
+            if (!accumulatedPath.isEmpty()) {
+                accumulatedPath.append('/');
+            }
+            accumulatedPath.append(part);
 
-            boolean isLast = (i == parts.length - 1);
-            String fullPath = accum.toString();
-            boolean nodeIsDir = !isLast || isDir;
+            boolean isLastPart = i == parts.length - 1;
+            boolean nodeIsDirectory = !isLastPart || isDirectory;
+            String fullPath = accumulatedPath.toString();
 
-            FileTreeNode existing = current.children().stream()
-                    .filter(c -> c.name().equals(part))
-                    .findFirst().orElse(null);
+            Map<String, FileTreeNode> indexForCurrent =
+                    childIndex.computeIfAbsent(current, ignored -> new HashMap<>());
+            FileTreeNode existing = indexForCurrent.get(part);
 
             if (existing == null) {
-                FileTreeNode node = new FileTreeNode(part, fullPath, nodeIsDir);
-                current.addChild(node);
-                current = node;
+                FileTreeNode created = new FileTreeNode(part, fullPath, nodeIsDirectory);
+                current.addChild(created);
+                indexForCurrent.put(part, created);
+                childIndex.put(created, new HashMap<>());
+                current = created;
             } else {
                 current = existing;
             }
@@ -112,9 +140,14 @@ public final class FileTreeBuilder {
 
     private static void sortTree(FileTreeNode node) {
         node.children().sort((a, b) -> {
-            if (a.isDirectory() != b.isDirectory()) return a.isDirectory() ? -1 : 1;
+            if (a.isDirectory() != b.isDirectory()) {
+                return a.isDirectory() ? -1 : 1;
+            }
             return a.name().compareToIgnoreCase(b.name());
         });
-        for (FileTreeNode child : node.children()) sortTree(child);
+
+        for (FileTreeNode child : node.children()) {
+            sortTree(child);
+        }
     }
 }

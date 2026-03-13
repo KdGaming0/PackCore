@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.gui.component;
 import com.daqem.uilib.api.widget.IWidget;
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
+import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
@@ -47,17 +48,17 @@ public class FileTreeComponent extends EmptyComponent {
 
     private void build() {
         double savedScroll = scrollContainer != null ? scrollContainer.scrollAmount() : 0;
-        this.clearComponents();
+        clearComponents();
 
-        List<VisibleNode> visible = new ArrayList<>();
-        collectVisible(root, 0, visible);
+        List<VisibleNode> visibleNodes = new ArrayList<>();
+        collectVisible(root, 0, visibleNodes);
 
         int rowWidth = getWidth() - SCROLL_BAR_ROOM;
-        EmptyComponent rows = new EmptyComponent(0, 0, rowWidth, visible.size() * ROW_HEIGHT);
+        EmptyComponent rows = new EmptyComponent(0, 0, rowWidth, visibleNodes.size() * ROW_HEIGHT);
 
         int nodeY = 0;
-        for (VisibleNode vn : visible) {
-            rows.addWidget(new FileTreeRowWidget(0, nodeY, rowWidth, ROW_HEIGHT, vn.node, vn.depth));
+        for (VisibleNode visibleNode : visibleNodes) {
+            rows.addWidget(new FileTreeRowWidget(0, nodeY, rowWidth, ROW_HEIGHT, visibleNode.node, visibleNode.depth));
             nodeY += ROW_HEIGHT;
         }
 
@@ -67,20 +68,26 @@ public class FileTreeComponent extends EmptyComponent {
 
         EmptyComponent wrapper = new EmptyComponent(0, 0, getWidth(), getHeight());
         wrapper.addWidget(scrollContainer);
-        this.addComponent(wrapper);
-        this.updateParentPosition(getParentX(), getParentY(), getWidth(), getHeight());
+        addComponent(wrapper);
+        updateParentPosition(getParentX(), getParentY(), getWidth(), getHeight());
     }
 
     private void collectVisible(FileTreeNode node, int depth, List<VisibleNode> result) {
         for (FileTreeNode child : node.children()) {
             result.add(new VisibleNode(child, depth));
-            if (child.isDirectory() && child.isExpanded()) collectVisible(child, depth + 1, result);
+            if (child.isDirectory() && child.isExpanded()) {
+                collectVisible(child, depth + 1, result);
+            }
         }
     }
 
-    public List<String> getSelectedPaths() { return root.collectSelectedPaths(); }
+    public List<String> getSelectedPaths() {
+        return root.collectSelectedPaths();
+    }
 
-    public void setOnSelectionChanged(Runnable callback) { this.onSelectionChanged = callback; }
+    public void setOnSelectionChanged(Runnable callback) {
+        this.onSelectionChanged = callback;
+    }
 
     private record VisibleNode(FileTreeNode node, int depth) {}
 
@@ -100,80 +107,99 @@ public class FileTreeComponent extends EmptyComponent {
             var font = Minecraft.getInstance().font;
             int x = getX();
             int y = getY();
-            int w = getWidth();
-            int h = getHeight();
-            int indent = INDENT_WIDTH * depth + 4;
-            int midY = y + (h - font.lineHeight) / 2;
+            int width = getWidth();
+            int height = getHeight();
 
-            if (isHovered()) graphics.fill(x, y, x + w, y + h, COLOR_HOVER);
+            int indent = INDENT_WIDTH * depth + 4;
+            int checkboxSize = 8;
+            int checkboxX = x + indent;
+            int checkboxY = y + (height - checkboxSize) / 2;
+            int textY = y + (height - font.lineHeight) / 2;
+
+            if (isHovered()) {
+                graphics.fill(x, y, x + width, y + height, COLOR_HOVER);
+            }
+
+            GuiHelper.drawBorder(graphics, checkboxX, checkboxY, checkboxSize, checkboxSize, COLOR_CHECKBOX_BORDER);
 
             if (node.isDirectory()) {
-                int checkSize = 8;
-                int checkX = x + indent;
-                int checkY = y + (h - checkSize) / 2;
+                boolean allSelected = node.isAllSelected();
+                boolean anySelected = node.isAnySelected();
 
-                // Draw directory checkbox border
-                graphics.fill(checkX, checkY, checkX + checkSize, checkY + 1, COLOR_CHECKBOX_BORDER);
-                graphics.fill(checkX, checkY + checkSize - 1, checkX + checkSize, checkY + checkSize, COLOR_CHECKBOX_BORDER);
-                graphics.fill(checkX, checkY, checkX + 1, checkY + checkSize, COLOR_CHECKBOX_BORDER);
-                graphics.fill(checkX + checkSize - 1, checkY, checkX + checkSize, checkY + checkSize, COLOR_CHECKBOX_BORDER);
-
-                if (node.isAllSelected()) {
-                    // Fully selected: solid fill
-                    graphics.fill(checkX + 1, checkY + 1, checkX + checkSize - 1, checkY + checkSize - 1, COLOR_CHECKBOX_FILL);
-                } else if (node.isAnySelected()) {
-                    // Partially selected: dimmer fill to indicate indeterminate
-                    graphics.fill(checkX + 2, checkY + 2, checkX + checkSize - 2, checkY + checkSize - 2, COLOR_CHECKBOX_FILL);
+                if (allSelected) {
+                    graphics.fill(checkboxX + 1, checkboxY + 1, checkboxX + checkboxSize - 1, checkboxY + checkboxSize - 1, COLOR_CHECKBOX_FILL);
+                } else if (anySelected) {
+                    graphics.fill(checkboxX + 2, checkboxY + 2, checkboxX + checkboxSize - 2, checkboxY + checkboxSize - 2, COLOR_CHECKBOX_FILL);
                 }
 
                 String prefix = node.isExpanded() ? "v " : "> ";
-                graphics.drawString(font, prefix + node.name(), checkX + checkSize + 3, midY, COLOR_TEXT_DIR, false);
+                graphics.drawString(font, prefix + node.name(), checkboxX + checkboxSize + 3, textY, COLOR_TEXT_DIR, false);
             } else {
-                int checkSize = 8;
-                int checkX = x + indent;
-                int checkY = y + (h - checkSize) / 2;
-
-                graphics.fill(checkX, checkY, checkX + checkSize, checkY + 1, COLOR_CHECKBOX_BORDER);
-                graphics.fill(checkX, checkY + checkSize - 1, checkX + checkSize, checkY + checkSize, COLOR_CHECKBOX_BORDER);
-                graphics.fill(checkX, checkY, checkX + 1, checkY + checkSize, COLOR_CHECKBOX_BORDER);
-                graphics.fill(checkX + checkSize - 1, checkY, checkX + checkSize, checkY + checkSize, COLOR_CHECKBOX_BORDER);
-
                 if (node.isSelected()) {
-                    graphics.fill(checkX + 1, checkY + 1, checkX + checkSize - 1, checkY + checkSize - 1, COLOR_CHECKBOX_FILL);
+                    graphics.fill(checkboxX + 1, checkboxY + 1, checkboxX + checkboxSize - 1, checkboxY + checkboxSize - 1, COLOR_CHECKBOX_FILL);
                 }
 
                 int textColor = node.isSelected() ? COLOR_TEXT_FILE_SELECTED : COLOR_TEXT_FILE;
-                graphics.drawString(font, node.name(), checkX + checkSize + 3, midY, textColor, false);
+                graphics.drawString(font, node.name(), checkboxX + checkboxSize + 3, textY, textColor, false);
             }
         }
 
         @Override
         public boolean mouseClicked(@NotNull MouseButtonEvent event, boolean bl) {
-            if (event.button() != 0 || !isMouseOver(event.x(), event.y())) return false;
+            if (event.button() != 0 || !isMouseOver(event.x(), event.y())) {
+                return false;
+            }
+
             int indent = INDENT_WIDTH * depth + 4;
-            int checkX = getX() + indent;
-            int checkSize = 8;
+            int checkboxX = getX() + indent;
+            int checkboxSize = 8;
 
             if (node.isDirectory()) {
-                if (event.x() >= checkX && event.x() < checkX + checkSize) {
+                if (event.x() >= checkboxX && event.x() < checkboxX + checkboxSize) {
                     node.setSelectedRecursive(!node.isAllSelected());
-                    if (onSelectionChanged != null) onSelectionChanged.run();
+                    if (onSelectionChanged != null) {
+                        onSelectionChanged.run();
+                    }
                 } else {
                     node.setExpanded(!node.isExpanded());
                 }
             } else {
                 node.setSelected(!node.isSelected());
-                if (onSelectionChanged != null) onSelectionChanged.run();
+                if (onSelectionChanged != null) {
+                    onSelectionChanged.run();
+                }
             }
+
             FileTreeComponent.this.build();
             return true;
         }
 
-        @Override protected int contentHeight() { return 0; }
-        @Override protected double scrollRate() { return 0; }
-        @Override protected void updateWidgetNarration(@NotNull NarrationElementOutput n) {}
-        @Override public @NotNull ScreenRectangle getBorderForArrowNavigation(@NotNull ScreenDirection d) { return getRectangle(); }
-        @Override public @NotNull List<? extends GuiEventListener> children() { return List.of(); }
-        @Override public @NotNull Collection<? extends net.minecraft.client.gui.narration.NarratableEntry> getNarratables() { return List.of(); }
+        @Override
+        protected int contentHeight() {
+            return 0;
+        }
+
+        @Override
+        protected double scrollRate() {
+            return 0;
+        }
+
+        @Override
+        protected void updateWidgetNarration(@NotNull NarrationElementOutput output) {}
+
+        @Override
+        public @NotNull ScreenRectangle getBorderForArrowNavigation(@NotNull ScreenDirection direction) {
+            return getRectangle();
+        }
+
+        @Override
+        public @NotNull List<? extends GuiEventListener> children() {
+            return List.of();
+        }
+
+        @Override
+        public @NotNull Collection<? extends net.minecraft.client.gui.narration.NarratableEntry> getNarratables() {
+            return List.of();
+        }
     }
 }

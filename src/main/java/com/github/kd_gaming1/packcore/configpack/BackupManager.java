@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -24,18 +25,15 @@ public final class BackupManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/BackupManager");
     private static final Path BACKUP_DIR = PackCore.PACKCORE_DIR.resolve("backups");
-    private static final DateTimeFormatter FILE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault());
-    private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd  HH:mm:ss").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter FILE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter DISPLAY_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd  HH:mm:ss").withZone(ZoneId.systemDefault());
 
-    /** Top-level paths (relative to game dir) to include in every backup. */
     private static final Set<String> BACKUP_ROOTS = Set.of(
             "config", "options.txt", "servers.dat"
     );
 
-    /**
-     * Subpaths excluded from the backup. These are large or auto-regenerated
-     * directories that don't need to be saved.
-     */
     private static final Set<String> BACKUP_EXCLUDED = Set.of(
             "config/skyhanni/repo",
             "config/skyhanni/logs",
@@ -51,22 +49,33 @@ public final class BackupManager {
 
     private BackupManager() {}
 
-    public static List<BackupEntry> listBackups() throws IOException {
-        if (!Files.exists(BACKUP_DIR)) return List.of();
+    private record BackupFile(Path path, Instant modifiedAt) {}
 
-        List<BackupEntry> result = new ArrayList<>();
+    public static List<BackupEntry> listBackups() throws IOException {
+        if (!Files.exists(BACKUP_DIR)) {
+            return List.of();
+        }
+
+        List<BackupFile> backupFiles = new ArrayList<>();
         try (Stream<Path> stream = Files.list(BACKUP_DIR)) {
-            stream.filter(p -> p.toString().endsWith(".zip"))
-                    .sorted((a, b) -> {
-                        try { return Files.getLastModifiedTime(b).compareTo(Files.getLastModifiedTime(a)); }
-                        catch (IOException e) { return 0; }
-                    })
-                    .forEach(p -> {
+            stream.filter(path -> path.toString().endsWith(".zip"))
+                    .forEach(path -> {
                         try {
-                            Instant time = Files.getLastModifiedTime(p).toInstant();
-                            result.add(new BackupEntry(p, DISPLAY_FORMAT.format(time), time));
-                        } catch (IOException ignored) {}
+                            backupFiles.add(new BackupFile(path, Files.getLastModifiedTime(path).toInstant()));
+                        } catch (IOException ignored) {
+                        }
                     });
+        }
+
+        backupFiles.sort(Comparator.comparing(BackupFile::modifiedAt).reversed());
+
+        List<BackupEntry> result = new ArrayList<>(backupFiles.size());
+        for (BackupFile backupFile : backupFiles) {
+            result.add(new BackupEntry(
+                    backupFile.path(),
+                    DISPLAY_FORMAT.format(backupFile.modifiedAt()),
+                    backupFile.modifiedAt()
+            ));
         }
         return result;
     }
@@ -91,17 +100,14 @@ public final class BackupManager {
         LOGGER.info("Backup created: {}", zipName);
     }
 
-    /**
-     * Collects all files to back up by walking each root in {@link #BACKUP_ROOTS}.
-     * Directories listed in {@link #BACKUP_EXCLUDED} are skipped entirely via
-     * {@link FileVisitResult#SKIP_SUBTREE} so their contents are never read.
-     */
     private static List<String> collectBackupPaths(Path gameDir) throws IOException {
         List<String> paths = new ArrayList<>();
 
         for (String root : BACKUP_ROOTS) {
             Path rootPath = gameDir.resolve(root);
-            if (!Files.exists(rootPath)) continue;
+            if (!Files.exists(rootPath)) {
+                continue;
+            }
 
             if (Files.isRegularFile(rootPath)) {
                 paths.add(root);
@@ -111,8 +117,8 @@ public final class BackupManager {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
                 public @NonNull FileVisitResult preVisitDirectory(@NonNull Path dir, @NonNull BasicFileAttributes attrs) {
-                    String rel = gameDir.relativize(dir).toString().replace('\\', '/');
-                    if (BACKUP_EXCLUDED.stream().anyMatch(ex -> rel.equals(ex) || rel.startsWith(ex + "/"))) {
+                    String relativePath = gameDir.relativize(dir).toString().replace('\\', '/');
+                    if (BACKUP_EXCLUDED.stream().anyMatch(ex -> relativePath.equals(ex) || relativePath.startsWith(ex + "/"))) {
                         return FileVisitResult.SKIP_SUBTREE;
                     }
                     return FileVisitResult.CONTINUE;
@@ -120,8 +126,8 @@ public final class BackupManager {
 
                 @Override
                 public @NonNull FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) {
-                    String rel = gameDir.relativize(file).toString().replace('\\', '/');
-                    paths.add(rel);
+                    String relativePath = gameDir.relativize(file).toString().replace('\\', '/');
+                    paths.add(relativePath);
                     return FileVisitResult.CONTINUE;
                 }
 
