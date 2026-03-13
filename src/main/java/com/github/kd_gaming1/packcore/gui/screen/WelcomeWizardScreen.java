@@ -8,6 +8,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.page.*;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import eu.midnightdust.lib.config.MidnightConfig;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -63,7 +64,9 @@ public class WelcomeWizardScreen extends AbstractScreen {
         navigator.addPage(new TabDesignPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new ItemBackgroundPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new StorageDesignPage(wizardState, navigator, contentWidth, contentHeight));
-        navigator.addPage(new ScamScreenerPage(wizardState, navigator, contentWidth, contentHeight));
+        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+            navigator.addPage(new ScamScreenerPage(wizardState, navigator, contentWidth, contentHeight));
+        }
         navigator.addPage(new ResourcePackPage(wizardState, navigator, contentWidth, contentHeight));
 
         confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);

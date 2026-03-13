@@ -15,9 +15,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 public final class ScamScreenerConfigurator {
 
@@ -31,18 +29,46 @@ public final class ScamScreenerConfigurator {
     private static final String DEFAULT_MINIMUM_RISK_LEVEL = "MEDIUM";
     private static final boolean DEFAULT_PING_ON_RISK_WARNING = true;
     private static final boolean DEFAULT_PING_ON_BLACKLIST_WARNING = true;
+    private static final List<String> DEFAULT_ALERT_LEVELS = List.of("LOW", "MEDIUM", "HIGH", "CRITICAL");
     private static final List<String> DEFAULT_MUTE_PATTERNS = List.of();
 
     private ScamScreenerConfigurator() {}
 
     public record RuntimeSettings(
             String minimumRiskLevel,
-            Set<String> mutePatterns,
             boolean pingOnRiskWarning,
             boolean pingOnBlacklistWarning
     ) {}
 
     public static RuntimeSettings loadSettings() {
+        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+            try {
+                if (ScamScreenerApiBridge.isAvailable()) {
+                    return ScamScreenerApiBridge.loadSettings();
+                }
+            } catch (RuntimeException | LinkageError e) {
+                LOGGER.warn("Failed to load ScamScreener settings from API, falling back to runtime.json: {}", e.getMessage());
+            }
+        }
+
+        return loadSettingsFromJson();
+    }
+
+    public static List<String> availableAlertLevels() {
+        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+            try {
+                if (ScamScreenerApiBridge.isAvailable()) {
+                    return ScamScreenerApiBridge.availableAlertLevels();
+                }
+            } catch (RuntimeException | LinkageError e) {
+                LOGGER.warn("Failed to read ScamScreener alert levels from API, falling back to defaults: {}", e.getMessage());
+            }
+        }
+
+        return DEFAULT_ALERT_LEVELS;
+    }
+
+    private static RuntimeSettings loadSettingsFromJson() {
         Path path = resolveExistingPath();
         if (path == null) {
             return defaultSettings();
@@ -60,19 +86,31 @@ public final class ScamScreenerConfigurator {
     public static RuntimeSettings defaultSettings() {
         return new RuntimeSettings(
                 DEFAULT_MINIMUM_RISK_LEVEL,
-                new LinkedHashSet<>(DEFAULT_MUTE_PATTERNS),
                 DEFAULT_PING_ON_RISK_WARNING,
                 DEFAULT_PING_ON_BLACKLIST_WARNING
         );
     }
 
-    public static boolean apply(String minimumRiskLevel, Set<String> mutePatterns,
-                                boolean pingOnRiskWarning, boolean pingOnBlacklistWarning) {
+    public static boolean apply(String minimumRiskLevel, boolean pingOnRiskWarning, boolean pingOnBlacklistWarning) {
+        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+            try {
+                if (ScamScreenerApiBridge.isAvailable()) {
+                    return ScamScreenerApiBridge.apply(minimumRiskLevel, pingOnRiskWarning, pingOnBlacklistWarning);
+                }
+            } catch (RuntimeException | LinkageError e) {
+                LOGGER.warn("Failed to apply ScamScreener settings through API, falling back to runtime.json: {}", e.getMessage());
+            }
+        }
+
+        return applyViaJson(minimumRiskLevel, pingOnRiskWarning, pingOnBlacklistWarning);
+    }
+
+    private static boolean applyViaJson(String minimumRiskLevel, boolean pingOnRiskWarning, boolean pingOnBlacklistWarning) {
         Path targetPath = resolveWritePath();
 
         try {
             JsonObject root = loadOrCreateConfig(targetPath);
-            applySettings(root, minimumRiskLevel, mutePatterns, pingOnRiskWarning, pingOnBlacklistWarning);
+            applySettings(root, minimumRiskLevel, readMutePatterns(root), pingOnRiskWarning, pingOnBlacklistWarning);
 
             Files.createDirectories(targetPath.getParent());
             try (Writer writer = Files.newBufferedWriter(targetPath)) {
@@ -117,27 +155,29 @@ public final class ScamScreenerConfigurator {
 
     private static RuntimeSettings settingsFromJson(JsonObject root) {
         JsonObject alerts = getOrCreateObject(root, "alerts");
-        JsonObject safety = getOrCreateObject(root, "safety");
         JsonObject output = getOrCreateObject(root, "output");
 
         String minimumRiskLevel = getString(alerts, "minimumRiskLevel", DEFAULT_MINIMUM_RISK_LEVEL);
-        LinkedHashSet<String> mutePatterns = new LinkedHashSet<>();
-
-        if (safety.has("mutePatterns") && safety.get("mutePatterns").isJsonArray()) {
-            for (JsonElement element : safety.getAsJsonArray("mutePatterns")) {
-                if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
-                    mutePatterns.add(element.getAsString());
-                }
-            }
-        }
-
         boolean pingOnRiskWarning = getBoolean(output, "pingOnRiskWarning", DEFAULT_PING_ON_RISK_WARNING);
         boolean pingOnBlacklistWarning = getBoolean(output, "pingOnBlacklistWarning", DEFAULT_PING_ON_BLACKLIST_WARNING);
 
-        return new RuntimeSettings(minimumRiskLevel, mutePatterns, pingOnRiskWarning, pingOnBlacklistWarning);
+        return new RuntimeSettings(minimumRiskLevel, pingOnRiskWarning, pingOnBlacklistWarning);
     }
 
-    private static void applySettings(JsonObject root, String minimumRiskLevel, Set<String> mutePatterns,
+    private static List<String> readMutePatterns(JsonObject root) {
+        JsonObject safety = getOrCreateObject(root, "safety");
+        if (!safety.has("mutePatterns") || !safety.get("mutePatterns").isJsonArray()) {
+            return DEFAULT_MUTE_PATTERNS;
+        }
+
+        return safety.getAsJsonArray("mutePatterns").asList().stream()
+                .filter(JsonElement::isJsonPrimitive)
+                .filter(element -> element.getAsJsonPrimitive().isString())
+                .map(JsonElement::getAsString)
+                .toList();
+    }
+
+    private static void applySettings(JsonObject root, String minimumRiskLevel, List<String> mutePatterns,
                                       boolean pingOnRiskWarning, boolean pingOnBlacklistWarning) {
         JsonObject alerts = getOrCreateObject(root, "alerts");
         JsonObject safety = getOrCreateObject(root, "safety");

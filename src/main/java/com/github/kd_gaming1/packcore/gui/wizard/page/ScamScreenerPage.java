@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
+import java.util.Locale;
 
 public class ScamScreenerPage extends BaseWizardPage {
 
@@ -73,6 +74,10 @@ public class ScamScreenerPage extends BaseWizardPage {
                 .orElse(Component.literal(optionId));
     }
 
+    public static Component labelForAlertLevel(String optionId) {
+        return AlertLevelOption.fromId(optionId).name();
+    }
+
     private void seedInitialState() {
         ScamScreenerConfigurator.RuntimeSettings settings = ScamScreenerConfigurator.loadSettings();
 
@@ -92,6 +97,17 @@ public class ScamScreenerPage extends BaseWizardPage {
 
     private void buildAlertLevelColumn(EmptyComponent column, int width, int height) {
         var font = Minecraft.getInstance().font;
+        List<AlertLevelOption> alertLevels = ScamScreenerConfigurator.availableAlertLevels().stream()
+                .map(AlertLevelOption::fromId)
+                .toList();
+
+        String selectedAlertLevel = state.getSelection(ALERT_LEVEL_KEY);
+        String selectedAlertLevelCandidate = selectedAlertLevel;
+        boolean selectedValueExists = alertLevels.stream().anyMatch(option -> option.id().equals(selectedAlertLevelCandidate));
+        if (!selectedValueExists && !alertLevels.isEmpty()) {
+            selectedAlertLevel = alertLevels.getFirst().id();
+            state.setSelection(ALERT_LEVEL_KEY, selectedAlertLevel);
+        }
 
         column.addComponent(new TextComponent(
                 0, 0,
@@ -104,13 +120,13 @@ public class ScamScreenerPage extends BaseWizardPage {
 
         OptionSelectList<AlertLevelOption> list = new OptionSelectList<>(
                 0, contentY, width, contentHeight,
-                AlertLevelOption.all(),
+                alertLevels,
                 OptionSelectList.RowDescriptor.of(
                         AlertLevelOption::id,
                         AlertLevelOption::name,
                         AlertLevelOption::description
                 ),
-                state.getSelection(ALERT_LEVEL_KEY),
+                selectedAlertLevel,
                 selected -> state.setSelection(ALERT_LEVEL_KEY, selected.id())
         );
         column.addComponent(list);
@@ -168,22 +184,38 @@ public class ScamScreenerPage extends BaseWizardPage {
     }
 
     public record AlertLevelOption(String id, Component name, Component description) {
-        private static List<AlertLevelOption> all() {
-            return List.of(
-                    fromId("LOW"),
-                    fromId("MEDIUM"),
-                    fromId("HIGH"),
-                    fromId("CRITICAL")
+        private static AlertLevelOption fromId(String id) {
+            String normalizedId = id.toUpperCase(Locale.ROOT);
+            String baseKey = "gui.packcore.wizard.scamscreener.minimum_risk." + normalizedId;
+            return new AlertLevelOption(
+                    normalizedId,
+                    switch (normalizedId) {
+                        case "LOW", "MEDIUM", "HIGH", "CRITICAL" -> Component.translatable(baseKey + ".name");
+                        default -> Component.literal(prettyLabel(normalizedId));
+                    },
+                    switch (normalizedId) {
+                        case "LOW", "MEDIUM", "HIGH", "CRITICAL" -> Component.translatable(baseKey + ".desc");
+                        default -> Component.literal("Use ScamScreener's " + prettyLabel(normalizedId) + " warning threshold.");
+                    }
             );
         }
 
-        private static AlertLevelOption fromId(String id) {
-            String baseKey = "gui.packcore.wizard.scamscreener.minimum_risk." + id;
-            return new AlertLevelOption(
-                    id,
-                    Component.translatable(baseKey + ".name"),
-                    Component.translatable(baseKey + ".desc")
-            );
+        private static String prettyLabel(String id) {
+            String[] parts = id.split("_");
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                if (parts[i].isEmpty()) {
+                    continue;
+                }
+
+                if (builder.length() > 0) {
+                    builder.append(' ');
+                }
+
+                String part = parts[i].toLowerCase(Locale.ROOT);
+                builder.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+            }
+            return builder.toString();
         }
     }
 

@@ -33,6 +33,7 @@ dependencies {
     modImplementation("com.daqem.uilib:uilib-fabric:${property("deps.uilib_version")}")
 
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
+    modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
 
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
     include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
@@ -42,6 +43,8 @@ dependencies {
 
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
     modRuntimeOnly("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
+
+    modRuntimeOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
 }
 
 loom {
@@ -140,6 +143,9 @@ publishMods {
         }
         optional {
             slug = "mOgUt4GM" // ModMenu
+        }
+        optional {
+            slug = "scamscreener"
         }
     }
 

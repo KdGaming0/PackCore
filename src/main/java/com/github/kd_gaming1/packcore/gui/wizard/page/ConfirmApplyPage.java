@@ -152,13 +152,20 @@ public class ConfirmApplyPage extends BaseWizardPage {
         // Build row container
         EmptyComponent rowContainer = new EmptyComponent(0, 0, rowWidth, 0);
         int currentY = 0;
+        boolean scamScreenerLoaded = FabricLoader.getInstance().isModLoaded("scamscreener");
 
         for (SummaryEntry entry : SUMMARY_ENTRIES) {
+            if (!scamScreenerLoaded && entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)) {
+                continue;
+            }
+
             String selectedId = state.getSelection(entry.selectionKey());
             boolean skipped = selectedId == null;
 
             Component valueText = skipped
                     ? Component.literal("Skipped")
+                    : entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)
+                    ? ScamScreenerPage.labelForAlertLevel(selectedId)
                     : Component.translatable(entry.translationPrefix() + selectedId + ".name");
             int valueColor = skipped ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED;
 
@@ -171,33 +178,35 @@ public class ConfirmApplyPage extends BaseWizardPage {
             currentY += ROW_HEIGHT + ROW_GAP;
         }
 
-        Set<String> selectedPingOptions = state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY);
-        SummaryRowComponent pingHeaderRow = new SummaryRowComponent(
-                0, currentY, rowWidth, ROW_HEIGHT,
-                SCAM_SCREENER_PINGS_STATUS_KEY,
-                "ScamScreener Pings",
-                selectedPingOptions.isEmpty()
-                        ? Component.literal("None selected")
-                        : Component.literal(selectedPingOptions.size() + " selected"),
-                selectedPingOptions.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED,
-                false
-        );
-        scamPingRows.add(pingHeaderRow);
-        rowContainer.addComponent(pingHeaderRow);
-        currentY += ROW_HEIGHT + ROW_GAP;
-
-        for (String optionId : selectedPingOptions.stream().sorted(Comparator.naturalOrder()).toList()) {
-            SummaryRowComponent pingRow = new SummaryRowComponent(
+        if (scamScreenerLoaded) {
+            Set<String> selectedPingOptions = state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY);
+            SummaryRowComponent pingHeaderRow = new SummaryRowComponent(
                     0, currentY, rowWidth, ROW_HEIGHT,
                     SCAM_SCREENER_PINGS_STATUS_KEY,
-                    "",
-                    ScamScreenerPage.labelForPingOption(optionId),
-                    COLOR_PACK_NAME,
-                    true
+                    "ScamScreener Pings",
+                    selectedPingOptions.isEmpty()
+                            ? Component.literal("None selected")
+                            : Component.literal(selectedPingOptions.size() + " selected"),
+                    selectedPingOptions.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED,
+                    false
             );
-            scamPingRows.add(pingRow);
-            rowContainer.addComponent(pingRow);
+            scamPingRows.add(pingHeaderRow);
+            rowContainer.addComponent(pingHeaderRow);
             currentY += ROW_HEIGHT + ROW_GAP;
+
+            for (String optionId : selectedPingOptions.stream().sorted(Comparator.naturalOrder()).toList()) {
+                SummaryRowComponent pingRow = new SummaryRowComponent(
+                        0, currentY, rowWidth, ROW_HEIGHT,
+                        SCAM_SCREENER_PINGS_STATUS_KEY,
+                        "",
+                        ScamScreenerPage.labelForPingOption(optionId),
+                        COLOR_PACK_NAME,
+                        true
+                );
+                scamPingRows.add(pingRow);
+                rowContainer.addComponent(pingRow);
+                currentY += ROW_HEIGHT + ROW_GAP;
+            }
         }
 
         Set<String> selectedPacks = state.getSelectedResourcePacks();
@@ -270,11 +279,13 @@ public class ConfirmApplyPage extends BaseWizardPage {
         anyError |= runStep(StorageDesignPage.STATE_KEY,
                 () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
 
-        anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY,
-                () -> applyScamScreener(
-                        state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
-                        state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)
-                ));
+        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+            anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY,
+                    () -> applyScamScreener(
+                            state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
+                            state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)
+                    ));
+        }
 
         anyError |= runStep(RESOURCE_PACKS_KEY,
                 () -> applyResourcePacks(state.getSelectedResourcePacks()));
@@ -431,16 +442,13 @@ public class ConfirmApplyPage extends BaseWizardPage {
                 ? selectedId
                 : ScamScreenerConfigurator.defaultSettings().minimumRiskLevel();
 
-        ScamScreenerConfigurator.RuntimeSettings currentSettings = ScamScreenerConfigurator.loadSettings();
-
         boolean success = ScamScreenerConfigurator.apply(
                 minimumRiskLevel,
-                currentSettings.mutePatterns(),
                 pingOptions.contains("risk_warning"),
                 pingOptions.contains("blacklist_warning")
         );
         if (!success) {
-            throw new RuntimeException("Failed to update ScamScreener runtime.json");
+            throw new RuntimeException("Failed to update ScamScreener settings");
         }
     }
 
