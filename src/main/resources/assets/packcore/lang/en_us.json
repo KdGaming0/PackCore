@@ -238,5 +238,6 @@
   "gui.packcore.toast.backup.title": "Backup Created",
   "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
   "gui.packcore.toast.ram.title": "Low Memory Warning",
-  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance."
+  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance.",
+  "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update."
 }

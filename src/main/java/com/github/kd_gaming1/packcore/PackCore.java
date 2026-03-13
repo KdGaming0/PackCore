@@ -26,6 +26,8 @@ public class PackCore implements ClientModInitializer {
 
     public static final Path PACKCORE_DIR = FabricLoader.getInstance().getGameDir().resolve("packcore");
 
+    public static boolean migratedFromV3 = false;
+
     @Override
     public void onInitializeClient() {
         LOGGER.info("[PackCore] Initialized");

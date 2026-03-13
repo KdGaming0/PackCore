@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.screen;
 
 import com.daqem.uilib.gui.AbstractScreen;
 import com.daqem.uilib.gui.component.EmptyComponent;
+import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.wizard.*;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.wizard.page.*;
@@ -42,6 +43,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
 
         if (firstOpen) {
             wizardState = new WizardState();
+            wizardState.migratedFromV3 = PackCore.migratedFromV3;
             navigator = new WizardNavigator(wizardState);
             registerPages();
             navigator.initialize();

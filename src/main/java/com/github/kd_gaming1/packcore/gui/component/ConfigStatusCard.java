@@ -20,13 +20,13 @@ public class ConfigStatusCard extends AbstractComponent {
 
     private final boolean isApplied;
 
-    public ConfigStatusCard(int x, int y, int width, ConfigPackEntry appliedPack) {
+    public ConfigStatusCard(int x, int y, int width, ConfigPackEntry appliedPack, boolean showMigrationHint) {
         super(x, y, width, 0);
         isApplied = appliedPack != null;
-        build(appliedPack);
+        build(appliedPack, showMigrationHint);
     }
 
-    private void build(ConfigPackEntry appliedPack) {
+    private void build(ConfigPackEntry appliedPack, boolean showMigrationHint) {
         int fontHeight = Minecraft.getInstance().font.lineHeight;
         int textX = ACCENT_BAR_WIDTH + PADDING_H;
         int textWidth = getWidth() - textX - PADDING_H;
@@ -44,7 +44,16 @@ public class ConfigStatusCard extends AbstractComponent {
             );
             statusLine.setDrawShadow(true);
             addComponent(statusLine);
-            setHeight(PADDING_V + fontHeight + PADDING_V);
+            if (showMigrationHint) {
+                addComponent(new TextComponent(
+                        textX, PADDING_V + fontHeight + ROW_GAP,
+                        Component.translatable("gui.packcore.wizard.card.config.applied.hint"),
+                        GuiColors.TEXT_SECONDARY
+                ));
+                setHeight(PADDING_V + fontHeight + ROW_GAP + fontHeight + PADDING_V);
+            } else {
+                setHeight(PADDING_V + fontHeight + PADDING_V);
+            }
         } else {
             ScrollingTextComponent errorLine = new ScrollingTextComponent(
                     textX, PADDING_V, textWidth,

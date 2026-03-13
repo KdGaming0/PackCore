@@ -105,7 +105,7 @@ public class WelcomePage extends BaseWizardPage {
         int lineHeight = font.lineHeight;
         int currentY = 0;
 
-        ConfigStatusCard statusCard = new ConfigStatusCard(0, currentY, columnWidth, activePack);
+        ConfigStatusCard statusCard = new ConfigStatusCard(0, currentY, columnWidth, activePack, state.migratedFromV3);
         column.addComponent(statusCard);
         currentY += statusCard.getHeight() + DIVIDER_GAP;
 

@@ -13,6 +13,8 @@ public class WizardState {
     private final Map<String, Set<String>> multiSelections = new HashMap<>();
     private final Set<String> selectedResourcePacks = new HashSet<>();
 
+    public boolean migratedFromV3 = false;
+
     // Selections
     public void setSelection(String key, String value) {
         selections.put(key, value);

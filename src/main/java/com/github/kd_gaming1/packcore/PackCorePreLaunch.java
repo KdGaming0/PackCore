@@ -239,6 +239,8 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
     }
 
     private void migrateFromV3(ConfigPackEntry selectedPack, Path gameDir) {
+        PackCore.migratedFromV3 = true;
+
         JsonObject config = selectedPack.config();
         String selectedPackFile = selectedPack.zipPath().getFileName().toString();
         String packVersion = readPackVersionOrFallback(config);
