@@ -8,6 +8,7 @@ import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.configpack.BackupEntry;
 import com.github.kd_gaming1.packcore.configpack.BackupManager;
 import com.github.kd_gaming1.packcore.gui.component.RestoreConfirmOverlay;
+import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -30,12 +31,6 @@ public class BackupsPage extends BaseConfigPage {
     private static final int CARD_PADDING = 8;
     private static final int RESTORE_BTN_WIDTH = 70;
 
-    private static final int COLOR_LABEL = 0xFFCCCCCC;
-    private static final int COLOR_HINT = 0xFF666666;
-    private static final int COLOR_CARD_BG = 0x22FFFFFF;
-    private static final int COLOR_CARD_BORDER = 0xFF333333;
-    private static final int COLOR_TIMESTAMP = 0xFFAAAAAA;
-
     private RestoreConfirmOverlay restoreOverlay;
     private ScrollContainerWidget backupListScroll;
     private CustomButtonWidget createBackupButton;
@@ -46,12 +41,12 @@ public class BackupsPage extends BaseConfigPage {
 
     @Override
     public void onEnter() {
-        this.clearComponents();
+        clearComponents();
 
         var font = Minecraft.getInstance().font;
 
-        this.addComponent(new TextComponent(PADDING, PADDING,
-                Component.translatable("gui.packcore.backups.heading"), COLOR_LABEL));
+        addComponent(new TextComponent(PADDING, PADDING,
+                Component.translatable("gui.packcore.backups.heading"), GuiColors.NAME_DEFAULT));
 
         int createBtnX = (getWidth() - BUTTON_WIDTH) / 2;
         int createBtnY = getHeight() - BUTTON_HEIGHT - PADDING;
@@ -59,7 +54,7 @@ public class BackupsPage extends BaseConfigPage {
                 Component.translatable("gui.packcore.backups.button.create"),
                 GuiHelper.BLANK_BUTTON_SPRITES,
                 btn -> createBackupAndRefresh());
-        this.addWidget(createBackupButton);
+        addWidget(createBackupButton);
 
         restoreOverlay = new RestoreConfirmOverlay(getWidth(), getHeight());
         restoreOverlay.setOnClose(() -> {
@@ -67,11 +62,8 @@ public class BackupsPage extends BaseConfigPage {
             if (createBackupButton != null) createBackupButton.visible = true;
         });
 
-        int listStartY = PADDING + font.lineHeight + PADDING;
-        buildBackupList(listStartY);
-
-        // Add overlay last so it renders on top of everything else
-        this.addComponent(restoreOverlay);
+        buildBackupList(PADDING + font.lineHeight + PADDING);
+        addComponent(restoreOverlay);
     }
 
     private void buildBackupList(int startY) {
@@ -80,8 +72,8 @@ public class BackupsPage extends BaseConfigPage {
             backups = BackupManager.listBackups();
         } catch (IOException e) {
             LOGGER.error("Failed to list backups: {}", e.getMessage());
-            this.addComponent(new TextComponent(PADDING, startY,
-                    Component.literal("Error reading backups."), 0xFFFF5555));
+            addComponent(new TextComponent(PADDING, startY,
+                    Component.literal("Error reading backups."), GuiColors.ERROR));
             return;
         }
 
@@ -97,7 +89,7 @@ public class BackupsPage extends BaseConfigPage {
 
         if (backups.isEmpty()) {
             container.addComponent(new TextComponent(0, 0,
-                    Component.translatable("gui.packcore.backups.empty"), COLOR_HINT));
+                    Component.translatable("gui.packcore.backups.empty"), GuiColors.TEXT_HINT));
             containerHeight = font.lineHeight;
         }
 
@@ -106,7 +98,6 @@ public class BackupsPage extends BaseConfigPage {
             int cardY = i * (cardHeight + CARD_GAP);
 
             container.addComponent(new BackupCard(0, cardY, listWidth - 8, cardHeight, backup));
-
             container.addWidget(new CustomButtonWidget(
                     listWidth - 8 - RESTORE_BTN_WIDTH - CARD_PADDING,
                     cardY + (cardHeight - BUTTON_HEIGHT) / 2,
@@ -118,7 +109,7 @@ public class BackupsPage extends BaseConfigPage {
                         if (createBackupButton != null) createBackupButton.visible = false;
                         restoreOverlay.show(backup);
                     }));
-                    containerHeight = cardY + cardHeight;
+            containerHeight = cardY + cardHeight;
         }
 
         container.setHeight(containerHeight);
@@ -126,14 +117,14 @@ public class BackupsPage extends BaseConfigPage {
 
         EmptyComponent scrollWrapper = new EmptyComponent(PADDING, startY, listWidth, listHeight);
         scrollWrapper.addWidget(backupListScroll);
-        this.addComponent(scrollWrapper);
+        addComponent(scrollWrapper);
     }
 
     private void createBackupAndRefresh() {
         try {
             BackupManager.createBackup(FabricLoader.getInstance().getGameDir());
             onEnter();
-            this.updateParentPosition(getParentX(), getParentY(), getWidth(), getHeight());
+            updateParentPosition(getParentX(), getParentY(), getWidth(), getHeight());
         } catch (IOException e) {
             LOGGER.error("Failed to create backup: {}", e.getMessage());
         }
@@ -163,20 +154,18 @@ public class BackupsPage extends BaseConfigPage {
             int w = getWidth();
             int h = getHeight();
 
-            graphics.fill(x, y, x + w, y + h, COLOR_CARD_BG);
-            graphics.fill(x, y, x + w, y + 1, COLOR_CARD_BORDER);
-            graphics.fill(x, y + h - 1, x + w, y + h, COLOR_CARD_BORDER);
-            graphics.fill(x, y, x + 1, y + h, COLOR_CARD_BORDER);
-            graphics.fill(x + w - 1, y, x + w, y + h, COLOR_CARD_BORDER);
+            graphics.fill(x, y, x + w, y + h, GuiColors.ROW_BACKGROUND);
+            GuiHelper.drawBorder(graphics, x, y, w, h, GuiColors.BORDER_IDLE);
 
             var font = Minecraft.getInstance().font;
-            String name = backup.zipPath().getFileName().toString();
             int textY = y + (h - font.lineHeight) / 2;
-            graphics.drawString(font, name, x + CARD_PADDING, textY, 0xFFCCCCCC, false);
 
-            String time = backup.displayName();
-            int timeX = x + w - RESTORE_BTN_WIDTH - CARD_PADDING - font.width(time) - 8;
-            graphics.drawString(font, time, timeX, textY, COLOR_TIMESTAMP, false);
+            graphics.drawString(font, backup.zipPath().getFileName().toString(),
+                    x + CARD_PADDING, textY, GuiColors.NAME_DEFAULT, false);
+
+            String timestamp = backup.displayName();
+            int timestampX = x + w - RESTORE_BTN_WIDTH - CARD_PADDING - font.width(timestamp) - 8;
+            graphics.drawString(font, timestamp, timestampX, textY, GuiColors.TEXT_SECONDARY, false);
         }
     }
 }

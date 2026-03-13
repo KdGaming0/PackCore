@@ -4,6 +4,7 @@ import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
@@ -12,8 +13,8 @@ import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.ScamScreenerConfigurator;
-import com.github.kd_gaming1.packcore.integration.TabDesignManager;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
+import com.github.kd_gaming1.packcore.integration.TabDesignManager;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -33,12 +34,7 @@ import java.util.Set;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
-/**
- * The final wizard step — shows a summary of all selections and applies them.
- * <p>
- * Each apply method is a stub. Replace the LOGGER.info body with the real
- * implementation one at a time; the rest of the page doesn't need to change.
- */
+/** Final wizard step — review selections and apply them. */
 public class ConfirmApplyPage extends BaseWizardPage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/ConfirmApplyPage");
@@ -53,23 +49,18 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private static final int BUTTON_GAP = 8;
     private static final int SCROLL_BAR_WIDTH = 8;
 
-    private static final int COLOR_HEADING = 0xFFCCCCCC;
-    private static final int COLOR_ROW_BACKGROUND = 0x22FFFFFF;
-    private static final int COLOR_BORDER_IDLE = 0x44FFFFFF;
-    private static final int COLOR_BORDER_SUCCESS = 0xFF4CAF50;
-    private static final int COLOR_BORDER_ERROR = 0xFFFF5555;
-    private static final int COLOR_LABEL = 0xFFCCCCCC;
-    private static final int COLOR_VALUE_SELECTED = 0xFF2196F3;
+    private static final int COLOR_VALUE_SELECTED = GuiColors.ACCENT;
     private static final int COLOR_VALUE_SKIPPED = 0xFF555555;
-    private static final int COLOR_STATUS_ERROR = 0xFFFF5555;
-    private static final int COLOR_WARNING = 0xFFFFAA00;
-    private static final int COLOR_PACK_NAME = 0xFF777777;
+    private static final int COLOR_PACK_SUBROW = 0xFF777777;
 
     private static final WidgetSprites APPLY_BUTTON_SPRITES = new WidgetSprites(
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_gray_button"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_blank_gray_button"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
     );
+
+    private static final String RESOURCE_PACKS_KEY = "resourcePacks";
+    private static final String SCAM_PINGS_KEY = "scamScreenerPings";
 
     private record SummaryEntry(String selectionKey, String statusKey, String label, String translationPrefix) {}
 
@@ -82,27 +73,20 @@ public class ConfirmApplyPage extends BaseWizardPage {
             new SummaryEntry(ScamScreenerPage.ALERT_LEVEL_KEY, ScamScreenerPage.ALERT_LEVEL_KEY, "ScamScreener Alerts", "gui.packcore.wizard.scamscreener.minimum_risk.")
     );
 
-    private static final String RESOURCE_PACKS_KEY = "resourcePacks";
-    private static final String SCAM_SCREENER_PINGS_STATUS_KEY = "scamScreenerPings";
-
     private enum RowStatus { SUCCESS, ERROR }
 
-    /** Per-row apply result. Null = not yet applied. */
     private final Map<String, RowStatus> rowStatuses = new HashMap<>();
     private final Map<String, String> rowErrors = new HashMap<>();
-
-    // Hold references so we can push status updates into them after applying
     private final List<SummaryRowComponent> summaryRows = new ArrayList<>();
     private final List<SummaryRowComponent> packRows = new ArrayList<>();
     private final List<SummaryRowComponent> scamPingRows = new ArrayList<>();
 
-    private CustomButtonWidget applyButton = null;
-    private String globalErrorMessage = null;
-    private Runnable onApplySucceeded = null;
+    private CustomButtonWidget applyButton;
+    private String globalErrorMessage;
+    private Runnable onApplySucceeded;
 
-    /** Called by the screen after wiring to unlock the Finish button on success. */
     public void setOnApplySucceeded(Runnable callback) {
-        this.onApplySucceeded = callback;
+        onApplySucceeded = callback;
     }
 
     public ConfirmApplyPage(WizardState state, WizardNavigator navigator, int width, int height) {
@@ -111,11 +95,11 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     @Override public Component getTitle() { return PAGE_TITLE; }
     @Override public boolean validate() { return true; }
-    @Override public void onExit() { }
+    @Override public void onExit() {}
 
     @Override
     public void onEnter() {
-        this.clearComponents();
+        clearComponents();
         applyButton = null;
         rowStatuses.clear();
         rowErrors.clear();
@@ -125,39 +109,29 @@ public class ConfirmApplyPage extends BaseWizardPage {
         globalErrorMessage = null;
 
         var font = Minecraft.getInstance().font;
-        int availableWidth = getWidth() - PADDING * 2;
-        int rowWidth = availableWidth - SCROLL_BAR_WIDTH;
+        int rowWidth = getWidth() - PADDING * 2 - SCROLL_BAR_WIDTH;
+        boolean scamLoaded = FabricLoader.getInstance().isModLoaded("scamscreener");
 
-        // Heading
-        int headingY = PADDING;
-        int headingHeight = font.lineHeight + PADDING;
-        addComponent(new TextComponent(PADDING, headingY, Component.translatable("gui.packcore.wizard.confirm.title"), COLOR_HEADING));
+        addComponent(new TextComponent(PADDING, PADDING,
+                Component.translatable("gui.packcore.wizard.confirm.title"), GuiColors.NAME_DEFAULT));
 
-        // Work upward from the bottom to place button and warning
         int buttonY = getHeight() - PADDING - BUTTON_HEIGHT;
-
         boolean showWarning = requiresWorldJoin();
-        int warningHeight = showWarning ? font.lineHeight + BUTTON_GAP : 0;
-        int warningY = buttonY - warningHeight;
+        int warningY = buttonY - (showWarning ? font.lineHeight + BUTTON_GAP : 0);
 
         if (showWarning) {
-            addComponent(new TextComponent(PADDING, warningY, Component.translatable("gui.packcore.wizard.confirm.world_join_required"), COLOR_WARNING));
+            addComponent(new TextComponent(PADDING, warningY,
+                    Component.translatable("gui.packcore.wizard.confirm.world_join_required"), GuiColors.WARNING));
         }
 
-        // Scroll area fills between heading and warning/button
-        int scrollTop = headingY + headingHeight;
-        int scrollBottom = showWarning ? warningY - BUTTON_GAP : buttonY - BUTTON_GAP;
-        int scrollHeight = scrollBottom - scrollTop;
+        int scrollTop = PADDING + font.lineHeight + PADDING;
+        int scrollHeight = (showWarning ? warningY - BUTTON_GAP : buttonY - BUTTON_GAP) - scrollTop;
 
-        // Build row container
         EmptyComponent rowContainer = new EmptyComponent(0, 0, rowWidth, 0);
         int currentY = 0;
-        boolean scamScreenerLoaded = FabricLoader.getInstance().isModLoaded("scamscreener");
 
         for (SummaryEntry entry : SUMMARY_ENTRIES) {
-            if (!scamScreenerLoaded && entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)) {
-                continue;
-            }
+            if (!scamLoaded && entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)) continue;
 
             String selectedId = state.getSelection(entry.selectionKey());
             boolean skipped = selectedId == null;
@@ -167,42 +141,31 @@ public class ConfirmApplyPage extends BaseWizardPage {
                     : entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)
                     ? ScamScreenerPage.labelForAlertLevel(selectedId)
                     : Component.translatable(entry.translationPrefix() + selectedId + ".name");
-            int valueColor = skipped ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED;
 
             SummaryRowComponent row = new SummaryRowComponent(
                     0, currentY, rowWidth, ROW_HEIGHT,
-                    entry.statusKey(), entry.label(), valueText, valueColor, false
-            );
+                    entry.statusKey(), entry.label(), valueText,
+                    skipped ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED, false);
             summaryRows.add(row);
             rowContainer.addComponent(row);
             currentY += ROW_HEIGHT + ROW_GAP;
         }
 
-        if (scamScreenerLoaded) {
-            Set<String> selectedPingOptions = state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY);
-            SummaryRowComponent pingHeaderRow = new SummaryRowComponent(
-                    0, currentY, rowWidth, ROW_HEIGHT,
-                    SCAM_SCREENER_PINGS_STATUS_KEY,
+        if (scamLoaded) {
+            Set<String> pingOptions = state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY);
+            SummaryRowComponent pingHeader = new SummaryRowComponent(
+                    0, currentY, rowWidth, ROW_HEIGHT, SCAM_PINGS_KEY,
                     "ScamScreener Pings",
-                    selectedPingOptions.isEmpty()
-                            ? Component.literal("None selected")
-                            : Component.literal(selectedPingOptions.size() + " selected"),
-                    selectedPingOptions.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED,
-                    false
-            );
-            scamPingRows.add(pingHeaderRow);
-            rowContainer.addComponent(pingHeaderRow);
+                    pingOptions.isEmpty() ? Component.literal("None selected") : Component.literal(pingOptions.size() + " selected"),
+                    pingOptions.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED, false);
+            scamPingRows.add(pingHeader);
+            rowContainer.addComponent(pingHeader);
             currentY += ROW_HEIGHT + ROW_GAP;
 
-            for (String optionId : selectedPingOptions.stream().sorted(Comparator.naturalOrder()).toList()) {
+            for (String optionId : pingOptions.stream().sorted(Comparator.naturalOrder()).toList()) {
                 SummaryRowComponent pingRow = new SummaryRowComponent(
-                        0, currentY, rowWidth, ROW_HEIGHT,
-                        SCAM_SCREENER_PINGS_STATUS_KEY,
-                        "",
-                        ScamScreenerPage.labelForPingOption(optionId),
-                        COLOR_PACK_NAME,
-                        true
-                );
+                        0, currentY, rowWidth, ROW_HEIGHT, SCAM_PINGS_KEY,
+                        "", ScamScreenerPage.labelForPingOption(optionId), COLOR_PACK_SUBROW, true);
                 scamPingRows.add(pingRow);
                 rowContainer.addComponent(pingRow);
                 currentY += ROW_HEIGHT + ROW_GAP;
@@ -210,101 +173,64 @@ public class ConfirmApplyPage extends BaseWizardPage {
         }
 
         Set<String> selectedPacks = state.getSelectedResourcePacks();
-
-        SummaryRowComponent packHeaderRow = new SummaryRowComponent(
-                0, currentY, rowWidth, ROW_HEIGHT,
-                RESOURCE_PACKS_KEY,
+        SummaryRowComponent packHeader = new SummaryRowComponent(
+                0, currentY, rowWidth, ROW_HEIGHT, RESOURCE_PACKS_KEY,
                 "Resource Packs",
-                selectedPacks.isEmpty()
-                        ? Component.literal("None selected")
-                        : Component.literal(selectedPacks.size() + " selected"),
-                selectedPacks.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED,
-                false
-        );
-        packRows.add(packHeaderRow);
-        rowContainer.addComponent(packHeaderRow);
+                selectedPacks.isEmpty() ? Component.literal("None selected") : Component.literal(selectedPacks.size() + " selected"),
+                selectedPacks.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED, false);
+        packRows.add(packHeader);
+        rowContainer.addComponent(packHeader);
         currentY += ROW_HEIGHT + ROW_GAP;
 
         for (String packId : selectedPacks) {
             SummaryRowComponent packRow = new SummaryRowComponent(
-                    0, currentY, rowWidth, ROW_HEIGHT,
-                    RESOURCE_PACKS_KEY + ":" + packId,
-                    "",
-                    Component.literal(packId),
-                    COLOR_PACK_NAME,
-                    true
-            );
+                    0, currentY, rowWidth, ROW_HEIGHT, RESOURCE_PACKS_KEY + ":" + packId,
+                    "", Component.literal(packId), COLOR_PACK_SUBROW, true);
             packRows.add(packRow);
             rowContainer.addComponent(packRow);
             currentY += ROW_HEIGHT + ROW_GAP;
         }
 
         rowContainer.setHeight(currentY);
-
-        addComponent(GuiHelper.scrollWrapped(PADDING, scrollTop, availableWidth, scrollHeight,
+        addComponent(GuiHelper.scrollWrapped(PADDING, scrollTop, getWidth() - PADDING * 2, scrollHeight,
                 scroll -> scroll.addComponent(rowContainer)));
 
-        // Apply button
         applyButton = new CustomButtonWidget(
-                (getWidth() - BUTTON_WIDTH) / 2, buttonY,
-                BUTTON_WIDTH, BUTTON_HEIGHT,
+                (getWidth() - BUTTON_WIDTH) / 2, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.wizard.confirm.apply_all_configs"),
-                APPLY_BUTTON_SPRITES,
-                btn -> applyAll()
-        );
+                APPLY_BUTTON_SPRITES, btn -> applyAll());
         addWidget(applyButton);
-        applyButton.active = true;
-
     }
-
-    // --- Apply logic ---
 
     private void applyAll() {
         LOGGER.info("Applying wizard selections...");
         globalErrorMessage = null;
         boolean anyError = false;
 
-        anyError |= runStep(MainMenuDesignPage.STATE_KEY,
-                () -> applyMainMenuDesign(state.getSelection(MainMenuDesignPage.STATE_KEY)));
-
-        anyError |= runStep(PerformancePage.STATE_KEY,
-                () -> applyPerformanceProfile(state.getSelection(PerformancePage.STATE_KEY)));
-
-        anyError |= runStep(TabDesignPage.STATE_KEY,
-                () -> applyTabDesign(state.getSelection(TabDesignPage.STATE_KEY)));
-
-        anyError |= runStep(ItemBackgroundPage.STATE_KEY,
-                () -> applyItemBackground(state.getSelection(ItemBackgroundPage.STATE_KEY)));
-
-        anyError |= runStep(StorageDesignPage.STATE_KEY,
-                () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
+        anyError |= runStep(MainMenuDesignPage.STATE_KEY, () -> applyMainMenuDesign(state.getSelection(MainMenuDesignPage.STATE_KEY)));
+        anyError |= runStep(PerformancePage.STATE_KEY, () -> applyPerformanceProfile(state.getSelection(PerformancePage.STATE_KEY)));
+        anyError |= runStep(TabDesignPage.STATE_KEY, () -> applyTabDesign(state.getSelection(TabDesignPage.STATE_KEY)));
+        anyError |= runStep(ItemBackgroundPage.STATE_KEY, () -> applyItemBackground(state.getSelection(ItemBackgroundPage.STATE_KEY)));
+        anyError |= runStep(StorageDesignPage.STATE_KEY, () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
 
         if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
-            anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY,
-                    () -> applyScamScreener(
-                            state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
-                            state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)
-                    ));
+            anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY, () -> applyScamScreener(
+                    state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
+                    state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)));
         }
 
-        anyError |= runStep(RESOURCE_PACKS_KEY,
-                () -> applyResourcePacks(state.getSelectedResourcePacks()));
+        anyError |= runStep(RESOURCE_PACKS_KEY, () -> applyResourcePacks(state.getSelectedResourcePacks()));
 
         if (!anyError) {
             applyButton.active = false;
             if (onApplySucceeded != null) onApplySucceeded.run();
-            LOGGER.info("All settings applied successfully.");
         } else {
             globalErrorMessage = "Some settings failed to apply — see highlighted rows and check logs.";
-            LOGGER.warn("One or more settings failed to apply.");
         }
 
         refreshRowStatuses();
     }
 
-    /**
-     * Runs a single applied step, recording success or failure against the given key.
-     */
     private boolean runStep(String key, Runnable step) {
         try {
             step.run();
@@ -318,19 +244,15 @@ public class ConfirmApplyPage extends BaseWizardPage {
         }
     }
 
-    /** Pushes the current rowStatuses into each row component so borders update. */
     private void refreshRowStatuses() {
         for (SummaryRowComponent row : summaryRows) {
             row.setStatus(rowStatuses.get(row.getKey()), rowErrors.get(row.getKey()));
         }
-
-        RowStatus scamPingStatus = rowStatuses.get(ScamScreenerPage.ALERT_LEVEL_KEY);
-        String scamPingError = rowErrors.get(ScamScreenerPage.ALERT_LEVEL_KEY);
+        RowStatus scamStatus = rowStatuses.get(ScamScreenerPage.ALERT_LEVEL_KEY);
+        String scamError = rowErrors.get(ScamScreenerPage.ALERT_LEVEL_KEY);
         for (SummaryRowComponent row : scamPingRows) {
-            row.setStatus(scamPingStatus, scamPingError);
+            row.setStatus(scamStatus, scamError);
         }
-
-        // All pack rows share the same status as the resource pack step
         RowStatus packStatus = rowStatuses.get(RESOURCE_PACKS_KEY);
         String packError = rowErrors.get(RESOURCE_PACKS_KEY);
         for (SummaryRowComponent row : packRows) {
@@ -338,154 +260,90 @@ public class ConfirmApplyPage extends BaseWizardPage {
         }
     }
 
-    // --- Stubs — replace each body with the real implementation ---
-
     private void applyMainMenuDesign(String selectedId) {
-        if (selectedId == null) { LOGGER.info("mainMenuDesign: skipped"); return; }
-
+        if (selectedId == null) return;
         PackCoreConfig.menuStyle = switch (selectedId) {
-            case "modern"         -> PackCoreConfig.MenuStyle.MODERN;
+            case "modern" -> PackCoreConfig.MenuStyle.MODERN;
             case "modern_minimal" -> PackCoreConfig.MenuStyle.MODERN_MINIMAL;
-            case "minimal"        -> PackCoreConfig.MenuStyle.MINIMAL;
+            case "minimal" -> PackCoreConfig.MenuStyle.MINIMAL;
             default -> throw new RuntimeException("Unknown menu design ID: " + selectedId);
         };
         MidnightConfig.write(MOD_ID);
-        LOGGER.info("Applied menu design: {}", selectedId);
     }
 
     private void applyPerformanceProfile(String selectedId) {
-        if (selectedId == null) {
-            LOGGER.info("Performance profile: skipped");
-            return;
-        }
-
-        // Map UI option IDs → PerformanceProfile enum IDs
+        if (selectedId == null) return;
         PerformanceProfileService.PerformanceProfile profile = switch (selectedId) {
             case "max_fps" -> PerformanceProfileService.PerformanceProfile.PERFORMANCE;
             case "balanced" -> PerformanceProfileService.PerformanceProfile.BALANCED;
             case "quality" -> PerformanceProfileService.PerformanceProfile.QUALITY;
             case "quality_performance_shaders" -> PerformanceProfileService.PerformanceProfile.SHADERS_PERFORMANCE;
             case "quality_quality_shaders" -> PerformanceProfileService.PerformanceProfile.SHADERS_QUALITY;
-            default -> throw new RuntimeException("Unknown profile ID from UI: " + selectedId);
+            default -> throw new RuntimeException("Unknown profile ID: " + selectedId);
         };
-
-        LOGGER.info("Applying performance profile: {} -> {}", selectedId, profile.getDisplayName());
-
-        boolean success = PerformanceProfileService.applyAll(profile);
-        if (!success) {
+        if (!PerformanceProfileService.applyAll(profile)) {
             throw new RuntimeException("One or more integrations failed for profile: " + profile.getDisplayName());
         }
     }
 
     private void applyTabDesign(String selectedId) {
-        if (selectedId == null) {
-            LOGGER.info("Tab design: skipped");
-            return;
-        }
-
+        if (selectedId == null) return;
         TabDesignManager.TabDesign design = switch (selectedId) {
             case "compact" -> TabDesignManager.TabDesign.COMPACT;
             case "fancy" -> TabDesignManager.TabDesign.FANCY;
             default -> throw new RuntimeException("Unknown tab design ID: " + selectedId);
         };
-
-        boolean success = TabDesignManager.apply(design);
-        if (!success) {
-            throw new RuntimeException("Failed to apply tab design: " + selectedId);
-        }
+        if (!TabDesignManager.apply(design)) throw new RuntimeException("Failed to apply tab design: " + selectedId);
     }
 
     private void applyItemBackground(String selectedId) {
-        if (selectedId == null) {
-            LOGGER.info("Item background_old: skipped");
-            return;
-        }
-
+        if (selectedId == null) return;
         ItemBackgroundManager.ItemBackground background = switch (selectedId) {
             case "none" -> ItemBackgroundManager.ItemBackground.NONE;
             case "circle" -> ItemBackgroundManager.ItemBackground.CIRCLE;
             case "square" -> ItemBackgroundManager.ItemBackground.SQUARE;
-            default -> throw new RuntimeException("Unknown item background_old ID: " + selectedId);
+            default -> throw new RuntimeException("Unknown item background ID: " + selectedId);
         };
-
-        boolean success = ItemBackgroundManager.apply(background);
-        if (!success) {
-            throw new RuntimeException("Failed to apply item background_old: " + selectedId);
-        }
+        if (!ItemBackgroundManager.apply(background)) throw new RuntimeException("Failed to apply item background: " + selectedId);
     }
 
     private void applyStorageDesign(String selectedId) {
-        if (selectedId == null) {
-            LOGGER.info("Storage design: skipped");
-            return;
-        }
-
+        if (selectedId == null) return;
         StorageDesignManager.StorageDesign design = switch (selectedId) {
             case "overlay" -> StorageDesignManager.StorageDesign.OVERLAY;
             case "vanilla" -> StorageDesignManager.StorageDesign.VANILLA;
             default -> throw new RuntimeException("Unknown storage design ID: " + selectedId);
         };
-
-        boolean success = StorageDesignManager.apply(design);
-        if (!success) {
-            throw new RuntimeException("Failed to apply storage design: " + selectedId);
-        }
+        if (!StorageDesignManager.apply(design)) throw new RuntimeException("Failed to apply storage design: " + selectedId);
     }
 
     private void applyScamScreener(String selectedId, Set<String> pingOptions) {
-        if (selectedId == null && pingOptions.isEmpty()) {
-            LOGGER.info("ScamScreener: skipped");
-            return;
-        }
-
-        String minimumRiskLevel = selectedId != null
-                ? selectedId
-                : ScamScreenerConfigurator.defaultSettings().minimumRiskLevel();
-
-        boolean success = ScamScreenerConfigurator.apply(
-                minimumRiskLevel,
+        if (selectedId == null && pingOptions.isEmpty()) return;
+        String riskLevel = selectedId != null ? selectedId : ScamScreenerConfigurator.defaultSettings().minimumRiskLevel();
+        if (!ScamScreenerConfigurator.apply(riskLevel,
                 pingOptions.contains("risk_warning"),
-                pingOptions.contains("blacklist_warning")
-        );
-        if (!success) {
+                pingOptions.contains("blacklist_warning"))) {
             throw new RuntimeException("Failed to update ScamScreener settings");
         }
     }
 
     private void applyResourcePacks(Set<String> packIds) {
-        if (packIds.isEmpty()) {
-            LOGGER.info("Resource packs: none selected");
-            return;
-        }
-
-        LOGGER.info("Resource packs: applying {} packs: {}", packIds.size(), packIds);
+        if (packIds.isEmpty()) return;
         ResourcePackManager.apply(packIds);
     }
 
     private boolean requiresWorldJoin() {
-        String tabDesign = state.getSelection(TabDesignPage.STATE_KEY);
-        String storageDesign = state.getSelection(StorageDesignPage.STATE_KEY);
-
-        boolean skyhanniPending = tabDesign != null && FabricLoader.getInstance().isModLoaded("skyhanni");
-        boolean firmamentPending = storageDesign != null && FabricLoader.getInstance().isModLoaded("firmament");
-
-        return skyhanniPending || firmamentPending;
+        return (state.getSelection(TabDesignPage.STATE_KEY) != null && FabricLoader.getInstance().isModLoaded("skyhanni"))
+                || (state.getSelection(StorageDesignPage.STATE_KEY) != null && FabricLoader.getInstance().isModLoaded("firmament"));
     }
-
-    // --- Draw the global error message below the button ---
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
         if (globalErrorMessage == null) return;
-
         var font = Minecraft.getInstance().font;
-        int statusY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT + BUTTON_HEIGHT + 4;
-        int centerX = getTotalX() + getWidth() / 2;
-
-        graphics.drawCenteredString(font, globalErrorMessage, centerX, statusY, COLOR_STATUS_ERROR);
+        int errorY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT + BUTTON_HEIGHT + 4;
+        graphics.drawCenteredString(font, globalErrorMessage, getTotalX() + getWidth() / 2, errorY, GuiColors.ERROR);
     }
-
-    // --- Inner component for one summary row ---
 
     private static class SummaryRowComponent extends EmptyComponent {
 
@@ -495,8 +353,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
         private final int valueColor;
         private final boolean isSubRow;
 
-        private RowStatus status = null;
-        private String errorMessage = null;
+        private RowStatus status;
+        private String errorMessage;
 
         SummaryRowComponent(int x, int y, int width, int height,
                             String key, String label, Component value, int valueColor, boolean isSubRow) {
@@ -511,8 +369,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
         String getKey() { return key; }
 
         void setStatus(RowStatus newStatus, String error) {
-            this.status = newStatus;
-            this.errorMessage = error;
+            status = newStatus;
+            errorMessage = error;
         }
 
         @Override
@@ -521,27 +379,25 @@ public class ConfirmApplyPage extends BaseWizardPage {
             int y = getTotalY();
             int w = getWidth();
             int h = getHeight();
-
             int leftInset = isSubRow ? 20 : 0;
 
-            int borderColor = status == RowStatus.SUCCESS ? COLOR_BORDER_SUCCESS
-                    : status == RowStatus.ERROR ? COLOR_BORDER_ERROR
-                    : COLOR_BORDER_IDLE;
+            int borderColor = status == RowStatus.SUCCESS ? GuiColors.SUCCESS
+                    : status == RowStatus.ERROR ? GuiColors.ERROR
+                    : GuiColors.BORDER_IDLE;
 
-            graphics.fill(x + leftInset, y, x + w, y + h, COLOR_ROW_BACKGROUND);
+            graphics.fill(x + leftInset, y, x + w, y + h, GuiColors.ROW_BACKGROUND);
             GuiHelper.drawBorder(graphics, x + leftInset, y, w - leftInset, h, borderColor);
 
             var font = Minecraft.getInstance().font;
             int textY = y + (h - font.lineHeight) / 2;
 
             if (!label.isEmpty()) {
-                graphics.drawString(font, label, x + leftInset + 8, textY, COLOR_LABEL, false);
+                graphics.drawString(font, label, x + leftInset + 8, textY, GuiColors.NAME_DEFAULT, false);
             }
 
-            // On error, show the error message in place of the value (non-sub-rows only)
             if (status == RowStatus.ERROR && errorMessage != null && !isSubRow) {
                 String errText = "Error: " + errorMessage;
-                graphics.drawString(font, errText, x + w - font.width(errText) - 8, textY, COLOR_BORDER_ERROR, false);
+                graphics.drawString(font, errText, x + w - font.width(errText) - 8, textY, GuiColors.ERROR, false);
             } else {
                 String valueStr = value.getString();
                 graphics.drawString(font, valueStr, x + w - font.width(valueStr) - 8, textY, valueColor, false);
