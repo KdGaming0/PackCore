@@ -123,7 +123,7 @@ public class ConfigAutoApplier {
             Dimension screenSize = toolkit.getScreenSize();
             LOGGER.debug("Screen dimensions: {}x{}", screenSize.width, screenSize.height);
             return screenSize;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOGGER.error("Failed to detect resolution", e);
             return null;
         }
