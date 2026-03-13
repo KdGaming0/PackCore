@@ -143,6 +143,7 @@
   "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
   "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world.",
   "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
+  "gui.packcore.wizard.button.finish.locked_tooltip": "Click \"Apply Settings\" to apply your selections before finishing.",
 
   "gui.packcore.config.title": "Modpack Configuration",
 
@@ -203,5 +204,7 @@
   "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
   "gui.packcore.toast.ram.title": "Low Memory Warning",
   "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance.",
-  "gui.packcore.wizard.button.finish.locked_tooltip": "Click \"Apply Settings\" to apply your selections before finishing."
+
+  "gui.packcore.export.field.gui_scale": "GUI Scale",
+  "gui.packcore.export.tooltip.missing_gui_scale": "GUI scale must be a whole number (0 = Auto)"
 }

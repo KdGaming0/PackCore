@@ -1,10 +1,14 @@
 package com.github.kd_gaming1.packcore.gui.component;
 
+import org.jspecify.annotations.NonNull;
+
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Set;
-import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 public final class FileTreeBuilder {
@@ -34,15 +38,43 @@ public final class FileTreeBuilder {
 
         if (!Files.exists(dir)) return root;
 
-        try (Stream<Path> stream = Files.walk(dir, 8)) {
-            stream.filter(p -> !p.equals(dir))
-                    .sorted()
-                    .forEach(p -> {
-                        String rel = dir.relativize(p).toString().replace('\\', '/');
-                        if (hidden != null && hidden.stream().anyMatch(h -> rel.equals(h) || rel.startsWith(h + "/"))) return;
-                        insertPath(root, rel, Files.isDirectory(p));
-                    });
-        }
+        Files.walkFileTree(dir, new SimpleFileVisitor<>() {
+
+            @Override
+            public @NonNull FileVisitResult preVisitDirectory(@NonNull Path path, @NonNull BasicFileAttributes attrs) {
+                if (path.equals(dir)) return FileVisitResult.CONTINUE;
+
+                String rel = dir.relativize(path).toString().replace('\\', '/');
+                String topLevel = rel.split("/")[0];
+
+                if (topLevel.startsWith(".")) return FileVisitResult.SKIP_SUBTREE;
+                if (hidden != null && hidden.stream().anyMatch(h -> rel.equals(h) || rel.startsWith(h + "/"))) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+
+                insertPath(root, rel, true);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public @NonNull FileVisitResult visitFile(@NonNull Path path, @NonNull BasicFileAttributes attrs) {
+                String rel = dir.relativize(path).toString().replace('\\', '/');
+                String topLevel = rel.split("/")[0];
+
+                if (topLevel.startsWith(".")) return FileVisitResult.CONTINUE;
+                if (hidden != null && hidden.stream().anyMatch(h -> rel.equals(h) || rel.startsWith(h + "/"))) {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                insertPath(root, rel, false);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public @NonNull FileVisitResult visitFileFailed(@NonNull Path path, @NonNull IOException e) {
+                return FileVisitResult.CONTINUE;
+            }
+        });
 
         sortTree(root);
         return root;

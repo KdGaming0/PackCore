@@ -8,6 +8,7 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackExtractor;
 import com.google.gson.JsonObject;
 import eu.midnightdust.lib.config.MidnightConfig;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,24 +26,25 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
     @Override
     public void onPreLaunch() {
+        Path gameDir = FabricLoader.getInstance().getGameDir();
         Path packcoreDir = PackCore.PACKCORE_DIR;
-        Path configsDir  = packcoreDir.resolve("configs");
+        Path configsDir = packcoreDir.resolve("configs");
 
         MidnightConfig.init("packcore", PackCoreConfig.class);
 
         // Highest priority: restore a backup if one is pending
         if (!PackCoreConfig.pendingRestoreBackup.isBlank()) {
-            applyPendingRestore(packcoreDir);
+            applyPendingRestore(packcoreDir, gameDir);
             return;
         }
 
         // Next priority: the user explicitly chose a config from the wizard GUI
         if (!PackCoreConfig.pendingConfigPack.isBlank()) {
-            applyPendingConfig(packcoreDir, configsDir);
+            applyPendingConfig(gameDir, configsDir);
             return;
         }
 
-        // ── Normal path: auto-detect the best resolution match ─────────────────
+        // Normal path: auto-detect the best resolution + GUI scale match
         ScreenResolution.ScreenSize screen = ScreenResolution.detect();
 
         ConfigPackScanner scanner = new ConfigPackScanner();
@@ -60,30 +62,25 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        ConfigPackEntry selectedPack = findBestResolutionMatch(scannedPacks, screen.width(), screen.height());
+        ConfigPackEntry selectedPack = findBestMatch(scannedPacks, screen.width(), screen.height());
 
         if (selectedPack == null) {
             LOGGER.warn("No packs had valid resolution fields, aborting.");
             return;
         }
 
-        extractIfNeeded(selectedPack, packcoreDir);
+        extractIfNeeded(selectedPack, gameDir);
     }
-
-    // ── Pending (user-selected) config ────────────────────────────────────────
 
     /**
      * Applies the pack whose filename is stored in {@link PackCoreConfig#pendingConfigPack}.
-     * <p>
-     * Always uses {@link ConfigPackExtractor.OverwriteMode#REPLACE_EXISTING} because
-     * the user explicitly asked to switch, so we want a clean application of the new pack.
+     * Always uses REPLACE_EXISTING because the user explicitly asked to switch.
      * The pending flag is cleared regardless of success or failure.
      */
-    private void applyPendingConfig(Path packcoreDir, Path configsDir) {
+    private void applyPendingConfig(Path gameDir, Path configsDir) {
         String pendingFile = PackCoreConfig.pendingConfigPack;
         LOGGER.info("Pending config switch requested: {}", pendingFile);
 
-        // Locate the zip in the configs directory
         Path zipPath = configsDir.resolve(pendingFile);
         if (!Files.exists(zipPath)) {
             LOGGER.error("Pending config zip not found at: {}", zipPath);
@@ -91,7 +88,6 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        // Re-scan so we get the ConfigPackEntry (with the parsed JsonObject)
         ConfigPackScanner scanner = new ConfigPackScanner();
         List<ConfigPackEntry> packs;
         try {
@@ -113,10 +109,9 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        // Extract — fully replace
         try {
             ConfigPackExtractor.extractAll(
-                    entry.zipPath(), packcoreDir,
+                    entry.zipPath(), gameDir,
                     ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
             );
         } catch (IOException e) {
@@ -125,18 +120,18 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        JsonObject config      = entry.config();
-        String     packVersion = config.has("version") ? config.get("version").getAsString() : "";
+        JsonObject config = entry.config();
+        String packVersion = config.has("version") ? config.get("version").getAsString() : "";
 
-        PackCoreConfig.lastAppliedVersion  = packVersion;
+        PackCoreConfig.lastAppliedVersion = packVersion;
         PackCoreConfig.lastAppliedPackFile = pendingFile;
-        PackCoreConfig.pendingConfigPack   = "";
+        PackCoreConfig.pendingConfigPack = "";
         MidnightConfig.write(MOD_ID);
 
         LOGGER.info("Successfully applied pending config: {} (version: {})", pendingFile, packVersion);
     }
 
-    private void applyPendingRestore(Path packcoreDir) {
+    private void applyPendingRestore(Path packcoreDir, Path gameDir) {
         String backupFile = PackCoreConfig.pendingRestoreBackup;
         Path backupPath = packcoreDir.resolve("backups").resolve(backupFile);
 
@@ -149,9 +144,10 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         }
 
         try {
-            // Backup files are relative to the game dir, so extract there
-            ConfigPackExtractor.extractAll(backupPath, packcoreDir.getParent(),
-                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
+            ConfigPackExtractor.extractAll(
+                    backupPath, gameDir,
+                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
+            );
             LOGGER.info("Successfully restored backup: {}", backupFile);
         } catch (IOException e) {
             LOGGER.error("Failed to restore backup '{}': {}", backupFile, e.getMessage());
@@ -160,44 +156,50 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         clearPendingRestore();
     }
 
-    /** Clears {@code applyPendingRestore} and persists the change. */
     private static void clearPendingRestore() {
         PackCoreConfig.pendingRestoreBackup = "";
         MidnightConfig.write(MOD_ID);
     }
 
-    /** Clears {@code pendingConfigPack} and persists the change. */
     private static void clearPending() {
         PackCoreConfig.pendingConfigPack = "";
         MidnightConfig.write(MOD_ID);
     }
 
-    // ── Auto-detect helpers ───────────────────────────────────────────────────
-
     /**
-     * Extracts {@code selectedPack} if it is newer than the installed version,
-     * or if no version has been applied yet.
+     * Extracts {@code selectedPack} into the game directory if:
+     * <ul>
+     *   <li>No version has been applied yet, or</li>
+     *   <li>The selected pack's filename matches the last applied file AND its version is newer.</li>
+     * </ul>
+     * If the filenames differ, extraction is skipped to preserve what the user has installed.
      */
-    private void extractIfNeeded(ConfigPackEntry selectedPack, Path packcoreDir) {
-        JsonObject config           = selectedPack.config();
-        String     packVersion      = config.has("version") ? config.get("version").getAsString() : "";
-        String     installedVersion = PackCoreConfig.lastAppliedVersion;
+    private void extractIfNeeded(ConfigPackEntry selectedPack, Path gameDir) {
+        JsonObject config = selectedPack.config();
+        String packVersion = config.has("version") ? config.get("version").getAsString() : "";
+        String installedVersion = PackCoreConfig.lastAppliedVersion;
+        String installedPackFile = PackCoreConfig.lastAppliedPackFile;
+        String selectedPackFile = selectedPack.zipPath().getFileName().toString();
 
-        LOGGER.info("Best resolution match: {} (version: {})",
-                selectedPack.zipPath().getFileName(), packVersion);
+        LOGGER.info("Best match: {} (version: {})", selectedPackFile, packVersion);
 
         try {
             if (installedVersion.isEmpty()) {
                 LOGGER.info("No config applied yet — performing full extraction.");
                 ConfigPackExtractor.extractAll(
-                        selectedPack.zipPath(), packcoreDir,
+                        selectedPack.zipPath(), gameDir,
                         ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
                 );
+            } else if (!installedPackFile.equals(selectedPackFile)) {
+                // Selected pack differs from last applied — keep what's installed.
+                LOGGER.info("Selected pack '{}' differs from last applied '{}', skipping.",
+                        selectedPackFile, installedPackFile);
+                return;
             } else if (UpdateChecker.isNewerVersion(packVersion, installedVersion)) {
                 LOGGER.info("Newer config available ({} → {}), applying with SKIP_EXISTING.",
                         installedVersion, packVersion);
                 ConfigPackExtractor.extractAll(
-                        selectedPack.zipPath(), packcoreDir,
+                        selectedPack.zipPath(), gameDir,
                         ConfigPackExtractor.OverwriteMode.SKIP_EXISTING
                 );
             } else {
@@ -209,8 +211,8 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             return;
         }
 
-        PackCoreConfig.lastAppliedVersion  = packVersion;
-        PackCoreConfig.lastAppliedPackFile = selectedPack.zipPath().getFileName().toString();
+        PackCoreConfig.lastAppliedVersion = packVersion;
+        PackCoreConfig.lastAppliedPackFile = selectedPackFile;
         MidnightConfig.write(MOD_ID);
 
         LOGGER.info("Successfully applied config version: {}", packVersion);
@@ -218,12 +220,13 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
     /**
      * Returns the pack whose target resolution is closest to the screen resolution
-     * using squared Euclidean distance.
+     * using squared Euclidean distance. When two packs tie on distance, the one
+     * with the higher guiScale wins.
      */
-    private ConfigPackEntry findBestResolutionMatch(List<ConfigPackEntry> packs,
-                                                    int screenWidth, int screenHeight) {
-        ConfigPackEntry selectedPack       = null;
-        long            bestDistanceSquared = Long.MAX_VALUE;
+    private ConfigPackEntry findBestMatch(List<ConfigPackEntry> packs, int screenWidth, int screenHeight) {
+        ConfigPackEntry best = null;
+        long bestDistSq = Long.MAX_VALUE;
+        int bestGuiScale = -1;
 
         for (ConfigPackEntry pack : packs) {
             JsonObject config = pack.config();
@@ -233,16 +236,18 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
                 continue;
             }
 
-            long widthDiff  = config.get("targetWidth").getAsInt()  - screenWidth;
+            long widthDiff = config.get("targetWidth").getAsInt() - screenWidth;
             long heightDiff = config.get("targetHeight").getAsInt() - screenHeight;
-            long distSq     = widthDiff * widthDiff + heightDiff * heightDiff;
+            long distSq = widthDiff * widthDiff + heightDiff * heightDiff;
+            int guiScale = config.has("guiScale") ? config.get("guiScale").getAsInt() : 0;
 
-            if (distSq < bestDistanceSquared) {
-                bestDistanceSquared = distSq;
-                selectedPack        = pack;
+            if (distSq < bestDistSq || (distSq == bestDistSq && guiScale > bestGuiScale)) {
+                bestDistSq = distSq;
+                bestGuiScale = guiScale;
+                best = pack;
             }
         }
 
-        return selectedPack;
+        return best;
     }
 }

@@ -13,6 +13,7 @@ public final class ConfigPackMeta {
     private final String version;
     private final int targetWidth;
     private final int targetHeight;
+    private final int guiScale;
 
     // Optional
     private final String name;
@@ -27,6 +28,7 @@ public final class ConfigPackMeta {
         this.version = builder.version;
         this.targetWidth = builder.targetWidth;
         this.targetHeight = builder.targetHeight;
+        this.guiScale = builder.guiScale;
         this.name = builder.name;
         this.description = builder.description;
         this.author = builder.author;
@@ -34,20 +36,18 @@ public final class ConfigPackMeta {
         this.createdDate = Instant.now().toString();
     }
 
-    // Getters
-    public String version() {return version;}
-    public int targetWidth() {return targetWidth;}
-    public int targetHeight() {return targetHeight;}
-    public String name() {return name;}
-    public String description() {return description;}
-    public String author() {return author;}
-    public List<String> mods() {return mods;}
-    public String createdDate() {return createdDate;}
+    public String version() { return version; }
+    public int targetWidth() { return targetWidth; }
+    public int targetHeight() { return targetHeight; }
+    public int guiScale() { return guiScale; }
+    public String name() { return name; }
+    public String description() { return description; }
+    public String author() { return author; }
+    public List<String> mods() { return mods; }
+    public String createdDate() { return createdDate; }
 
-    // --- Builder ---
-
-    public static Builder builder(String version, int targetWidth, int targetHeight) {
-        return new Builder(version, targetWidth, targetHeight);
+    public static Builder builder(String version, int targetWidth, int targetHeight, int guiScale) {
+        return new Builder(version, targetWidth, targetHeight, guiScale);
     }
 
     public static final class Builder {
@@ -56,6 +56,7 @@ public final class ConfigPackMeta {
         private final String version;
         private final int targetWidth;
         private final int targetHeight;
+        private final int guiScale;
 
         // Optional
         private String name;
@@ -63,15 +64,16 @@ public final class ConfigPackMeta {
         private String author;
         private List<String> mods = List.of();
 
-        private Builder(String version, int targetWidth, int targetHeight) {
-            this.version      = version;
-            this.targetWidth  = targetWidth;
+        private Builder(String version, int targetWidth, int targetHeight, int guiScale) {
+            this.version = version;
+            this.targetWidth = targetWidth;
             this.targetHeight = targetHeight;
+            this.guiScale = guiScale;
         }
 
-        public Builder name(String name) {this.name = name; return this;}
-        public Builder description(String description) {this.description = description; return this;}
-        public Builder author(String author) {this.author = author; return this;}
+        public Builder name(String name) { this.name = name; return this; }
+        public Builder description(String description) { this.description = description; return this; }
+        public Builder author(String author) { this.author = author; return this; }
         public Builder mods(List<String> mods) {
             this.mods = mods != null ? mods : List.of();
             return this;

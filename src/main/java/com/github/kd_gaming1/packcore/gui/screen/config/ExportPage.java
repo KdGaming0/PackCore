@@ -49,9 +49,20 @@ public class ExportPage extends BaseConfigPage {
     private static final int COLOR_LABEL = 0xFFCCCCCC;
     private static final int COLOR_SECTION = 0xFF888888;
 
+    /**
+     * Top-level folders and files hidden from the export file tree.
+     * Dot-folders (e.g. .fabric, .git) are hidden automatically by FileTreeBuilder
+     * and do not need to be listed here.
+     */
     private static final Set<String> HIDDEN_PATHS = Set.of(
             "logs", "crash-reports", "screenshots", "saves", "packcore",
-            "replay_recordings", "debug", ".fabric", "resourcepacks", "shaderpacks"
+            "replay_recordings", "debug", "resourcepacks", "shaderpacks",
+            "cache", "data", "datapacks", "downloads", "meowdding-repo-cache",
+            "moddata", "mods", "skyblock-repo-cache", "command_history.txt", "icon.png",
+            "usercache", "realms_persistence.json", "config/firmament/profiles", "config/skyocean/data",
+            "config/skyhanni/repo", "config/skyhanni/logs", "config/skyhanni/backup",
+            "config/skyblocker/item-repo", "config/skyblocker/config_backups",
+            "config/skyblocker/backpack-preview", "config/SBO", "config/notenoughupdates"
     );
 
     private EditBoxWidget nameField;
@@ -59,6 +70,7 @@ public class ExportPage extends BaseConfigPage {
     private EditBoxWidget authorField;
     private EditBoxWidget descriptionField;
     private EditBoxWidget resolutionField;
+    private EditBoxWidget guiScaleField;
     private FileTreeComponent fileTree;
     private CustomButtonWidget exportBtn;
 
@@ -124,6 +136,19 @@ public class ExportPage extends BaseConfigPage {
                 "gui.packcore.export.field.resolution", screenSize.width() + "x" + screenSize.height(), input -> {
                     if (!input.matches("\\d+[x×]\\d+"))
                         return List.of(ValidationErrors.pattern("e.g. 1920x1080"));
+                    return List.of();
+                });
+        currentY += fieldStride;
+
+        int currentGuiScale = Minecraft.getInstance().options.guiScale().get();
+        guiScaleField = addValidatedField(container, fieldWidth, currentY,
+                "gui.packcore.export.field.gui_scale", String.valueOf(currentGuiScale), input -> {
+                    try {
+                        int value = Integer.parseInt(input.trim());
+                        if (value < 0) return List.of(ValidationErrors.pattern("Must be 0 or greater"));
+                    } catch (NumberFormatException e) {
+                        return List.of(ValidationErrors.pattern("Must be a whole number"));
+                    }
                     return List.of();
                 });
         currentY += fieldStride;
@@ -215,9 +240,10 @@ public class ExportPage extends BaseConfigPage {
         boolean nameOk = nameField != null && !nameField.getValue().isBlank();
         boolean versionOk = versionField != null && versionField.getValue().matches("\\d+\\.\\d+(\\.\\d+)?(-.*)?");
         boolean resOk = resolutionField != null && resolutionField.getValue().matches("\\d+[x×]\\d+");
+        boolean guiScaleOk = guiScaleField != null && isValidGuiScale(guiScaleField.getValue());
         boolean filesSelected = fileTree != null && !fileTree.getSelectedPaths().isEmpty();
 
-        exportBtn.active = nameOk && versionOk && resOk && filesSelected;
+        exportBtn.active = nameOk && versionOk && resOk && guiScaleOk && filesSelected;
 
         if (exportBtn.active) {
             exportBtn.setTooltip(null);
@@ -228,6 +254,7 @@ public class ExportPage extends BaseConfigPage {
         if (!nameOk) reasons.add(Component.translatable("gui.packcore.export.tooltip.missing_name"));
         if (!versionOk) reasons.add(Component.translatable("gui.packcore.export.tooltip.missing_version"));
         if (!resOk) reasons.add(Component.translatable("gui.packcore.export.tooltip.missing_resolution"));
+        if (!guiScaleOk) reasons.add(Component.translatable("gui.packcore.export.tooltip.missing_gui_scale"));
         if (!filesSelected) reasons.add(Component.translatable("gui.packcore.export.tooltip.missing_files"));
 
         var tooltipText = Component.empty();
@@ -239,6 +266,13 @@ public class ExportPage extends BaseConfigPage {
         exportBtn.setTooltip(Tooltip.create(tooltipText));
     }
 
+    private static boolean isValidGuiScale(String input) {
+        try {
+            return Integer.parseInt(input.trim()) >= 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 
     private void doExport() {
         if (nameField == null || nameField.getValue().isBlank()) return;
@@ -259,7 +293,14 @@ public class ExportPage extends BaseConfigPage {
             }
         } catch (NumberFormatException ignored) {}
 
-        ConfigPackMeta meta = ConfigPackMeta.builder(version, targetWidth, targetHeight)
+        int guiScale = 0;
+        if (guiScaleField != null) {
+            try {
+                guiScale = Integer.parseInt(guiScaleField.getValue().trim());
+            } catch (NumberFormatException ignored) {}
+        }
+
+        ConfigPackMeta meta = ConfigPackMeta.builder(version, targetWidth, targetHeight, guiScale)
                 .name(name)
                 .description(description.isEmpty() ? null : description)
                 .author(author.isEmpty() ? null : author)

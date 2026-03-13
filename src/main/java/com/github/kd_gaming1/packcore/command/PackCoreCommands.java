@@ -1,5 +1,7 @@
 package com.github.kd_gaming1.packcore.command;
 
+import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
+import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
@@ -84,6 +86,22 @@ public class PackCoreCommands {
                                     applyStorageDesign(ctx.getSource(), StorageDesignManager.StorageDesign.VANILLA);
                                     return 1;
                                 }))
+                        )
+                        .then(literal("wizard")
+                                .executes(ctx -> {
+                                    Minecraft.getInstance().execute(() ->
+                                            Minecraft.getInstance().setScreen(new WelcomeWizardScreen(Minecraft.getInstance().screen))
+                                    );
+                                    return 1;
+                                })
+                        )
+                        .then(literal("modpack_config")
+                                .executes(ctx -> {
+                                    Minecraft.getInstance().execute(() ->
+                                            Minecraft.getInstance().setScreen(new ConfigScreen())
+                                    );
+                                    return 1;
+                                })
                         )
         );
     }

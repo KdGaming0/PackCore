@@ -1,1 +1,0 @@
-- fix: bug that disabled fancy tab and hud in Skyblocker when selecting Skyhanni compact tab in welcome wizard

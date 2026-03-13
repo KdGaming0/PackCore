@@ -77,6 +77,7 @@ public class ConfigPackBuilder {
         json.addProperty("version", meta.version());
         json.addProperty("targetWidth", meta.targetWidth());
         json.addProperty("targetHeight", meta.targetHeight());
+        json.addProperty("guiScale", meta.guiScale());
         json.addProperty("createdDate", meta.createdDate());
 
         if (meta.name() != null) json.addProperty("name", meta.name());

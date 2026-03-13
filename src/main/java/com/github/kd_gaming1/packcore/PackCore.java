@@ -35,7 +35,7 @@ public class PackCore implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> PackCoreCommands.register(dispatcher));
 
         ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (screen.getClass() != TitleScreen.class) return;
+            if (!(screen instanceof TitleScreen)) return;
 
             RamWarningHelper.onMainMenu();
 
