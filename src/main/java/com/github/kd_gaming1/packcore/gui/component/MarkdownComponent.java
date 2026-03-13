@@ -83,7 +83,7 @@ public class MarkdownComponent extends AbstractComponent {
 
     public MarkdownComponent(int x, int y, int maxWidth, String markdown, int defaultColor) {
         super(x, y, maxWidth, 0);
-        this.markdown = markdown;
+        this.markdown = markdown != null ? markdown : "";
         this.maxWidth = maxWidth;
         this.defaultColor = defaultColor;
         rebuild();

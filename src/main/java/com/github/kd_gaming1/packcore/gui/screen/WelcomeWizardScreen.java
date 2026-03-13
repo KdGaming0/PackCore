@@ -8,6 +8,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.page.*;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import eu.midnightdust.lib.config.MidnightConfig;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -63,6 +64,9 @@ public class WelcomeWizardScreen extends AbstractScreen {
         navigator.addPage(new TabDesignPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new ItemBackgroundPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new StorageDesignPage(wizardState, navigator, contentWidth, contentHeight));
+        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+            navigator.addPage(new ScamScreenerPage(wizardState, navigator, contentWidth, contentHeight));
+        }
         navigator.addPage(new ResourcePackPage(wizardState, navigator, contentWidth, contentHeight));
 
         confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
@@ -109,7 +113,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
         // Finish — settings have been applied; mark complete and close
         buttonBar.setOnFinish(() -> {
             markWizardComplete();
-            Minecraft.getInstance().setScreen(lastScreen);
+            Minecraft.getInstance().setScreen(resolvePostWizardScreen());
         });
 
         // Skip on the last page — close without applying; still marks complete
@@ -128,6 +132,14 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private void markWizardComplete() {
         PackCoreConfig.successfulWelcomeWizard = true;
         MidnightConfig.write(MOD_ID);
+    }
+
+    private Screen resolvePostWizardScreen() {
+        return switch (PackCoreConfig.menuStyle) {
+            case MODERN -> new SBETitleScreen();
+            case MODERN_MINIMAL -> new SBETitleScreen(false);
+            case MINIMAL -> new PackCoreTitleScreen();
+        };
     }
 
     @Override

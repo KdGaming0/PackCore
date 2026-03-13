@@ -4,6 +4,7 @@ import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.widget.ButtonWidget;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
+import com.github.kd_gaming1.packcore.gui.wizard.page.ScamScreenerPage;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetSprites;
@@ -30,6 +31,11 @@ public class WizardButtonBar extends EmptyComponent {
     private static final WidgetSprites CONTINUE_BUTTON = new WidgetSprites(
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/continue_gray_button"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/disabled_continue_gray_button"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_continue_gray_button")
+    );
+    private static final WidgetSprites SCAM_SCREENER_CONTINUE_BUTTON = new WidgetSprites(
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/continue_gray_button"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/continue_gray_button"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_continue_gray_button")
     );
 
@@ -64,6 +70,7 @@ public class WizardButtonBar extends EmptyComponent {
     private final ButtonWidget backButton;
     private final ButtonWidget skipButton;
     private final ButtonWidget continueButton;
+    private final ButtonWidget scamScreenerContinueButton;
     private final ButtonWidget finishButton;
 
     public WizardButtonBar(WizardNavigator navigator, int width, int height) {
@@ -99,6 +106,12 @@ public class WizardButtonBar extends EmptyComponent {
                 CONTINUE_BUTTON,
                 btn -> navigator.nextPage()
         );
+        scamScreenerContinueButton = new CustomButtonWidget(
+                width - BTN_WIDTH - BTN_GAP, btnY, BTN_WIDTH, BTN_HEIGHT,
+                Component.translatable("gui.packcore.wizard.button.continue"),
+                SCAM_SCREENER_CONTINUE_BUTTON,
+                btn -> navigator.nextPage()
+        );
 
         backButton = new CustomButtonWidget(
                 width - BTN_WIDTH * 2 - BTN_GAP * 2, btnY, BTN_WIDTH, BTN_HEIGHT,
@@ -132,6 +145,7 @@ public class WizardButtonBar extends EmptyComponent {
         this.addWidget(skipButton);
         this.addWidget(backButton);
         this.addWidget(continueButton);
+        this.addWidget(scamScreenerContinueButton);
         this.addWidget(finishButton);
 
         refresh();
@@ -141,12 +155,16 @@ public class WizardButtonBar extends EmptyComponent {
     public void refresh() {
         boolean hasBack = navigator.hasPrevious();
         boolean isLastPage = navigator.isOnLastPage();
+        boolean isScamScreenerPage = navigator.getCurrentPage() instanceof ScamScreenerPage;
 
         backButton.visible = hasBack;
         backButton.active = hasBack;
 
-        continueButton.visible = !isLastPage;
-        continueButton.active = !isLastPage;
+        continueButton.visible = !isLastPage && !isScamScreenerPage;
+        continueButton.active = !isLastPage && !isScamScreenerPage;
+
+        scamScreenerContinueButton.visible = !isLastPage && isScamScreenerPage;
+        scamScreenerContinueButton.active = !isLastPage && isScamScreenerPage;
 
         skipButton.visible = isLastPage;
         skipButton.active = isLastPage;

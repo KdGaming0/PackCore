@@ -139,11 +139,12 @@ public class SBETitleScreen extends AbstractScreen {
         int overlayX = (this.width - overlayW) / 2;
         int overlayY = (this.height - overlayH) / 2 + 25;
 
-        String changelogMarkdown = updateStatus.changelog();
+        String changelogVersion = resolveChangelogVersion(updateStatus);
+        String changelogMarkdown = resolveChangelogMarkdown(updateStatus);
 
         changelogOverlay = new OverlayComponent(
                 overlayX, overlayY, overlayW, overlayH,
-                Component.translatable("gui.packcore.overlay.changelog.title", updateStatus.latestVersion()),
+                Component.translatable("gui.packcore.overlay.changelog.title", changelogVersion),
                 changelogMarkdown
         );
         changelogOverlay.setOnClose(() -> setMenuButtonsVisible(true));
@@ -356,6 +357,26 @@ public class SBETitleScreen extends AbstractScreen {
         }
 
         return Component.literal("v" + installed);
+    }
+
+    private static String resolveChangelogVersion(UpdateStatus status) {
+        if (status.latestVersion() != null && !status.latestVersion().isBlank()) {
+            return status.latestVersion();
+        }
+        if (status.installedVersion() != null && !status.installedVersion().isBlank()) {
+            return status.installedVersion();
+        }
+        return ModpackMetadata.getInstance().getModpackVersion();
+    }
+
+    private static String resolveChangelogMarkdown(UpdateStatus status) {
+        if (status.changelog() != null && !status.changelog().isBlank()) {
+            return status.changelog();
+        }
+
+        return Component.translatable("gui.packcore.overlay.changelog.empty").getString()
+                + "\n\n"
+                + Component.translatable("gui.packcore.overlay.changelog.empty.hint").getString();
     }
 
     private void setMenuButtonsVisible(boolean visible) {

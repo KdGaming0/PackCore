@@ -11,6 +11,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
+import com.github.kd_gaming1.packcore.integration.ScamScreenerConfigurator;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import eu.midnightdust.lib.config.MidnightConfig;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,17 +71,19 @@ public class ConfirmApplyPage extends BaseWizardPage {
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_blank_gray_button")
     );
 
-    private record SummaryEntry(String stateKey, String label, String translationPrefix) {}
+    private record SummaryEntry(String selectionKey, String statusKey, String label, String translationPrefix) {}
 
     private static final List<SummaryEntry> SUMMARY_ENTRIES = List.of(
-            new SummaryEntry(MainMenuDesignPage.STATE_KEY, "Main Menu Design",    "gui.packcore.wizard.menu_design."),
-            new SummaryEntry(PerformancePage.STATE_KEY,    "Performance Profile", "gui.packcore.wizard.performance."),
-            new SummaryEntry(TabDesignPage.STATE_KEY,      "Tab Design",          "gui.packcore.wizard.tab_design."),
-            new SummaryEntry(ItemBackgroundPage.STATE_KEY, "Item Background",     "gui.packcore.wizard.item_background."),
-            new SummaryEntry(StorageDesignPage.STATE_KEY,  "Storage Design",      "gui.packcore.wizard.storage_design.")
+            new SummaryEntry(MainMenuDesignPage.STATE_KEY, MainMenuDesignPage.STATE_KEY, "Main Menu Design", "gui.packcore.wizard.menu_design."),
+            new SummaryEntry(PerformancePage.STATE_KEY, PerformancePage.STATE_KEY, "Performance Profile", "gui.packcore.wizard.performance."),
+            new SummaryEntry(TabDesignPage.STATE_KEY, TabDesignPage.STATE_KEY, "Tab Design", "gui.packcore.wizard.tab_design."),
+            new SummaryEntry(ItemBackgroundPage.STATE_KEY, ItemBackgroundPage.STATE_KEY, "Item Background", "gui.packcore.wizard.item_background."),
+            new SummaryEntry(StorageDesignPage.STATE_KEY, StorageDesignPage.STATE_KEY, "Storage Design", "gui.packcore.wizard.storage_design."),
+            new SummaryEntry(ScamScreenerPage.ALERT_LEVEL_KEY, ScamScreenerPage.ALERT_LEVEL_KEY, "ScamScreener Alerts", "gui.packcore.wizard.scamscreener.minimum_risk.")
     );
 
     private static final String RESOURCE_PACKS_KEY = "resourcePacks";
+    private static final String SCAM_SCREENER_PINGS_STATUS_KEY = "scamScreenerPings";
 
     private enum RowStatus { SUCCESS, ERROR }
 
@@ -90,6 +94,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
     // Hold references so we can push status updates into them after applying
     private final List<SummaryRowComponent> summaryRows = new ArrayList<>();
     private final List<SummaryRowComponent> packRows = new ArrayList<>();
+    private final List<SummaryRowComponent> scamPingRows = new ArrayList<>();
 
     private CustomButtonWidget applyButton = null;
     private String globalErrorMessage = null;
@@ -116,6 +121,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
         rowErrors.clear();
         summaryRows.clear();
         packRows.clear();
+        scamPingRows.clear();
         globalErrorMessage = null;
 
         var font = Minecraft.getInstance().font;
@@ -146,23 +152,61 @@ public class ConfirmApplyPage extends BaseWizardPage {
         // Build row container
         EmptyComponent rowContainer = new EmptyComponent(0, 0, rowWidth, 0);
         int currentY = 0;
+        boolean scamScreenerLoaded = FabricLoader.getInstance().isModLoaded("scamscreener");
 
         for (SummaryEntry entry : SUMMARY_ENTRIES) {
-            String selectedId = state.getSelection(entry.stateKey());
+            if (!scamScreenerLoaded && entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)) {
+                continue;
+            }
+
+            String selectedId = state.getSelection(entry.selectionKey());
             boolean skipped = selectedId == null;
 
             Component valueText = skipped
                     ? Component.literal("Skipped")
+                    : entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)
+                    ? ScamScreenerPage.labelForAlertLevel(selectedId)
                     : Component.translatable(entry.translationPrefix() + selectedId + ".name");
             int valueColor = skipped ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED;
 
             SummaryRowComponent row = new SummaryRowComponent(
                     0, currentY, rowWidth, ROW_HEIGHT,
-                    entry.stateKey(), entry.label(), valueText, valueColor, false
+                    entry.statusKey(), entry.label(), valueText, valueColor, false
             );
             summaryRows.add(row);
             rowContainer.addComponent(row);
             currentY += ROW_HEIGHT + ROW_GAP;
+        }
+
+        if (scamScreenerLoaded) {
+            Set<String> selectedPingOptions = state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY);
+            SummaryRowComponent pingHeaderRow = new SummaryRowComponent(
+                    0, currentY, rowWidth, ROW_HEIGHT,
+                    SCAM_SCREENER_PINGS_STATUS_KEY,
+                    "ScamScreener Pings",
+                    selectedPingOptions.isEmpty()
+                            ? Component.literal("None selected")
+                            : Component.literal(selectedPingOptions.size() + " selected"),
+                    selectedPingOptions.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED,
+                    false
+            );
+            scamPingRows.add(pingHeaderRow);
+            rowContainer.addComponent(pingHeaderRow);
+            currentY += ROW_HEIGHT + ROW_GAP;
+
+            for (String optionId : selectedPingOptions.stream().sorted(Comparator.naturalOrder()).toList()) {
+                SummaryRowComponent pingRow = new SummaryRowComponent(
+                        0, currentY, rowWidth, ROW_HEIGHT,
+                        SCAM_SCREENER_PINGS_STATUS_KEY,
+                        "",
+                        ScamScreenerPage.labelForPingOption(optionId),
+                        COLOR_PACK_NAME,
+                        true
+                );
+                scamPingRows.add(pingRow);
+                rowContainer.addComponent(pingRow);
+                currentY += ROW_HEIGHT + ROW_GAP;
+            }
         }
 
         Set<String> selectedPacks = state.getSelectedResourcePacks();
@@ -235,6 +279,14 @@ public class ConfirmApplyPage extends BaseWizardPage {
         anyError |= runStep(StorageDesignPage.STATE_KEY,
                 () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
 
+        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+            anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY,
+                    () -> applyScamScreener(
+                            state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
+                            state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)
+                    ));
+        }
+
         anyError |= runStep(RESOURCE_PACKS_KEY,
                 () -> applyResourcePacks(state.getSelectedResourcePacks()));
 
@@ -271,6 +323,13 @@ public class ConfirmApplyPage extends BaseWizardPage {
         for (SummaryRowComponent row : summaryRows) {
             row.setStatus(rowStatuses.get(row.getKey()), rowErrors.get(row.getKey()));
         }
+
+        RowStatus scamPingStatus = rowStatuses.get(ScamScreenerPage.ALERT_LEVEL_KEY);
+        String scamPingError = rowErrors.get(ScamScreenerPage.ALERT_LEVEL_KEY);
+        for (SummaryRowComponent row : scamPingRows) {
+            row.setStatus(scamPingStatus, scamPingError);
+        }
+
         // All pack rows share the same status as the resource pack step
         RowStatus packStatus = rowStatuses.get(RESOURCE_PACKS_KEY);
         String packError = rowErrors.get(RESOURCE_PACKS_KEY);
@@ -370,6 +429,26 @@ public class ConfirmApplyPage extends BaseWizardPage {
         boolean success = StorageDesignManager.apply(design);
         if (!success) {
             throw new RuntimeException("Failed to apply storage design: " + selectedId);
+        }
+    }
+
+    private void applyScamScreener(String selectedId, Set<String> pingOptions) {
+        if (selectedId == null && pingOptions.isEmpty()) {
+            LOGGER.info("ScamScreener: skipped");
+            return;
+        }
+
+        String minimumRiskLevel = selectedId != null
+                ? selectedId
+                : ScamScreenerConfigurator.defaultSettings().minimumRiskLevel();
+
+        boolean success = ScamScreenerConfigurator.apply(
+                minimumRiskLevel,
+                pingOptions.contains("risk_warning"),
+                pingOptions.contains("blacklist_warning")
+        );
+        if (!success) {
+            throw new RuntimeException("Failed to update ScamScreener settings");
         }
     }
 
