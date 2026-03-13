@@ -52,7 +52,7 @@ public class StorageDesignManager {
                     if (player == null) return;
                     // /firm config toggle storage-overlay always-replace
                     // The toggle command flips the value, so we need to check the current state.
-                    String command = "firm config set storage-overlay always-replace " + enable;
+                    String command = "firm config toggle storage-overlay always-replace";
                     player.connection.sendCommand(command);
                     PackCore.LOGGER.info("StorageDesign: executed /{}", command);
                 });

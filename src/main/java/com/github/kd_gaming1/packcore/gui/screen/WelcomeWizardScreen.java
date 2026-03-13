@@ -11,6 +11,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
@@ -113,11 +114,18 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private void wireEvents() {
         // When apply succeeds, unlock the Finish button
         confirmApplyPage.setOnApplySucceeded(() -> buttonBar.setFinishEnabled(true));
+        // Re-apply persisted confirm state after screen init/reload.
+        buttonBar.setFinishEnabled(confirmApplyPage.isApplyCompleted());
 
         // Finish — settings have been applied; mark complete and close
         buttonBar.setOnFinish(() -> {
             markWizardComplete();
-            Minecraft.getInstance().setScreen(resolvePostWizardScreen());
+            boolean openedFromTitle = lastScreen instanceof TitleScreen;
+            if (openedFromTitle) {
+                Minecraft.getInstance().setScreen(resolvePostWizardScreen());
+            } else {
+                Minecraft.getInstance().setScreen(lastScreen);
+            }
         });
 
         // Skip on the last page — close without applying; still marks complete

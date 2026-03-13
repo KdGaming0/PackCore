@@ -141,7 +141,7 @@
   "gui.packcore.wizard.page.confirm.title": "Confirm & Apply",
   "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",
   "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
-  "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world.",
+  "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world/server. Please do so immediately, and do NOT close the game first.",
   "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
   "gui.packcore.wizard.button.finish.locked_tooltip": "Click \"Apply Settings\" to apply your selections before finishing.",
 

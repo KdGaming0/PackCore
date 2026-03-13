@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.wizard.page;
 
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
+import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
@@ -84,9 +85,14 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private CustomButtonWidget applyButton;
     private String globalErrorMessage;
     private Runnable onApplySucceeded;
+    private boolean applyCompleted;
 
     public void setOnApplySucceeded(Runnable callback) {
         onApplySucceeded = callback;
+    }
+
+    public boolean isApplyCompleted() {
+        return applyCompleted;
     }
 
     public ConfirmApplyPage(WizardState state, WizardNavigator navigator, int width, int height) {
@@ -95,18 +101,26 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     @Override public Component getTitle() { return PAGE_TITLE; }
     @Override public boolean validate() { return true; }
-    @Override public void onExit() {}
+    @Override public void onExit() {
+        applyCompleted = false;
+        rowStatuses.clear();
+        rowErrors.clear();
+        globalErrorMessage = null;
+    }
 
     @Override
     public void onEnter() {
         clearComponents();
         applyButton = null;
-        rowStatuses.clear();
-        rowErrors.clear();
         summaryRows.clear();
         packRows.clear();
         scamPingRows.clear();
         globalErrorMessage = null;
+
+        if (!applyCompleted) {
+            rowStatuses.clear();
+            rowErrors.clear();
+        }
 
         var font = Minecraft.getInstance().font;
         int rowWidth = getWidth() - PADDING * 2 - SCROLL_BAR_WIDTH;
@@ -120,7 +134,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
         int warningY = buttonY - (showWarning ? font.lineHeight + BUTTON_GAP : 0);
 
         if (showWarning) {
-            addComponent(new TextComponent(PADDING, warningY,
+            addComponent(new MultiLineTextComponent(PADDING, warningY, getWidth() - PADDING * 2 - SCROLL_BAR_WIDTH,
                     Component.translatable("gui.packcore.wizard.confirm.world_join_required"), GuiColors.WARNING));
         }
 
@@ -200,6 +214,11 @@ public class ConfirmApplyPage extends BaseWizardPage {
                 Component.translatable("gui.packcore.wizard.confirm.apply_all_configs"),
                 APPLY_BUTTON_SPRITES, btn -> applyAll());
         addWidget(applyButton);
+
+        if (applyCompleted) {
+            applyButton.active = false;
+            refreshRowStatuses();
+        }
     }
 
     private void applyAll() {
@@ -220,6 +239,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
         }
 
         anyError |= runStep(RESOURCE_PACKS_KEY, () -> applyResourcePacks(state.getSelectedResourcePacks()));
+
+        applyCompleted = !anyError;
 
         if (!anyError) {
             applyButton.active = false;

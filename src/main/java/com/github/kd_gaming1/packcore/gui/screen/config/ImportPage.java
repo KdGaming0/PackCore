@@ -220,14 +220,19 @@ public class ImportPage extends BaseConfigPage {
     }
 
     private void applyAll() {
-        if (selectedImport == null) return;
-        try {
-            ConfigPackExtractor.extractAll(selectedImport.zipPath(), PackCore.PACKCORE_DIR,
-                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
-            saveAppliedState();
-        } catch (IOException e) {
-            LOGGER.error("Failed to apply all imported files: {}", e.getMessage());
+        if (selectedImport == null) {
+            LOGGER.warn("Apply All clicked in ImportPage without a selected import.");
+            return;
         }
+
+        String pendingFile = selectedImport.zipPath().getFileName().toString();
+        LOGGER.info("Scheduling imported config apply on restart: file='{}'", pendingFile);
+
+        PackCoreConfig.pendingConfigPack = pendingFile;
+        MidnightConfig.write(MOD_ID);
+
+        LOGGER.info("Pending imported config saved, stopping client to apply on next launch.");
+        Minecraft.getInstance().stop();
     }
 
     private void saveAppliedState() {

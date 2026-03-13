@@ -249,14 +249,19 @@ public class ConfigurationPage extends BaseConfigPage {
     }
 
     private void applyAll() {
-        if (selectedPreset == null) return;
-        try {
-            ConfigPackExtractor.extractAll(selectedPreset.zipPath(), PackCore.PACKCORE_DIR,
-                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
-            saveAppliedState();
-        } catch (IOException e) {
-            LOGGER.error("Failed to apply all files: {}", e.getMessage());
+        if (selectedPreset == null) {
+            LOGGER.warn("Apply All clicked without a selected preset (source={})", presetsSource);
+            return;
         }
+
+        String pendingFile = selectedPreset.zipPath().getFileName().toString();
+        LOGGER.info("Scheduling config apply on restart: file='{}', source={}", pendingFile, presetsSource);
+
+        PackCoreConfig.pendingConfigPack = pendingFile;
+        MidnightConfig.write(MOD_ID);
+
+        LOGGER.info("Pending config saved, stopping client to apply on next launch.");
+        Minecraft.getInstance().stop();
     }
 
     private void saveAppliedState() {
