@@ -34,6 +34,7 @@ dependencies {
 
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
     modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
+    modCompileOnly("maven.modrinth:scaleme:${property("deps.scaleme_version")}")
 
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
     include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")

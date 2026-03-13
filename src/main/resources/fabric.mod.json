@@ -23,9 +23,11 @@
   "mixins": [ "packcore.mixins.json" ],
   "depends": {
     "fabricloader": ">=${fabricloader}",
-    "minecraft": "${minecraft}"
+    "minecraft": "${minecraft}",
+    "uilib": ">=${uilib_version}"
   },
   "suggests": {
-    "scamscreener": "*"
+    "scamscreener": "*",
+    "scaleme": "*"
   }
 }

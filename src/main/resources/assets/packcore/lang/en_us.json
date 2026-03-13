@@ -206,5 +206,14 @@
   "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance.",
 
   "gui.packcore.export.field.gui_scale": "GUI Scale",
-  "gui.packcore.export.tooltip.missing_gui_scale": "GUI scale must be a whole number (0 = Auto)"
+  "gui.packcore.export.tooltip.missing_gui_scale": "GUI scale must be a whole number (0 = Auto)",
+
+  "gui.packcore.wizard.page.sword_block.title": "Sword Block",
+  "gui.packcore.wizard.page.sword_block.explanation": "Choose whether to enable the sword blocking animation from ScaleMe. When enabled, holding right click with a sword will display the classic blocking pose from 1.8.9.",
+
+  "gui.packcore.wizard.sword_block.enabled.name": "Enabled",
+  "gui.packcore.wizard.sword_block.enabled.desc": "Holding right click with a sword will show the blocking animation.",
+
+  "gui.packcore.wizard.sword_block.disabled.name": "Disabled",
+  "gui.packcore.wizard.sword_block.disabled.desc": "No blocking animation will be shown when holding right click with a sword."
 }

@@ -16,6 +16,7 @@ import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.ScamScreenerConfigurator;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
+import com.github.kd_gaming1.scaleme.config.ScaleMeConfig;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -71,6 +72,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
             new SummaryEntry(TabDesignPage.STATE_KEY, TabDesignPage.STATE_KEY, "Tab Design", "gui.packcore.wizard.tab_design."),
             new SummaryEntry(ItemBackgroundPage.STATE_KEY, ItemBackgroundPage.STATE_KEY, "Item Background", "gui.packcore.wizard.item_background."),
             new SummaryEntry(StorageDesignPage.STATE_KEY, StorageDesignPage.STATE_KEY, "Storage Design", "gui.packcore.wizard.storage_design."),
+            new SummaryEntry(SwordBlockPage.STATE_KEY, SwordBlockPage.STATE_KEY, "Sword Block", "gui.packcore.wizard.sword_block."),
             new SummaryEntry(ScamScreenerPage.ALERT_LEVEL_KEY, ScamScreenerPage.ALERT_LEVEL_KEY, "ScamScreener Alerts", "gui.packcore.wizard.scamscreener.minimum_risk.")
     );
 
@@ -231,6 +233,9 @@ public class ConfirmApplyPage extends BaseWizardPage {
         anyError |= runStep(TabDesignPage.STATE_KEY, () -> applyTabDesign(state.getSelection(TabDesignPage.STATE_KEY)));
         anyError |= runStep(ItemBackgroundPage.STATE_KEY, () -> applyItemBackground(state.getSelection(ItemBackgroundPage.STATE_KEY)));
         anyError |= runStep(StorageDesignPage.STATE_KEY, () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
+        if (FabricLoader.getInstance().isModLoaded("scaleme")) {
+            anyError |= runStep(SwordBlockPage.STATE_KEY, () -> applySwordBlock(state.getSelection(SwordBlockPage.STATE_KEY)));
+        }
 
         if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
             anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY, () -> applyScamScreener(
@@ -336,6 +341,12 @@ public class ConfirmApplyPage extends BaseWizardPage {
             default -> throw new RuntimeException("Unknown storage design ID: " + selectedId);
         };
         if (!StorageDesignManager.apply(design)) throw new RuntimeException("Failed to apply storage design: " + selectedId);
+    }
+
+    private void applySwordBlock(String selectedId) {
+        if (selectedId == null) return;
+        ScaleMeConfig.enableSwordBlock = selectedId.equals("enabled");
+        MidnightConfig.write("scaleme");
     }
 
     private void applyScamScreener(String selectedId, Set<String> pingOptions) {

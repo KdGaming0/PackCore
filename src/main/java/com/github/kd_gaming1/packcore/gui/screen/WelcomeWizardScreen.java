@@ -65,6 +65,9 @@ public class WelcomeWizardScreen extends AbstractScreen {
         navigator.addPage(new TabDesignPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new ItemBackgroundPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new StorageDesignPage(wizardState, navigator, contentWidth, contentHeight));
+        if (FabricLoader.getInstance().isModLoaded("scaleme")) {
+            navigator.addPage(new SwordBlockPage(wizardState, navigator, contentWidth, contentHeight));
+        }
         if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
             navigator.addPage(new ScamScreenerPage(wizardState, navigator, contentWidth, contentHeight));
         }
