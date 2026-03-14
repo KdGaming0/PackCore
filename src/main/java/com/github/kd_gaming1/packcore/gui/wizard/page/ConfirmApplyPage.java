@@ -456,31 +456,27 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+            int x = getTotalX();
+            int y = getTotalY();
+            int w = getWidth();
+            int h = getHeight();
+            int leftInset = isSubRow ? 20 : 0;
+
+            int borderColor = status == RowStatus.SUCCESS ? GuiColors.SUCCESS
+                    : status == RowStatus.ERROR ? GuiColors.ERROR
+                    : GuiColors.BORDER_IDLE;
+
+            graphics.fill(x + leftInset, y, x + w, y + h, GuiColors.ROW_BACKGROUND);
+            GuiHelper.drawBorder(graphics, x + leftInset, y, w - leftInset, h, borderColor);
+
             var font = Minecraft.getInstance().font;
+            int textY = y + (h - font.lineHeight) / 2;
 
-            // Global error (some steps failed)
-            if (globalErrorMessage != null) {
-                int errorY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT + BUTTON_HEIGHT + 4;
-                graphics.drawCenteredString(font, globalErrorMessage, getTotalX() + getWidth() / 2, errorY, GuiColors.ERROR);
+            if (!label.isEmpty()) {
+                graphics.drawString(font, label, x + leftInset + 8, textY, GuiColors.NAME_DEFAULT, false);
             }
 
-            // Resource-pack partial-apply warning (some packs applied, Hypixel+ skipped)
-            if (resourcePackWarningMessage != null) {
-                int warningY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT + BUTTON_HEIGHT + 4
-                        + (globalErrorMessage != null ? font.lineHeight + 2 : 0);
-
-                // Render each line of the multi-line instructions string
-                String[] lines = resourcePackWarningMessage.split("\n");
-                int lineY = warningY;
-                for (String line : lines) {
-                    if (line.isBlank()) {
-                        lineY += font.lineHeight / 2;
-                        continue;
-                    }
-                    graphics.drawCenteredString(font, line.trim(), getTotalX() + getWidth() / 2, lineY, GuiColors.WARNING);
-                    lineY += font.lineHeight + 1;
-                }
-            }
+            graphics.drawString(font, cachedRightText, x + w - cachedRightWidth - 8, textY, cachedRightColor, false);
         }
     }
 }

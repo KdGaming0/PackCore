@@ -41,7 +41,7 @@ public class SBETitleScreen extends AbstractScreen {
     // Logo dimensions and positioning
     private static final int LOGO_ORIGINAL_WIDTH = 1020;
     private static final int LOGO_ORIGINAL_HEIGHT = 77;
-    private static final double LOGO_SCALE = 0.8;
+    private static final double LOGO_SCALE = 0.5;
     private static final int LOGO_Y_POSITION = 20;
 
     // Main menu button dimensions
