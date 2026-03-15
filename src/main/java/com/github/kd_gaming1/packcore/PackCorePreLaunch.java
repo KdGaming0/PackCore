@@ -26,17 +26,16 @@ import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
-
 public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
+    private static final String MOD_ID = "packcore";
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/PreLaunch");
     private static final String PACK_META_FILE = "pack.json";
 
     @Override
     public void onPreLaunch() {
         Path gameDir = FabricLoader.getInstance().getGameDir();
-        Path packcoreDir = PackCore.PACKCORE_DIR;
+        Path packcoreDir = gameDir.resolve(MOD_ID);
         Path configsDir = packcoreDir.resolve("configs");
 
         MidnightConfig.init("packcore", PackCoreConfig.class);
