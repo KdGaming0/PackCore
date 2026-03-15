@@ -27,6 +27,7 @@ public class PackCore implements ClientModInitializer {
     public static final Path PACKCORE_DIR = FabricLoader.getInstance().getGameDir().resolve("packcore");
 
     public static boolean migratedFromV3 = false;
+    private static boolean replacingTitleScreen = false;
 
     @Override
     public void onInitializeClient() {
@@ -39,7 +40,7 @@ public class PackCore implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> PackCoreCommands.register(dispatcher));
 
         ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (!(screen instanceof TitleScreen) || screen instanceof PackCoreTitleScreen) return;
+            if (!(screen instanceof TitleScreen) || screen instanceof PackCoreTitleScreen || replacingTitleScreen) return;
 
             RamWarningHelper.onMainMenu();
 
@@ -48,11 +49,18 @@ public class PackCore implements ClientModInitializer {
                 return;
             }
 
-            switch (PackCoreConfig.menuStyle) {
-                case MODERN         -> client.execute(() -> client.setScreen(new SBETitleScreen()));
-                case MODERN_MINIMAL -> client.execute(() -> client.setScreen(new SBETitleScreen(false)));
-                case MINIMAL        -> client.execute(() -> client.setScreen(new PackCoreTitleScreen()));
-            }
+            client.execute(() -> {
+                replacingTitleScreen = true;
+                try {
+                    switch (PackCoreConfig.menuStyle) {
+                        case MODERN -> client.setScreen(new SBETitleScreen());
+                        case MODERN_MINIMAL -> client.setScreen(new SBETitleScreen(false));
+                        case MINIMAL -> client.setScreen(new PackCoreTitleScreen());
+                    }
+                } finally {
+                    replacingTitleScreen = false;
+                }
+            });
         });
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(RamWarningHelper::onWorldJoin));
