@@ -11,7 +11,6 @@ import com.github.kd_gaming1.packcore.util.RamWarningHelper;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -43,40 +42,28 @@ public class PackCore implements ClientModInitializer {
 
         ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof TitleScreen)) return;
+            if (screen instanceof PackCoreTitleScreen) return;
 
             RamWarningHelper.onMainMenu();
-            if (decorateMinimalTitleScreenIfNeeded(screen, scaledWidth, scaledHeight)) return;
 
-            scheduleConfiguredTitleScreen(client, screen);
+            if (PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) {
+                scheduleConfiguredTitleScreen(client, screen);
+            }
         });
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (decorateMinimalTitleScreenIfNeeded(
-                    client.screen,
-                    client.getWindow().getGuiScaledWidth(),
-                    client.getWindow().getGuiScaledHeight()
-            )) return;
+        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (!(screen instanceof TitleScreen)) return;
+            if (screen instanceof PackCoreTitleScreen) return;
+            if (!PackCoreConfig.successfulWelcomeWizard) return;
+            if (PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) return;
 
-            scheduleConfiguredTitleScreen(client, client.screen);
+            PackCoreTitleScreen.decorateExisting((TitleScreen) screen, scaledWidth, scaledHeight);
         });
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(RamWarningHelper::onWorldJoin));
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> PlaytimeTracker.onSessionStart());
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> PlaytimeTracker.onSessionEnd());
-    }
-
-    private static boolean decorateMinimalTitleScreenIfNeeded(Screen screen, int scaledWidth, int scaledHeight) {
-        if (!(screen instanceof TitleScreen titleScreen)
-                || !PackCoreConfig.successfulWelcomeWizard
-                || PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) {
-            return false;
-        }
-
-        if (!(titleScreen instanceof PackCoreTitleScreen)) {
-            PackCoreTitleScreen.decorateExisting(titleScreen, scaledWidth, scaledHeight);
-        }
-        return true;
     }
 
     private static void scheduleConfiguredTitleScreen(Minecraft client, Screen screen) {

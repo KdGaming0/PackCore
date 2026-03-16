@@ -43,8 +43,7 @@ public class PackCoreTitleScreen extends TitleScreen {
     private static final String JOIN_HYPIXEL_LABEL = Component.translatable("gui.packcore.button.join_hypixel").getString();
 
     private static boolean updateToastShown = false;
-    private static final Set<TitleScreen> VERSION_HOOKED_SCREENS =
-            Collections.newSetFromMap(new WeakHashMap<>());
+    private static final Set<TitleScreen> VERSION_HOOKED_SCREENS = Collections.newSetFromMap(new WeakHashMap<>());
 
     @Override
     protected void init() {
