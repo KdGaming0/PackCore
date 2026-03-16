@@ -33,7 +33,7 @@ dependencies {
     modImplementation("com.daqem.uilib:uilib-fabric:${property("deps.uilib_version")}")
 
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
-    modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
+    modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}+${stonecutter.current.version}")
     modCompileOnly("maven.modrinth:scaleme:${property("deps.scaleme_version")}")
 
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
@@ -45,7 +45,7 @@ dependencies {
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
     modRuntimeOnly("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
 
-    modRuntimeOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
+    modRuntimeOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}+${stonecutter.current.version}")
 }
 
 loom {
