@@ -6,6 +6,8 @@ import com.github.kd_gaming1.packcore.gui.util.ToastHelper;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.update.UpdateStatus;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -21,6 +23,10 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
+
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
 /**
@@ -34,21 +40,18 @@ public class PackCoreTitleScreen extends TitleScreen {
     private static final int ICON_SPACING = 4;
     private static final int BUTTON_HEIGHT = 20;
     private static final int BUTTON_STRIDE = 24;
+    private static final String JOIN_HYPIXEL_LABEL = Component.translatable("gui.packcore.button.join_hypixel").getString();
 
     private static boolean updateToastShown = false;
+    private static final Set<TitleScreen> VERSION_HOOKED_SCREENS =
+            Collections.newSetFromMap(new WeakHashMap<>());
 
     @Override
     protected void init() {
         super.init();
 
         UpdateStatus status = UpdateChecker.getCachedStatus();
-
-        if (!updateToastShown) {
-            if (status.isUpdateAvailable()) {
-                ToastHelper.showUpdateAvailable(status.latestVersion());
-            }
-            updateToastShown = true;
-        }
+        showUpdateToastIfNeeded();
 
         // Join Hypixel — one row above vanilla singleplayer
         int hypixelY = this.height / 4 + 48 - (BUTTON_STRIDE * 2);
@@ -93,6 +96,66 @@ public class PackCoreTitleScreen extends TitleScreen {
                 btn -> Minecraft.getInstance().setScreen(new ChangelogScreen(this, status)));
     }
 
+    public static void decorateExisting(TitleScreen screen, int scaledWidth, int scaledHeight) {
+        showUpdateToastIfNeeded();
+        Screens.getButtons(screen).removeIf(button ->
+                button instanceof PackCoreDecoratedWidget
+                        || JOIN_HYPIXEL_LABEL.equals(button.getMessage().getString())
+        );
+
+        int hypixelY = scaledHeight / 4 + 48 - (BUTTON_STRIDE * 2);
+        Screens.getButtons(screen).add(Button.builder(
+                Component.translatable("gui.packcore.button.join_hypixel"),
+                btn -> connectToHypixel(screen)
+        ).bounds(scaledWidth / 2 - 100, hypixelY, 200, BUTTON_HEIGHT).build());
+
+        int vanillaTwoLinesY = scaledHeight - 10 - Minecraft.getInstance().font.lineHeight - 2;
+        int yourVersionY = vanillaTwoLinesY - Minecraft.getInstance().font.lineHeight - 2;
+
+        int githubY = yourVersionY - MARGIN - ICON_SIZE;
+        int modrinthY = githubY - ICON_SPACING - ICON_SIZE;
+        int discordY = modrinthY - ICON_SPACING - ICON_SIZE;
+
+        Screens.getButtons(screen).add(createDecoratedIconButton(
+                MARGIN, discordY, "menu/discord_icon",
+                Component.translatable("gui.packcore.tooltip.discord"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getDiscordUrl())
+        ));
+
+        Screens.getButtons(screen).add(createDecoratedIconButton(
+                MARGIN, modrinthY, "menu/modrinth_icon",
+                Component.translatable("gui.packcore.tooltip.modrinth"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getWebsiteUrl())
+        ));
+
+        Screens.getButtons(screen).add(createDecoratedIconButton(
+                MARGIN, githubY, "menu/github_icon",
+                Component.translatable("gui.packcore.tooltip.github"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getIssueTrackerUrl())
+        ));
+
+        int settingsY = scaledHeight - ICON_SIZE - MARGIN - (Minecraft.getInstance().font.lineHeight * 2) - 4;
+        Screens.getButtons(screen).add(createDecoratedIconButton(
+                scaledWidth - ICON_SIZE - MARGIN, settingsY, "menu/settings_icon",
+                Component.translatable("gui.packcore.tooltip.modpack_config"),
+                btn -> Minecraft.getInstance().setScreen(new ConfigScreen())
+        ));
+
+        UpdateStatus status = UpdateChecker.getCachedStatus();
+        boolean hasUpdate = status.isUpdateAvailable();
+        String updateIcon = hasUpdate ? "menu/update_icon_available" : "menu/update_icon";
+        Component updateTooltip = hasUpdate
+                ? Component.translatable("gui.packcore.tooltip.update_available", status.latestVersion())
+                : Component.translatable("gui.packcore.tooltip.changelog");
+
+        Screens.getButtons(screen).add(createDecoratedIconButton(
+                scaledWidth - ICON_SIZE - MARGIN, MARGIN, updateIcon, updateTooltip,
+                btn -> Minecraft.getInstance().setScreen(new ChangelogScreen(screen, status))
+        ));
+
+        registerVersionHook(screen);
+    }
+
     @Override
     public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         super.render(graphics, mouseX, mouseY, delta);
@@ -102,13 +165,17 @@ public class PackCoreTitleScreen extends TitleScreen {
     }
 
     private void connectToHypixel() {
+        connectToHypixel(this);
+    }
+
+    private static void connectToHypixel(TitleScreen screen) {
         ServerData serverData = new ServerData(
                 "Hypixel",
                 PackCoreConfig.serverAddressForQuickJoinButton,
                 ServerData.Type.OTHER
         );
         ConnectScreen.startConnecting(
-                this,
+                screen,
                 Minecraft.getInstance(),
                 ServerAddress.parseString(PackCoreConfig.serverAddressForQuickJoinButton),
                 serverData,
@@ -125,6 +192,35 @@ public class PackCoreTitleScreen extends TitleScreen {
         addRenderableWidget(button);
     }
 
+    private static PackCoreImageButton createDecoratedIconButton(int x, int y, String spritePath, Component tooltip, Button.OnPress onPress) {
+        Identifier icon = Identifier.fromNamespaceAndPath(MOD_ID, spritePath);
+        WidgetSprites sprites = new WidgetSprites(icon, icon, icon);
+        PackCoreImageButton button = new PackCoreImageButton(x, y, ICON_SIZE, ICON_SIZE, sprites, onPress);
+        button.setTooltip(Tooltip.create(tooltip));
+        return button;
+    }
+
+    private static void registerVersionHook(TitleScreen screen) {
+        if (!VERSION_HOOKED_SCREENS.add(screen)) return;
+
+        ScreenEvents.afterRender(screen).register((screen1, graphics, mouseX, mouseY, tickDelta) -> {
+            Minecraft client = Minecraft.getInstance();
+            int height = client.getWindow().getGuiScaledHeight();
+            int yourVersionY = (height - MARGIN - ICON_SIZE) + (ICON_SIZE - client.font.lineHeight) / 2;
+            graphics.drawString(client.font, buildVersionText(UpdateChecker.getCachedStatus()), MARGIN, yourVersionY, 0xFFFFFFFF, false);
+        });
+    }
+
+    private static void showUpdateToastIfNeeded() {
+        if (updateToastShown) return;
+
+        UpdateStatus status = UpdateChecker.getCachedStatus();
+        if (status.isUpdateAvailable()) {
+            ToastHelper.showUpdateAvailable(status.latestVersion());
+        }
+        updateToastShown = true;
+    }
+
     private static Component buildVersionText(UpdateStatus status) {
         String installed = status.installedVersion() != null
                 ? status.installedVersion()
@@ -134,5 +230,13 @@ public class PackCoreTitleScreen extends TitleScreen {
             return Component.literal("v" + installed + " → v" + status.latestVersion());
         }
         return Component.literal("v" + installed);
+    }
+
+    private interface PackCoreDecoratedWidget {}
+
+    private static final class PackCoreImageButton extends ImageButton implements PackCoreDecoratedWidget {
+        private PackCoreImageButton(int x, int y, int width, int height, WidgetSprites sprites, OnPress onPress) {
+            super(x, y, width, height, sprites, onPress);
+        }
     }
 }
