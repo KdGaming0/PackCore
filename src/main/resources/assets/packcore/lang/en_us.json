@@ -1,48 +1,243 @@
 {
-  "packcore.midnightconfig.title": "PackCore Configuration",
+  "packcore.midnightconfig.title": "PackCore Settings",
 
-  "packcore.midnightconfig.category.interface": "User Interface",
-  "packcore.midnightconfig.category.backups": "Backups",
-  "packcore.midnightconfig.category.customization": "Customization & Updates",
-  "packcore.midnightconfig.category.scam_protection": "Scam protection",
-  "packcore.midnightconfig.category.advanced": "Advanced",
+  "packcore.midnightconfig.category.toast": "Notifications",
+  "packcore.midnightconfig.category.menu": "Main Menu",
+  "packcore.midnightconfig.category.backup": "Automatic Backups",
+  "packcore.midnightconfig.category.meta": "Internal",
 
-  "packcore.midnightconfig.interface_info": "Interface settings for the PackCore mod.",
-  "packcore.midnightconfig.enable_custom_menu": "Enable custom main menu",
-  "packcore.midnightconfig.enable_custom_menu.tooltip": "Turns the PackCore custom main menu on or off.",
+  "packcore.midnightconfig.showRamWarningToast": "Low RAM Warning",
+  "packcore.midnightconfig.showRamWarningToast.tooltip": "Show a toast when less than 3GB of RAM is allocated.",
 
-  "packcore.midnightconfig.backup_info": "Auto backups run when you apply configuration changes. Scheduled backups run at the interval below.",
-  "packcore.midnightconfig.enable_auto_backups": "Enable auto backups",
-  "packcore.midnightconfig.enable_auto_backups.tooltip": "Creates a backup each time you apply new settings.",
-  "packcore.midnightconfig.enable_scheduled_backups": "Enable scheduled backups",
-  "packcore.midnightconfig.enable_scheduled_backups.tooltip": "Creates backups at regular times.",
-  "packcore.midnightconfig.max_backups": "Maximum number of backups to keep",
-  "packcore.midnightconfig.max_backups.tooltip": "Limits how many backups PackCore stores. It deletes the oldest when full.",
-  "packcore.midnightconfig.backup_interval_days": "Backup interval (days)",
-  "packcore.midnightconfig.backup_interval_days.tooltip": "Sets how long PackCore waits before creating the next scheduled backup.",
-  "packcore.midnightconfig.enable_backup_debug_logging": "Enable Backup Debug Logging",
-  "packcore.midnightconfig.enable_backup_debug_logging.tooltip": "Logs detailed timing information for each backup phase. Enable this if backups are slow to help diagnose the issue.",
-  "packcore.midnightconfig.customization_spacer_1": "",
+  "packcore.midnightconfig.showUpdateToast": "Update Notification",
+  "packcore.midnightconfig.showUpdateToast.tooltip": "Show a toast when a modpack update is available.",
 
-  "packcore.midnightconfig.server_address": "Server address for quick-join button",
-  "packcore.midnightconfig.server_address.tooltip": "Sets the server used by the Quick Join button.",
-  "packcore.midnightconfig.enable_update_notifications": "Enable update notifications",
-  "packcore.midnightconfig.enable_update_notifications.tooltip": "Shows a message in chat when the modpack has updates.",
-  "packcore.midnightconfig.show_update_notifications_title": "Show update notifications on title screen",
-  "packcore.midnightconfig.show_update_notifications_title.tooltip": "Shows update notices on the title screen.",
-  "packcore.midnightconfig.show_low_memory_warning": "Show Low Memory Warning",
-  "packcore.midnightconfig.show_low_memory_warning.tooltip": "Show a warning on the main menu if allocated RAM is below the minimum",
-  "packcore.midnightconfig.minimum_ram_gb": "Minimum RAM (GB)",
-  "packcore.midnightconfig.minimum_ram_gb.tooltip": "Minimum amount of RAM in GB before showing a warning",
+  "packcore.midnightconfig.showBackupToast": "Backup Notification",
+  "packcore.midnightconfig.showBackupToast.tooltip": "Show a toast when an automatic backup is created.",
 
-  "packcore.midnightconfig.first_startup": "Treat next launch as first startup",
-  "packcore.midnightconfig.first_startup.tooltip": "Controls whether PackCore runs its first-time setup. Turn this on if you want the modpack to run the setup steps again.",
-  "packcore.midnightconfig.welcome_wizard_shown": "Mark welcome wizard as shown",
-  "packcore.midnightconfig.welcome_wizard_shown.tooltip": "Controls if the welcome wizard shows. Turn it off to show it again.",
+  "packcore.midnightconfig.menuStyle": "Menu Style (requires restart)",
+  "packcore.midnightconfig.menuStyle.tooltip": "Controls which title screen style is used.\nModern: fully custom branded screen with a custom background.\nModern Minimal: fully custom branded screen with the vanilla panorama.\nMinimal: vanilla-style screen with quick-join and social buttons added.",
 
-  "packcore.midnightconfig.have_set_bobby_config": "Mark Bobby config as applied",
-  "packcore.midnightconfig.have_set_bobby_config.tooltip": "Tracks if PackCore has applied Bobby’s settings. Change it to force the setup again.",
+  "packcore.midnightconfig.enum.MenuStyle.MODERN": "Modern",
+  "packcore.midnightconfig.enum.MenuStyle.MODERN_MINIMAL": "Modern Minimal",
+  "packcore.midnightconfig.enum.MenuStyle.MINIMAL": "Minimal",
 
-  "packcore.midnightconfig.setup_wizard_completed": "Mark setup wizard as completed",
-  "packcore.midnightconfig.setup_wizard_completed.tooltip": "Tracks if the setup wizard has been completed."
+  "packcore.midnightconfig.serverAddressForQuickJoinButton": "Quick Join Address",
+  "packcore.midnightconfig.serverAddressForQuickJoinButton.tooltip": "The server address used by the Join button on the main menu.",
+
+  "packcore.midnightconfig.autoBackupEnabled": "Automatic Backups",
+  "packcore.midnightconfig.autoBackupEnabled.tooltip": "Automatically create a backup when you log in after not playing for a while.",
+
+  "packcore.midnightconfig.autoBackupIntervalDays": "Backup Interval (days)",
+  "packcore.midnightconfig.autoBackupIntervalDays.tooltip": "How many days must pass before a new automatic backup is triggered (1–90).",
+
+  "gui.packcore.button.join_hypixel": "Join Hypixel",
+  "gui.packcore.button.modmenu": "Mod Menu",
+
+  "gui.packcore.tooltip.discord": "Join our Discord server",
+  "gui.packcore.tooltip.modrinth": "View on Modrinth",
+  "gui.packcore.tooltip.github": "View source on GitHub",
+  "gui.packcore.tooltip.modpack_config": "Open Configuration menu for the modpack",
+  "gui.packcore.tooltip.modpack_update": "See what's new in the modpack.",
+  "gui.packcore.tooltip.update_available": "Update available: v%s",
+  "gui.packcore.tooltip.changelog": "View Changelog",
+
+  "gui.packcore.overlay.changelog.title": "Changelog — v%s",
+  "gui.packcore.overlay.changelog.close": "Close",
+  "gui.packcore.overlay.changelog.empty": "No changelog available.",
+  "gui.packcore.overlay.changelog.empty.hint": "PackCore could not load changelog text for this version.",
+
+  "gui.packcore.wizard.title": "Welcome to v%s",
+
+  "gui.packcore.wizard.button.back": "Back",
+  "gui.packcore.wizard.button.continue": "Continue",
+  "gui.packcore.wizard.button.skip": "Skip",
+  "gui.packcore.wizard.button.finish": "Finish ✓",
+
+  "gui.packcore.wizard.page.welcome.title": "Welcome",
+
+  "gui.packcore.wizard.card.config.applied": "✓ Applied: %s",
+  "gui.packcore.wizard.card.config.error": "No Config Applied",
+  "gui.packcore.wizard.card.config.error.hint": "Restart the game to automatically try again, or manually apply a config from the list below.",
+
+  "gui.packcore.wizard.card.configs.heading": "Available Configurations",
+  "gui.packcore.wizard.card.configs.hint": "Want to switch from the auto-selected one?",
+
+  "gui.packcore.wizard.page.main_menu_design.title": "Main Menu Design",
+  "gui.packcore.wizard.page.main_menu_design.explanation": "Select how your main menu should look. Modern gives the game a custom SkyBlock-branded look. Modern Minimal uses the same layout but with the vanilla panorama background. Minimal adds quick-join and social buttons to the standard Minecraft menu.",
+
+  "gui.packcore.wizard.menu_design.modern.name": "Modern",
+  "gui.packcore.wizard.menu_design.modern.desc": "A fully custom main menu designed to give the game the look and feel of the official Hypixel SkyBlock game rather than Minecraft.",
+
+  "gui.packcore.wizard.menu_design.modern_minimal.name": "Modern Minimal",
+  "gui.packcore.wizard.menu_design.modern_minimal.desc": "The same custom layout as Modern, but uses the vanilla Minecraft panorama instead of a custom background image.",
+
+  "gui.packcore.wizard.menu_design.minimal.name": "Minimal",
+  "gui.packcore.wizard.menu_design.minimal.desc": "A custom main menu based on the vanilla style, with quick-join, social, and update buttons added.",
+
+  "gui.packcore.wizard.page.performance.title": "Performance",
+
+  "gui.packcore.wizard.performance.max_fps.name": "Max FPS",
+  "gui.packcore.wizard.performance.max_fps.desc": "Reduces visual quality to maximize frame rate.",
+
+  "gui.packcore.wizard.performance.balanced.name": "Balanced",
+  "gui.packcore.wizard.performance.balanced.desc": "A balance between performance and visuals. Recommended for most systems.",
+
+  "gui.packcore.wizard.performance.quality.name": "Quality",
+  "gui.packcore.wizard.performance.quality.desc": "Prioritizes visual quality over frame rate. Recommended for mid-range hardware.",
+
+  "gui.packcore.wizard.performance.quality_performance_shaders.name": "Quality + Performance Shaders",
+  "gui.packcore.wizard.performance.quality_performance_shaders.desc": "Quality settings with lightweight shaders that add visual polish with minimal FPS impact.",
+
+  "gui.packcore.wizard.performance.quality_quality_shaders.name": "Quality + Quality Shaders",
+  "gui.packcore.wizard.performance.quality_quality_shaders.desc": "High quality settings with demanding shaders. Requires a powerful GPU.",
+
+  "gui.packcore.wizard.page.tab_design.title": "Tab List Design",
+  "gui.packcore.wizard.page.tab_design.explanation": "Choose a tab list style. Compact (from SkyHanni) shows more information in a condensed layout with a vanilla look. Fancy (from Skyblocker) uses a more decorative and styled display.",
+
+  "gui.packcore.wizard.tab_design.compact.name": "Compact",
+  "gui.packcore.wizard.tab_design.compact.desc": "A condensed tab list from SkyHanni.",
+  "gui.packcore.wizard.tab_design.fancy.name": "Fancy",
+  "gui.packcore.wizard.tab_design.fancy.desc": "A decorative styled tab list from Skyblocker.",
+
+  "gui.packcore.wizard.page.item_background.title": "Item Background",
+  "gui.packcore.wizard.page.item_background.explanation": "Choose how items appear in your inventory. All options come from Skyblocker. None keeps the default Minecraft look, while Circle and Square add a styled background behind each item slot that matches the item rarity color.",
+
+  "gui.packcore.wizard.item_background.none.name": "None",
+  "gui.packcore.wizard.item_background.none.desc": "Default Minecraft item appearance with no background.",
+
+  "gui.packcore.wizard.item_background.circle.name": "Circle",
+  "gui.packcore.wizard.item_background.circle.desc": "Adds a circular background behind each item.",
+
+  "gui.packcore.wizard.item_background.square.name": "Square",
+  "gui.packcore.wizard.item_background.square.desc": "Adds a square background behind each item.",
+
+  "gui.packcore.wizard.page.storage_design.title": "Storage Design",
+  "gui.packcore.wizard.page.storage_design.explanation": "Choose how your SkyBlock storage is displayed. Overlay shows a full storage interface with all pages visible at once. Vanilla keeps the default chest look but adds tooltips that show what each page contains when you hover over it.",
+
+  "gui.packcore.wizard.storage_design.overlay.name": "Overlay",
+  "gui.packcore.wizard.storage_design.overlay.desc": "A full storage interface with all pages and their contents visible at once.",
+
+  "gui.packcore.wizard.storage_design.vanilla.name": "Vanilla",
+  "gui.packcore.wizard.storage_design.vanilla.desc": "Default chest appearance with tooltips that show each page's contents on hover.",
+
+  "gui.packcore.wizard.page.scamscreener.title": "ScamScreener",
+  "gui.packcore.wizard.page.scamscreener.explanation": "Configure how aggressively ScamScreener should warn and whether warning messages should ping you in chat.",
+  "gui.packcore.wizard.scamscreener.alerts.heading": "Minimum Alert Level",
+  "gui.packcore.wizard.scamscreener.pings.heading": "Warning Pings",
+  "gui.packcore.wizard.scamscreener.pings.hint": "Choose which ScamScreener warning types should play a ping in chat.",
+
+  "gui.packcore.wizard.scamscreener.minimum_risk.LOW.name": "Low",
+  "gui.packcore.wizard.scamscreener.minimum_risk.LOW.desc": "Show all ScamScreener warnings, including low-confidence alerts. ⚠ Higher chance of false positives!",
+  "gui.packcore.wizard.scamscreener.minimum_risk.MEDIUM.name": "Medium (Recommended)",
+  "gui.packcore.wizard.scamscreener.minimum_risk.MEDIUM.desc": "Hide low-confidence alerts and only warn when risk is medium or higher. Best default for most players.",
+  "gui.packcore.wizard.scamscreener.minimum_risk.HIGH.name": "High",
+  "gui.packcore.wizard.scamscreener.minimum_risk.HIGH.desc": "Only surface stronger warnings with a lower chance of false positives.",
+  "gui.packcore.wizard.scamscreener.minimum_risk.CRITICAL.name": "Critical",
+  "gui.packcore.wizard.scamscreener.minimum_risk.CRITICAL.desc": "Only show the most severe warnings.",
+
+  "gui.packcore.wizard.scamscreener.pings.risk.name": "Ping On Risk Warning",
+  "gui.packcore.wizard.scamscreener.pings.risk.desc": "Enable the chat ping when ScamScreener raises a normal risk warning.",
+  "gui.packcore.wizard.scamscreener.pings.blacklist.name": "Ping On Blacklist Warning",
+  "gui.packcore.wizard.scamscreener.pings.blacklist.desc": "Enable the chat ping when ScamScreener detects a blacklist warning.",
+
+  "gui.packcore.wizard.page.resource_pack.title": "Resource Packs",
+  "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resource packs folder. Add resource packs there and reopen the wizard.",
+  "gui.packcore.wizard.resource_pack.no_description": "No description provided.",
+
+  "gui.packcore.wizard.resource_pack.xss_warning": "⚠ Disabled — add -Xss4M JVM argument to enable.",
+
+  "gui.packcore.wizard.resource_pack.xss_banner_header": "⚠ Hypixel+ requires the JVM argument -Xss4M, which is not currently set.",
+  "gui.packcore.wizard.resource_pack.xss_banner_launcher": "Detected launcher: %s",
+
+  "gui.packcore.wizard.resource_pack.xss_fix.prism": "Fix: right-click instance → Edit → Settings → Java → add -Xss4M to JVM Arguments.",
+  "gui.packcore.wizard.resource_pack.xss_fix.curseforge": "Fix: profile ⋯ → Profile Options → Additional Java Arguments → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.atlauncher": "Fix: Settings → Java/Minecraft → Extra Java Parameters → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.modrinth": "Fix: instance ⋯ → Edit → Java Settings → Java arguments → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.official": "Fix: Installations → edit profile → More Options → JVM Arguments → add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.unknown": "Fix: open your launcher's instance/profile settings, find the JVM Arguments field, and add -Xss4M.",
+  "gui.packcore.wizard.resource_pack.xss_fix.restart": "Restart the game after saving to enable Hypixel+.",
+
+  "gui.packcore.wizard.page.confirm.title": "Confirm & Apply",
+  "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",
+  "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
+  "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world/server. Please do so immediately, and do NOT close the game first.",
+  "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
+  "gui.packcore.wizard.button.finish.locked_tooltip": "Click \"Apply Settings\" to apply your selections before finishing.",
+
+  "gui.packcore.wizard.confirm.resource_pack.xss_partial_apply": "Hypixel+ was skipped — -Xss4M is missing. Other selected packs were applied.",
+  "gui.packcore.wizard.confirm.resource_pack.xss_blocked": "Hypixel+ was not applied — -Xss4M JVM argument is missing.",
+
+  "gui.packcore.wizard.page.sword_block.title": "Sword Block",
+  "gui.packcore.wizard.page.sword_block.explanation": "Choose whether to enable the sword blocking animation from ScaleMe. When enabled, holding right click with a sword will display the classic blocking pose from 1.8.9.",
+
+  "gui.packcore.wizard.sword_block.enabled.name": "Enabled",
+  "gui.packcore.wizard.sword_block.enabled.desc": "Holding right click with a sword will show the blocking animation.",
+
+  "gui.packcore.wizard.sword_block.disabled.name": "Disabled",
+  "gui.packcore.wizard.sword_block.disabled.desc": "No blocking animation will be shown when holding right click with a sword.",
+
+  "gui.packcore.config.title": "Modpack Configuration",
+
+  "gui.packcore.config.tab.configuration": "Configuration",
+  "gui.packcore.config.tab.export": "Export",
+  "gui.packcore.config.tab.backups": "Backups",
+  "gui.packcore.config.tab.import": "Import",
+
+  "gui.packcore.config.files.heading": "Files in Config Preset",
+  "gui.packcore.config.files.hint": "Select a config preset on the right to browse its files.",
+  "gui.packcore.config.presets.heading": "Available Presets",
+
+  "gui.packcore.config.button.apply_selected": "Apply Selected",
+  "gui.packcore.config.button.apply_all": "Apply All",
+
+  "gui.packcore.export.metadata.heading": "Export Metadata",
+  "gui.packcore.export.files.heading": "Select Files to Export",
+  "gui.packcore.export.field.name": "Config Name",
+  "gui.packcore.export.field.version": "Version",
+  "gui.packcore.export.field.author": "Author",
+  "gui.packcore.export.field.description": "Description",
+  "gui.packcore.export.field.resolution": "Resolution (e.g. 1920x1080)",
+  "gui.packcore.export.field.gui_scale": "GUI Scale",
+  "gui.packcore.export.button.export": "Export Config Pack",
+  "gui.packcore.export.button.open_folder": "Open Exports Folder",
+
+  "gui.packcore.export.tooltip.missing_name": "Enter a config name.",
+  "gui.packcore.export.tooltip.missing_version": "Fix the version format (e.g. 1.0.0).",
+  "gui.packcore.export.tooltip.missing_resolution": "Fix the resolution format (e.g. 1920x1080).",
+  "gui.packcore.export.tooltip.missing_gui_scale": "GUI scale must be a whole number (0 = Auto)",
+  "gui.packcore.export.tooltip.missing_files": "Select at least one file to export.",
+
+  "gui.packcore.config.source.official": "Official",
+  "gui.packcore.config.source.my_exports": "My Exports",
+
+  "gui.packcore.config.tooltip.apply_selected": "Apply only the files you have checked in the file tree.",
+  "gui.packcore.config.tooltip.apply_all": "Apply every file in this preset, overwriting existing ones.",
+
+  "gui.packcore.backups.heading": "Backups",
+  "gui.packcore.backups.empty": "No backups found. Create one with the button above.",
+  "gui.packcore.backups.button.create": "Create Backup Now",
+  "gui.packcore.backups.button.restore": "Restore",
+
+  "gui.packcore.import.files.heading": "Files in Import",
+  "gui.packcore.import.files.hint": "Select an import on the right to browse its files.",
+  "gui.packcore.import.list.heading": "Imported Configs",
+  "gui.packcore.import.list.empty": "No imports found",
+  "gui.packcore.import.list.empty.hint": "Place a config pack .zip file in the imports folder",
+  "gui.packcore.import.button.open_folder": "Open Imports Folder",
+
+  "gui.packcore.overlay.restore.title": "Restore Backup?",
+  "gui.packcore.overlay.restore.button.cancel": "Cancel",
+  "gui.packcore.overlay.restore.button.confirm": "Restore on Restart",
+  "gui.packcore.overlay.restore.warning1": "⚠ This will overwrite your current config.",
+  "gui.packcore.overlay.restore.warning2": "Any unsaved changes since this backup will be lost.",
+  "gui.packcore.overlay.restore.note": "The game will close to apply the restore.",
+
+  "gui.packcore.toast.update.title": "Update Available",
+  "gui.packcore.toast.update.message": "PackCore %s is available!",
+  "gui.packcore.toast.backup.title": "Backup Created",
+  "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
+  "gui.packcore.toast.ram.title": "Low Memory Warning",
+  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance.",
+  "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update."
 }

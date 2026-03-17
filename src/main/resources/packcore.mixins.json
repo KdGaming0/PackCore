@@ -2,9 +2,7 @@
   "required": true,
   "package": "com.github.kd_gaming1.packcore.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [
-    "CrashReportMixin"
-  ],
+  "mixins": [],
   "injectors": {
     "defaultRequire": 1
   },

@@ -14,7 +14,7 @@
   "environment": "client",
   "entrypoints": {
     "preLaunch": [
-      "com.github.kd_gaming1.packcore.prelaunch.PreLaunchWizardInitializer"
+      "com.github.kd_gaming1.packcore.PackCorePreLaunch"
     ],
     "client": [
       "com.github.kd_gaming1.packcore.PackCore"
@@ -22,14 +22,12 @@
   },
   "mixins": [ "packcore.mixins.json" ],
   "depends": {
-    "fabricloader": ">=${fabric_loader}",
+    "fabricloader": ">=${fabricloader}",
     "minecraft": "${minecraft}",
-    "midnightlib": ">=${midnightlib_version}",
-    "owo": ">=${owo_version}"
+    "uilib": ">=${uilib_version}"
   },
   "suggests": {
-    "sodium": ">=${sodium_version}",
-    "iris": ">=${iris_version}",
-    "modmenu": ">=${modmenu_version}"
+    "scamscreener": "*",
+    "scaleme": "*"
   }
 }
