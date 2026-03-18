@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.command;
 
+import com.github.kd_gaming1.packcore.util.diagnostics.DiagnosticsCollector;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
@@ -8,15 +9,16 @@ import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
 import com.github.kd_gaming1.packcore.update.UpdateCache;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
-import com.github.kd_gaming1.packcore.update.UpdateStatus;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.ChatFormatting;
+import net.minecraft.CrashReport;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -36,8 +38,7 @@ public class PackCoreCommands {
                                 .then(literal("reset").executes(ctx -> {
                                     resetUpdateCache(ctx.getSource());
                                     return 1;
-                                }))
-                        )
+                                })))
                         .then(literal("performance")
                                 .then(argument("profile", StringArgumentType.word())
                                         .suggests((ctx, builder) -> {
@@ -47,12 +48,10 @@ public class PackCoreCommands {
                                             return builder.buildFuture();
                                         })
                                         .executes(ctx -> {
-                                            String id = StringArgumentType.getString(ctx, "profile");
-                                            applyPerformanceProfile(ctx.getSource(), id);
+                                            applyPerformanceProfile(
+                                                    ctx.getSource(), StringArgumentType.getString(ctx, "profile"));
                                             return 1;
-                                        })
-                                )
-                        )
+                                        })))
                         .then(literal("tabdesign")
                                 .then(literal("compact").executes(ctx -> {
                                     applyTabDesign(ctx.getSource(), TabDesignManager.TabDesign.COMPACT);
@@ -61,8 +60,7 @@ public class PackCoreCommands {
                                 .then(literal("fancy").executes(ctx -> {
                                     applyTabDesign(ctx.getSource(), TabDesignManager.TabDesign.FANCY);
                                     return 1;
-                                }))
-                        )
+                                })))
                         .then(literal("itembg")
                                 .then(literal("none").executes(ctx -> {
                                     applyItemBackground(ctx.getSource(), ItemBackgroundManager.ItemBackground.NONE);
@@ -75,8 +73,7 @@ public class PackCoreCommands {
                                 .then(literal("square").executes(ctx -> {
                                     applyItemBackground(ctx.getSource(), ItemBackgroundManager.ItemBackground.SQUARE);
                                     return 1;
-                                }))
-                        )
+                                })))
                         .then(literal("storagedesign")
                                 .then(literal("overlay").executes(ctx -> {
                                     applyStorageDesign(ctx.getSource(), StorageDesignManager.StorageDesign.OVERLAY);
@@ -85,48 +82,83 @@ public class PackCoreCommands {
                                 .then(literal("vanilla").executes(ctx -> {
                                     applyStorageDesign(ctx.getSource(), StorageDesignManager.StorageDesign.VANILLA);
                                     return 1;
-                                }))
-                        )
-                        .then(literal("wizard")
-                                .executes(ctx -> {
-                                    Minecraft.getInstance().execute(() ->
-                                            Minecraft.getInstance().setScreen(new WelcomeWizardScreen(Minecraft.getInstance().screen))
-                                    );
-                                    return 1;
-                                })
-                        )
-                        .then(literal("modpack_config")
-                                .executes(ctx -> {
-                                    Minecraft.getInstance().execute(() ->
-                                            Minecraft.getInstance().setScreen(new ConfigScreen())
-                                    );
-                                    return 1;
-                                })
-                        )
-        );
+                                })))
+                        .then(literal("wizard").executes(ctx -> {
+                            Minecraft.getInstance().execute(() ->
+                                    Minecraft.getInstance().setScreen(
+                                            new WelcomeWizardScreen(Minecraft.getInstance().screen)));
+                            return 1;
+                        }))
+                        .then(literal("modpack_config").executes(ctx -> {
+                            Minecraft.getInstance().execute(() ->
+                                    Minecraft.getInstance().setScreen(new ConfigScreen()));
+                            return 1;
+                        }))
+                        .then(literal("diagnose").executes(ctx -> {
+                            sendDiagnostics(ctx.getSource());
+                            return 1;
+                        }))
+                        .then(literal("crashtest").executes(ctx -> {
+                            triggerTestCrash();
+                            return 1;
+                        })));
     }
+
+    // ---------------------------------------------------------------------------
+    // Diagnostics
+    // ---------------------------------------------------------------------------
+
+    private static void sendDiagnostics(FabricClientCommandSource source) {
+        String report = DiagnosticsCollector.buildCompactReport();
+
+        for (String line : report.split("\n")) {
+            source.sendFeedback(Component.literal(line).withStyle(ChatFormatting.GRAY));
+        }
+
+        source.sendFeedback(
+                Component.literal("[PackCore] ")
+                        .withStyle(ChatFormatting.DARK_AQUA)
+                        .append(
+                                Component.literal(" [ Click to copy ] ")
+                                        .withStyle(
+                                                Style.EMPTY
+                                                        .withColor(ChatFormatting.AQUA)
+                                                        .withUnderlined(true)
+                                                        .withClickEvent(
+                                                                new ClickEvent.CopyToClipboard(report)))));
+    }
+
+    private static void triggerTestCrash() {
+        Minecraft.getInstance().execute(() ->
+                Minecraft.getInstance().delayCrash(
+                        CrashReport.forThrowable(
+                                new Throwable("PackCore crash report test"),
+                                "PackCore crashtest command")));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Handlers
+    // ---------------------------------------------------------------------------
 
     private static void checkUpdate(FabricClientCommandSource source) {
         send(source, "Checking for updates...");
-
-        CompletableFuture<UpdateStatus> future = UpdateChecker.checkAsync();
-
-        future.thenAccept(status -> Minecraft.getInstance().execute(() -> {
-            switch (status.state()) {
-                case UP_TO_DATE -> send(source, "You are up to date! Version: " + status.installedVersion());
-                case UPDATE_AVAILABLE -> {
-                    send(source, "Update available!");
-                    send(source, "Installed: " + status.installedVersion());
-                    send(source, "Latest: " + status.latestVersion());
-
-                    if (status.changelog() != null && !status.changelog().isBlank()) {
-                        send(source, "Changelog:");
-                        send(source, status.changelog());
+        UpdateChecker.checkAsync().thenAccept(status ->
+                Minecraft.getInstance().execute(() -> {
+                    switch (status.state()) {
+                        case UP_TO_DATE ->
+                                send(source, "You are up to date! Version: " + status.installedVersion());
+                        case UPDATE_AVAILABLE -> {
+                            send(source, "Update available!");
+                            send(source, "Installed: " + status.installedVersion());
+                            send(source, "Latest: " + status.latestVersion());
+                            if (status.changelog() != null && !status.changelog().isBlank()) {
+                                send(source, "Changelog:");
+                                send(source, status.changelog());
+                            }
+                        }
+                        case UNKNOWN -> sendError(source, "Could not determine update status.");
                     }
-                }
-                case UNKNOWN -> sendError(source, "Could not determine update status.");
-            }
-        }));
+                }));
     }
 
     private static void resetUpdateCache(FabricClientCommandSource source) {
@@ -134,60 +166,70 @@ public class PackCoreCommands {
         send(source, "Update cache cleared. Next check will fetch from Modrinth.");
     }
 
-    private static void applyStorageDesign(FabricClientCommandSource source, StorageDesignManager.StorageDesign design) {
-        send(source, "Applying storage design: " + design.name().toLowerCase() + "...");
-        boolean success = StorageDesignManager.apply(design);
-        if (success) {
-            send(source, "Storage design applied: " + design.name().toLowerCase()
+    private static void applyStorageDesign(
+            FabricClientCommandSource source, StorageDesignManager.StorageDesign design) {
+        String name = design.name().toLowerCase();
+        send(source, "Applying storage design: " + name + "...");
+        if (StorageDesignManager.apply(design)) {
+            send(source, "Storage design applied: " + name
                     + ". If not in a world yet, the change will take effect on next world join.");
         } else {
-            sendError(source, "Failed to apply storage design: " + design.name().toLowerCase() + ". Firmament may not be loaded — check logs.");
+            sendError(source, "Failed to apply storage design: " + name
+                    + ". Firmament may not be loaded — check logs.");
         }
     }
 
-    private static void applyItemBackground(FabricClientCommandSource source, ItemBackgroundManager.ItemBackground background) {
-        send(source, "Applying item background: " + background.name().toLowerCase() + "...");
-        boolean success = ItemBackgroundManager.apply(background);
-        if (success) {
-            send(source, "Item background applied: " + background.name().toLowerCase());
+    private static void applyItemBackground(
+            FabricClientCommandSource source, ItemBackgroundManager.ItemBackground background) {
+        String name = background.name().toLowerCase();
+        send(source, "Applying item background: " + name + "...");
+        if (ItemBackgroundManager.apply(background)) {
+            send(source, "Item background applied: " + name);
         } else {
-            sendError(source, "Failed to apply item background: " + background.name().toLowerCase() + ". Skyblocker may not be loaded — check logs.");
+            sendError(source, "Failed to apply item background: " + name
+                    + ". Skyblocker may not be loaded — check logs.");
         }
     }
 
-    private static void applyTabDesign(FabricClientCommandSource source, TabDesignManager.TabDesign design) {
-        send(source, "Applying tab design: " + design.name().toLowerCase() + "...");
-        boolean success = TabDesignManager.apply(design);
-        if (success) {
-            send(source, "Tab design applied: " + design.name().toLowerCase());
+    private static void applyTabDesign(
+            FabricClientCommandSource source, TabDesignManager.TabDesign design) {
+        String name = design.name().toLowerCase();
+        send(source, "Applying tab design: " + name + "...");
+        if (TabDesignManager.apply(design)) {
+            send(source, "Tab design applied: " + name);
         } else {
-            sendError(source, "Failed to apply tab design: " + design.name().toLowerCase() + ". Check logs for details.");
+            sendError(source, "Failed to apply tab design: " + name + ". Check logs for details.");
         }
     }
 
     private static void applyPerformanceProfile(FabricClientCommandSource source, String id) {
-        PerformanceProfileService.PerformanceProfile profile = Arrays.stream(PerformanceProfileService.PerformanceProfile.values())
-                .filter(p -> p.id().equals(id))
-                .findFirst()
-                .orElse(null);
+        PerformanceProfileService.PerformanceProfile profile =
+                Arrays.stream(PerformanceProfileService.PerformanceProfile.values())
+                        .filter(p -> p.id().equals(id))
+                        .findFirst()
+                        .orElse(null);
 
         if (profile == null) {
-            sendError(source, "Unknown performance profile: \"" + id + "\". Valid options: "
-                    + Arrays.stream(PerformanceProfileService.PerformanceProfile.values())
+            String valid = Arrays.stream(PerformanceProfileService.PerformanceProfile.values())
                     .map(PerformanceProfileService.PerformanceProfile::id)
-                    .reduce((a, b) -> a + ", " + b).orElse(""));
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("");
+            sendError(source, "Unknown performance profile: \"" + id + "\". Valid options: " + valid);
             return;
         }
 
         send(source, "Applying performance profile: " + profile.getDisplayName() + "...");
-        boolean success = PerformanceProfileService.applyAll(profile);
-
-        if (success) {
+        if (PerformanceProfileService.applyAll(profile)) {
             send(source, "Performance profile applied: " + profile.getDisplayName());
         } else {
-            sendError(source, "One or more integrations failed for profile: " + profile.getDisplayName() + ". Check logs for details.");
+            sendError(source, "One or more integrations failed for profile: "
+                    + profile.getDisplayName() + ". Check logs for details.");
         }
     }
+
+    // ---------------------------------------------------------------------------
+    // Feedback helpers
+    // ---------------------------------------------------------------------------
 
     private static void send(FabricClientCommandSource source, String message) {
         source.sendFeedback(Component.literal("[PackCore] " + message));
