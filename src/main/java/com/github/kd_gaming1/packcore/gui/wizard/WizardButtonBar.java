@@ -159,6 +159,9 @@ public class WizardButtonBar extends EmptyComponent {
         } else {
             backButton.setX(getTotalX() + getWidth() - BTN_WIDTH * 2 - BTN_GAP * 2);
         }
+
+        continueButton.setFocused(false);
+        backButton.setFocused(false);
     }
 
     /**
