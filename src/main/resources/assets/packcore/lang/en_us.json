@@ -141,6 +141,14 @@
   "gui.packcore.wizard.scamscreener.pings.blacklist.name": "Ping On Blacklist Warning",
   "gui.packcore.wizard.scamscreener.pings.blacklist.desc": "Enable the chat ping when ScamScreener detects a blacklist warning.",
 
+  "gui.packcore.wizard.page.modern_ui.title": "Modern UI",
+  "gui.packcore.wizard.modern_ui.customFont.name": "Custom Font",
+  "gui.packcore.wizard.modern_ui.customFont.desc": "Use the modpack's custom font (Inter). Disable to revert to the vanilla Minecraft font. Requires a restart.",
+  "gui.packcore.wizard.modern_ui.fancyTooltip.name": "Fancy Tooltips",
+  "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.",
+  "gui.packcore.wizard.modern_ui.dingSound.name": "Startup Ding",
+  "gui.packcore.wizard.modern_ui.dingSound.desc": "Plays a sound effect when the game finishes loading.",
+
   "gui.packcore.wizard.page.resource_pack.title": "Resource Packs",
   "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resource packs folder. Add resource packs there and reopen the wizard.",
   "gui.packcore.wizard.resource_pack.no_description": "No description provided.",
@@ -161,6 +169,7 @@
   "gui.packcore.wizard.page.confirm.title": "Confirm & Apply",
   "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",
   "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
+  "gui.packcore.wizard.confirm.restart_required": "⚠ Font changes require a full game restart to take effect.",
   "gui.packcore.wizard.confirm.world_join_required": "⚠ Tab and storage settings will finish applying after you join a world/server. Please do so immediately, and do NOT close the game first.",
   "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
   "gui.packcore.wizard.button.finish.locked_tooltip": "Click \"Apply Settings\" to apply your selections before finishing.",

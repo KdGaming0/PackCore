@@ -73,6 +73,9 @@ public class WelcomeWizardScreen extends AbstractScreen {
         if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
             navigator.addPage(new ScamScreenerPage(wizardState, navigator, contentWidth, contentHeight));
         }
+        if (FabricLoader.getInstance().isModLoaded("modernui")) {
+            navigator.addPage(new ModernUIPage(wizardState, navigator, contentWidth, contentHeight));
+        }
         navigator.addPage(new ResourcePackPage(wizardState, navigator, contentWidth, contentHeight));
 
         confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
