@@ -17,3 +17,9 @@
 - Crash reports now include a **PackCore Diagnostics** section with the same data as the startup log
 - New `/packcore diagnose` command — shows a compact report in chat with a **click-to-copy** button for easy sharing when reporting issues
 - New `/packcore crashtest` command — triggers a test crash to verify the crash report enrichment is working
+
+### Storage Design
+- Replaced the world-join command approach for toggling the Firmament storage overlay with direct reflection — the setting is now applied instantly without requiring a world join
+
+### Tab Design
+- SkyHanni compact tab list toggle now applied instantly via reflection instead of a delayed chat command on world join

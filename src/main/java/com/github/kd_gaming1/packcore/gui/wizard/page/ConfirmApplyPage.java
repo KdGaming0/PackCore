@@ -87,10 +87,10 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private final List<SummaryRowComponent> muiRows = new ArrayList<>();
 
     private CustomButtonWidget applyButton;
-    private static String globalErrorMessage;
+    private String globalErrorMessage;
     private Runnable onApplySucceeded;
     private boolean applyCompleted;
-    private static String resourcePackWarningMessage;
+    private String resourcePackWarningMessage;
 
     public void setOnApplySucceeded(Runnable callback) { onApplySucceeded = callback; }
     public boolean isApplyCompleted() { return applyCompleted; }
@@ -138,29 +138,19 @@ public class ConfirmApplyPage extends BaseWizardPage {
         // ── Warning area (restart + world-join, stacked if both needed) ──
         int buttonY = getHeight() - PADDING - BUTTON_HEIGHT;
         boolean showRestart = requiresRestart();
-        boolean showWorldJoin = requiresWorldJoin();
         int warningLineHeight = font.lineHeight + WARNING_LINE_GAP;
-        int warningCount = (showRestart ? 1 : 0) + (showWorldJoin ? 1 : 0);
-        int warningBlockHeight = warningCount > 0 ? warningCount * warningLineHeight + BUTTON_GAP : 0;
-        int firstWarningY = buttonY - warningBlockHeight;
+        int warningBlockHeight = showRestart ? warningLineHeight + BUTTON_GAP : 0;
+        int warningY = buttonY - warningBlockHeight;
 
-        int warningY = firstWarningY;
         if (showRestart) {
             addComponent(new MultiLineTextComponent(
                     PADDING, warningY, getWidth() - PADDING * 2 - SCROLL_BAR_WIDTH,
                     Component.translatable("gui.packcore.wizard.confirm.restart_required"),
                     GuiColors.WARNING));
-            warningY += warningLineHeight;
-        }
-        if (showWorldJoin) {
-            addComponent(new MultiLineTextComponent(
-                    PADDING, warningY, getWidth() - PADDING * 2 - SCROLL_BAR_WIDTH,
-                    Component.translatable("gui.packcore.wizard.confirm.world_join_required"),
-                    GuiColors.WARNING));
         }
 
         int scrollTop = PADDING + font.lineHeight + PADDING;
-        int scrollHeight = (warningCount > 0 ? firstWarningY - BUTTON_GAP : buttonY - BUTTON_GAP) - scrollTop;
+        int scrollHeight = (showRestart ? warningY - BUTTON_GAP : buttonY - BUTTON_GAP) - scrollTop;
 
         // ── Summary rows ──
         EmptyComponent rowContainer = new EmptyComponent(0, 0, rowWidth, 0);
@@ -458,13 +448,6 @@ public class ConfirmApplyPage extends BaseWizardPage {
         return wantsCustomFont != engineCurrentlyOn;
     }
 
-    private boolean requiresWorldJoin() {
-        return (state.getSelection(TabDesignPage.STATE_KEY) != null
-                && FabricLoader.getInstance().isModLoaded("skyhanni"))
-                || (state.getSelection(StorageDesignPage.STATE_KEY) != null
-                && FabricLoader.getInstance().isModLoaded("firmament"));
-    }
-
     private boolean isHypixelPlusId(String packId) {
         return packId != null && packId.toLowerCase(Locale.ROOT).contains("hypixel");
     }
@@ -474,11 +457,22 @@ public class ConfirmApplyPage extends BaseWizardPage {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY,
                        float partialTick, int parentWidth, int parentHeight) {
-        if (globalErrorMessage == null) return;
+        if (globalErrorMessage == null && resourcePackWarningMessage == null) return;
+
         var font = Minecraft.getInstance().font;
-        int errorY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT + BUTTON_HEIGHT + 4;
-        graphics.drawCenteredString(font, globalErrorMessage,
-                getTotalX() + getWidth() / 2, errorY, GuiColors.ERROR);
+        int buttonY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT;
+        int messageY = buttonY - font.lineHeight - 4;
+
+        if (globalErrorMessage != null) {
+            graphics.drawCenteredString(font, globalErrorMessage,
+                    getTotalX() + getWidth() / 2, messageY, GuiColors.ERROR);
+            messageY -= font.lineHeight + 4;
+        }
+
+        if (resourcePackWarningMessage != null) {
+            graphics.drawCenteredString(font, resourcePackWarningMessage,
+                    getTotalX() + getWidth() / 2, messageY, GuiColors.WARNING);
+        }
     }
 
     // ── SummaryRowComponent ───────────────────────────────────────────────────
