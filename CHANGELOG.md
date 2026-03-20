@@ -1,25 +1,13 @@
 # Changelog
 
-## v4.1.0
+## v4.1.1
 
-### Modern UI Integration
-- New wizard page for configuring Modern UI features
-- Toggle **Custom Font** (Inter) — disabling reverts to the vanilla Minecraft font and requires a restart
-- Toggle **Fancy Tooltips** — rounded, styled tooltips with rarity-adaptive border colors
-- Toggle **Startup Ding** — sound effect played when the game finishes loading
-- Font values are backed up before clearing, and restored if the custom font is re-enabled
-- Confirm page now shows a restart warning when the font toggle differs from the current live state
-- Custom Font row in the summary is annotated with "(restart required)"
-- New `/packcore modernui` command with subcommands: `font vanilla`, `font custom`, `tooltip on/off`, `ding on/off`
+### Bug Fixes
+- **Apply Selected Files** in the Configuration and Import tabs now correctly queues files for pre-launch application and closes the game, instead of applying immediately mid-session
+- Fixed **Apply All** in the Import tab resolving the zip against the wrong directory (`configs/` instead of `imports/`), which caused the pending config to never be found on restart
+- Pending config resolution now searches `configs/`, `imports/`, and `user_configs/` so all sources work correctly through the same pre-launch path
+- Fixed keyboard events (typing, hotkeys, ESC) passing through the backup restore overlay and triggering navigation or closing the screen
+- Fixed ESC in the Welcome Wizard incorrectly closing the screen instead of navigating back to the previous page and clicking any key sent one page back.
 
-### Diagnostics
-- Full diagnostics report logged on every startup (modpack info, config pack, settings, runtime, system)
-- Crash reports now include a **PackCore Diagnostics** section with the same data as the startup log
-- New `/packcore diagnose` command — shows a compact report in chat with a **click-to-copy** button for easy sharing when reporting issues
-- New `/packcore crashtest` command — triggers a test crash to verify the crash report enrichment is working
-
-### Storage Design
-- Replaced the world-join command approach for toggling the Firmament storage overlay with direct reflection — the setting is now applied instantly without requiring a world join
-
-### Tab Design
-- SkyHanni compact tab list toggle now applied instantly via reflection instead of a delayed chat command on world join
+### Improvements
+- **Backup restore overlay** now includes a file tree for selective restore — all files are pre-selected by default, deselect any files you want to keep untouched

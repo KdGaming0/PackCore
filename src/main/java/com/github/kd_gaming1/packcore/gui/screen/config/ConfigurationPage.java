@@ -10,7 +10,6 @@ import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
-import com.github.kd_gaming1.packcore.configpack.ConfigPackExtractor;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
 import com.github.kd_gaming1.packcore.gui.component.*;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
@@ -239,13 +238,10 @@ public class ConfigurationPage extends BaseConfigPage {
 
     private void applyFiles(List<String> paths) {
         if (selectedPreset == null || paths.isEmpty()) return;
-        try {
-            ConfigPackExtractor.extractSelective(selectedPreset.zipPath(), PackCore.PACKCORE_DIR,
-                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING, paths);
-            saveAppliedState();
-        } catch (IOException e) {
-            LOGGER.error("Failed to apply selected files: {}", e.getMessage());
-        }
+        PackCoreConfig.pendingConfigPack = selectedPreset.zipPath().getFileName().toString();
+        PackCoreConfig.pendingConfigPackFiles = String.join("|", paths);
+        MidnightConfig.write(MOD_ID);
+        Minecraft.getInstance().stop();
     }
 
     private void applyAll() {
@@ -262,14 +258,6 @@ public class ConfigurationPage extends BaseConfigPage {
 
         LOGGER.info("Pending config saved, stopping client to apply on next launch.");
         Minecraft.getInstance().stop();
-    }
-
-    private void saveAppliedState() {
-        if (selectedPreset.config().has("version")) {
-            PackCoreConfig.lastAppliedVersion = selectedPreset.config().get("version").getAsString();
-        }
-        PackCoreConfig.lastAppliedPackFile = selectedPreset.zipPath().getFileName().toString();
-        MidnightConfig.write(MOD_ID);
     }
 
     private List<ConfigPackEntry> scanPacks() {

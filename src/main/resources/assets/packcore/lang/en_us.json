@@ -145,7 +145,7 @@
   "gui.packcore.wizard.modern_ui.customFont.name": "Custom Font",
   "gui.packcore.wizard.modern_ui.customFont.desc": "Use the modpack's custom font (Inter). Disable to revert to the vanilla Minecraft font. Requires a restart.",
   "gui.packcore.wizard.modern_ui.fancyTooltip.name": "Fancy Tooltips",
-  "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.",
+  "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.\n⚠ NOTE: Tooltip Scroll doesn't work with this option enabled, but the tooltip will automatically scroll up and down when it doesn't fit.",
   "gui.packcore.wizard.modern_ui.dingSound.name": "Startup Ding",
   "gui.packcore.wizard.modern_ui.dingSound.desc": "Plays a sound effect when the game finishes loading.",
 
@@ -247,5 +247,6 @@
   "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
   "gui.packcore.toast.ram.title": "Low Memory Warning",
   "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance.",
-  "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update."
+  "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update.",
+  "gui.packcore.overlay.restore.select_files": "Select files to restore"
 }

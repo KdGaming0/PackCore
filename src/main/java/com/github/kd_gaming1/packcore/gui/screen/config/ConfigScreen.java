@@ -3,8 +3,12 @@ package com.github.kd_gaming1.packcore.gui.screen.config;
 import com.daqem.uilib.gui.AbstractScreen;
 import com.github.kd_gaming1.packcore.gui.util.ImageBackground;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.NonNull;
+import org.lwjgl.glfw.GLFW;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
@@ -97,8 +101,34 @@ public class ConfigScreen extends AbstractScreen {
         return new BaseConfigPage[]{ configPage, exportPage, backupsPage, importPage };
     }
 
+    /** Returns true when the backups overlay is blocking all input. */
+    private boolean isModalOverlayActive() {
+        return activeTab == ConfigTab.BACKUPS && backupsPage != null && backupsPage.isOverlayVisible();
+    }
+
     @Override
     public boolean shouldCloseOnEsc() {
-        return activeTab != ConfigTab.BACKUPS || !backupsPage.handleEsc();
+        // Just block screen closure when overlay is active; don't act on it here.
+        return !isModalOverlayActive();
+    }
+
+    @Override
+    public boolean keyPressed(@NonNull KeyEvent keyEvent) {
+        if (isModalOverlayActive()) {
+            // ESC closes the overlay; all other keys are swallowed.
+            if (keyEvent.key() == GLFW.GLFW_KEY_ESCAPE) {
+                backupsPage.handleEsc();
+            }
+            return true;
+        }
+        return super.keyPressed(keyEvent);
+    }
+
+    @Override
+    public boolean charTyped(@NonNull CharacterEvent characterEvent) {
+        if (isModalOverlayActive()) {
+            return true;
+        }
+        return super.charTyped(characterEvent);
     }
 }

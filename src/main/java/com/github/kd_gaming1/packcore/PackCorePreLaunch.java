@@ -21,8 +21,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -46,10 +48,9 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         }
 
         if (!PackCoreConfig.pendingConfigPack.isBlank()) {
-            applyPendingConfig(gameDir, configsDir);
+            applyPendingConfig(gameDir, packcoreDir);
             return;
         }
-
         ScreenResolution.ScreenSize screen = ScreenResolution.detect();
 
         List<ConfigPackEntry> scannedPacks;
@@ -85,14 +86,19 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
      * Always uses REPLACE_EXISTING because the user explicitly asked to switch.
      * The pending flag is cleared regardless of success or failure.
      */
-    private void applyPendingConfig(Path gameDir, Path configsDir) {
+    private void applyPendingConfig(Path gameDir, Path packcoreDir) {
         String pendingFileName = PackCoreConfig.pendingConfigPack;
-        Path zipPath = configsDir.resolve(pendingFileName);
-
         LOGGER.info("Pending config switch requested: {}", pendingFileName);
 
-        if (!Files.isRegularFile(zipPath)) {
-            LOGGER.error("Pending config zip not found at: {}", zipPath);
+        // Search all possible source directories so imports and user_configs work too
+        Path zipPath = Stream.of("configs", "imports", "user_configs")
+                .map(dir -> packcoreDir.resolve(dir).resolve(pendingFileName))
+                .filter(Files::isRegularFile)
+                .findFirst()
+                .orElse(null);
+
+        if (zipPath == null) {
+            LOGGER.error("Pending config zip '{}' not found in any known directory", pendingFileName);
             clearPending();
             return;
         }
@@ -105,11 +111,14 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         }
 
         try {
-            ConfigPackExtractor.extractAll(
-                    zipPath,
-                    gameDir,
-                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
-            );
+            String pendingFiles = PackCoreConfig.pendingConfigPackFiles;
+            if (pendingFiles.isBlank()) {
+                ConfigPackExtractor.extractAll(zipPath, gameDir, ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
+            } else {
+                List<String> paths = Arrays.asList(pendingFiles.split("\\|"));
+                ConfigPackExtractor.extractSelective(zipPath, gameDir, ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING, paths);
+                LOGGER.info("Applied {} selective file(s) from '{}'", paths.size(), pendingFileName);
+            }
         } catch (IOException e) {
             LOGGER.error("Failed to extract pending config pack '{}': {}", pendingFileName, e.getMessage());
             clearPending();
@@ -117,14 +126,11 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         }
 
         JsonObject config = configOptional.get();
-        String packVersion = config.has("version") ? config.get("version").getAsString() : "";
-
-        PackCoreConfig.lastAppliedVersion = packVersion;
+        PackCoreConfig.lastAppliedVersion = config.has("version") ? config.get("version").getAsString() : "";
         PackCoreConfig.lastAppliedPackFile = pendingFileName;
-        PackCoreConfig.pendingConfigPack = "";
+        clearPending();
         MidnightConfig.write(MOD_ID);
-
-        LOGGER.info("Successfully applied pending config: {} (version: {})", pendingFileName, packVersion);
+        LOGGER.info("Successfully applied pending config: {}", pendingFileName);
     }
 
     private static Optional<JsonObject> readPackConfig(Path zipPath) {
@@ -157,11 +163,14 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         }
 
         try {
-            ConfigPackExtractor.extractAll(
-                    backupPath,
-                    gameDir,
-                    ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
-            );
+            String pendingFiles = PackCoreConfig.pendingRestoreBackupFiles;
+            if (pendingFiles.isBlank()) {
+                ConfigPackExtractor.extractAll(backupPath, gameDir, ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING);
+            } else {
+                List<String> paths = Arrays.asList(pendingFiles.split("\\|"));
+                ConfigPackExtractor.extractSelective(backupPath, gameDir, ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING, paths);
+                LOGGER.info("Selectively restored {} file(s) from '{}'", paths.size(), backupFile);
+            }
             LOGGER.info("Successfully restored backup: {}", backupFile);
         } catch (IOException e) {
             LOGGER.error("Failed to restore backup '{}': {}", backupFile, e.getMessage());
@@ -172,11 +181,13 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
     private static void clearPendingRestore() {
         PackCoreConfig.pendingRestoreBackup = "";
+        PackCoreConfig.pendingRestoreBackupFiles = "";
         MidnightConfig.write(MOD_ID);
     }
 
     private static void clearPending() {
         PackCoreConfig.pendingConfigPack = "";
+        PackCoreConfig.pendingConfigPackFiles = "";
         MidnightConfig.write(MOD_ID);
     }
 

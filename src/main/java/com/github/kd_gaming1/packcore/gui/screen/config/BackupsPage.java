@@ -144,12 +144,14 @@ public class BackupsPage extends BaseConfigPage {
         }));
     }
 
-    public boolean handleEsc() {
+    public void handleEsc() {
         if (restoreOverlay != null && restoreOverlay.isVisible()) {
             restoreOverlay.setVisible(false);
-            return true;
         }
-        return false;
+    }
+
+    public boolean isOverlayVisible() {
+        return restoreOverlay != null && restoreOverlay.isVisible();
     }
 
     private static class BackupCard extends AbstractComponent {

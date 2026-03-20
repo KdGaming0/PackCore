@@ -13,7 +13,10 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.NonNull;
+import org.lwjgl.glfw.GLFW;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
@@ -164,11 +167,17 @@ public class WelcomeWizardScreen extends AbstractScreen {
 
     @Override
     public boolean shouldCloseOnEsc() {
-        if (navigator.hasPrevious()) {
+        // Block screen closure when there are previous pages — keyPressed handles the actual navigation.
+        return !navigator.hasPrevious();
+    }
+
+    @Override
+    public boolean keyPressed(@NonNull KeyEvent keyEvent) {
+        if (keyEvent.key() == GLFW.GLFW_KEY_ESCAPE && navigator.hasPrevious()) {
             navigator.previousPage();
-            return false;
+            return true;
         }
-        return true;
+        return super.keyPressed(keyEvent);
     }
 
     @Override
