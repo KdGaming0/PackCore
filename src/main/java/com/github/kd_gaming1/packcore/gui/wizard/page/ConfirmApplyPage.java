@@ -444,7 +444,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private boolean requiresRestart() {
         if (!FabricLoader.getInstance().isModLoaded("modernui")) return false;
         boolean wantsCustomFont = state.getMultiSelection(MODERN_UI_KEY).contains("customFont");
-        boolean engineCurrentlyOn = ModernUIConfigurator.isTextEngineEnabled();
+        boolean engineCurrentlyOn = ModernUIConfigurator.isCustomFontEnabled();
         return wantsCustomFont != engineCurrentlyOn;
     }
 

@@ -143,7 +143,7 @@
 
   "gui.packcore.wizard.page.modern_ui.title": "Modern UI",
   "gui.packcore.wizard.modern_ui.customFont.name": "Custom Font",
-  "gui.packcore.wizard.modern_ui.customFont.desc": "Use the modpack's custom font (Inter). Disable to revert to the vanilla Minecraft font. Requires a restart.",
+  "gui.packcore.wizard.modern_ui.customFont.desc": "Use the modpack's custom font (Inter). Disable to revert to the vanilla Minecraft font.\n⚠Requires a restart.",
   "gui.packcore.wizard.modern_ui.fancyTooltip.name": "Fancy Tooltips",
   "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.\n⚠ NOTE: Tooltip Scroll doesn't work with this option enabled, but the tooltip will automatically scroll up and down when it doesn't fit.",
   "gui.packcore.wizard.modern_ui.dingSound.name": "Startup Ding",

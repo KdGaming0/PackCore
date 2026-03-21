@@ -270,7 +270,7 @@ public class PackCoreCommands {
             Set<String> features = buildCurrentFeatures();
             if (custom) features.add("customFont"); else features.remove("customFont");
             ModernUIConfigurator.apply(features);
-            send(source, "Font set to " + label + ". Restart required for font changes to take effect.");
+            send(source, "Font set to " + label + ".");
         } catch (Exception e) {
             sendError(source, "Failed to switch font: " + e.getMessage());
         }
@@ -294,7 +294,7 @@ public class PackCoreCommands {
      */
     private static Set<String> buildCurrentFeatures() {
         Set<String> features = new java.util.HashSet<>();
-        if (ModernUIConfigurator.isTextEngineEnabled()) features.add("customFont");
+        if (ModernUIConfigurator.isCustomFontEnabled()) features.add("customFont");
         if (ModernUIConfigurator.isTooltipEnabled()) features.add("fancyTooltip");
         if (ModernUIConfigurator.isDingEnabled()) features.add("dingSound");
         return features;

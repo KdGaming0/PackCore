@@ -105,7 +105,7 @@ public class ModernUIPage extends BaseWizardPage {
     public enum Feature {
         CUSTOM_FONT("customFont") {
             @Override public boolean isCurrentlyEnabled() {
-                return ModernUIConfigurator.isTextEngineEnabled();
+                return ModernUIConfigurator.isCustomFontEnabled();
             }
         },
         FANCY_TOOLTIP("fancyTooltip") {
