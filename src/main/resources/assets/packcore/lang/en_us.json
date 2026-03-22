@@ -34,7 +34,8 @@
   "gui.packcore.button.join_hypixel": "Join Hypixel",
   "gui.packcore.button.modmenu": "Mod Menu",
 
-  "gui.packcore.tooltip.discord": "Join our Discord server",
+  "gui.packcore.tooltip.discord": "Join our Discord server (Recommending joining FLuxer instead)",
+  "gui.packcore.tooltip.fluxer": "Join our Fluxer community server (Recommended) (Discord Alternative)",
   "gui.packcore.tooltip.modrinth": "View on Modrinth",
   "gui.packcore.tooltip.github": "View source on GitHub",
   "gui.packcore.tooltip.modpack_config": "Open Configuration menu for the modpack",

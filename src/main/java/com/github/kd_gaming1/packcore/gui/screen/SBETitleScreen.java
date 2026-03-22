@@ -111,25 +111,27 @@ public class SBETitleScreen extends AbstractScreen {
         optionsButton = createOptionsButton(buttonX, buttonStartY + (BUTTON_HEIGHT + BUTTON_SPACING) * 4);
         quitButton = createQuitButton(buttonX, buttonStartY + (BUTTON_HEIGHT + BUTTON_SPACING) * 5);
 
-        // === SOCIAL BUTTONS (Bottom-left, stacked vertically) ===
+        // === SOCIAL BUTTONS (Bottom-left, stacked vertically bottom-up) ===
         int socialButtonX = SCREEN_MARGIN;
         int versionY = this.height - VERSION_TEXT_HEIGHT;
-        int githubY = versionY - SOCIAL_TO_VERSION_GAP - ICON_BUTTON_SIZE;
-        int modrinthY = githubY - BUTTON_SPACING - ICON_BUTTON_SIZE;
-        int discordY = modrinthY - BUTTON_SPACING - ICON_BUTTON_SIZE;
 
-        ButtonWidget discordButton = createDiscordButton(socialButtonX, discordY);
+        int githubY   = versionY - SOCIAL_TO_VERSION_GAP - ICON_BUTTON_SIZE;
+        int modrinthY = githubY   - BUTTON_SPACING - ICON_BUTTON_SIZE;
+        int discordY  = modrinthY - BUTTON_SPACING - ICON_BUTTON_SIZE;
+        int fluxerY   = discordY  - BUTTON_SPACING - ICON_BUTTON_SIZE;
+
+        ButtonWidget githubButton   = createGithubButton(socialButtonX, githubY);
         ButtonWidget modrinthButton = createModrinthButton(socialButtonX, modrinthY);
-        ButtonWidget githubButton = createGithubButton(socialButtonX, githubY);
+        ButtonWidget discordButton  = createDiscordButton(socialButtonX, discordY);
+
+        String fluxerUrl = ModpackMetadata.getInstance().getFluxerUrl();
+        ButtonWidget fluxerButton = fluxerUrl.isBlank() ? null : createFluxerButton(socialButtonX, fluxerY);
 
         // === VERSION TEXT ===
         UpdateStatus updateStatus = UpdateChecker.getCachedStatus();
-
-        Component versionText = buildVersionText(updateStatus);
-
         TextComponent modpackVersion = new TextComponent(
                 SCREEN_MARGIN, versionY,
-                versionText,
+                buildVersionText(updateStatus),
                 0xFFFFFFFF
         );
 
@@ -164,6 +166,7 @@ public class SBETitleScreen extends AbstractScreen {
         this.addWidget(optionsButton);
         this.addWidget(quitButton);
 
+        if (fluxerButton != null) this.addWidget(fluxerButton);
         this.addWidget(discordButton);
         this.addWidget(modrinthButton);
         this.addWidget(githubButton);
@@ -271,7 +274,7 @@ public class SBETitleScreen extends AbstractScreen {
 
     // === CORNER BUTTONS ===
 
-    private ButtonWidget createModpackUpdateButton(OverlayComponent changelogOverlay) {
+    private ButtonWidget createModpackUpdateButton(OverlayComponent overlay) {
         UpdateStatus status = UpdateChecker.getCachedStatus();
         ButtonWidget button = new CustomButtonWidget(
                 this.width - ICON_BUTTON_SIZE - SCREEN_MARGIN,
@@ -279,13 +282,12 @@ public class SBETitleScreen extends AbstractScreen {
                 ICON_BUTTON_SIZE,
                 ICON_BUTTON_SIZE,
                 Component.empty(),
-                // Tint the icon green when up to date, yellow when update available
                 status.isUpdateAvailable()
                         ? createIconSprites("menu/update_icon_available")
                         : createIconSprites("menu/update_icon"),
                 btn -> {
-                    changelogOverlay.toggle();
-                    setMenuButtonsVisible(!changelogOverlay.isShown());
+                    overlay.toggle();
+                    setMenuButtonsVisible(!overlay.isShown());
                 }
         );
         button.setTooltip(Tooltip.create(
@@ -311,6 +313,17 @@ public class SBETitleScreen extends AbstractScreen {
     }
 
     // === SOCIAL BUTTONS ===
+
+    private ButtonWidget createFluxerButton(int x, int y) {
+        ButtonWidget button = new CustomButtonWidget(
+                x, y, ICON_BUTTON_SIZE, ICON_BUTTON_SIZE,
+                Component.empty(),
+                createIconSprites("menu/fluxericon"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getFluxerUrl())
+        );
+        button.setTooltip(Tooltip.create(Component.translatable("gui.packcore.tooltip.fluxer")));
+        return button;
+    }
 
     private ButtonWidget createDiscordButton(int x, int y) {
         ButtonWidget button = new CustomButtonWidget(
@@ -345,6 +358,8 @@ public class SBETitleScreen extends AbstractScreen {
         return button;
     }
 
+    // === HELPERS ===
+
     private static Component buildVersionText(UpdateStatus status) {
         String installed = status.installedVersion() != null
                 ? status.installedVersion()
@@ -353,9 +368,8 @@ public class SBETitleScreen extends AbstractScreen {
         if (status.isUpdateAvailable()) {
             return Component.literal("v" + installed + " → ")
                     .append(Component.literal("v" + status.latestVersion())
-                            .withStyle(s -> s.withColor(0xFFFFFFFF))); // green
+                            .withStyle(s -> s.withColor(0xFFFFFFFF)));
         }
-
         return Component.literal("v" + installed);
     }
 
@@ -373,7 +387,6 @@ public class SBETitleScreen extends AbstractScreen {
         if (status.changelog() != null && !status.changelog().isBlank()) {
             return status.changelog();
         }
-
         return Component.translatable("gui.packcore.overlay.changelog.empty").getString()
                 + "\n\n"
                 + Component.translatable("gui.packcore.overlay.changelog.empty.hint").getString();
@@ -381,20 +394,18 @@ public class SBETitleScreen extends AbstractScreen {
 
     private void setMenuButtonsVisible(boolean visible) {
         joinHypixelButton.visible = visible;
-        joinHypixelButton.active = visible;
+        joinHypixelButton.active  = visible;
         singleplayerButton.visible = visible;
-        singleplayerButton.active = visible;
+        singleplayerButton.active  = visible;
         multiplayerButton.visible = visible;
-        multiplayerButton.active = visible;
+        multiplayerButton.active  = visible;
         modmenuButton.visible = visible;
-        modmenuButton.active = visible;
+        modmenuButton.active  = visible;
         optionsButton.visible = visible;
-        optionsButton.active = visible;
+        optionsButton.active  = visible;
         quitButton.visible = visible;
-        quitButton.active = visible;
+        quitButton.active  = visible;
     }
-
-    // === SPRITE HELPERS ===
 
     private static final WidgetSprites MAIN_BUTTON_SPRITES = new WidgetSprites(
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/blank_red_button"),

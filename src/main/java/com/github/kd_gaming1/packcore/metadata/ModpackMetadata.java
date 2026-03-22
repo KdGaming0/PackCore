@@ -38,6 +38,7 @@ public class ModpackMetadata {
     private final String modrinthProjectId;
     private final String websiteUrl;
     private final String discordUrl;
+    private final String fluxerUrl;
     private final String issueTrackerUrl;
     private final String wikiUrl;
 
@@ -55,6 +56,7 @@ public class ModpackMetadata {
             modrinthProjectId = get(json, "modrinthProjectId");
             websiteUrl = get(json, "websiteUrl");
             discordUrl = get(json, "discordUrl");
+            fluxerUrl = get(json, "fluxerUrl");
             issueTrackerUrl = get(json, "issueTrackerUrl");
             wikiUrl = get(json, "wikiUrl");
 
@@ -89,6 +91,7 @@ public class ModpackMetadata {
         json.addProperty("modrinthProjectId", "Unknown Modrinth ID");
         json.addProperty("websiteUrl", "Unknown Website URL");
         json.addProperty("discordUrl", "Unknown Discord URL");
+        json.addProperty("fluxerUrl", "Unknown Fluxer URL");
         json.addProperty("issueTrackerUrl", "Unknown Issue URL");
         json.addProperty("wikiUrl", "Unknown Wiki URL");
         return json;
@@ -111,6 +114,7 @@ public class ModpackMetadata {
     public String getModrinthProjectId(){ return modrinthProjectId; }
     public String getWebsiteUrl()       { return websiteUrl; }
     public String getDiscordUrl()       { return discordUrl; }
+    public String getFluxerUrl()        { return fluxerUrl; }
     public String getIssueTrackerUrl()  { return issueTrackerUrl; }
     public String getWikiUrl()          { return wikiUrl; }
 }

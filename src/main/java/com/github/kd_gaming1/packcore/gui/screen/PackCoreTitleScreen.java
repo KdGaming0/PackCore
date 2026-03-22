@@ -40,10 +40,12 @@ public class PackCoreTitleScreen extends TitleScreen {
     private static final int ICON_SPACING = 4;
     private static final int BUTTON_HEIGHT = 20;
     private static final int BUTTON_STRIDE = 24;
-    private static final String JOIN_HYPIXEL_LABEL = Component.translatable("gui.packcore.button.join_hypixel").getString();
+    private static final String JOIN_HYPIXEL_LABEL =
+            Component.translatable("gui.packcore.button.join_hypixel").getString();
 
     private static boolean updateToastShown = false;
-    private static final Set<TitleScreen> VERSION_HOOKED_SCREENS = Collections.newSetFromMap(new WeakHashMap<>());
+    private static final Set<TitleScreen> VERSION_HOOKED_SCREENS =
+            Collections.newSetFromMap(new WeakHashMap<>());
 
     @Override
     protected void init() {
@@ -62,21 +64,30 @@ public class PackCoreTitleScreen extends TitleScreen {
         int vanillaTwoLinesY = this.height - 10 - this.font.lineHeight - 2;
         int yourVersionY = vanillaTwoLinesY - this.font.lineHeight - 2;
 
+        // Social icon stack (bottom-up)
         int githubY   = yourVersionY - MARGIN - ICON_SIZE;
-        int modrinthY = githubY - ICON_SPACING - ICON_SIZE;
+        int modrinthY = githubY   - ICON_SPACING - ICON_SIZE;
         int discordY  = modrinthY - ICON_SPACING - ICON_SIZE;
+        int fluxerY   = discordY  - ICON_SPACING - ICON_SIZE;
 
-        addIconButton(MARGIN, discordY, "menu/discord_icon",
-                Component.translatable("gui.packcore.tooltip.discord"),
-                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getDiscordUrl()));
+        addIconButton(MARGIN, githubY, "menu/github_icon",
+                Component.translatable("gui.packcore.tooltip.github"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getIssueTrackerUrl()));
 
         addIconButton(MARGIN, modrinthY, "menu/modrinth_icon",
                 Component.translatable("gui.packcore.tooltip.modrinth"),
                 btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getWebsiteUrl()));
 
-        addIconButton(MARGIN, githubY, "menu/github_icon",
-                Component.translatable("gui.packcore.tooltip.github"),
-                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getIssueTrackerUrl()));
+        addIconButton(MARGIN, discordY, "menu/discord_icon",
+                Component.translatable("gui.packcore.tooltip.discord"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getDiscordUrl()));
+
+        String fluxerUrl = ModpackMetadata.getInstance().getFluxerUrl();
+        if (!fluxerUrl.isBlank()) {
+            addIconButton(MARGIN, fluxerY, "menu/fluxericon",
+                    Component.translatable("gui.packcore.tooltip.fluxer"),
+                    btn -> Util.getPlatform().openUri(fluxerUrl));
+        }
 
         // Config — bottom-right
         int settingsY = this.height - ICON_SIZE - MARGIN - (this.font.lineHeight * 2) - 4;
@@ -84,7 +95,7 @@ public class PackCoreTitleScreen extends TitleScreen {
                 Component.translatable("gui.packcore.tooltip.modpack_config"),
                 btn -> Minecraft.getInstance().setScreen(new ConfigScreen()));
 
-        // Changelog/update
+        // Changelog/update — top-right
         boolean hasUpdate = status.isUpdateAvailable();
         String updateIcon = hasUpdate ? "menu/update_icon_available" : "menu/update_icon";
         Component updateTooltip = hasUpdate
@@ -111,14 +122,16 @@ public class PackCoreTitleScreen extends TitleScreen {
         int vanillaTwoLinesY = scaledHeight - 10 - Minecraft.getInstance().font.lineHeight - 2;
         int yourVersionY = vanillaTwoLinesY - Minecraft.getInstance().font.lineHeight - 2;
 
-        int githubY = yourVersionY - MARGIN - ICON_SIZE;
-        int modrinthY = githubY - ICON_SPACING - ICON_SIZE;
-        int discordY = modrinthY - ICON_SPACING - ICON_SIZE;
+        // Social icon stack (bottom-up)
+        int githubY   = yourVersionY - MARGIN - ICON_SIZE;
+        int modrinthY = githubY   - ICON_SPACING - ICON_SIZE;
+        int discordY  = modrinthY - ICON_SPACING - ICON_SIZE;
+        int fluxerY   = discordY  - ICON_SPACING - ICON_SIZE;
 
         Screens.getButtons(screen).add(createDecoratedIconButton(
-                MARGIN, discordY, "menu/discord_icon",
-                Component.translatable("gui.packcore.tooltip.discord"),
-                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getDiscordUrl())
+                MARGIN, githubY, "menu/github_icon",
+                Component.translatable("gui.packcore.tooltip.github"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getIssueTrackerUrl())
         ));
 
         Screens.getButtons(screen).add(createDecoratedIconButton(
@@ -128,10 +141,19 @@ public class PackCoreTitleScreen extends TitleScreen {
         ));
 
         Screens.getButtons(screen).add(createDecoratedIconButton(
-                MARGIN, githubY, "menu/github_icon",
-                Component.translatable("gui.packcore.tooltip.github"),
-                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getIssueTrackerUrl())
+                MARGIN, discordY, "menu/discord_icon",
+                Component.translatable("gui.packcore.tooltip.discord"),
+                btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getDiscordUrl())
         ));
+
+        String fluxerUrl = ModpackMetadata.getInstance().getFluxerUrl();
+        if (!fluxerUrl.isBlank()) {
+            Screens.getButtons(screen).add(createDecoratedIconButton(
+                    MARGIN, fluxerY, "menu/fluxericon",
+                    Component.translatable("gui.packcore.tooltip.fluxer"),
+                    btn -> Util.getPlatform().openUri(fluxerUrl)
+            ));
+        }
 
         int settingsY = scaledHeight - ICON_SIZE - MARGIN - (Minecraft.getInstance().font.lineHeight * 2) - 4;
         Screens.getButtons(screen).add(createDecoratedIconButton(
@@ -160,7 +182,8 @@ public class PackCoreTitleScreen extends TitleScreen {
         super.render(graphics, mouseX, mouseY, delta);
 
         int yourVersionY = (this.height - MARGIN - ICON_SIZE) + (ICON_SIZE - this.font.lineHeight) / 2;
-        graphics.drawString(this.font, buildVersionText(UpdateChecker.getCachedStatus()), MARGIN, yourVersionY, 0xFFFFFFFF, false);
+        graphics.drawString(this.font, buildVersionText(UpdateChecker.getCachedStatus()),
+                MARGIN, yourVersionY, 0xFFFFFFFF, false);
     }
 
     private void connectToHypixel() {
@@ -191,7 +214,8 @@ public class PackCoreTitleScreen extends TitleScreen {
         addRenderableWidget(button);
     }
 
-    private static PackCoreImageButton createDecoratedIconButton(int x, int y, String spritePath, Component tooltip, Button.OnPress onPress) {
+    private static PackCoreImageButton createDecoratedIconButton(
+            int x, int y, String spritePath, Component tooltip, Button.OnPress onPress) {
         Identifier icon = Identifier.fromNamespaceAndPath(MOD_ID, spritePath);
         WidgetSprites sprites = new WidgetSprites(icon, icon, icon);
         PackCoreImageButton button = new PackCoreImageButton(x, y, ICON_SIZE, ICON_SIZE, sprites, onPress);
@@ -202,17 +226,17 @@ public class PackCoreTitleScreen extends TitleScreen {
     private static void registerVersionHook(TitleScreen screen) {
         if (!VERSION_HOOKED_SCREENS.add(screen)) return;
 
-        ScreenEvents.afterRender(screen).register((screen1, graphics, mouseX, mouseY, tickDelta) -> {
+        ScreenEvents.afterRender(screen).register((s, graphics, mouseX, mouseY, tickDelta) -> {
             Minecraft client = Minecraft.getInstance();
             int height = client.getWindow().getGuiScaledHeight();
             int yourVersionY = (height - MARGIN - ICON_SIZE) + (ICON_SIZE - client.font.lineHeight) / 2;
-            graphics.drawString(client.font, buildVersionText(UpdateChecker.getCachedStatus()), MARGIN, yourVersionY, 0xFFFFFFFF, false);
+            graphics.drawString(client.font, buildVersionText(UpdateChecker.getCachedStatus()),
+                    MARGIN, yourVersionY, 0xFFFFFFFF, false);
         });
     }
 
     private static void showUpdateToastIfNeeded() {
         if (updateToastShown) return;
-
         UpdateStatus status = UpdateChecker.getCachedStatus();
         if (status.isUpdateAvailable()) {
             ToastHelper.showUpdateAvailable(status.latestVersion());

@@ -39,22 +39,28 @@ public class WizardButtonBar extends EmptyComponent {
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/buttons/hover_previous_gray_button")
     );
 
+    private static final WidgetSprites FLUXER_BUTTON = new WidgetSprites(
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/fluxericon"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/fluxericon"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/fluxericon")
+    );
+
     private static final WidgetSprites DISCORD_BUTTON = new WidgetSprites(
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/discord_icon"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/discord_icon"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/discord_icon")
     );
 
-    private static final WidgetSprites GITHUB_BUTTON = new WidgetSprites(
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/github_icon"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/github_icon"),
-            Identifier.fromNamespaceAndPath(MOD_ID, "menu/github_icon")
-    );
-
     private static final WidgetSprites MODRINTH_BUTTON = new WidgetSprites(
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/modrinth_icon"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/modrinth_icon"),
             Identifier.fromNamespaceAndPath(MOD_ID, "menu/modrinth_icon")
+    );
+
+    private static final WidgetSprites GITHUB_BUTTON = new WidgetSprites(
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/github_icon"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/github_icon"),
+            Identifier.fromNamespaceAndPath(MOD_ID, "menu/github_icon")
     );
 
     private final WizardNavigator navigator;
@@ -71,28 +77,51 @@ public class WizardButtonBar extends EmptyComponent {
         this.navigator = navigator;
 
         int btnY = (height - BTN_HEIGHT) / 2;
+        int iconY = (height - ICON_SIZE) / 2;
+
+        // Social icons — left side, Fluxer first if URL is configured
+        int iconX = BTN_GAP;
+        String fluxerUrl = ModpackMetadata.getInstance().getFluxerUrl();
+
+        if (!fluxerUrl.isBlank()) {
+            ButtonWidget fluxer = new CustomButtonWidget(
+                    iconX, iconY, ICON_SIZE, ICON_SIZE,
+                    Component.literal(""),
+                    FLUXER_BUTTON,
+                    btn -> openUrlSafely(fluxerUrl)
+            );
+            fluxer.setTooltip(Tooltip.create(Component.translatable("gui.packcore.tooltip.fluxer")));
+            this.addWidget(fluxer);
+            iconX += ICON_SIZE + BTN_GAP;
+        }
 
         ButtonWidget discord = new CustomButtonWidget(
-                BTN_GAP, btnY, ICON_SIZE, ICON_SIZE,
+                iconX, iconY, ICON_SIZE, ICON_SIZE,
                 Component.literal(""),
                 DISCORD_BUTTON,
                 btn -> openUrlSafely(ModpackMetadata.getInstance().getDiscordUrl())
         );
+        discord.setTooltip(Tooltip.create(Component.translatable("gui.packcore.tooltip.discord")));
+        iconX += ICON_SIZE + BTN_GAP;
 
         ButtonWidget modrinth = new CustomButtonWidget(
-                BTN_GAP * 2 + ICON_SIZE, btnY, ICON_SIZE, ICON_SIZE,
+                iconX, iconY, ICON_SIZE, ICON_SIZE,
                 Component.literal(""),
                 MODRINTH_BUTTON,
                 btn -> openUrlSafely(ModpackMetadata.getInstance().getWebsiteUrl())
         );
+        modrinth.setTooltip(Tooltip.create(Component.translatable("gui.packcore.tooltip.modrinth")));
+        iconX += ICON_SIZE + BTN_GAP;
 
         ButtonWidget github = new CustomButtonWidget(
-                BTN_GAP * 3 + ICON_SIZE + ICON_SIZE, btnY, ICON_SIZE, ICON_SIZE,
+                iconX, iconY, ICON_SIZE, ICON_SIZE,
                 Component.literal(""),
                 GITHUB_BUTTON,
                 btn -> openUrlSafely(ModpackMetadata.getInstance().getIssueTrackerUrl())
         );
+        github.setTooltip(Tooltip.create(Component.translatable("gui.packcore.tooltip.github")));
 
+        // Navigation buttons — right side
         continueButton = new CustomButtonWidget(
                 width - BTN_WIDTH - BTN_GAP, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.continue"),
@@ -108,7 +137,6 @@ public class WizardButtonBar extends EmptyComponent {
         );
 
         // Skip is only shown on the last page as a "skip applying" escape hatch.
-        // It marks the wizard complete without applying settings.
         skipButton = new CustomButtonWidget(
                 width - BTN_WIDTH * 2 - BTN_GAP * 2, btnY, BTN_WIDTH, BTN_HEIGHT,
                 Component.translatable("gui.packcore.wizard.button.skip"),
@@ -143,13 +171,13 @@ public class WizardButtonBar extends EmptyComponent {
         boolean isLastPage = navigator.isOnLastPage();
 
         backButton.visible = hasBack;
-        backButton.active = hasBack;
+        backButton.active  = hasBack;
 
         continueButton.visible = !isLastPage;
-        continueButton.active = !isLastPage;
+        continueButton.active  = !isLastPage;
 
         skipButton.visible = isLastPage;
-        skipButton.active = isLastPage;
+        skipButton.active  = isLastPage;
 
         finishButton.visible = isLastPage;
 
@@ -192,7 +220,7 @@ public class WizardButtonBar extends EmptyComponent {
         try {
             Util.getPlatform().openUri(url);
         } catch (Exception e) {
-            LOGGER.warn("Couldn't open uri '{}' ", url, e);
+            LOGGER.warn("Couldn't open uri '{}'", url, e);
         }
     }
 }
