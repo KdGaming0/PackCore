@@ -207,8 +207,7 @@ public class PackCoreCommands {
         String name = design.name().toLowerCase();
         send(source, "Applying storage design: " + name + "...");
         if (StorageDesignManager.apply(design)) {
-            send(source, "Storage design applied: " + name
-                    + ". If not in a world yet, the change will take effect on next world join.");
+            send(source, "Storage design applied: " + name + ".");
         } else {
             sendError(source, "Failed to apply storage design: " + name
                     + ". Firmament may not be loaded -- check logs.");

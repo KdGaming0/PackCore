@@ -13,8 +13,8 @@ public class PerformanceProfileService {
         PERFORMANCE("performance", "Maximum Performance"),
         BALANCED("balanced", "Balanced"),
         QUALITY("quality", "Best Quality"),
-        SHADERS_PERFORMANCE("shaders_performance", "Shaders (Performance)"),
-        SHADERS_QUALITY("shaders_quality", "Shaders (Quality)");
+        SHADERS_PERFORMANCE("balanced_shaders", "Shaders (Balanced)"),
+        SHADERS_QUALITY("quality_shaders", "Shaders (Quality)");
 
         private final String id;
         private final String displayName;

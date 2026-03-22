@@ -2,4 +2,6 @@
 
 ## v4.1.3
 
-### Imporvments
+### Improvements
+- Added Fluxer as the recommended community platform alongside Discord
+- Updated showcase images (compressed them to lower jar size)

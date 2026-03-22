@@ -48,7 +48,7 @@ public class ItemBackgroundPage extends BaseCardGridPage<ItemBackgroundPage.Item
                     Component.translatable("gui.packcore.wizard.item_background." + id + ".name"),
                     Component.translatable("gui.packcore.wizard.item_background." + id + ".desc"),
                     Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/sprites/wizard/item_background_preview/" + id + ".png"),
-                    555, 666
+                    405, 495
             );
         }
     }
