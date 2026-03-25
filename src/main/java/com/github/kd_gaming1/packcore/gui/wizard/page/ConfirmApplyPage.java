@@ -211,13 +211,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
             currentY += ROW_HEIGHT + ROW_GAP;
 
             for (String featureId : enabledFeatures) {
-                // Mark the customFont sub-row with a restart indicator in its value text
-                Component featureName = Component.translatable(
+                Component displayValue = Component.translatable(
                         "gui.packcore.wizard.modern_ui." + featureId + ".name");
-                Component displayValue = featureId.equals("customFont")
-                        ? featureName.copy().append(Component.literal(" (restart required)")
-                        .withStyle(s -> s.withColor(GuiColors.WARNING)))
-                        : featureName;
 
                 SummaryRowComponent featureRow = new SummaryRowComponent(
                         0, currentY, rowWidth, ROW_HEIGHT, MODERN_UI_KEY + ":" + featureId,

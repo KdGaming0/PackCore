@@ -33,7 +33,7 @@ public class ModernUIConfigurator {
     private static final Path TEXT_TOML = CONFIG_DIR.resolve("text.toml");
 
     private static final String FONT_BEHAVIOR_VANILLA = "ONLY_INCLUDE";
-    private static final String FONT_BEHAVIOR_CUSTOM = "ONLY_EXCLUDE";
+    private static final String FONT_BEHAVIOR_CUSTOM = "KEEP_OTHER";
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -61,7 +61,7 @@ public class ModernUIConfigurator {
     /** Returns true if the custom font is currently active (defaultFontBehavior != ONLY_INCLUDE). */
     public static boolean isCustomFontEnabled() {
         String behavior = readTomlValue(TEXT_TOML, "text", "defaultFontBehavior");
-        // Fresh install default is ONLY_EXCLUDE (custom on), so treat unknown/missing as enabled.
+        // Fresh install default is KEEP_OTHER (custom on), so treat unknown/missing as enabled.
         return !FONT_BEHAVIOR_VANILLA.equals(behavior);
     }
 
@@ -82,7 +82,7 @@ public class ModernUIConfigurator {
      * {@code text.defaultFontBehavior} in {@code text.toml}.
      *
      * <ul>
-     *   <li>Custom: {@code ONLY_EXCLUDE}
+     *   <li>Custom: {@code KEEP_OTHER}
      *   <li>Vanilla: {@code ONLY_INCLUDE}
      * </ul>
      *

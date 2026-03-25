@@ -1,7 +1,6 @@
 # Changelog
 
-## v4.1.3
+## v4.1.4
 
 ### Improvements
-- Added Fluxer as the recommended community platform alongside Discord
-- Updated showcase images (compressed them to lower jar size)
+- Changed the default font used in modern ui to fix text rendering issue.
