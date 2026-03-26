@@ -64,6 +64,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private static final String RESOURCE_PACKS_KEY = "resourcePacks";
     private static final String SCAM_PINGS_KEY = "scamScreenerPings";
     private static final String MODERN_UI_KEY = ModernUIPage.FEATURES_KEY;
+    private static final String FONT_MODE_KEY = ModernUIPage.FONT_MODE_KEY;
 
     private record SummaryEntry(String selectionKey, String statusKey, String label, String translationPrefix) {}
 
@@ -197,23 +198,33 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
         if (muiLoaded) {
             Set<String> enabledFeatures = state.getMultiSelection(MODERN_UI_KEY);
+            String fontModeId = state.getSelection(FONT_MODE_KEY);
             int total = ModernUIPage.Feature.all().size();
-            Component muiValue = enabledFeatures.isEmpty()
-                    ? Component.literal("Skipped")
-                    : Component.literal(enabledFeatures.size() + " / " + total + " enabled");
-            int muiColor = enabledFeatures.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED;
+            Component muiValue = Component.literal(enabledFeatures.size() + " / " + total + " features");
 
             SummaryRowComponent muiHeader = new SummaryRowComponent(
                     0, currentY, rowWidth, ROW_HEIGHT, MODERN_UI_KEY,
-                    "Modern UI Features", muiValue, muiColor, false);
+                    "Modern UI", muiValue, COLOR_VALUE_SELECTED, false);
             muiRows.add(muiHeader);
             rowContainer.addComponent(muiHeader);
             currentY += ROW_HEIGHT + ROW_GAP;
 
+            // Font mode sub-row
+            if (fontModeId != null) {
+                Component fontLabel = Component.translatable(
+                        "gui.packcore.wizard.modern_ui.font." + fontModeId + ".name");
+                SummaryRowComponent fontRow = new SummaryRowComponent(
+                        0, currentY, rowWidth, ROW_HEIGHT, FONT_MODE_KEY,
+                        "Font", fontLabel, COLOR_PACK_SUBROW, true);
+                muiRows.add(fontRow);
+                rowContainer.addComponent(fontRow);
+                currentY += ROW_HEIGHT + ROW_GAP;
+            }
+
+            // Feature toggle sub-rows
             for (String featureId : enabledFeatures) {
                 Component displayValue = Component.translatable(
                         "gui.packcore.wizard.modern_ui." + featureId + ".name");
-
                 SummaryRowComponent featureRow = new SummaryRowComponent(
                         0, currentY, rowWidth, ROW_HEIGHT, MODERN_UI_KEY + ":" + featureId,
                         "", displayValue, COLOR_PACK_SUBROW, true);
@@ -279,7 +290,9 @@ public class ConfirmApplyPage extends BaseWizardPage {
                     state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)));
         }
         if (FabricLoader.getInstance().isModLoaded("modernui")) {
-            anyError |= runStep(MODERN_UI_KEY, () -> ModernUIConfigurator.apply(state.getMultiSelection(MODERN_UI_KEY)));
+            anyError |= runStep(MODERN_UI_KEY, () -> ModernUIConfigurator.apply(
+                    state.getMultiSelection(MODERN_UI_KEY),
+                    state.getSelection(FONT_MODE_KEY)));
         }
 
         anyError |= runStep(RESOURCE_PACKS_KEY, () -> applyResourcePacksGuarded(state.getSelectedResourcePacks()));
@@ -434,13 +447,13 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     /**
      * Returns true if any wizard selection differs from the current live state in a way
-     * that requires a game restart to take effect (font or text engine changes).
+     * that requires a game restart to take effect (font mode change that flips engine state).
      */
     private boolean requiresRestart() {
         if (!FabricLoader.getInstance().isModLoaded("modernui")) return false;
-        Set<String> wanted = state.getMultiSelection(MODERN_UI_KEY);
-        return wanted.contains("customFont") != ModernUIConfigurator.isCustomFontEnabled()
-                || wanted.contains("textEngine") != ModernUIConfigurator.isTextEngineEnabled();
+        String original = state.getSelection(FONT_MODE_KEY + "_original");
+        String current = state.getSelection(FONT_MODE_KEY);
+        return !Objects.equals(current, original);
     }
 
     private boolean isHypixelPlusId(String packId) {

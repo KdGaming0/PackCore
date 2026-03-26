@@ -58,6 +58,7 @@
   "gui.packcore.wizard.page.welcome.title": "Welcome",
 
   "gui.packcore.wizard.card.config.applied": "✓ Applied: %s",
+  "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update.",
   "gui.packcore.wizard.card.config.error": "No Config Applied",
   "gui.packcore.wizard.card.config.error.hint": "Restart the game to automatically try again, or manually apply a config from the list below.",
 
@@ -143,19 +144,34 @@
   "gui.packcore.wizard.scamscreener.pings.blacklist.desc": "Enable the chat ping when ScamScreener detects a blacklist warning.",
 
   "gui.packcore.wizard.page.modern_ui.title": "Modern UI",
-  "gui.packcore.wizard.modern_ui.customFont.name": "Custom Font",
-  "gui.packcore.wizard.modern_ui.customFont.desc": "Use the modpack's custom font (Inter). Disable to revert to the vanilla Minecraft font.",
+  "gui.packcore.wizard.modern_ui.font_mode.label": "Font",
+  "gui.packcore.wizard.modern_ui.features.label": "Features",
+
+  "gui.packcore.wizard.modern_ui.font.inter.name": "Inter (Modpack Font)",
+  "gui.packcore.wizard.modern_ui.font.inter.desc": "Uses the modpack's custom Inter typeface. Clean, modern, and highly legible.",
+
+  "gui.packcore.wizard.modern_ui.font.vanilla.name": "Vanilla Font",
+  "gui.packcore.wizard.modern_ui.font.vanilla.desc": "Reverts to the default Minecraft font and disables the Modern Text Engine for full mod compatibility. Resource pack fonts will also work correctly with this option.\n⚠ Requires a restart.",
+
   "gui.packcore.wizard.modern_ui.fancyTooltip.name": "Fancy Tooltips",
   "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.\n⚠ NOTE: Tooltip Scroll doesn't work with this option enabled, but the tooltip will automatically scroll up and down when it doesn't fit.",
+
   "gui.packcore.wizard.modern_ui.dingSound.name": "Startup Ding",
   "gui.packcore.wizard.modern_ui.dingSound.desc": "Plays a sound effect when the game finishes loading.",
-  "gui.packcore.wizard.modern_ui.textEngine.name": "Modern Text Engine",
-  "gui.packcore.wizard.modern_ui.textEngine.desc": "The Modern UI text rendering pipeline. Disable if you use the SBO Party Finder with the vanilla font — they are incompatible.\n⚠ Requires a restart.",
 
   "gui.packcore.overlay.modern_ui_skip.title": "⚠ Hold On",
-  "gui.packcore.overlay.modern_ui_skip.message": "This page has important information about the Modern Text Engine and SBO Party Finder compatibility. It looks like you may have skipped it. Take a moment to read the guide on the left before continuing.",
+  "gui.packcore.overlay.modern_ui_skip.message": "This page has important information about font modes and their compatibility with other mods. It looks like you may have skipped it. Take a moment to read the guide on the left before continuing.",
   "gui.packcore.overlay.modern_ui_skip.go_back": "Go Back",
   "gui.packcore.overlay.modern_ui_skip.continue_anyway": "Continue Anyway",
+
+  "gui.packcore.wizard.page.sword_block.title": "Sword Block",
+  "gui.packcore.wizard.page.sword_block.explanation": "Choose whether to enable the sword blocking animation from ScaleMe. When enabled, holding right click with a sword will display the classic blocking pose from 1.8.9.",
+
+  "gui.packcore.wizard.sword_block.enabled.name": "Enabled",
+  "gui.packcore.wizard.sword_block.enabled.desc": "Holding right click with a sword will show the blocking animation.",
+
+  "gui.packcore.wizard.sword_block.disabled.name": "Disabled",
+  "gui.packcore.wizard.sword_block.disabled.desc": "No blocking animation will be shown when holding right click with a sword.",
 
   "gui.packcore.wizard.page.resource_pack.title": "Resource Packs",
   "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resource packs folder. Add resource packs there and reopen the wizard.",
@@ -183,15 +199,6 @@
 
   "gui.packcore.wizard.confirm.resource_pack.xss_partial_apply": "Hypixel+ was skipped — -Xss4M is missing. Other selected packs were applied.",
   "gui.packcore.wizard.confirm.resource_pack.xss_blocked": "Hypixel+ was not applied — -Xss4M JVM argument is missing.",
-
-  "gui.packcore.wizard.page.sword_block.title": "Sword Block",
-  "gui.packcore.wizard.page.sword_block.explanation": "Choose whether to enable the sword blocking animation from ScaleMe. When enabled, holding right click with a sword will display the classic blocking pose from 1.8.9.",
-
-  "gui.packcore.wizard.sword_block.enabled.name": "Enabled",
-  "gui.packcore.wizard.sword_block.enabled.desc": "Holding right click with a sword will show the blocking animation.",
-
-  "gui.packcore.wizard.sword_block.disabled.name": "Disabled",
-  "gui.packcore.wizard.sword_block.disabled.desc": "No blocking animation will be shown when holding right click with a sword.",
 
   "gui.packcore.config.title": "Modpack Configuration",
 
@@ -248,13 +255,12 @@
   "gui.packcore.overlay.restore.warning1": "⚠ This will overwrite your current config.",
   "gui.packcore.overlay.restore.warning2": "Any unsaved changes since this backup will be lost.",
   "gui.packcore.overlay.restore.note": "The game will close to apply the restore.",
+  "gui.packcore.overlay.restore.select_files": "Select files to restore",
 
   "gui.packcore.toast.update.title": "Update Available",
   "gui.packcore.toast.update.message": "PackCore %s is available!",
   "gui.packcore.toast.backup.title": "Backup Created",
   "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
   "gui.packcore.toast.ram.title": "Low Memory Warning",
-  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance.",
-  "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update.",
-  "gui.packcore.overlay.restore.select_files": "Select files to restore"
+  "gui.packcore.toast.ram.message": "Allocate 3GB+ RAM for best performance."
 }
