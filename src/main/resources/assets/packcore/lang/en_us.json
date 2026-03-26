@@ -144,11 +144,18 @@
 
   "gui.packcore.wizard.page.modern_ui.title": "Modern UI",
   "gui.packcore.wizard.modern_ui.customFont.name": "Custom Font",
-  "gui.packcore.wizard.modern_ui.customFont.desc": "Use the modpack's custom font (Inter). Disable to revert to the vanilla Minecraft font.\n⚠Requires a restart.",
+  "gui.packcore.wizard.modern_ui.customFont.desc": "Use the modpack's custom font (Inter). Disable to revert to the vanilla Minecraft font.",
   "gui.packcore.wizard.modern_ui.fancyTooltip.name": "Fancy Tooltips",
   "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.\n⚠ NOTE: Tooltip Scroll doesn't work with this option enabled, but the tooltip will automatically scroll up and down when it doesn't fit.",
   "gui.packcore.wizard.modern_ui.dingSound.name": "Startup Ding",
   "gui.packcore.wizard.modern_ui.dingSound.desc": "Plays a sound effect when the game finishes loading.",
+  "gui.packcore.wizard.modern_ui.textEngine.name": "Modern Text Engine",
+  "gui.packcore.wizard.modern_ui.textEngine.desc": "The Modern UI text rendering pipeline. Disable if you use the SBO Party Finder with the vanilla font — they are incompatible.\n⚠ Requires a restart.",
+
+  "gui.packcore.overlay.modern_ui_skip.title": "⚠ Hold On",
+  "gui.packcore.overlay.modern_ui_skip.message": "This page has important information about the Modern Text Engine and SBO Party Finder compatibility. It looks like you may have skipped it. Take a moment to read the guide on the left before continuing.",
+  "gui.packcore.overlay.modern_ui_skip.go_back": "Go Back",
+  "gui.packcore.overlay.modern_ui_skip.continue_anyway": "Continue Anyway",
 
   "gui.packcore.wizard.page.resource_pack.title": "Resource Packs",
   "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resource packs folder. Add resource packs there and reopen the wizard.",
@@ -170,7 +177,7 @@
   "gui.packcore.wizard.page.confirm.title": "Confirm & Apply",
   "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",
   "gui.packcore.wizard.confirm.title": "Review your selections before applying.",
-  "gui.packcore.wizard.confirm.restart_required": "⚠ Font changes require a full game restart to take effect.",
+  "gui.packcore.wizard.confirm.restart_required": "⚠ Some changes require a full game restart to take effect.",
   "gui.packcore.wizard.confirm.apply_all_configs": "Apply Settings",
   "gui.packcore.wizard.button.finish.locked_tooltip": "Click \"Apply Settings\" to apply your selections before finishing.",
 

@@ -71,6 +71,10 @@ public class WizardNavigator {
             LOGGER.warn("Cannot proceed from page {}", getCurrentPageNumber());
             return;
         }
+        // Give the current page a chance to block navigation (e.g., show a warning overlay).
+        if (!getCurrentPage().onContinueAttempted()) {
+            return;
+        }
         navigateTo(currentPageIndex + 1, NavigationDirection.FORWARD);
     }
 

@@ -12,16 +12,21 @@ import java.util.*;
  * Reads and writes ModernUI config files to reflect the user's wizard selections.
  *
  * <p>Font changes require a restart -- ModernUI states "only read once when the game is loaded".
+ * Text engine changes also require a restart; the pipeline is bootstrapped before the game loads.
  * All other changes are picked up live via ModernUI's file watcher.
  *
- * <p>To toggle between vanilla and custom fonts, we switch {@code text.defaultFontBehavior}
- * between {@code ONLY_INCLUDE} (vanilla -- includes the vanilla ASCII providers) and
- * {@code ONLY_EXCLUDE} (custom -- uses the Modern UI typeface list with exclusions).
- * This avoids touching the font family fields, so user-configured fonts are never lost.
+ * <p>Config files used:
+ * <ul>
+ *   <li>{@code config/ModernUI/client.toml} -- tooltip, general (ding), font sections
+ *   <li>{@code config/ModernUI/text.toml} -- text rendering (defaultFontBehavior)
+ *   <li>{@code config/ModernUI/bootstrap.properties} -- pre-launch flags including text engine toggle
+ * </ul>
  *
- * <p>ModernUI splits its config across two files: {@code client.toml} (screen, tooltip, general,
- * font sections) and {@code text.toml} (text engine section). {@code defaultFontBehavior} lives in
- * {@code text.toml}.
+ * <p>The text engine toggle is {@code modernui_mc_disableTextEngine} in bootstrap.properties.
+ * The key is inverted: {@code false} = engine ON, {@code true} = engine OFF.
+ *
+ * <p>To toggle fonts, we switch {@code text.defaultFontBehavior} between {@code ONLY_INCLUDE}
+ * (vanilla) and {@code KEEP_OTHER} (custom). Font family fields are never touched.
  */
 public class ModernUIConfigurator {
 
@@ -31,9 +36,11 @@ public class ModernUIConfigurator {
             FabricLoader.getInstance().getConfigDir().resolve("ModernUI");
     private static final Path CLIENT_TOML = CONFIG_DIR.resolve("client.toml");
     private static final Path TEXT_TOML = CONFIG_DIR.resolve("text.toml");
+    private static final Path BOOTSTRAP = CONFIG_DIR.resolve("bootstrap.properties");
 
     private static final String FONT_BEHAVIOR_VANILLA = "ONLY_INCLUDE";
     private static final String FONT_BEHAVIOR_CUSTOM = "KEEP_OTHER";
+    private static final String TEXT_ENGINE_DISABLE_KEY = "modernui_mc_disableTextEngine";
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -41,11 +48,12 @@ public class ModernUIConfigurator {
      * Applies all feature toggles. Throws {@link RuntimeException} on write failure so the wizard
      * surfaces a red row.
      *
-     * <p>Features: {@code customFont}, {@code fancyTooltip}, {@code dingSound}.
+     * <p>Features: {@code textEngine}, {@code customFont}, {@code fancyTooltip}, {@code dingSound}.
      */
     public static void apply(Set<String> enabledFeatures) {
         boolean ok = true;
 
+        ok &= applyTextEngine(enabledFeatures.contains("textEngine"));
         ok &= applyCustomFont(enabledFeatures.contains("customFont"));
         ok &= patchToml(CLIENT_TOML, "tooltip", "enable", bool(enabledFeatures.contains("fancyTooltip")), false);
         ok &= patchToml(CLIENT_TOML, "general", "ding", bool(enabledFeatures.contains("dingSound")), false);
@@ -57,6 +65,17 @@ public class ModernUIConfigurator {
     }
 
     // ── State readers ─────────────────────────────────────────────────────────
+
+    /**
+     * Returns true if the Modern Text Engine is currently enabled.
+     * Reads {@code modernui_mc_disableTextEngine} from bootstrap.properties.
+     * Defaults to {@code true} (engine on) if the key or file is missing.
+     */
+    public static boolean isTextEngineEnabled() {
+        String val = readBootstrapValue(TEXT_ENGINE_DISABLE_KEY);
+        // Key absent on fresh install = engine on by default
+        return !"true".equals(val);
+    }
 
     /** Returns true if the custom font is currently active (defaultFontBehavior != ONLY_INCLUDE). */
     public static boolean isCustomFontEnabled() {
@@ -78,6 +97,14 @@ public class ModernUIConfigurator {
     // ── Feature application ───────────────────────────────────────────────────
 
     /**
+     * Toggles the Modern Text Engine by writing {@code modernui_mc_disableTextEngine}
+     * in bootstrap.properties. The key is inverted: engine ON = {@code false}.
+     */
+    private static boolean applyTextEngine(boolean enable) {
+        return patchBootstrap(bool(!enable));
+    }
+
+    /**
      * Switches between vanilla and custom font rendering by toggling
      * {@code text.defaultFontBehavior} in {@code text.toml}.
      *
@@ -85,8 +112,6 @@ public class ModernUIConfigurator {
      *   <li>Custom: {@code KEEP_OTHER}
      *   <li>Vanilla: {@code ONLY_INCLUDE}
      * </ul>
-     *
-     * <p>The Modern Text Engine is left untouched -- PackCore never modifies that setting.
      */
     private static boolean applyCustomFont(boolean enable) {
         return patchToml(
@@ -95,6 +120,75 @@ public class ModernUIConfigurator {
                 "defaultFontBehavior",
                 str(enable ? FONT_BEHAVIOR_CUSTOM : FONT_BEHAVIOR_VANILLA),
                 true /* required -- missing key is a real error */);
+    }
+
+    // ── Bootstrap properties patching ─────────────────────────────────────────
+
+    /**
+     * Reads a single value from bootstrap.properties (flat key=value, no sections).
+     * Returns null if the file or key does not exist.
+     */
+    private static String readBootstrapValue(String key) {
+        if (!Files.exists(BOOTSTRAP)) return null;
+        try {
+            Properties props = new Properties();
+            try (InputStream in = Files.newInputStream(BOOTSTRAP)) {
+                props.load(in);
+            }
+            return props.getProperty(key);
+        } catch (IOException e) {
+            LOGGER.warn("Could not read bootstrap.properties key '{}': {}", key, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Patches a single key in bootstrap.properties, preserving all other lines and comments.
+     * If the key does not exist, it is appended at the end of the file.
+     *
+     * <p>We patch line-by-line (rather than Properties.store) to preserve the comment
+     * header and any other keys ModernUI has written.
+     */
+    private static boolean patchBootstrap(String value) {
+        if (!Files.exists(BOOTSTRAP)) {
+            // Create the file with just this key -- ModernUI will fill the rest on next launch.
+            try {
+                Files.createDirectories(BOOTSTRAP.getParent());
+                Files.writeString(BOOTSTRAP, "#Modern UI bootstrap file\n" + ModernUIConfigurator.TEXT_ENGINE_DISABLE_KEY + "=" + value + "\n");
+                LOGGER.info("Created bootstrap.properties with {}={}", ModernUIConfigurator.TEXT_ENGINE_DISABLE_KEY, value);
+                return true;
+            } catch (IOException e) {
+                LOGGER.error("Failed to create bootstrap.properties: {}", e.getMessage(), e);
+                return false;
+            }
+        }
+
+        try {
+            List<String> lines = Files.readAllLines(BOOTSTRAP);
+            List<String> out = new ArrayList<>(lines.size() + 1);
+            boolean replaced = false;
+
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (!trimmed.startsWith("#") && trimmed.startsWith(ModernUIConfigurator.TEXT_ENGINE_DISABLE_KEY + "=")) {
+                    out.add(ModernUIConfigurator.TEXT_ENGINE_DISABLE_KEY + "=" + value);
+                    replaced = true;
+                } else {
+                    out.add(line);
+                }
+            }
+
+            if (!replaced) {
+                out.add(ModernUIConfigurator.TEXT_ENGINE_DISABLE_KEY + "=" + value);
+            }
+
+            Files.write(BOOTSTRAP, out);
+            LOGGER.info("bootstrap.properties patched: {}={}", ModernUIConfigurator.TEXT_ENGINE_DISABLE_KEY, value);
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("Failed to patch bootstrap.properties [{}]: {}", ModernUIConfigurator.TEXT_ENGINE_DISABLE_KEY, e.getMessage(), e);
+            return false;
+        }
     }
 
     // ── TOML patching ─────────────────────────────────────────────────────────

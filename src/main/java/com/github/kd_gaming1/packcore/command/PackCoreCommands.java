@@ -108,6 +108,15 @@ public class PackCoreCommands {
         // Modern UI subcommands -- only registered when the mod is present
         if (FabricLoader.getInstance().isModLoaded("modernui")) {
             root.then(literal("modernui")
+                    .then(literal("textengine")
+                            .then(literal("on").executes(ctx -> {
+                                applyModernUIToggle(ctx.getSource(), "textEngine", true);
+                                return 1;
+                            }))
+                            .then(literal("off").executes(ctx -> {
+                                applyModernUIToggle(ctx.getSource(), "textEngine", false);
+                                return 1;
+                            })))
                     .then(literal("font")
                             .then(literal("vanilla").executes(ctx -> {
                                 applyModernUIFont(ctx.getSource(), false);
@@ -269,7 +278,7 @@ public class PackCoreCommands {
             Set<String> features = buildCurrentFeatures();
             if (custom) features.add("customFont"); else features.remove("customFont");
             ModernUIConfigurator.apply(features);
-            send(source, "Font set to " + label + ".");
+            send(source, "Font set to " + label + ". Restart required to take effect.");
         } catch (Exception e) {
             sendError(source, "Failed to switch font: " + e.getMessage());
         }
@@ -281,7 +290,9 @@ public class PackCoreCommands {
             Set<String> features = buildCurrentFeatures();
             if (enable) features.add(feature); else features.remove(feature);
             ModernUIConfigurator.apply(features);
-            send(source, feature + " set to " + enable + ".");
+            boolean needsRestart = feature.equals("textEngine") || feature.equals("customFont");
+            send(source, feature + " set to " + enable + "."
+                    + (needsRestart ? " Restart required to take effect." : ""));
         } catch (Exception e) {
             sendError(source, "Failed to update " + feature + ": " + e.getMessage());
         }
@@ -293,6 +304,7 @@ public class PackCoreCommands {
      */
     private static Set<String> buildCurrentFeatures() {
         Set<String> features = new java.util.HashSet<>();
+        if (ModernUIConfigurator.isTextEngineEnabled()) features.add("textEngine");
         if (ModernUIConfigurator.isCustomFontEnabled()) features.add("customFont");
         if (ModernUIConfigurator.isTooltipEnabled()) features.add("fancyTooltip");
         if (ModernUIConfigurator.isDingEnabled()) features.add("dingSound");

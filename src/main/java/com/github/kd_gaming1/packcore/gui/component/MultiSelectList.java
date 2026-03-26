@@ -136,6 +136,17 @@ public class MultiSelectList<T> extends EmptyComponent {
     }
 
     /**
+     * Enables or disables the internal scroll container.
+     * Call with {@code false} when a modal overlay is shown over this list,
+     * and {@code true} again when the overlay is dismissed.
+     */
+    public void setScrollActive(boolean active) {
+        if (scrollContainer != null) {
+            scrollContainer.active = active;
+        }
+    }
+
+    /**
      * Tells the list how to read each field from your option type.
      * Build one with {@link #of} using method references.
      * Description may return null for name-only rows.

@@ -433,14 +433,14 @@ public class ConfirmApplyPage extends BaseWizardPage {
     // ── Condition checks ──────────────────────────────────────────────────────
 
     /**
-     * Returns true if the customFont toggle in the wizard differs from the current live engine
-     * state, meaning the change requires a game restart to take effect.
+     * Returns true if any wizard selection differs from the current live state in a way
+     * that requires a game restart to take effect (font or text engine changes).
      */
     private boolean requiresRestart() {
         if (!FabricLoader.getInstance().isModLoaded("modernui")) return false;
-        boolean wantsCustomFont = state.getMultiSelection(MODERN_UI_KEY).contains("customFont");
-        boolean engineCurrentlyOn = ModernUIConfigurator.isCustomFontEnabled();
-        return wantsCustomFont != engineCurrentlyOn;
+        Set<String> wanted = state.getMultiSelection(MODERN_UI_KEY);
+        return wanted.contains("customFont") != ModernUIConfigurator.isCustomFontEnabled()
+                || wanted.contains("textEngine") != ModernUIConfigurator.isTextEngineEnabled();
     }
 
     private boolean isHypixelPlusId(String packId) {
