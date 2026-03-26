@@ -189,7 +189,7 @@ public class SBETitleScreen extends AbstractScreen {
                 LOGO_ORIGINAL_HEIGHT,
                 LOGO_SCALE,
                 LOGO_Y_POSITION,
-                Identifier.fromNamespaceAndPath(MOD_ID, "title/SkyBlockEnhanced_title1")
+                Identifier.fromNamespaceAndPath(MOD_ID, "title/skyblock_enhanced_title1")
         );
     }
 
