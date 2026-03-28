@@ -62,10 +62,11 @@ public class PackCore implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register(
                 (handler, sender, client) -> client.execute(RamWarningHelper::onWorldJoin));
 
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> PlaytimeTracker.onSessionStart());
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            PlaytimeTracker.onSessionStart();
+            enforceModernUIDefaultsIfNeeded();
+        });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> PlaytimeTracker.onSessionEnd());
-
-        enforceModernUIDefaultsIfNeeded();
     }
 
     private static void scheduleConfiguredTitleScreen(Minecraft client, Screen screen) {

@@ -50,6 +50,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
             navigator = new WizardNavigator(wizardState);
             registerPages();
             navigator.initialize();
+            navigator.getPages().forEach(BaseWizardPage::preloadAssets);
         } else {
             resizePages();
         }
@@ -83,10 +84,6 @@ public class WelcomeWizardScreen extends AbstractScreen {
 
         confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
         navigator.addPage(confirmApplyPage);
-
-        for (BaseWizardPage page : navigator.getPages()) {
-            page.preloadAssets();
-        }
     }
 
     /** Updates the size of each existing page after a window resize, then re-enters the current page. */

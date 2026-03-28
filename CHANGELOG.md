@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.1.6
+## v4.1.7
 
 ### Fix
-- Updated the logo resource path to use correct lowercase naming to prevent crash.
+- Freeze when lunching the game on macOS

@@ -4,6 +4,7 @@ import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.github.kd_gaming1.packcore.gui.component.OptionCardGrid;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
@@ -59,10 +60,10 @@ public abstract class BaseCardGridPage<T> extends BaseWizardPage {
 
     @Override
     public void preloadAssets() {
-        // Touch the texture so TextureManager loads it now instead of on first render
+        Minecraft mc = Minecraft.getInstance();
         for (T option : options()) {
-            Minecraft.getInstance().getTextureManager().getTexture(descriptor().previewTexture(option));
+            Identifier tex = descriptor().previewTexture(option);
+            mc.execute(() -> mc.getTextureManager().getTexture(tex));
         }
     }
-
 }
