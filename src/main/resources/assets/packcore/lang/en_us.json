@@ -148,13 +148,13 @@
   "gui.packcore.wizard.modern_ui.features.label": "Features",
 
   "gui.packcore.wizard.modern_ui.font.inter.name": "Inter (Modpack Font)",
-  "gui.packcore.wizard.modern_ui.font.inter.desc": "Uses the modpack's custom Inter typeface. Clean, modern, and highly legible.",
+  "gui.packcore.wizard.modern_ui.font.inter.desc": "Uses the modpack's custom Inter typeface. Clean, modern, and highly legible.\n⚠ Requires a restart to apply.",
 
   "gui.packcore.wizard.modern_ui.font.vanilla.name": "Vanilla Font",
-  "gui.packcore.wizard.modern_ui.font.vanilla.desc": "Reverts to the default Minecraft font and disables the Modern Text Engine for full mod compatibility. Resource pack fonts will also work correctly with this option.\n⚠ Requires a restart.",
+  "gui.packcore.wizard.modern_ui.font.vanilla.desc": "Use the default Minecraft font and disables the Modern Text Engine for full mod compatibility. Resource pack fonts will also work correctly with this option.\n⚠ Requires a restart to apply.",
 
   "gui.packcore.wizard.modern_ui.fancyTooltip.name": "Fancy Tooltips",
-  "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.\n⚠ NOTE: Tooltip Scroll doesn't work with this option enabled, but the tooltip will automatically scroll up and down when it doesn't fit.",
+  "gui.packcore.wizard.modern_ui.fancyTooltip.desc": "Replaces vanilla tooltips with rounded, styled tooltips with gradient borders.",
 
   "gui.packcore.wizard.modern_ui.dingSound.name": "Startup Ding",
   "gui.packcore.wizard.modern_ui.dingSound.desc": "Plays a sound effect when the game finishes loading.",
