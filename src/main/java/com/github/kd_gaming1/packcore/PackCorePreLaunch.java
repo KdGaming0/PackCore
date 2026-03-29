@@ -1,9 +1,11 @@
 package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.configpack.BackupManager;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackExtractor;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
+import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.util.ScreenResolution;
 import com.google.gson.JsonObject;
@@ -41,6 +43,8 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         Path configsDir = packcoreDir.resolve("configs");
 
         MidnightConfig.init("packcore", PackCoreConfig.class);
+
+        maybeCreateUpdateBackup(gameDir);
 
         if (!PackCoreConfig.pendingRestoreBackup.isBlank()) {
             applyPendingRestore(packcoreDir, gameDir);
@@ -108,6 +112,12 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             LOGGER.error("Pending config zip is missing a valid {}: {}", PACK_META_FILE, zipPath);
             clearPending();
             return;
+        }
+
+        try {
+            BackupManager.createConfigSwitchBackup(gameDir);
+        } catch (IOException e) {
+            LOGGER.warn("Config switch backup failed, continuing anyway: {}", e.getMessage());
         }
 
         try {
@@ -284,6 +294,29 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         );
     }
 
+    /**
+     * If the modpack version has changed since last launch, creates a pre-update
+     * backup so users can restore their previous config if needed.
+     * Skipped on first startup — there's nothing to back up yet.
+     */
+    private static void maybeCreateUpdateBackup(Path gameDir) {
+        String currentVersion = ModpackMetadata.getInstance().getModpackVersion();
+        String lastSeen = PackCoreConfig.lastSeenModpackVersion;
+
+        PackCoreConfig.lastSeenModpackVersion = currentVersion;
+        MidnightConfig.write(MOD_ID);
+
+        if (lastSeen.isBlank() || lastSeen.equals(currentVersion)) {
+            return; // First launch or same version — nothing to do.
+        }
+
+        LOGGER.info("Modpack updated ({} -> {}), creating pre-update backup.", lastSeen, currentVersion);
+        try {
+            BackupManager.createModpackUpdateBackup(gameDir, lastSeen, currentVersion);
+        } catch (IOException e) {
+            LOGGER.warn("Pre-update backup failed, continuing anyway: {}", e.getMessage());
+        }
+    }
 
     /**
      * Returns the pack whose target resolution is closest to the current screen

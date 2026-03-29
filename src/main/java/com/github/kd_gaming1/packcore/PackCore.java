@@ -32,6 +32,9 @@ public class PackCore implements ClientModInitializer {
             FabricLoader.getInstance().getGameDir().resolve("packcore");
 
     public static boolean migratedFromV3 = false;
+
+    /** True once CLIENT_STARTED has fired and the initial screen swap is done. */
+    private static boolean clientFullyStarted = false;
     private static boolean replacingTitleScreen = false;
 
     @Override
@@ -44,9 +47,12 @@ public class PackCore implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register(
                 (dispatcher, registryAccess) -> PackCoreCommands.register(dispatcher));
 
+        // Only handles subsequent returns to TitleScreen (e.g. disconnect from server).
+        // The initial startup swap is done in CLIENT_STARTED to avoid racing the loading overlay.
         ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof TitleScreen) || screen instanceof PackCoreTitleScreen) return;
             RamWarningHelper.onMainMenu();
+            if (!clientFullyStarted) return;
             if (PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) {
                 scheduleConfiguredTitleScreen(client, screen);
             }
@@ -65,6 +71,14 @@ public class PackCore implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             PlaytimeTracker.onSessionStart();
             enforceModernUIDefaultsIfNeeded();
+
+            // Safe to swap now — resources are loaded and the overlay is gone.
+            clientFullyStarted = true;
+            if (client.screen instanceof TitleScreen ts && !(ts instanceof PackCoreTitleScreen)) {
+                if (PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) {
+                    applyConfiguredTitleScreen(client, ts);
+                }
+            }
         });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> PlaytimeTracker.onSessionEnd());
     }
@@ -73,21 +87,22 @@ public class PackCore implements ClientModInitializer {
         if (replacingTitleScreen) return;
         replacingTitleScreen = true;
         client.execute(() -> {
-            try {
-                if (client.screen != screen) return;
-                if (!PackCoreConfig.successfulWelcomeWizard) {
-                    client.setScreen(new WelcomeWizardScreen(screen));
-                    return;
-                }
-                switch (PackCoreConfig.menuStyle) {
-                    case MODERN       -> client.setScreen(new SBETitleScreen());
-                    case MODERN_MINIMAL -> client.setScreen(new SBETitleScreen(false));
-                    case MINIMAL      -> client.setScreen(new PackCoreTitleScreen());
-                }
-            } finally {
-                replacingTitleScreen = false;
-            }
+            replacingTitleScreen = false;
+            if (client.screen != screen) return;
+            applyConfiguredTitleScreen(client, screen);
         });
+    }
+
+    private static void applyConfiguredTitleScreen(Minecraft client, Screen screen) {
+        if (!PackCoreConfig.successfulWelcomeWizard) {
+            client.setScreen(new WelcomeWizardScreen(screen));
+            return;
+        }
+        switch (PackCoreConfig.menuStyle) {
+            case MODERN -> client.setScreen(new SBETitleScreen());
+            case MODERN_MINIMAL -> client.setScreen(new SBETitleScreen(false));
+            case MINIMAL -> client.setScreen(new PackCoreTitleScreen());
+        }
     }
 
     private static void enforceModernUIDefaultsIfNeeded() {

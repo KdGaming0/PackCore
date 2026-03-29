@@ -70,6 +70,10 @@ public class PackCoreConfig extends MidnightConfig {
 
     @Hidden
     @Entry(category = META)
+    public static String lastSeenModpackVersion = "";
+
+    @Hidden
+    @Entry(category = META)
     public static long lastBackupEpochMs = 0L;
 
     @Hidden

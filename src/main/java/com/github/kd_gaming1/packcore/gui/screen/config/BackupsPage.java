@@ -173,15 +173,34 @@ public class BackupsPage extends BaseConfigPage {
             graphics.fill(x, y, x + w, y + h, GuiColors.ROW_BACKGROUND);
             GuiHelper.drawBorder(graphics, x, y, w, h, GuiColors.BORDER_IDLE);
 
+            // Colored accent bar on the left edge indicating backup type
+            graphics.fill(x, y, x + 3, y + h, accentColor(backup.type()));
+
             var font = Minecraft.getInstance().font;
             int textY = y + (h - font.lineHeight) / 2;
 
-            graphics.drawString(font, backup.zipPath().getFileName().toString(),
-                    x + CARD_PADDING, textY, GuiColors.NAME_DEFAULT, false);
+            // Split "Label  ·  date" into two parts for independent styling
+            String display = backup.displayName();
+            int sepIdx = display.indexOf("  ·  ");
+            String label = sepIdx >= 0 ? display.substring(0, sepIdx) : display;
+            String date  = sepIdx >= 0 ? display.substring(sepIdx + 5) : "";
 
-            String timestamp = backup.displayName();
-            int timestampX = x + w - RESTORE_BTN_WIDTH - CARD_PADDING - font.width(timestamp) - 8;
-            graphics.drawString(font, timestamp, timestampX, textY, GuiColors.TEXT_SECONDARY, false);
+            int textX = x + 3 + CARD_PADDING; // offset past accent bar
+            int dateX = x + w - RESTORE_BTN_WIDTH - CARD_PADDING - font.width(date) - 8;
+
+            graphics.drawString(font, label, textX, textY, GuiColors.NAME_DEFAULT, false);
+            if (!date.isEmpty()) {
+                graphics.drawString(font, date, dateX, textY, GuiColors.TEXT_SECONDARY, false);
+            }
+        }
+
+        private static int accentColor(BackupEntry.BackupType type) {
+            return switch (type) {
+                case MODPACK_UPDATE -> 0xFF5B8DD9; // blue
+                case CONFIG_SWITCH  -> 0xFF8B5BD9; // purple
+                case AUTO           -> 0xFF5BD97A; // green
+                case MANUAL         -> 0xFF888888; // grey
+            };
         }
     }
 }

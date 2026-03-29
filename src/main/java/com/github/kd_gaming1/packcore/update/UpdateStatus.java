@@ -20,8 +20,8 @@ public final class UpdateStatus {
         this.changelog = changelog;
     }
 
-    public static UpdateStatus upToDate(String version) {
-        return new UpdateStatus(State.UP_TO_DATE, version, version, null);
+    public static UpdateStatus upToDate(String version, String changelog) {
+        return new UpdateStatus(State.UP_TO_DATE, version, version, changelog);
     }
 
     public static UpdateStatus updateAvailable(String installed, String latest, String changelog) {

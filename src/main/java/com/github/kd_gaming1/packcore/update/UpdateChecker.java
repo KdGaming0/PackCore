@@ -78,7 +78,7 @@ public final class UpdateChecker {
 
         UpdateStatus status = isNewerVersion(versionInfo.versionNumber(), installedVersion)
                 ? UpdateStatus.updateAvailable(installedVersion, versionInfo.versionNumber(), versionInfo.changelog())
-                : UpdateStatus.upToDate(installedVersion);
+                : UpdateStatus.upToDate(installedVersion, versionInfo.changelog());
 
         LOGGER.info(
                 "Update check result: {} (installed: {}, latest: {})",

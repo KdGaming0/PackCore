@@ -10,9 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -21,11 +18,6 @@ import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 public final class PlaytimeTracker {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/PlaytimeTracker");
-
-    private static final long BACKUP_INTERVAL_MS = 3L * 24 * 60 * 60 * 1_000;
-
-    private static final DateTimeFormatter BACKUP_NAME_FORMAT =
-            DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").withZone(ZoneId.systemDefault());
 
     private static final Executor BACKUP_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -67,13 +59,11 @@ public final class PlaytimeTracker {
     }
 
     private static void triggerAutoBackupAsync() {
-        String backupName = "auto_" + BACKUP_NAME_FORMAT.format(Instant.now()) + ".zip";
-        LOGGER.info("Scheduling automatic backup: {}", backupName);
-
+        LOGGER.info("Scheduling automatic backup.");
         BACKUP_EXECUTOR.execute(() -> {
             try {
-                BackupManager.createBackup(FabricLoader.getInstance().getGameDir());
-                Minecraft.getInstance().execute(() -> ToastHelper.showBackupCreated(backupName));
+                BackupManager.createAutoBackup(FabricLoader.getInstance().getGameDir());
+                Minecraft.getInstance().execute(() -> ToastHelper.showBackupCreated("Auto backup"));
             } catch (IOException e) {
                 LOGGER.error("Automatic backup failed: {}", e.getMessage());
             }
