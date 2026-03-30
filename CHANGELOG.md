@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.2.1
+## v4.2.2
 
-### Chore
-- Update Modern UI font and tooltip descriptions for clarity and restart requirement
+### Improvements
+- /packcore diagnose now include screen resolution.

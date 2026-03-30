@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+
+import com.github.kd_gaming1.packcore.util.ScreenResolution;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
@@ -88,6 +90,10 @@ public final class DiagnosticsCollector {
         ModpackMetadata meta = ModpackMetadata.getInstance();
         Runtime rt = Runtime.getRuntime();
 
+        // Detect screen resolution
+        var screen = ScreenResolution.detect();
+        String screenLine = screen.width() + "x" + screen.height();
+
         return String.join(
                 "\n",
                 "=== PackCore Diagnostics ===",
@@ -99,6 +105,7 @@ public final class DiagnosticsCollector {
                 "Backup  : " + formatEpoch(PackCoreConfig.lastBackupEpochMs),
                 "Menu    : " + PackCoreConfig.menuStyle.name(),
                 "OS      : " + System.getProperty("os.name") + " " + System.getProperty("os.arch"),
+                "Screen  : " + screenLine,
                 "Java    : " + System.getProperty("java.version"),
                 "============================");
     }
