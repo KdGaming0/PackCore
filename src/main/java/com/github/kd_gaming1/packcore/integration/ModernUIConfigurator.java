@@ -103,6 +103,18 @@ public class ModernUIConfigurator {
         }
     }
 
+    /**
+     * Enforces modpack-standard screen defaults. Safe to call unconditionally; silently skips if
+     * ModernUI config files are absent.
+     */
+    public static void enforceModpackScreenDefaults() {
+        boolean ok = patchToml(CLIENT_TOML, "screen", "animationDuration",   "0",     false);
+        ok        &= patchToml(CLIENT_TOML, "screen", "overrideVanillaBlur", "false", false);
+        if (!ok) {
+            LOGGER.warn("Could not enforce ModernUI screen defaults -- check log above for details.");
+        }
+    }
+
     // ── State readers ─────────────────────────────────────────────────────────
 
     /**

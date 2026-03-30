@@ -71,6 +71,7 @@ public class PackCore implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             PlaytimeTracker.onSessionStart();
             enforceModernUIDefaultsIfNeeded();
+            enforceModernUIScreenDefaultsIfNeeded();
 
             // Safe to swap now — resources are loaded and the overlay is gone.
             clientFullyStarted = true;
@@ -112,5 +113,14 @@ public class PackCore implements ClientModInitializer {
         PackCoreConfig.modernUIDefaultsEnforced = true;
         PackCoreConfig.write(MOD_ID);
         LOGGER.info("ModernUI modpack defaults enforced (one-time).");
+    }
+
+    private static void enforceModernUIScreenDefaultsIfNeeded() {
+        if (PackCoreConfig.modernUIScreenDefaultsEnforced) return;
+        if (!FabricLoader.getInstance().isModLoaded("modernui")) return;
+        ModernUIConfigurator.enforceModpackScreenDefaults();
+        PackCoreConfig.modernUIScreenDefaultsEnforced = true;
+        PackCoreConfig.write(MOD_ID);
+        LOGGER.info("ModernUI screen defaults enforced (one-time).");
     }
 }
