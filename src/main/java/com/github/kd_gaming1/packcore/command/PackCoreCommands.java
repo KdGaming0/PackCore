@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.command;
 
+import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.util.diagnostics.DiagnosticsCollector;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
@@ -15,6 +16,9 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.mojang.brigadier.context.CommandContext;
+import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
@@ -33,6 +37,9 @@ public class PackCoreCommands {
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         var root = literal("packcore")
+                .executes(PackCoreCommands::executeOpenConfig)
+                .then(literal("config")
+                        .executes(PackCoreCommands::executeOpenConfig))
                 .then(literal("update")
                         .then(literal("check").executes(ctx -> {
                             checkUpdate(ctx.getSource());
@@ -302,6 +309,31 @@ public class PackCoreCommands {
         return features;
     }
 
+    /**
+     * Opens the configuration menu.
+     * Uses client.send() to delay opening until after the chat closes.
+     */
+    private static int executeOpenConfig(CommandContext<FabricClientCommandSource> ctx) {
+        Minecraft client = Minecraft.getInstance();
+
+        if (client.player == null) {
+            sendError(ctx);
+            return 0;
+        }
+
+        // Schedule GUI opening on the next tick (after chat closes)
+        client.schedule(() -> {
+            try {
+                client.setScreen(MidnightConfig.getScreen(client.screen, PackCore.MOD_ID));
+            } catch (Exception e) {
+                PackCore.LOGGER.error("Failed to open config menu", e);
+            }
+        });
+
+        sendSuccess(ctx);
+        return 1;
+    }
+
     // ---------------------------------------------------------------------------
     // Feedback helpers
     // ---------------------------------------------------------------------------
@@ -310,7 +342,15 @@ public class PackCoreCommands {
         source.sendFeedback(Component.literal("[PackCore] " + message));
     }
 
+    private static void sendSuccess(CommandContext<FabricClientCommandSource> ctx) {
+        ctx.getSource().sendFeedback(Component.literal("§a[PackCore] " + "Opening configuration menu..."));
+    }
+
     private static void sendError(FabricClientCommandSource source, String message) {
         source.sendError(Component.literal("[PackCore] " + message));
+    }
+
+    private static void sendError(CommandContext<FabricClientCommandSource> ctx) {
+        ctx.getSource().sendError(Component.literal("§c[PackCore] " + "You must be in-game to open the config menu."));
     }
 }
