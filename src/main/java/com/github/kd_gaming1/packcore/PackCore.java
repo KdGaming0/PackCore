@@ -9,6 +9,7 @@ import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.playtime.PlaytimeTracker;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.util.RamWarningHelper;
+import com.github.kd_gaming1.packcore.warning.CaxtonShaderConflictWarner;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -42,6 +43,7 @@ public class PackCore implements ClientModInitializer {
 
         RamWarningHelper.init();
         UpdateChecker.checkAsync();
+        CaxtonShaderConflictWarner.init();
 
         ClientCommandRegistrationCallback.EVENT.register(
                 (dispatcher, registryAccess) -> PackCoreCommands.register(dispatcher));

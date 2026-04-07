@@ -10,6 +10,7 @@ import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
 import com.github.kd_gaming1.packcore.update.UpdateCache;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
+import com.github.kd_gaming1.packcore.warning.CaxtonShaderConflictWarner;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.util.Arrays;
@@ -107,7 +108,24 @@ public class PackCoreCommands {
                 .then(literal("crashtest").executes(ctx -> {
                     triggerTestCrash();
                     return 1;
+                }))
+                .then(literal("ignore-shader-warning").executes(ctx -> {
+                    CaxtonShaderConflictWarner.ignoreWarning();
+                    ctx.getSource().sendFeedback(
+                            Component.literal("✓ Shader/Font warnings ignored for this session")
+                                    .withStyle(ChatFormatting.GREEN)
+                    );
+                    return 1;
+                }))
+                .then(literal("enable-shader-warning").executes(ctx -> {
+                    CaxtonShaderConflictWarner.enableWarnings();
+                    ctx.getSource().sendFeedback(
+                            Component.literal("✓ Shader/Font warnings re-enabled")
+                                    .withStyle(ChatFormatting.GREEN)
+                    );
+                    return 1;
                 })));
+
     }
 
     // ---------------------------------------------------------------------------
