@@ -9,11 +9,16 @@ public final class ToastHelper {
 
     private ToastHelper() {}
 
-    public static void showUpdateAvailable(String latestVersion) {
+    public static void showUpdateAvailable(String latestVersion, boolean isBeta) {
         if (!PackCoreConfig.showUpdateToast) return;
+        if (isBeta && !PackCoreConfig.showBetaUpdateNotifications) return;
         show(
-                Component.translatable("gui.packcore.toast.update.title"),
-                Component.translatable("gui.packcore.toast.update.message", latestVersion)
+                Component.translatable(isBeta
+                        ? "gui.packcore.toast.update.beta.title"
+                        : "gui.packcore.toast.update.title"),
+                Component.translatable(isBeta
+                        ? "gui.packcore.toast.update.beta.message"
+                        : "gui.packcore.toast.update.message", latestVersion)
         );
     }
 

@@ -12,6 +12,9 @@
   "packcore.midnightconfig.showUpdateToast": "Update Notification",
   "packcore.midnightconfig.showUpdateToast.tooltip": "Show a toast when a modpack update is available.",
 
+  "config.packcore.showBetaUpdateNotifications": "Beta Update Notifications",
+  "config.packcore.showBetaUpdateNotifications.tooltip": "Show a notification when a beta pre-release is available. Only enable if you want to test less stable builds.",
+
   "packcore.midnightconfig.showBackupToast": "Backup Notification",
   "packcore.midnightconfig.showBackupToast.tooltip": "Show a toast when an automatic backup is created.",
 
@@ -258,7 +261,9 @@
   "gui.packcore.overlay.restore.select_files": "Select files to restore",
 
   "gui.packcore.toast.update.title": "Update Available",
-  "gui.packcore.toast.update.message": "PackCore %s is available!",
+  "gui.packcore.toast.update.message": "Modpack v%s is available!",
+  "gui.packcore.toast.update.beta.title": "Beta Update Available",
+  "gui.packcore.toast.update.beta.message": "v%s is ready — this is a beta build.",
   "gui.packcore.toast.backup.title": "Backup Created",
   "gui.packcore.toast.backup.message": "Auto-backup saved: %s",
   "gui.packcore.toast.ram.title": "Low Memory Warning",

@@ -239,7 +239,9 @@ public class PackCoreTitleScreen extends TitleScreen {
         if (updateToastShown) return;
         UpdateStatus status = UpdateChecker.getCachedStatus();
         if (status.isUpdateAvailable()) {
-            ToastHelper.showUpdateAvailable(status.latestVersion());
+            boolean isBeta = status.latestVersion() != null
+                    && status.latestVersion().contains("-beta.");
+            ToastHelper.showUpdateAvailable(status.latestVersion(), isBeta);
         }
         updateToastShown = true;
     }
@@ -250,7 +252,12 @@ public class PackCoreTitleScreen extends TitleScreen {
                 : ModpackMetadata.getInstance().getModpackVersion();
 
         if (status.isUpdateAvailable()) {
-            return Component.literal("v" + installed + " → v" + status.latestVersion());
+            String latest = status.latestVersion();
+            boolean isBeta = latest != null && latest.contains("-beta.");
+            String arrow = "v" + installed + " → v" + latest;
+            return isBeta
+                    ? Component.literal(arrow + " (beta)")
+                    : Component.literal(arrow);
         }
         return Component.literal("v" + installed);
     }

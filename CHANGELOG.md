@@ -1,7 +1,6 @@
 # Changelog
 
-## v4.2.2
+## v4.2.3
 
 ### Improvements
-- `/packcore diagnose` now include screen resolution.
-- Added `/packore config` to open the config menu.
+- Update checks now support beta versions of the modpack

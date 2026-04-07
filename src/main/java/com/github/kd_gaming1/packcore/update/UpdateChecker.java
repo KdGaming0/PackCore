@@ -1,5 +1,6 @@
 package com.github.kd_gaming1.packcore.update;
 
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.ModrinthClient.VersionInfo;
 import org.slf4j.Logger;
@@ -66,7 +67,8 @@ public final class UpdateChecker {
             versionInfo = cached.get();
             LOGGER.info("Using cached latest version: {}", versionInfo.versionNumber());
         } else {
-            Optional<VersionInfo> fetched = ModrinthClient.fetchLatestVersion(projectId);
+            boolean includeBeta = PackCoreConfig.showBetaUpdateNotifications;
+            Optional<VersionInfo> fetched = ModrinthClient.fetchLatestVersion(projectId, includeBeta);
             if (fetched.isEmpty()) {
                 return UpdateStatus.unknown();
             }
@@ -90,28 +92,52 @@ public final class UpdateChecker {
     }
 
     public static boolean isNewerVersion(String available, String installed) {
-        String[] availableParts = available.split("\\.");
-        String[] installedParts = installed.split("\\.");
-
-        int segmentCount = Math.max(availableParts.length, installedParts.length);
-
-        for (int i = 0; i < segmentCount; i++) {
-            int availableSegment = i < availableParts.length ? parseSegment(availableParts[i]) : 0;
-            int installedSegment = i < installedParts.length ? parseSegment(installedParts[i]) : 0;
-
-            if (availableSegment != installedSegment) {
-                return availableSegment > installedSegment;
-            }
-        }
-
-        return false;
+        Version a = Version.parse(available);
+        Version b = Version.parse(installed);
+        return a.compareTo(b) > 0;
     }
 
-    private static int parseSegment(String segment) {
-        try {
-            return Integer.parseInt(segment.trim());
-        } catch (NumberFormatException e) {
-            return 0;
+    private record Version(int major, int minor, int patch, int betaNumber) implements Comparable<Version> {
+        static Version parse(String raw) {
+            // Split off optional -beta.N suffix
+            int betaNumber = -1;
+            String base = raw;
+
+            int betaIdx = raw.indexOf("-beta.");
+            if (betaIdx != -1) {
+                try {
+                    betaNumber = Integer.parseInt(raw.substring(betaIdx + 6).trim());
+                } catch (NumberFormatException ignored) {
+                    betaNumber = 0;
+                }
+                base = raw.substring(0, betaIdx);
+            }
+
+            String[] parts = base.split("\\.");
+            int major = parsePart(parts, 0);
+            int minor = parsePart(parts, 1);
+            int patch = parsePart(parts, 2);
+
+            return new Version(major, minor, patch, betaNumber);
+        }
+
+        private static int parsePart(String[] parts, int i) {
+            if (i >= parts.length) return 0;
+            try { return Integer.parseInt(parts[i].trim()); }
+            catch (NumberFormatException e) { return 0; }
+        }
+
+        @Override
+        public int compareTo(Version o) {
+            if (this.major != o.major) return Integer.compare(this.major, o.major);
+            if (this.minor != o.minor) return Integer.compare(this.minor, o.minor);
+            if (this.patch != o.patch) return Integer.compare(this.patch, o.patch);
+
+            // Same base version — stable beats beta, beta.2 beats beta.1
+            if (this.betaNumber == o.betaNumber) return 0;
+            if (this.betaNumber == -1) return 1;
+            if (o.betaNumber == -1)    return -1;
+            return Integer.compare(this.betaNumber, o.betaNumber);
         }
     }
 }

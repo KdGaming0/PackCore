@@ -24,23 +24,30 @@ public final class ModrinthClient {
 
     public record VersionInfo(String versionNumber, String changelog) {}
 
-    public static Optional<VersionInfo> fetchLatestVersion(String projectId) {
+    public static Optional<VersionInfo> fetchLatestVersion(String projectId, boolean includeBeta) {
         return get(API_BASE + "/project/" + projectId + "/version")
                 .flatMap(element -> {
                     JsonArray versions = element.getAsJsonArray();
-                    if (versions.isEmpty()) {
-                        LOGGER.warn("Modrinth project '{}' has no versions listed.", projectId);
-                        return Optional.empty();
+
+                    for (JsonElement el : versions) {
+                        JsonObject v = el.getAsJsonObject();
+                        String type = v.has("version_type")
+                                ? v.get("version_type").getAsString()
+                                : "release";
+
+                        // Skip beta/alpha entries unless the user opted in
+                        if (!includeBeta && !type.equals("release")) continue;
+
+                        String versionNumber = v.get("version_number").getAsString();
+                        String changelog = v.has("changelog") && !v.get("changelog").isJsonNull()
+                                ? v.get("changelog").getAsString()
+                                : null;
+
+                        return Optional.of(new VersionInfo(versionNumber, changelog));
                     }
 
-                    JsonObject latest = versions.get(0).getAsJsonObject();
-
-                    String versionNumber = latest.get("version_number").getAsString();
-                    String changelog = latest.has("changelog") && !latest.get("changelog").isJsonNull()
-                            ? latest.get("changelog").getAsString()
-                            : null;
-
-                    return Optional.of(new VersionInfo(versionNumber, changelog));
+                    LOGGER.warn("Modrinth project '{}' has no matching versions.", projectId);
+                    return Optional.empty();
                 });
     }
 

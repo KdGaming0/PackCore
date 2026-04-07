@@ -18,6 +18,9 @@ public class PackCoreConfig extends MidnightConfig {
     public static boolean showUpdateToast = true;
 
     @Entry(category = TOAST)
+    public static boolean showBetaUpdateNotifications = false;
+
+    @Entry(category = TOAST)
     public static boolean showBackupToast = true;
 
     // ── Menu ──────────────────────────────────────────────────────────────────

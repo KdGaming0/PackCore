@@ -92,7 +92,9 @@ public class SBETitleScreen extends AbstractScreen {
         if (!updateToastShown) {
             UpdateStatus status = UpdateChecker.getCachedStatus();
             if (status.isUpdateAvailable()) {
-                ToastHelper.showUpdateAvailable(status.latestVersion());
+                boolean isBeta = status.latestVersion() != null
+                        && status.latestVersion().contains("-beta.");
+                ToastHelper.showUpdateAvailable(status.latestVersion(), isBeta);
             }
             updateToastShown = true;
         }
