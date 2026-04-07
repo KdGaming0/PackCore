@@ -11,13 +11,11 @@ import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
-import com.github.kd_gaming1.packcore.integration.ModernUIConfigurator;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.ScamScreenerConfigurator;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
-import com.github.kd_gaming1.packcore.util.JvmArgs;
 import com.github.kd_gaming1.scaleme.config.ScaleMeConfig;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
@@ -26,11 +24,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.repository.Pack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
 
@@ -63,8 +61,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     private static final String RESOURCE_PACKS_KEY = "resourcePacks";
     private static final String SCAM_PINGS_KEY = "scamScreenerPings";
-    private static final String MODERN_UI_KEY = ModernUIPage.FEATURES_KEY;
-    private static final String FONT_MODE_KEY = ModernUIPage.FONT_MODE_KEY;
+    private static final String CAXTON_FONT_KEY = CaxtonFontPage.STATE_KEY;
 
     private record SummaryEntry(String selectionKey, String statusKey, String label, String translationPrefix) {}
 
@@ -85,13 +82,11 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private final List<SummaryRowComponent> summaryRows = new ArrayList<>();
     private final List<SummaryRowComponent> packRows = new ArrayList<>();
     private final List<SummaryRowComponent> scamPingRows = new ArrayList<>();
-    private final List<SummaryRowComponent> muiRows = new ArrayList<>();
 
     private CustomButtonWidget applyButton;
     private String globalErrorMessage;
     private Runnable onApplySucceeded;
     private boolean applyCompleted;
-    private String resourcePackWarningMessage;
 
     public void setOnApplySucceeded(Runnable callback) { onApplySucceeded = callback; }
     public boolean isApplyCompleted() { return applyCompleted; }
@@ -109,7 +104,6 @@ public class ConfirmApplyPage extends BaseWizardPage {
         rowStatuses.clear();
         rowErrors.clear();
         globalErrorMessage = null;
-        resourcePackWarningMessage = null;
     }
 
     @Override
@@ -119,9 +113,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
         summaryRows.clear();
         packRows.clear();
         scamPingRows.clear();
-        muiRows.clear();
         globalErrorMessage = null;
-        resourcePackWarningMessage = null;
 
         if (!applyCompleted) {
             rowStatuses.clear();
@@ -131,27 +123,14 @@ public class ConfirmApplyPage extends BaseWizardPage {
         var font = Minecraft.getInstance().font;
         int rowWidth = getWidth() - PADDING * 2 - SCROLL_BAR_WIDTH;
         boolean scamLoaded = FabricLoader.getInstance().isModLoaded("scamscreener");
-        boolean muiLoaded = FabricLoader.getInstance().isModLoaded("modernui");
 
         addComponent(new TextComponent(PADDING, PADDING,
                 Component.translatable("gui.packcore.wizard.confirm.title"), GuiColors.NAME_DEFAULT));
 
-        // ── Warning area (restart + world-join, stacked if both needed) ──
         int buttonY = getHeight() - PADDING - BUTTON_HEIGHT;
-        boolean showRestart = requiresRestart();
         int warningLineHeight = font.lineHeight + WARNING_LINE_GAP;
-        int warningBlockHeight = showRestart ? warningLineHeight + BUTTON_GAP : 0;
-        int warningY = buttonY - warningBlockHeight;
-
-        if (showRestart) {
-            addComponent(new MultiLineTextComponent(
-                    PADDING, warningY, getWidth() - PADDING * 2 - SCROLL_BAR_WIDTH,
-                    Component.translatable("gui.packcore.wizard.confirm.restart_required"),
-                    GuiColors.WARNING));
-        }
-
         int scrollTop = PADDING + font.lineHeight + PADDING;
-        int scrollHeight = (showRestart ? warningY - BUTTON_GAP : buttonY - BUTTON_GAP) - scrollTop;
+        int scrollHeight = buttonY - BUTTON_GAP - scrollTop;
 
         // ── Summary rows ──
         EmptyComponent rowContainer = new EmptyComponent(0, 0, rowWidth, 0);
@@ -165,14 +144,36 @@ public class ConfirmApplyPage extends BaseWizardPage {
             Component valueText = skipped
                     ? Component.literal("Skipped")
                     : entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)
-                    ? ScamScreenerPage.labelForAlertLevel(selectedId)
-                    : Component.translatable(entry.translationPrefix() + selectedId + ".name");
+                      ? ScamScreenerPage.labelForAlertLevel(selectedId)
+                      : Component.translatable(entry.translationPrefix() + selectedId + ".name");
 
             SummaryRowComponent row = new SummaryRowComponent(
                     0, currentY, rowWidth, ROW_HEIGHT, entry.statusKey(), entry.label(), valueText,
                     skipped ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED, false);
             summaryRows.add(row);
             rowContainer.addComponent(row);
+            currentY += ROW_HEIGHT + ROW_GAP;
+        }
+
+        // ── Caxton font row ──
+        if (FabricLoader.getInstance().isModLoaded("caxton")) {
+            String caxtonId = state.getSelection(CAXTON_FONT_KEY);
+
+            if (caxtonId == null) {
+                caxtonId = CaxtonFontPage.FontOption.NONE_ID;
+                state.setSelection(CAXTON_FONT_KEY, caxtonId);
+            }
+
+            Component caxtonValue = CaxtonFontPage.FontOption.NONE_ID.equals(caxtonId)
+                    ? Component.translatable("gui.packcore.wizard.caxton_font.none.name")
+                    : Component.translatable("gui.packcore.wizard.caxton_font." + caxtonId + ".name");
+
+            SummaryRowComponent caxtonRow = new SummaryRowComponent(
+                    0, currentY, rowWidth, ROW_HEIGHT, CAXTON_FONT_KEY,
+                    "Font", caxtonValue,
+                    CaxtonFontPage.FontOption.NONE_ID.equals(caxtonId) ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED, false);
+            summaryRows.add(caxtonRow);
+            rowContainer.addComponent(caxtonRow);
             currentY += ROW_HEIGHT + ROW_GAP;
         }
 
@@ -192,44 +193,6 @@ public class ConfirmApplyPage extends BaseWizardPage {
                         "", ScamScreenerPage.labelForPingOption(optionId), COLOR_PACK_SUBROW, true);
                 scamPingRows.add(pingRow);
                 rowContainer.addComponent(pingRow);
-                currentY += ROW_HEIGHT + ROW_GAP;
-            }
-        }
-
-        if (muiLoaded) {
-            Set<String> enabledFeatures = state.getMultiSelection(MODERN_UI_KEY);
-            String fontModeId = state.getSelection(FONT_MODE_KEY);
-            int total = ModernUIPage.Feature.all().size();
-            Component muiValue = Component.literal(enabledFeatures.size() + " / " + total + " features");
-
-            SummaryRowComponent muiHeader = new SummaryRowComponent(
-                    0, currentY, rowWidth, ROW_HEIGHT, MODERN_UI_KEY,
-                    "Modern UI", muiValue, COLOR_VALUE_SELECTED, false);
-            muiRows.add(muiHeader);
-            rowContainer.addComponent(muiHeader);
-            currentY += ROW_HEIGHT + ROW_GAP;
-
-            // Font mode sub-row
-            if (fontModeId != null) {
-                Component fontLabel = Component.translatable(
-                        "gui.packcore.wizard.modern_ui.font." + fontModeId + ".name");
-                SummaryRowComponent fontRow = new SummaryRowComponent(
-                        0, currentY, rowWidth, ROW_HEIGHT, FONT_MODE_KEY,
-                        "Font", fontLabel, COLOR_PACK_SUBROW, true);
-                muiRows.add(fontRow);
-                rowContainer.addComponent(fontRow);
-                currentY += ROW_HEIGHT + ROW_GAP;
-            }
-
-            // Feature toggle sub-rows
-            for (String featureId : enabledFeatures) {
-                Component displayValue = Component.translatable(
-                        "gui.packcore.wizard.modern_ui." + featureId + ".name");
-                SummaryRowComponent featureRow = new SummaryRowComponent(
-                        0, currentY, rowWidth, ROW_HEIGHT, MODERN_UI_KEY + ":" + featureId,
-                        "", displayValue, COLOR_PACK_SUBROW, true);
-                muiRows.add(featureRow);
-                rowContainer.addComponent(featureRow);
                 currentY += ROW_HEIGHT + ROW_GAP;
             }
         }
@@ -289,13 +252,17 @@ public class ConfirmApplyPage extends BaseWizardPage {
                     state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
                     state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)));
         }
-        if (FabricLoader.getInstance().isModLoaded("modernui")) {
-            anyError |= runStep(MODERN_UI_KEY, () -> ModernUIConfigurator.apply(
-                    state.getMultiSelection(MODERN_UI_KEY),
-                    state.getSelection(FONT_MODE_KEY)));
+
+        if (FabricLoader.getInstance().isModLoaded("caxton")) {
+            anyError |= runStep(CAXTON_FONT_KEY, () -> applyCaxtonFont(state.getSelection(CAXTON_FONT_KEY)));
         }
 
-        anyError |= runStep(RESOURCE_PACKS_KEY, () -> applyResourcePacksGuarded(state.getSelectedResourcePacks()));
+        Set<String> caxtonPackIds = CaxtonFontPage.FontOption.all().stream()
+                .map(CaxtonFontPage.FontOption::packId)
+                .filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+
+        anyError |= runStep(RESOURCE_PACKS_KEY, () -> ResourcePackManager.apply(state.getSelectedResourcePacks(), caxtonPackIds));
 
         applyCompleted = !anyError;
         if (!anyError) {
@@ -329,10 +296,6 @@ public class ConfirmApplyPage extends BaseWizardPage {
         RowStatus scamStatus = rowStatuses.get(ScamScreenerPage.ALERT_LEVEL_KEY);
         String scamError = rowErrors.get(ScamScreenerPage.ALERT_LEVEL_KEY);
         for (SummaryRowComponent row : scamPingRows) row.setStatus(scamStatus, scamError);
-
-        RowStatus muiStatus = rowStatuses.get(MODERN_UI_KEY);
-        String muiError = rowErrors.get(MODERN_UI_KEY);
-        for (SummaryRowComponent row : muiRows) row.setStatus(muiStatus, muiError);
 
         RowStatus packStatus = rowStatuses.get(RESOURCE_PACKS_KEY);
         String packError = rowErrors.get(RESOURCE_PACKS_KEY);
@@ -418,46 +381,28 @@ public class ConfirmApplyPage extends BaseWizardPage {
         }
     }
 
-    private void applyResourcePacksGuarded(Set<String> packIds) {
-        if (packIds.isEmpty()) return;
+    /**
+     * If the user chose a Caxton font pack, adds its pack ID into the wizard's resource pack
+     * selection so it is applied together with any other chosen packs by the resource pack step.
+     */
+    private void applyCaxtonFont(String selectedId) {
+        // Always clear any existing Caxton packs from selection first
+        CaxtonFontPage.FontOption.all().forEach(opt -> {
+            if (opt.packId() != null) state.removeResourcePack(opt.packId());
+        });
 
-        Set<String> hypixel = packIds.stream().filter(this::isHypixelPlusId).collect(Collectors.toSet());
-        boolean missingXss = !JvmArgs.hasXssAtLeast(4L * 1024 * 1024);
-
-        if (missingXss && !hypixel.isEmpty()) {
-            JvmArgs.Launcher launcher = JvmArgs.detectLauncher();
-            String instructions = JvmArgs.xss4MInstructions(launcher);
-            Set<String> filtered = new LinkedHashSet<>(packIds);
-            filtered.removeAll(hypixel);
-
-            if (!filtered.isEmpty()) {
-                ResourcePackManager.apply(filtered);
-                resourcePackWarningMessage = "Hypixel+ was skipped because -Xss4M is not set.\n" + instructions;
-            } else {
-                throw new RuntimeException(
-                        "Hypixel+ could not be applied — -Xss4M JVM argument is missing.\n" + instructions);
-            }
+        if (selectedId == null || CaxtonFontPage.FontOption.NONE_ID.equals(selectedId)) {
             return;
         }
 
-        ResourcePackManager.apply(packIds);
-    }
-
-    // ── Condition checks ──────────────────────────────────────────────────────
-
-    /**
-     * Returns true if any wizard selection differs from the current live state in a way
-     * that requires a game restart to take effect (font mode change that flips engine state).
-     */
-    private boolean requiresRestart() {
-        if (!FabricLoader.getInstance().isModLoaded("modernui")) return false;
-        String original = state.getSelection(FONT_MODE_KEY + "_original");
-        String current = state.getSelection(FONT_MODE_KEY);
-        return !Objects.equals(current, original);
-    }
-
-    private boolean isHypixelPlusId(String packId) {
-        return packId != null && packId.toLowerCase(Locale.ROOT).contains("hypixel");
+        CaxtonFontPage.FontOption.all().stream()
+                .filter(opt -> opt.id().equals(selectedId))
+                .findFirst()
+                .ifPresent(opt -> {
+                    if (opt.packId() != null) {
+                        state.addResourcePack(opt.packId());
+                    }
+                });
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -465,22 +410,14 @@ public class ConfirmApplyPage extends BaseWizardPage {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY,
                        float partialTick, int parentWidth, int parentHeight) {
-        if (globalErrorMessage == null && resourcePackWarningMessage == null) return;
+        if (globalErrorMessage == null) return;
 
         var font = Minecraft.getInstance().font;
         int buttonY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT;
         int messageY = buttonY - font.lineHeight - 4;
 
-        if (globalErrorMessage != null) {
-            graphics.drawCenteredString(font, globalErrorMessage,
-                    getTotalX() + getWidth() / 2, messageY, GuiColors.ERROR);
-            messageY -= font.lineHeight + 4;
-        }
-
-        if (resourcePackWarningMessage != null) {
-            graphics.drawCenteredString(font, resourcePackWarningMessage,
-                    getTotalX() + getWidth() / 2, messageY, GuiColors.WARNING);
-        }
+        graphics.drawCenteredString(font, globalErrorMessage,
+                getTotalX() + getWidth() / 2, messageY, GuiColors.ERROR);
     }
 
     // ── SummaryRowComponent ───────────────────────────────────────────────────
@@ -534,7 +471,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
             int borderColor = status == RowStatus.SUCCESS ? GuiColors.SUCCESS
                     : status == RowStatus.ERROR ? GuiColors.ERROR
-                    : GuiColors.BORDER_IDLE;
+                      : GuiColors.BORDER_IDLE;
 
             graphics.fill(x + leftInset, y, x + w, y + h, GuiColors.ROW_BACKGROUND);
             GuiHelper.drawBorder(graphics, x + leftInset, y, w - leftInset, h, borderColor);

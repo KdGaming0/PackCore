@@ -20,6 +20,10 @@ public class ResourcePackManager {
      * @throws RuntimeException if the reload fails
      */
     public static void apply(Set<String> packIds) {
+        apply(packIds, Set.of());
+    }
+
+    public static void apply(Set<String> packIds, Set<String> excludeIds) {
         Minecraft client = Minecraft.getInstance();
         PackRepository repo = client.getResourcePackRepository();
 
@@ -27,17 +31,16 @@ public class ResourcePackManager {
 
         Collection<String> availableIds = repo.getAvailableIds();
 
-        // Validate — warn about any selected IDs that no longer exist on disk
         for (String id : packIds) {
             if (!availableIds.contains(id)) {
                 PackCore.LOGGER.warn("ResourcePack: selected pack '{}' is not available, skipping", id);
             }
         }
 
-        // Keep existing enabled packs that we didn't touch, then append wizard packs on top
         List<String> finalOrder = new ArrayList<>();
 
         for (String id : client.options.resourcePacks) {
+            if (excludeIds.contains(id) && !packIds.contains(id)) continue;
             if (!packIds.contains(id)) {
                 finalOrder.add(id);
             }

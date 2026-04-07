@@ -5,7 +5,6 @@ import com.github.kd_gaming1.packcore.util.diagnostics.DiagnosticsCollector;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
-import com.github.kd_gaming1.packcore.integration.ModernUIConfigurator;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
@@ -14,13 +13,10 @@ import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import com.mojang.brigadier.context.CommandContext;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.CrashReport;
 import net.minecraft.client.Minecraft;
@@ -36,7 +32,7 @@ public class PackCoreCommands {
     private PackCoreCommands() {}
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
-        var root = literal("packcore")
+        dispatcher.register(literal("packcore")
                 .executes(PackCoreCommands::executeOpenConfig)
                 .then(literal("config")
                         .executes(PackCoreCommands::executeOpenConfig))
@@ -111,41 +107,7 @@ public class PackCoreCommands {
                 .then(literal("crashtest").executes(ctx -> {
                     triggerTestCrash();
                     return 1;
-                }));
-
-        // Modern UI subcommands -- only registered when the mod is present
-        if (FabricLoader.getInstance().isModLoaded("modernui")) {
-            root.then(literal("modernui")
-                    .then(literal("font")
-                            .then(literal("inter").executes(ctx -> {
-                                applyModernUIFont(ctx.getSource(), "inter");
-                                return 1;
-                            }))
-                            .then(literal("vanilla").executes(ctx -> {
-                                applyModernUIFont(ctx.getSource(), "vanilla");
-                                return 1;
-                            })))
-                    .then(literal("tooltip")
-                            .then(literal("on").executes(ctx -> {
-                                applyModernUIFeature(ctx.getSource(), "fancyTooltip", true);
-                                return 1;
-                            }))
-                            .then(literal("off").executes(ctx -> {
-                                applyModernUIFeature(ctx.getSource(), "fancyTooltip", false);
-                                return 1;
-                            })))
-                    .then(literal("ding")
-                            .then(literal("on").executes(ctx -> {
-                                applyModernUIFeature(ctx.getSource(), "dingSound", true);
-                                return 1;
-                            }))
-                            .then(literal("off").executes(ctx -> {
-                                applyModernUIFeature(ctx.getSource(), "dingSound", false);
-                                return 1;
-                            }))));
-        }
-
-        dispatcher.register(root);
+                })));
     }
 
     // ---------------------------------------------------------------------------
@@ -270,45 +232,6 @@ public class PackCoreCommands {
         }
     }
 
-    private static void applyModernUIFont(FabricClientCommandSource source, String fontModeId) {
-        send(source, "Switching Modern UI font to " + fontModeId + "...");
-        try {
-            ModernUIConfigurator.apply(buildCurrentFeatures(), fontModeId);
-            send(source, "Font set to " + fontModeId + ". Restart required to take effect.");
-        } catch (Exception e) {
-            sendError(source, "Failed to switch font: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Toggles a single Modern UI feature (tooltip, ding) while preserving all other current
-     * settings. Font mode is read from the current config so it is never inadvertently reset.
-     */
-    private static void applyModernUIFeature(
-            FabricClientCommandSource source, String feature, boolean enable) {
-        send(source, "Setting Modern UI " + feature + " to " + enable + "...");
-        try {
-            Set<String> features = buildCurrentFeatures();
-            if (enable) features.add(feature);
-            else features.remove(feature);
-            ModernUIConfigurator.apply(features, ModernUIConfigurator.currentFontMode().id());
-            send(source, feature + " set to " + enable + ".");
-        } catch (Exception e) {
-            sendError(source, "Failed to update " + feature + ": " + e.getMessage());
-        }
-    }
-
-    /**
-     * Builds a mutable feature set reflecting the current live config, so a single-feature
-     * command doesn't inadvertently reset the other features.
-     */
-    private static Set<String> buildCurrentFeatures() {
-        Set<String> features = new HashSet<>();
-        if (ModernUIConfigurator.isTooltipEnabled()) features.add("fancyTooltip");
-        if (ModernUIConfigurator.isDingEnabled()) features.add("dingSound");
-        return features;
-    }
-
     /**
      * Opens the configuration menu.
      * Uses client.send() to delay opening until after the chat closes.
@@ -321,7 +244,6 @@ public class PackCoreCommands {
             return 0;
         }
 
-        // Schedule GUI opening on the next tick (after chat closes)
         client.schedule(() -> {
             try {
                 client.setScreen(MidnightConfig.getScreen(client.screen, PackCore.MOD_ID));

@@ -2,7 +2,6 @@ package com.github.kd_gaming1.packcore;
 
 import com.github.kd_gaming1.packcore.command.PackCoreCommands;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.integration.ModernUIConfigurator;
 import com.github.kd_gaming1.packcore.util.diagnostics.DiagnosticsCollector;
 import com.github.kd_gaming1.packcore.gui.screen.PackCoreTitleScreen;
 import com.github.kd_gaming1.packcore.gui.screen.SBETitleScreen;
@@ -70,8 +69,6 @@ public class PackCore implements ClientModInitializer {
 
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             PlaytimeTracker.onSessionStart();
-            enforceModernUIDefaultsIfNeeded();
-            enforceModernUIScreenDefaultsIfNeeded();
 
             // Safe to swap now — resources are loaded and the overlay is gone.
             clientFullyStarted = true;
@@ -104,23 +101,5 @@ public class PackCore implements ClientModInitializer {
             case MODERN_MINIMAL -> client.setScreen(new SBETitleScreen(false));
             case MINIMAL -> client.setScreen(new PackCoreTitleScreen());
         }
-    }
-
-    private static void enforceModernUIDefaultsIfNeeded() {
-        if (PackCoreConfig.modernUIDefaultsEnforced) return;
-        if (!FabricLoader.getInstance().isModLoaded("modernui")) return;
-        ModernUIConfigurator.enforceModpackDefaults();
-        PackCoreConfig.modernUIDefaultsEnforced = true;
-        PackCoreConfig.write(MOD_ID);
-        LOGGER.info("ModernUI modpack defaults enforced (one-time).");
-    }
-
-    private static void enforceModernUIScreenDefaultsIfNeeded() {
-        if (PackCoreConfig.modernUIScreenDefaultsEnforced) return;
-        if (!FabricLoader.getInstance().isModLoaded("modernui")) return;
-        ModernUIConfigurator.enforceModpackScreenDefaults();
-        PackCoreConfig.modernUIScreenDefaultsEnforced = true;
-        PackCoreConfig.write(MOD_ID);
-        LOGGER.info("ModernUI screen defaults enforced (one-time).");
     }
 }
