@@ -20,7 +20,10 @@
       "com.github.kd_gaming1.packcore.PackCore"
     ]
   },
-  "mixins": [ "packcore.mixins.json" ],
+  "mixins": [
+    "packcore.mixins.json",
+    "packcore.compat.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=${fabricloader}",
     "minecraft": "${minecraft}",

@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "com.github.kd_gaming1.packcore.mixin.compat",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.github.kd_gaming1.packcore.mixin.compat.PackCoreCompatMixinPlugin",
+  "mixins": [],
+  "client": [
+    "skyblocker.CaxtonCompatibilityMixin",
+    "skyblocker.TextPrimitiveRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
