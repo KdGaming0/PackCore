@@ -93,9 +93,9 @@ public class PackCoreConfig extends MidnightConfig {
 
     @Hidden
     @Entry(category = META)
-    public static boolean modernUIDefaultsEnforced = false;
+    public static boolean firmamentPriceDisableApplied = false;
 
     @Hidden
     @Entry(category = META)
-    public static boolean modernUIScreenDefaultsEnforced = false;
+    public static boolean skyblockEnhancementsPriceTooltipsApplied = false;
 }

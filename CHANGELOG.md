@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.2.5
+## v4.2.6
 
-### Improvements
-- Added Caxton font + Skyblocker compatibility fix. Skyblocker waypoints are no longer a white box when Caxton fonts are not active.
+### Changes
+- One-time startup tweak: disable Firmament AH/BZ price overlay and enable Skyblock Enhancements price tooltips
