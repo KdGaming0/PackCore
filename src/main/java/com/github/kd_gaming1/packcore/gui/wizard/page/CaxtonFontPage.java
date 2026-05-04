@@ -58,7 +58,8 @@ public class CaxtonFontPage extends BaseWizardPage {
             return List.of(
                     none(),
                     fromId("open_sans", "caxton:opensans"),
-                    fromId("inter", "caxton:inter")
+                    fromId("inter", "caxton:inter"),
+                    fromId("thick_inter", "file/ThickInter.zip")
             );
         }
 

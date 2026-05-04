@@ -4,8 +4,10 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.util.diagnostics.DiagnosticsCollector;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
+import com.github.kd_gaming1.packcore.gui.wizard.page.CaxtonFontPage;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
+import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
 import com.github.kd_gaming1.packcore.update.UpdateCache;
@@ -14,6 +16,7 @@ import com.github.kd_gaming1.packcore.warning.CaxtonShaderConflictWarner;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.util.Arrays;
+import java.util.Set;
 
 import com.mojang.brigadier.context.CommandContext;
 import eu.midnightdust.lib.config.MidnightConfig;
@@ -101,6 +104,17 @@ public class PackCoreCommands {
                             Minecraft.getInstance().setScreen(new ConfigScreen()));
                     return 1;
                 }))
+                .then(literal("font")
+                        .then(argument("font", StringArgumentType.word())
+                                .suggests((ctx, builder) -> {
+                                    Arrays.asList("none", "opensans", "inter", "thickinter")
+                                            .forEach(builder::suggest);
+                                    return builder.buildFuture();
+                                })
+                                .executes(ctx -> {
+                                    applyCaxtonFont(ctx.getSource(), StringArgumentType.getString(ctx, "font"));
+                                    return 1;
+                                })))
                 .then(literal("diagnose").executes(ctx -> {
                     sendDiagnostics(ctx.getSource());
                     return 1;
@@ -248,6 +262,32 @@ public class PackCoreCommands {
             sendError(source, "One or more integrations failed for profile: "
                     + profile.getDisplayName() + ". Check logs for details.");
         }
+    }
+
+    private static void applyCaxtonFont(FabricClientCommandSource source, String fontId) {
+        String normalized = fontId == null ? "" : fontId.trim().toLowerCase();
+
+        Set<String> caxtonPackIds = CaxtonFontPage.FontOption.all().stream()
+                .map(CaxtonFontPage.FontOption::packId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+
+        Set<String> selectedPackIds = switch (normalized) {
+            case "none" -> Set.of();
+            case "opensans", "open_sans" -> Set.of("caxton:opensans");
+            case "inter" -> Set.of("caxton:inter");
+            case "thickinter", "thick_inter" -> Set.of("file/ThickInter.zip");
+            default -> {
+                sendError(source, "Unknown Caxton font: \"" + fontId + "\". Valid options: none, opensans, inter, thickinter");
+                yield null;
+            }
+        };
+
+        if (selectedPackIds == null) return;
+
+        send(source, "Applying Caxton font: " + normalized + "...");
+        ResourcePackManager.apply(selectedPackIds, caxtonPackIds);
+        send(source, "Caxton font command issued: " + normalized + ".");
     }
 
     /**

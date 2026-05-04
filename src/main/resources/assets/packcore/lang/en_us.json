@@ -138,6 +138,9 @@
   "gui.packcore.wizard.caxton_font.inter.name": "Inter",
   "gui.packcore.wizard.caxton_font.inter.desc": "A modern sans-serif designed for screen readability. Used in many apps and UI toolkits.",
 
+  "gui.packcore.wizard.caxton_font.thick_inter.name": "ThickInter",
+  "gui.packcore.wizard.caxton_font.thick_inter.desc": "A bolder Inter variant designed for stronger readability. (Recommended)",
+
   "gui.packcore.wizard.page.scamscreener.title": "ScamScreener",
   "gui.packcore.wizard.page.scamscreener.explanation": "Configure how aggressively ScamScreener should warn and whether warning messages should ping you in chat.",
   "gui.packcore.wizard.scamscreener.alerts.heading": "Minimum Alert Level",

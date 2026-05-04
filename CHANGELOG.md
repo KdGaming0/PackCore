@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.2.6
+## v4.2.7
 
 ### Changes
-- One-time startup tweak: disable Firmament AH/BZ price overlay and enable Skyblock Enhancements price tooltips
+- Added support for new font pack in the caxton font page in the welcome wizard + a new command to change font.
