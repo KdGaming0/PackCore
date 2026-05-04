@@ -388,11 +388,12 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         }
     }
 
-    private static void applyOneTimeSkyblockEnhancementsPriceTooltips(Path gameDir) {
+    public static void applyOneTimeSkyblockEnhancementsPriceTooltips() {
         if (PackCoreConfig.skyblockEnhancementsPriceTooltipsApplied) return;
 
         boolean updated = SkyblockEnhancementsConfigManager.enablePriceTooltips();
         PackCoreConfig.skyblockEnhancementsPriceTooltipsApplied = true;
+        MidnightConfig.write(MOD_ID);
 
         if (updated) {
             LOGGER.info("SkyblockEnhancements: one-time price tooltips enable completed.");
@@ -406,11 +407,6 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         if (!PackCoreConfig.firmamentPriceDisableApplied) {
             applyOneTimeFirmamentPriceDisable(gameDir);
-            wrote = true;
-        }
-
-        if (!PackCoreConfig.skyblockEnhancementsPriceTooltipsApplied) {
-            applyOneTimeSkyblockEnhancementsPriceTooltips(gameDir);
             wrote = true;
         }
 

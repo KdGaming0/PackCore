@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.2.7
+## v4.2.8
 
 ### Changes
-- Added support for new font pack in the caxton font page in the welcome wizard + a new command to change font.
+- Deferred the SkyblockEnhancements price tooltip config write until after client startup to avoid the `mc == null` crash.

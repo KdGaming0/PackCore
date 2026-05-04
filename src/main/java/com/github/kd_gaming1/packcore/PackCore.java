@@ -104,6 +104,7 @@ public class PackCore implements ClientModInitializer {
             }
 
             CaxtonFontDetector.recompute();
+            PackCorePreLaunch.applyOneTimeSkyblockEnhancementsPriceTooltips();
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> PlaytimeTracker.onSessionEnd());
