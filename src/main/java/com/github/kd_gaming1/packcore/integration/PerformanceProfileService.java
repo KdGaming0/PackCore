@@ -10,11 +10,11 @@ public class PerformanceProfileService {
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     public enum PerformanceProfile {
-        PERFORMANCE("performance", "Maximum Performance"),
+        PERFORMANCE("maxfps", "Maximum Performance"),
         BALANCED("balanced", "Balanced"),
         QUALITY("quality", "Best Quality"),
-        SHADERS_PERFORMANCE("balanced_shaders", "Shaders (Balanced)"),
-        SHADERS_QUALITY("quality_shaders", "Shaders (Quality)");
+        SHADERS_PERFORMANCE("shaders_balanced", "Shaders (Balanced)"),
+        SHADERS_QUALITY("shaders_quality", "Shaders (Quality)");
 
         private final String id;
         private final String displayName;
@@ -38,6 +38,8 @@ public class PerformanceProfileService {
             sodium = SodiumConfigurator.applyProfile(profile);
         }
 
+        boolean moreculling = MoreCullingConfigurator.applyProfile(profile);
+
         boolean iris = true;
         if (FabricLoader.getInstance().isModLoaded("iris")) {
             iris = switch (profile) {
@@ -47,6 +49,6 @@ public class PerformanceProfileService {
             };
         }
 
-        return vanilla && sodium && iris;
+        return vanilla && sodium && moreculling && iris;
     }
 }

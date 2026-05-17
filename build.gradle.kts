@@ -35,6 +35,7 @@ dependencies {
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
     modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}+${stonecutter.current.version}")
     modCompileOnly("maven.modrinth:scaleme:${property("deps.scaleme_version")}")
+    modCompileOnly("maven.modrinth:moreculling:${property("deps.moreculling_version")}")
 
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
     include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")

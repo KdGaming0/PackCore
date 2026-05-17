@@ -82,8 +82,8 @@
 
   "gui.packcore.wizard.page.performance.title": "Performance",
 
-  "gui.packcore.wizard.performance.max_fps.name": "Max FPS",
-  "gui.packcore.wizard.performance.max_fps.desc": "Reduces visual quality to maximize frame rate.",
+  "gui.packcore.wizard.performance.maxfps.name": "Max FPS",
+  "gui.packcore.wizard.performance.maxfps.desc": "Reduces visual quality to maximize frame rate.",
 
   "gui.packcore.wizard.performance.balanced.name": "Balanced",
   "gui.packcore.wizard.performance.balanced.desc": "A balance between performance and visuals. Recommended for most systems.",

@@ -1,6 +1,6 @@
 # Changelog
 
-## v4.2.8
+## v4.2.9
 
 ### Changes
-- Deferred the SkyblockEnhancements price tooltip config write until after client startup to avoid the `mc == null` crash.
+- Update the performance profile to edit More Culling options too for better fps.

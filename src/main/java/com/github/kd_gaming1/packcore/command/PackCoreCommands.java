@@ -49,7 +49,7 @@ public class PackCoreCommands {
                             resetUpdateCache(ctx.getSource());
                             return 1;
                         })))
-                .then(literal("performance")
+                .then(literal("performance-profile")
                         .then(argument("profile", StringArgumentType.word())
                                 .suggests((ctx, builder) -> {
                                     Arrays.stream(PerformanceProfileService.PerformanceProfile.values())

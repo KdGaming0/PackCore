@@ -87,7 +87,7 @@ public class PerformancePage extends BaseWizardPage {
 
         public static List<PerformanceProfile> all() {
             return List.of(
-                    fromId("max_fps"),
+                    fromId("maxfps"),
                     fromId("balanced"),
                     fromId("quality"),
                     fromId("quality_performance_shaders"),
