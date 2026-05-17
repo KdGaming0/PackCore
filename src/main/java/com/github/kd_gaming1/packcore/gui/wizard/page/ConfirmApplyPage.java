@@ -2,7 +2,6 @@ package com.github.kd_gaming1.packcore.gui.wizard.page;
 
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
-import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
@@ -10,6 +9,7 @@ import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
+import com.github.kd_gaming1.packcore.integration.DungeonRoutesManager;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
@@ -24,7 +24,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.repository.Pack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +71,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
             new SummaryEntry(ItemBackgroundPage.STATE_KEY, ItemBackgroundPage.STATE_KEY, "Item Background", "gui.packcore.wizard.item_background."),
             new SummaryEntry(StorageDesignPage.STATE_KEY, StorageDesignPage.STATE_KEY, "Storage Design", "gui.packcore.wizard.storage_design."),
             new SummaryEntry(SwordBlockPage.STATE_KEY, SwordBlockPage.STATE_KEY, "Sword Block", "gui.packcore.wizard.sword_block."),
+            new SummaryEntry(DungeonRoutesPage.STATE_KEY, DungeonRoutesPage.STATE_KEY, "Dungeon Routes", "gui.packcore.wizard.dungeon_routes."),
             new SummaryEntry(ScamScreenerPage.ALERT_LEVEL_KEY, ScamScreenerPage.ALERT_LEVEL_KEY, "ScamScreener Alerts", "gui.packcore.wizard.scamscreener.minimum_risk.")
     );
 
@@ -243,6 +243,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
         anyError |= runStep(TabDesignPage.STATE_KEY, () -> applyTabDesign(state.getSelection(TabDesignPage.STATE_KEY)));
         anyError |= runStep(ItemBackgroundPage.STATE_KEY, () -> applyItemBackground(state.getSelection(ItemBackgroundPage.STATE_KEY)));
         anyError |= runStep(StorageDesignPage.STATE_KEY, () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
+        anyError |= runStep(DungeonRoutesPage.STATE_KEY, () -> applyDungeonRoutes(state.getSelection(DungeonRoutesPage.STATE_KEY)));
 
         if (FabricLoader.getInstance().isModLoaded("scaleme")) {
             anyError |= runStep(SwordBlockPage.STATE_KEY, () -> applySwordBlock(state.getSelection(SwordBlockPage.STATE_KEY)));
@@ -318,7 +319,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private void applyPerformanceProfile(String selectedId) {
         if (selectedId == null) return;
         PerformanceProfileService.PerformanceProfile profile = switch (selectedId) {
-            case "max_fps" -> PerformanceProfileService.PerformanceProfile.PERFORMANCE;
+            case "maxfps" -> PerformanceProfileService.PerformanceProfile.PERFORMANCE;
             case "balanced" -> PerformanceProfileService.PerformanceProfile.BALANCED;
             case "quality" -> PerformanceProfileService.PerformanceProfile.QUALITY;
             case "quality_performance_shaders" -> PerformanceProfileService.PerformanceProfile.SHADERS_PERFORMANCE;
@@ -361,6 +362,17 @@ public class ConfirmApplyPage extends BaseWizardPage {
         };
         if (!StorageDesignManager.apply(design))
             throw new RuntimeException("Failed to apply storage design: " + selectedId);
+    }
+
+    private void applyDungeonRoutes(String selectedId) {
+        if (selectedId == null) return;
+        DungeonRoutesManager.DungeonRoutesMode mode = switch (selectedId) {
+            case "skyblocker_waypoints" -> DungeonRoutesManager.DungeonRoutesMode.SKYBLOCKER_WAYPOINTS;
+            case "secret_routes_mod" -> DungeonRoutesManager.DungeonRoutesMode.SECRET_ROUTES_MOD;
+            default -> throw new RuntimeException("Unknown dungeon routes ID: " + selectedId);
+        };
+        if (!DungeonRoutesManager.apply(mode))
+            throw new RuntimeException("Failed to apply dungeon routes mode: " + selectedId);
     }
 
     private void applySwordBlock(String selectedId) {

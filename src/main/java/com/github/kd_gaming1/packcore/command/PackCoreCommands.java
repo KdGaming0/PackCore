@@ -5,6 +5,7 @@ import com.github.kd_gaming1.packcore.util.diagnostics.DiagnosticsCollector;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.gui.wizard.page.CaxtonFontPage;
+import com.github.kd_gaming1.packcore.integration.DungeonRoutesManager;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
@@ -93,6 +94,15 @@ public class PackCoreCommands {
                             applyStorageDesign(ctx.getSource(), StorageDesignManager.StorageDesign.VANILLA);
                             return 1;
                         })))
+                .then(literal("dungeonroutes")
+                        .then(literal("skyblocker").executes(ctx -> {
+                            applyDungeonRoutes(ctx.getSource(), DungeonRoutesManager.DungeonRoutesMode.SKYBLOCKER_WAYPOINTS);
+                            return 1;
+                        }))
+                        .then(literal("secretroutesmod").executes(ctx -> {
+                            applyDungeonRoutes(ctx.getSource(), DungeonRoutesManager.DungeonRoutesMode.SECRET_ROUTES_MOD);
+                            return 1;
+                        })))
                 .then(literal("wizard").executes(ctx -> {
                     Minecraft.getInstance().execute(() ->
                             Minecraft.getInstance().setScreen(
@@ -126,7 +136,7 @@ public class PackCoreCommands {
                 .then(literal("ignore-shader-warning").executes(ctx -> {
                     CaxtonShaderConflictWarner.ignoreWarning();
                     ctx.getSource().sendFeedback(
-                            Component.literal("✓ Shader/Font warnings ignored for this session")
+                            Component.literal("Shader/Font warnings ignored for this session")
                                     .withStyle(ChatFormatting.GREEN)
                     );
                     return 1;
@@ -134,7 +144,7 @@ public class PackCoreCommands {
                 .then(literal("enable-shader-warning").executes(ctx -> {
                     CaxtonShaderConflictWarner.enableWarnings();
                     ctx.getSource().sendFeedback(
-                            Component.literal("✓ Shader/Font warnings re-enabled")
+                            Component.literal("Shader/Font warnings re-enabled")
                                     .withStyle(ChatFormatting.GREEN)
                     );
                     return 1;
@@ -239,6 +249,18 @@ public class PackCoreCommands {
         }
     }
 
+    private static void applyDungeonRoutes(
+            FabricClientCommandSource source, DungeonRoutesManager.DungeonRoutesMode mode) {
+        String name = mode.name().toLowerCase().replace("_", " ");
+        send(source, "Applying dungeon routes: " + name + "...");
+        if (DungeonRoutesManager.apply(mode)) {
+            send(source, "Dungeon routes applied: " + name);
+        } else {
+            sendError(source, "Failed to apply dungeon routes: " + name
+                    + ". Check that Skyblocker and/or Secret Routes Mod are loaded. See logs for details.");
+        }
+    }
+
     private static void applyPerformanceProfile(FabricClientCommandSource source, String id) {
         PerformanceProfileService.PerformanceProfile profile =
                 Arrays.stream(PerformanceProfileService.PerformanceProfile.values())
@@ -323,7 +345,7 @@ public class PackCoreCommands {
     }
 
     private static void sendSuccess(CommandContext<FabricClientCommandSource> ctx) {
-        ctx.getSource().sendFeedback(Component.literal("§a[PackCore] " + "Opening configuration menu..."));
+        ctx.getSource().sendFeedback(Component.literal("[PackCore] Opening configuration menu...").withStyle(ChatFormatting.GREEN));
     }
 
     private static void sendError(FabricClientCommandSource source, String message) {
@@ -331,6 +353,6 @@ public class PackCoreCommands {
     }
 
     private static void sendError(CommandContext<FabricClientCommandSource> ctx) {
-        ctx.getSource().sendError(Component.literal("§c[PackCore] " + "You must be in-game to open the config menu."));
+        ctx.getSource().sendError(Component.literal("[PackCore] You must be in-game to open the config menu.").withStyle(ChatFormatting.RED));
     }
 }
