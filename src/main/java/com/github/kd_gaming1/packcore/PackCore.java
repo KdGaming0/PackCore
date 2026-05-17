@@ -143,10 +143,20 @@ public class PackCore implements ClientModInitializer {
     }
 
     private static void applyConfiguredTitleScreen(Minecraft client, Screen screen) {
+        // Full welcome wizard for brand-new users
         if (!PackCoreConfig.successfulWelcomeWizard) {
             client.setScreen(new WelcomeWizardScreen(screen));
             return;
         }
+
+        // Mini-wizard: prompt existing users to choose dungeon routes on first launch after update
+        if (!PackCoreConfig.seenDungeonRoutesWizard
+                && FabricLoader.getInstance().isModLoaded("skyblocker")
+                && FabricLoader.getInstance().isModLoaded("secretroutesmod")) {
+            client.setScreen(WelcomeWizardScreen.forDungeonRoutes(screen));
+            return;
+        }
+
         switch (PackCoreConfig.menuStyle) {
             case MODERN -> client.setScreen(new SBETitleScreen());
             case MODERN_MINIMAL -> client.setScreen(new SBETitleScreen(false));

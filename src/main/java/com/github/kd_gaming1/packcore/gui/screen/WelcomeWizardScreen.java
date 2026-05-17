@@ -6,9 +6,10 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.wizard.*;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.wizard.page.*;
+import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
+import com.github.kd_gaming1.packcore.gui.wizard.page.DungeonRoutesPage;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import eu.midnightdust.lib.config.MidnightConfig;
-import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -34,10 +35,25 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private ConfirmApplyPage confirmApplyPage;
 
     private final Screen lastScreen;
+    private final boolean miniWizard;
 
+    /** Creates the full welcome wizard for new users. */
     public WelcomeWizardScreen(Screen lastScreen) {
-        super(Component.translatable("gui.packcore.wizard.title", ModpackMetadata.getInstance().getModpackName()));
+        this(lastScreen, false);
+    }
+
+    /** Creates a mini-wizard that shows only a subset of pages. */
+    private WelcomeWizardScreen(Screen lastScreen, boolean miniWizard) {
+        super(miniWizard
+                ? Component.translatable("gui.packcore.wizard.title.dungeon_routes")
+                : Component.translatable("gui.packcore.wizard.title", ModpackMetadata.getInstance().getModpackName()));
         this.lastScreen = lastScreen;
+        this.miniWizard = miniWizard;
+    }
+
+    /** Factory method: creates a mini-wizard showing only the Dungeon Routes page. */
+    public static WelcomeWizardScreen forDungeonRoutes(Screen lastScreen) {
+        return new WelcomeWizardScreen(lastScreen, true);
     }
 
     @Override
@@ -65,6 +81,17 @@ public class WelcomeWizardScreen extends AbstractScreen {
         int contentWidth = width - PANEL_PADDING * 2;
         int contentHeight = height - HEADER_HEIGHT - FOOTER_HEIGHT;
 
+        if (miniWizard) {
+            // Mini-wizard: only Dungeon Routes + Confirm & Apply
+            navigator.addPage(new DungeonRoutesPage(wizardState, navigator, contentWidth, contentHeight));
+
+            confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
+            confirmApplyPage.setMiniWizardMode(true);
+            navigator.addPage(confirmApplyPage);
+            return;
+        }
+
+        // Full wizard: all pages
         navigator.addPage(new WelcomePage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new MainMenuDesignPage(wizardState, navigator, contentWidth, contentHeight));
         navigator.addPage(new PerformancePage(wizardState, navigator, contentWidth, contentHeight));
@@ -151,9 +178,10 @@ public class WelcomeWizardScreen extends AbstractScreen {
         });
     }
 
-    /** Writes the wizard-complete flag to the config and saves it. */
+    /** Writes the wizard-complete flag(s) to the config and saves it. */
     private void markWizardComplete() {
         PackCoreConfig.successfulWelcomeWizard = true;
+        PackCoreConfig.seenDungeonRoutesWizard = true;
         MidnightConfig.write(MOD_ID);
     }
 

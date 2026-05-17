@@ -2,6 +2,7 @@ package com.github.kd_gaming1.packcore.gui.wizard.page;
 
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
+import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
@@ -24,6 +25,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.repository.Pack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +40,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     private static final Component PAGE_TITLE =
             Component.translatable("gui.packcore.wizard.page.confirm.title");
+    private static final Component MINI_PAGE_TITLE =
+            Component.translatable("gui.packcore.wizard.page.dungeon_routes.title");
 
     private static final int PADDING = 16;
     private static final int ROW_HEIGHT = 30;
@@ -75,6 +79,10 @@ public class ConfirmApplyPage extends BaseWizardPage {
             new SummaryEntry(ScamScreenerPage.ALERT_LEVEL_KEY, ScamScreenerPage.ALERT_LEVEL_KEY, "ScamScreener Alerts", "gui.packcore.wizard.scamscreener.minimum_risk.")
     );
 
+    private static final List<SummaryEntry> MINI_SUMMARY_ENTRIES = List.of(
+            new SummaryEntry(DungeonRoutesPage.STATE_KEY, DungeonRoutesPage.STATE_KEY, "Dungeon Routes", "gui.packcore.wizard.dungeon_routes.")
+    );
+
     private enum RowStatus { SUCCESS, ERROR }
 
     private final Map<String, RowStatus> rowStatuses = new HashMap<>();
@@ -87,15 +95,21 @@ public class ConfirmApplyPage extends BaseWizardPage {
     private String globalErrorMessage;
     private Runnable onApplySucceeded;
     private boolean applyCompleted;
+    private boolean miniWizardMode = false;
 
     public void setOnApplySucceeded(Runnable callback) { onApplySucceeded = callback; }
     public boolean isApplyCompleted() { return applyCompleted; }
+
+    /** When enabled, only shows the Dungeon Routes row and applies only that setting. */
+    public void setMiniWizardMode(boolean mini) { this.miniWizardMode = mini; }
 
     public ConfirmApplyPage(WizardState state, WizardNavigator navigator, int width, int height) {
         super(state, navigator, width, height);
     }
 
-    @Override public Component getTitle() { return PAGE_TITLE; }
+    @Override public Component getTitle() {
+        return miniWizardMode ? MINI_PAGE_TITLE : PAGE_TITLE;
+    }
     @Override public boolean validate() { return true; }
 
     @Override
@@ -128,7 +142,6 @@ public class ConfirmApplyPage extends BaseWizardPage {
                 Component.translatable("gui.packcore.wizard.confirm.title"), GuiColors.NAME_DEFAULT));
 
         int buttonY = getHeight() - PADDING - BUTTON_HEIGHT;
-        int warningLineHeight = font.lineHeight + WARNING_LINE_GAP;
         int scrollTop = PADDING + font.lineHeight + PADDING;
         int scrollHeight = buttonY - BUTTON_GAP - scrollTop;
 
@@ -136,7 +149,9 @@ public class ConfirmApplyPage extends BaseWizardPage {
         EmptyComponent rowContainer = new EmptyComponent(0, 0, rowWidth, 0);
         int currentY = 0;
 
-        for (SummaryEntry entry : SUMMARY_ENTRIES) {
+        List<SummaryEntry> entriesToShow = miniWizardMode ? MINI_SUMMARY_ENTRIES : SUMMARY_ENTRIES;
+
+        for (SummaryEntry entry : entriesToShow) {
             if (!scamLoaded && entry.selectionKey().equals(ScamScreenerPage.ALERT_LEVEL_KEY)) continue;
 
             String selectedId = state.getSelection(entry.selectionKey());
@@ -156,7 +171,7 @@ public class ConfirmApplyPage extends BaseWizardPage {
         }
 
         // ── Caxton font row ──
-        if (FabricLoader.getInstance().isModLoaded("caxton")) {
+        if (!miniWizardMode && FabricLoader.getInstance().isModLoaded("caxton")) {
             String caxtonId = state.getSelection(CAXTON_FONT_KEY);
 
             if (caxtonId == null) {
@@ -177,7 +192,8 @@ public class ConfirmApplyPage extends BaseWizardPage {
             currentY += ROW_HEIGHT + ROW_GAP;
         }
 
-        if (scamLoaded) {
+        // ── ScamScreener pings ──
+        if (!miniWizardMode && scamLoaded) {
             Set<String> pingOptions = state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY);
             SummaryRowComponent pingHeader = new SummaryRowComponent(
                     0, currentY, rowWidth, ROW_HEIGHT, SCAM_PINGS_KEY, "ScamScreener Pings",
@@ -197,22 +213,25 @@ public class ConfirmApplyPage extends BaseWizardPage {
             }
         }
 
-        Set<String> selectedPacks = state.getSelectedResourcePacks();
-        SummaryRowComponent packHeader = new SummaryRowComponent(
-                0, currentY, rowWidth, ROW_HEIGHT, RESOURCE_PACKS_KEY, "Resource Packs",
-                selectedPacks.isEmpty() ? Component.literal("None selected") : Component.literal(selectedPacks.size() + " selected"),
-                selectedPacks.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED, false);
-        packRows.add(packHeader);
-        rowContainer.addComponent(packHeader);
-        currentY += ROW_HEIGHT + ROW_GAP;
-
-        for (String packId : selectedPacks) {
-            SummaryRowComponent packRow = new SummaryRowComponent(
-                    0, currentY, rowWidth, ROW_HEIGHT, RESOURCE_PACKS_KEY + ":" + packId,
-                    "", Component.literal(packId), COLOR_PACK_SUBROW, true);
-            packRows.add(packRow);
-            rowContainer.addComponent(packRow);
+        // ── Resource packs ──
+        if (!miniWizardMode) {
+            Set<String> selectedPacks = state.getSelectedResourcePacks();
+            SummaryRowComponent packHeader = new SummaryRowComponent(
+                    0, currentY, rowWidth, ROW_HEIGHT, RESOURCE_PACKS_KEY, "Resource Packs",
+                    selectedPacks.isEmpty() ? Component.literal("None selected") : Component.literal(selectedPacks.size() + " selected"),
+                    selectedPacks.isEmpty() ? COLOR_VALUE_SKIPPED : COLOR_VALUE_SELECTED, false);
+            packRows.add(packHeader);
+            rowContainer.addComponent(packHeader);
             currentY += ROW_HEIGHT + ROW_GAP;
+
+            for (String packId : selectedPacks) {
+                SummaryRowComponent packRow = new SummaryRowComponent(
+                        0, currentY, rowWidth, ROW_HEIGHT, RESOURCE_PACKS_KEY + ":" + packId,
+                        "", Component.literal(packId), COLOR_PACK_SUBROW, true);
+                packRows.add(packRow);
+                rowContainer.addComponent(packRow);
+                currentY += ROW_HEIGHT + ROW_GAP;
+            }
         }
 
         rowContainer.setHeight(currentY);
@@ -238,32 +257,38 @@ public class ConfirmApplyPage extends BaseWizardPage {
         globalErrorMessage = null;
         boolean anyError = false;
 
-        anyError |= runStep(MainMenuDesignPage.STATE_KEY, () -> applyMainMenuDesign(state.getSelection(MainMenuDesignPage.STATE_KEY)));
-        anyError |= runStep(PerformancePage.STATE_KEY, () -> applyPerformanceProfile(state.getSelection(PerformancePage.STATE_KEY)));
-        anyError |= runStep(TabDesignPage.STATE_KEY, () -> applyTabDesign(state.getSelection(TabDesignPage.STATE_KEY)));
-        anyError |= runStep(ItemBackgroundPage.STATE_KEY, () -> applyItemBackground(state.getSelection(ItemBackgroundPage.STATE_KEY)));
-        anyError |= runStep(StorageDesignPage.STATE_KEY, () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
-        anyError |= runStep(DungeonRoutesPage.STATE_KEY, () -> applyDungeonRoutes(state.getSelection(DungeonRoutesPage.STATE_KEY)));
+        if (miniWizardMode) {
+            // Mini-wizard: only apply dungeon routes
+            anyError |= runStep(DungeonRoutesPage.STATE_KEY, () -> applyDungeonRoutes(state.getSelection(DungeonRoutesPage.STATE_KEY)));
+        } else {
+            // Full wizard: apply everything
+            anyError |= runStep(MainMenuDesignPage.STATE_KEY, () -> applyMainMenuDesign(state.getSelection(MainMenuDesignPage.STATE_KEY)));
+            anyError |= runStep(PerformancePage.STATE_KEY, () -> applyPerformanceProfile(state.getSelection(PerformancePage.STATE_KEY)));
+            anyError |= runStep(TabDesignPage.STATE_KEY, () -> applyTabDesign(state.getSelection(TabDesignPage.STATE_KEY)));
+            anyError |= runStep(ItemBackgroundPage.STATE_KEY, () -> applyItemBackground(state.getSelection(ItemBackgroundPage.STATE_KEY)));
+            anyError |= runStep(StorageDesignPage.STATE_KEY, () -> applyStorageDesign(state.getSelection(StorageDesignPage.STATE_KEY)));
+            anyError |= runStep(DungeonRoutesPage.STATE_KEY, () -> applyDungeonRoutes(state.getSelection(DungeonRoutesPage.STATE_KEY)));
 
-        if (FabricLoader.getInstance().isModLoaded("scaleme")) {
-            anyError |= runStep(SwordBlockPage.STATE_KEY, () -> applySwordBlock(state.getSelection(SwordBlockPage.STATE_KEY)));
+            if (FabricLoader.getInstance().isModLoaded("scaleme")) {
+                anyError |= runStep(SwordBlockPage.STATE_KEY, () -> applySwordBlock(state.getSelection(SwordBlockPage.STATE_KEY)));
+            }
+            if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
+                anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY, () -> applyScamScreener(
+                        state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
+                        state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)));
+            }
+
+            if (FabricLoader.getInstance().isModLoaded("caxton")) {
+                anyError |= runStep(CAXTON_FONT_KEY, () -> applyCaxtonFont(state.getSelection(CAXTON_FONT_KEY)));
+            }
+
+            Set<String> caxtonPackIds = CaxtonFontPage.FontOption.all().stream()
+                    .map(CaxtonFontPage.FontOption::packId)
+                    .filter(Objects::nonNull)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            anyError |= runStep(RESOURCE_PACKS_KEY, () -> ResourcePackManager.apply(state.getSelectedResourcePacks(), caxtonPackIds));
         }
-        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
-            anyError |= runStep(ScamScreenerPage.ALERT_LEVEL_KEY, () -> applyScamScreener(
-                    state.getSelection(ScamScreenerPage.ALERT_LEVEL_KEY),
-                    state.getMultiSelection(ScamScreenerPage.PING_OPTIONS_KEY)));
-        }
-
-        if (FabricLoader.getInstance().isModLoaded("caxton")) {
-            anyError |= runStep(CAXTON_FONT_KEY, () -> applyCaxtonFont(state.getSelection(CAXTON_FONT_KEY)));
-        }
-
-        Set<String> caxtonPackIds = CaxtonFontPage.FontOption.all().stream()
-                .map(CaxtonFontPage.FontOption::packId)
-                .filter(Objects::nonNull)
-                .collect(java.util.stream.Collectors.toSet());
-
-        anyError |= runStep(RESOURCE_PACKS_KEY, () -> ResourcePackManager.apply(state.getSelectedResourcePacks(), caxtonPackIds));
 
         applyCompleted = !anyError;
         if (!anyError) {
