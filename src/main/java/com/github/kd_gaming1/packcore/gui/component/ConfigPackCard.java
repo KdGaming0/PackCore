@@ -8,7 +8,7 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
 
@@ -74,13 +74,18 @@ public class ConfigPackCard extends AbstractComponent {
         if (!isActive) {
             addWidget(new ButtonWidget(0, 0, getWidth(), getHeight(), Component.empty(), button -> onSelect.accept(entry)) {
                 @Override
-                protected void renderContents(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {}
+                protected void extractContents(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {}
             });
         }
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    //?} else {
+     /*@Override
+     public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         boolean isHovered = !isActive
                 && mouseX >= getTotalX() && mouseX <= getTotalX() + getWidth()
                 && mouseY >= getTotalY() && mouseY <= getTotalY() + getHeight();
@@ -107,11 +112,15 @@ public class ConfigPackCard extends AbstractComponent {
             int badgeY = cardY + (cardHeight - badgeHeight) / 2;
 
             graphics.fill(badgeX, badgeY, badgeX + badgeWidth, badgeY + badgeHeight, COLOR_BADGE_BACKGROUND);
-            graphics.drawString(font, badgeText, badgeX + BADGE_PADDING, badgeY + (BADGE_PADDING / 2), COLOR_BADGE_TEXT, false);
+            //? if >=26.1 {
+            graphics.text(font, badgeText, badgeX + BADGE_PADDING, badgeY + (BADGE_PADDING / 2), COLOR_BADGE_TEXT, false);
+            //?} else {
+            /*graphics.drawString(font, badgeText, badgeX + BADGE_PADDING, badgeY + (BADGE_PADDING / 2), COLOR_BADGE_TEXT, false);
+            *///?}
         }
     }
 
-    private void drawOutline(GuiGraphics graphics, int x, int y, int width, int height, int color) {
+    private void drawOutline(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
         GuiHelper.drawBorder(graphics, x, y, width, height, color);
     }
 

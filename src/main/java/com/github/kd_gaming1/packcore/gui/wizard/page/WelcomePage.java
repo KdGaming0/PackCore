@@ -13,7 +13,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,10 +111,17 @@ public class WelcomePage extends BaseWizardPage {
 
         final int dividerY = currentY;
         column.addComponent(new EmptyComponent(0, dividerY, columnWidth, 1) {
-            @Override
-            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+             //? if >=26.1 {
+             @Override
+             public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+                 graphics.fill(getTotalX(), getTotalY(), getTotalX() + getWidth(), getTotalY() + 1, COLOR_DIVIDER);
+             }
+             //?} else {
+             /*@Override
+            public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
                 graphics.fill(getTotalX(), getTotalY(), getTotalX() + getWidth(), getTotalY() + 1, COLOR_DIVIDER);
             }
+            *///?}
         });
         currentY += 1 + DIVIDER_GAP;
 

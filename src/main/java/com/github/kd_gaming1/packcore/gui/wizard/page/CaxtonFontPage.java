@@ -8,9 +8,8 @@ import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.util.FormattedCharSequence;
 
@@ -215,9 +214,15 @@ public class CaxtonFontPage extends BaseWizardPage {
             this.text = text;
         }
 
+        //? if >=26.1 {
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY,
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                            float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+        /*@Override
+        public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+                           float partialTick, int parentWidth, int parentHeight) {
+         *///?}
             int x = getTotalX(), y = getTotalY(), w = getWidth(), h = getHeight();
             var font = Minecraft.getInstance().font;
 
@@ -231,11 +236,15 @@ public class CaxtonFontPage extends BaseWizardPage {
             int totalTextHeight = lines.size() * font.lineHeight + (lines.size() - 1) * 2;
             int textY = y + (h - totalTextHeight) / 2;
             for (FormattedCharSequence line : lines) {
-                graphics.drawString(font, line, textX, textY, COLOR_WARNING, false);
+                //? if >=26.1 {
+                graphics.text(font, line, textX, textY, COLOR_WARNING, false);
+                //?} else {
+                 /*graphics.drawString(font, line, textX, textY, COLOR_WARNING, false);
+                *///?}
                 textY += font.lineHeight + 2;
             }
 
-            super.render(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
+            super.extractRenderState(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
         }
     }
 }

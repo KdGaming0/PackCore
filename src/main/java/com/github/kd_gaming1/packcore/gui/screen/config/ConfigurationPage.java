@@ -15,7 +15,7 @@ import com.github.kd_gaming1.packcore.gui.component.*;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
@@ -148,8 +148,13 @@ public class ConfigurationPage extends BaseConfigPage {
 
         // Sub-tab bar
         panel.addComponent(new AbstractComponent(PADDING, PADDING, panelWidth - PADDING * 2, SUB_TAB_HEIGHT) {
+            //? if >=26.1 {
             @Override
-            public void render(GuiGraphics g, int mx, int my, float pt, int pw, int ph) {
+            public void extractRenderState(GuiGraphicsExtractor graphics, int mx, int my, float pt, int pw, int ph) {
+                //?} else {
+            /*@Override
+            public void render(GuiGraphicsExtractor graphics, int mx, int my, float pt, int pw, int ph) {
+            *///?}
                 int bx = getTotalX(), by = getTotalY(), bh = getHeight();
                 for (int i = 0; i < 2; i++) {
                     boolean active = (i == 0) == (presetsSource == PresetsSource.OFFICIAL);
@@ -158,10 +163,15 @@ public class ConfigurationPage extends BaseConfigPage {
                             : Component.translatable("gui.packcore.config.source.my_exports").getString();
                     int tx = bx + i * tabWidth;
                     int color = active ? 0xFFFFFFFF : 0xFF888888;
-                    g.drawString(font, label, tx + (tabWidth - font.width(label)) / 2,
+                    //? if >=26.1 {
+                    graphics.text(font, label, tx + (tabWidth - font.width(label)) / 2,
                             by + (bh - font.lineHeight) / 2, color, false);
+                    //?} else {
+                    /*graphics.drawString(font, label, tx + (tabWidth - font.width(label)) / 2,
+                            by + (bh - font.lineHeight) / 2, color, false);
+                     *///?}
                     if (active)
-                        g.fill(tx, by + bh - 2, tx + tabWidth, by + bh, 0xFF2196F3);
+                        graphics.fill(tx, by + bh - 2, tx + tabWidth, by + bh, 0xFF2196F3);
                 }
             }
         });
@@ -183,7 +193,11 @@ public class ConfigurationPage extends BaseConfigPage {
                     panel.updateParentPosition(panel.getParentX(), panel.getParentY(), getWidth(), getHeight());
                 }
             }) {
-                @Override protected void renderContents(@NonNull GuiGraphics graphics, int mx, int my, float pt) {}
+                //? if >=26.1 {
+                @Override protected void extractContents(@NonNull GuiGraphicsExtractor graphics, int mx, int my, float pt) {}
+                //?} else {
+                /*@Override protected void extractContents(@NonNull GuiGraphicsExtractor graphics, int mx, int my, float pt) {}
+                 *///?}
             });
         }
 

@@ -8,7 +8,7 @@ stonecutter tasks {
     order("publishCurseforge")
 }
 
-stonecutter active "1.21.11"
+stonecutter active "26.1"
 
 // See https://stonecutter.kikugie.dev/wiki/config/params
 stonecutter parameters {
@@ -23,10 +23,18 @@ stonecutter parameters {
         }
         string(current.parsed >= "26.1") {
             replace("classTweaker v1 named", "classTweaker v1 official")
+            replace("GuiGraphics", "GuiGraphicsExtractor")
+            replace("renderContents", "extractContents")
+            replace(".drawCenteredString", ".centeredText")
+            replace(".renderOutline", ".outline")
+            replace("super.render(", "super.extractRenderState(")
+            replace(".render(", ".extractRenderState(")
+            replace("Screens.getButtons(", "Screens.getWidgets(")
         }
         // UILib: render → extract for 26.1+
-        regex(current.parsed >= "26.1") {
-            replace("render([A-Z])" to "extract$1", "extract([A-Z])" to "render$1")
+        string(current.parsed >= "26.1") {
+            replace("renderBackground", "extractBackground")
+            replace(".renderBase(", ".extractRenderStateBase(")
         }
     }
 }

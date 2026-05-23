@@ -111,7 +111,11 @@ public final class CaxtonShaderConflictWarner {
                                 .withClickEvent(new ClickEvent.RunCommand(
                                         "/packcore ignore-shader-warning"))));
 
-        mc.player.displayClientMessage(message, false);
+        //? if >=26.1 {
+        mc.player.sendSystemMessage(message);
+        //?} else {
+        /*mc.player.displayClientMessage(message, false);
+         *///?}
 
         lastWarnedAt = System.currentTimeMillis();
         warningsSent++;

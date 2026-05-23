@@ -9,8 +9,13 @@ import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
+//? if >=26.1 {
+import net.minecraft.client.gui.components.AbstractScrollArea;
+//?} else {
+
+//?}
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -86,7 +91,30 @@ public class OptionCardGrid<T> extends EmptyComponent {
             int cardY = row * (cardHeight + cardGap);
             boolean isSelected = descriptor.id(option).equals(selectedId);
 
+            //? if >=26.1 {
             OptionCard<T> card = new OptionCard<>(
+                    cardX, cardY, cardWidth, cardHeight, previewHeight,
+                    option, descriptor, isSelected,
+                    clicked -> {
+                        String clickedId = descriptor.id(clicked);
+                        if (clickedId.equals(this.selectedId)) {
+                            this.selectedId = null;
+                            this.onSelect.accept(null);
+                        } else {
+                            this.selectedId = clickedId;
+                            this.onSelect.accept(clicked);
+                        }
+                        this.buildGrid();
+                    },
+                    new AbstractScrollArea.ScrollbarSettings(
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller"),
+                            null,
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller_background"),
+                            0, 0, 0, false
+                    )
+            );
+            //?} else {
+            /*OptionCard<T> card = new OptionCard<>(
                     cardX, cardY, cardWidth, cardHeight, previewHeight,
                     option, descriptor, isSelected,
                     clicked -> {
@@ -101,6 +129,7 @@ public class OptionCardGrid<T> extends EmptyComponent {
                         this.buildGrid();
                     }
             );
+            *///?}
             cardGrid.addWidget(card);
         }
 
@@ -159,8 +188,13 @@ public class OptionCardGrid<T> extends EmptyComponent {
         private final Consumer<T> onClick;
         private final List<IComponent> childComponents = new ArrayList<>();
 
-        OptionCard(int x, int y, int width, int height, int previewHeight, T option, CardDescriptor<T> descriptor, boolean isSelected, Consumer<T> onClick) {
+        //? if >=26.1 {
+        OptionCard(int x, int y, int width, int height, int previewHeight, T option, CardDescriptor<T> descriptor, boolean isSelected, Consumer<T> onClick, AbstractScrollArea.ScrollbarSettings scrollbarSettings) {
+            super(x, y, width, height, Component.empty(), scrollbarSettings);
+        //?} else {
+        /*OptionCard(int x, int y, int width, int height, int previewHeight, T option, CardDescriptor<T> descriptor, boolean isSelected, Consumer<T> onClick) {
             super(x, y, width, height, Component.empty());
+         *///?}
             this.previewHeight = previewHeight;
             this.option = option;
             this.descriptor = descriptor;
@@ -199,8 +233,14 @@ public class OptionCardGrid<T> extends EmptyComponent {
             ));
         }
 
+
+        //? if >=26.1 {
         @Override
-        protected void renderWidget(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        //?} else {
+        /*@Override
+        protected void renderWidget(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+         *///?}
             int cardLeft = getX();
             int cardTop = getY();
             int cardWidth = getWidth();
@@ -227,7 +267,11 @@ public class OptionCardGrid<T> extends EmptyComponent {
 
             for (IComponent component : childComponents) {
                 component.updateParentPosition(cardLeft, cardTop, cardWidth, cardHeight);
-                component.renderBase(graphics, mouseX, mouseY, partialTick, cardWidth, cardHeight);
+                //? if >=26.1 {
+                component.extractRenderState(graphics, mouseX, mouseY, partialTick, cardWidth, cardHeight);
+                //?} else {
+                /*component.extractRenderState(graphics, mouseX, mouseY, partialTick, cardWidth, cardHeight);
+                 *///?}
             }
         }
 
@@ -240,9 +284,9 @@ public class OptionCardGrid<T> extends EmptyComponent {
             return false;
         }
 
-        private void drawCheckmarkBadge(GuiGraphics graphics, int badgeX, int badgeY) {
+        private void drawCheckmarkBadge(GuiGraphicsExtractor graphics, int badgeX, int badgeY) {
             graphics.fill(badgeX, badgeY, badgeX + BADGE_SIZE, badgeY + BADGE_SIZE, GuiColors.BORDER_SELECTED);
-            graphics.drawCenteredString(
+            graphics.centeredText(
                     Minecraft.getInstance().font,
                     "✓",
                     badgeX + BADGE_SIZE / 2,
@@ -251,7 +295,7 @@ public class OptionCardGrid<T> extends EmptyComponent {
             );
         }
 
-        private static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {
+        private static void drawBorder(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
             GuiHelper.drawBorder(graphics, x, y, width, height, color);
         }
 

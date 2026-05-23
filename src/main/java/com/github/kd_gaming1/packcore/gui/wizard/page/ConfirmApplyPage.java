@@ -2,7 +2,6 @@ package com.github.kd_gaming1.packcore.gui.wizard.page;
 
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.TextComponent;
-import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
@@ -17,15 +16,13 @@ import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import com.github.kd_gaming1.packcore.integration.ScamScreenerConfigurator;
 import com.github.kd_gaming1.packcore.integration.StorageDesignManager;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
-import com.github.kd_gaming1.scaleme.config.ScaleMeConfig;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.repository.Pack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -402,8 +399,18 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     private void applySwordBlock(String selectedId) {
         if (selectedId == null) return;
-        ScaleMeConfig.enableSwordBlock = selectedId.equals("enabled");
-        MidnightConfig.write("scaleme");
+        try {
+            Class<?> configClass = Class.forName("com.github.kd_gaming1.scaleme.config.ScaleMeConfig");
+            java.lang.reflect.Field field = configClass.getDeclaredField("enableSwordBlock");
+            field.setAccessible(true);
+            field.setBoolean(null, selectedId.equals("enabled"));
+
+            Class<?> midnightConfigClass = Class.forName("eu.midnightdust.lib.config.MidnightConfig");
+            java.lang.reflect.Method writeMethod = midnightConfigClass.getMethod("write", String.class);
+            writeMethod.invoke(null, "scaleme");
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to apply ScaleMe sword block setting", e);
+        }
     }
 
     private void applyScamScreener(String selectedId, Set<String> pingOptions) {
@@ -444,16 +451,20 @@ public class ConfirmApplyPage extends BaseWizardPage {
 
     // ── Render ────────────────────────────────────────────────────────────────
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY,
-                       float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+     /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         if (globalErrorMessage == null) return;
 
         var font = Minecraft.getInstance().font;
         int buttonY = getTotalY() + getHeight() - PADDING - BUTTON_HEIGHT;
         int messageY = buttonY - font.lineHeight - 4;
 
-        graphics.drawCenteredString(font, globalErrorMessage,
+        graphics.centeredText(font, globalErrorMessage,
                 getTotalX() + getWidth() / 2, messageY, GuiColors.ERROR);
     }
 
@@ -500,9 +511,13 @@ public class ConfirmApplyPage extends BaseWizardPage {
             cachedRightWidth = Minecraft.getInstance().font.width(text);
         }
 
+        //? if >=26.1 {
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY,
-                           float partialTick, int parentWidth, int parentHeight) {
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+            //?} else {
+         /*@Override
+        public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        *///?}
             int x = getTotalX(), y = getTotalY(), w = getWidth(), h = getHeight();
             int leftInset = isSubRow ? 20 : 0;
 
@@ -516,9 +531,17 @@ public class ConfirmApplyPage extends BaseWizardPage {
             var font = Minecraft.getInstance().font;
             int textY = y + (h - font.lineHeight) / 2;
             if (!label.isEmpty()) {
-                graphics.drawString(font, label, x + leftInset + 8, textY, GuiColors.NAME_DEFAULT, false);
+                //? if >=26.1 {
+                graphics.text(font, label, x + leftInset + 8, textY, GuiColors.NAME_DEFAULT, false);
+                //?} else {
+                 /*graphics.drawString(font, label, x + leftInset + 8, textY, GuiColors.NAME_DEFAULT, false);
+                *///?}
             }
-            graphics.drawString(font, cachedRightText, x + w - cachedRightWidth - 8, textY, cachedRightColor, false);
+            //? if >=26.1 {
+            graphics.text(font, cachedRightText, x + w - cachedRightWidth - 8, textY, cachedRightColor, false);
+            //?} else {
+            /*graphics.drawString(font, cachedRightText, x + w - cachedRightWidth - 8, textY, cachedRightColor, false);
+             *///?}
         }
     }
 }

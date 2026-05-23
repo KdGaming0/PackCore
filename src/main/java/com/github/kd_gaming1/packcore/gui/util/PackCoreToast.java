@@ -1,7 +1,7 @@
 package com.github.kd_gaming1.packcore.gui.util;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastManager;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -51,8 +51,13 @@ class PackCoreToast implements Toast {
         }
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, Font font, long fullyVisibleFor) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, Font font, long fullyVisibleFor) {
+        //?} else {
+     /*@Override
+    public void render(GuiGraphicsExtractor graphics, Font font, long fullyVisibleFor) {
+    *///?}
         int w = width();
         int h = height();
 
@@ -64,8 +69,13 @@ class PackCoreToast implements Toast {
         int titleY = h / 2 - font.lineHeight - 1;
         int messageY = h / 2 + 1;
 
-        graphics.drawString(font, title, textX, titleY, COLOR_TITLE, false);
+        //? if >=26.1 {
+        graphics.text(font, title, textX, titleY, COLOR_TITLE, false);
+        graphics.text(font, message, textX, messageY, COLOR_MESSAGE, false);
+            //?} else {
+     /*graphics.drawString(font, title, textX, titleY, COLOR_TITLE, false);
         graphics.drawString(font, message, textX, messageY, COLOR_MESSAGE, false);
+    *///?}
     }
 
     @Override public int width()  { return 200; }

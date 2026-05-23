@@ -7,7 +7,7 @@ import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +109,7 @@ public class RestoreConfirmOverlay extends AbstractComponent {
         confirmButton.uilib$updateParentPosition(buttonsX + BUTTON_WIDTH + BUTTON_GAP, buttonsY);
     }
 
-    // ── Dimension helpers (all derived from current screen size) ─────────────
+    // -- Dimension helpers (all derived from current screen size) --
 
     private int getPanelW() { return (int)(getWidth()  * PANEL_W_PCT); }
     private int getPanelH() { return (int)(getHeight() * PANEL_H_PCT); }
@@ -117,7 +117,7 @@ public class RestoreConfirmOverlay extends AbstractComponent {
     private int getPanelY() { return (getHeight() - getPanelH()) / 2; }
     private int getTreeW(int panelW) { return (int)(panelW * TREE_W_PCT); }
 
-    // ── Visibility ────────────────────────────────────────────────────────────
+    // -- Visibility --
 
     public void setVisible(boolean visible) {
         this.visible = visible;
@@ -128,7 +128,7 @@ public class RestoreConfirmOverlay extends AbstractComponent {
 
     public boolean isVisible() { return visible; }
 
-    // ── Confirm ───────────────────────────────────────────────────────────────
+    // -- Confirm --
 
     private void confirmRestore() {
         if (backup == null) return;
@@ -156,17 +156,29 @@ public class RestoreConfirmOverlay extends AbstractComponent {
         for (FileTreeNode child : node.children()) collectFilesRecursive(child, result);
     }
 
-    // ── Rendering ─────────────────────────────────────────────────────────────
+    // -- Rendering --
 
+    //? if >=26.1 {
     @Override
-    public void renderBase(GuiGraphics graphics, int mouseX, int mouseY,
-                           float partialTick, int parentWidth, int parentHeight) {
-        if (visible) super.renderBase(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
+    public void extractRenderStateBase(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+                                       float partialTick, int parentWidth, int parentHeight) {
+        if (visible) super.extractRenderStateBase(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY,
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+                                   float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+    /*@Override
+    public void renderBase(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+                           float partialTick, int parentWidth, int parentHeight) {
+        if (visible) super.extractRenderStateBase(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
+    }
+
+    @Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                        float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         if (!visible || backup == null) return;
 
         var font = Minecraft.getInstance().font;
@@ -185,7 +197,11 @@ public class RestoreConfirmOverlay extends AbstractComponent {
         GuiHelper.drawBorder(graphics, panelX, panelY, panelW, panelH, GuiColors.OVERLAY_BORDER);
 
         // Tree column header
-        graphics.drawString(font,
+        //? if >=26.1 {
+        graphics.text(font,
+                //?} else {
+                /*graphics.drawString(font,
+                 *///?}
                 Component.translatable("gui.packcore.overlay.restore.select_files").getString(),
                 panelX + PADDING, panelY + PADDING, GuiColors.TEXT_SECONDARY, false);
 
@@ -198,31 +214,39 @@ public class RestoreConfirmOverlay extends AbstractComponent {
         int rightW = panelW - PADDING - treeW - DIVIDER_GAP - PADDING;
         int cy = panelY + PADDING;
 
-        graphics.drawCenteredString(font,
+        graphics.centeredText(font,
                 Component.translatable("gui.packcore.overlay.restore.title").getString(),
                 rightX + rightW / 2, cy, GuiColors.TEXT_PRIMARY);
         cy += lh + 6;
 
-        graphics.drawCenteredString(font,
+        graphics.centeredText(font,
                 font.plainSubstrByWidth(backup.zipPath().getFileName().toString(), rightW),
                 rightX + rightW / 2, cy, GuiColors.TEXT_PRIMARY);
         cy += lh + 4;
 
-        graphics.drawCenteredString(font, backup.displayName(),
+        graphics.centeredText(font, backup.displayName(),
                 rightX + rightW / 2, cy, GuiColors.TEXT_SECONDARY);
         cy += lh + 12;
 
         int warnH = lh * 2 + 12;
         graphics.fill(rightX, cy, rightX + rightW, cy + warnH, GuiColors.WARNING_BACKGROUND);
-        graphics.drawString(font,
+        //? if >=26.1 {
+        graphics.text(font,
+                //?} else {
+                /*graphics.drawString(font,
+                 *///?}
                 Component.translatable("gui.packcore.overlay.restore.warning1"),
                 rightX + 8, cy + 5, GuiColors.WARNING, false);
-        graphics.drawString(font,
+        //? if >=26.1 {
+        graphics.text(font,
+                //?} else {
+                /*graphics.drawString(font,
+                 *///?}
                 Component.translatable("gui.packcore.overlay.restore.warning2"),
                 rightX + 8, cy + 5 + lh + 2, GuiColors.WARNING, false);
         cy += warnH + 8;
 
-        graphics.drawCenteredString(font,
+        graphics.centeredText(font,
                 Component.translatable("gui.packcore.overlay.restore.note"),
                 rightX + rightW / 2, cy, GuiColors.TEXT_NOTE);
     }

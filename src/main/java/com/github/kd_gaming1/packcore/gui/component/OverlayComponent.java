@@ -7,7 +7,7 @@ import com.daqem.uilib.gui.widget.ButtonWidget;
 import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -94,14 +94,32 @@ public class OverlayComponent extends AbstractComponent {
         this.onClose = onClose;
     }
 
+    //? if >=26.1 {
     @Override
-    public void renderBase(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderStateBase(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    //?} else {
+    /*@Override
+    public void renderBase(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         if (!shown) return;
-        super.renderBase(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
-    }
+        super.extractRenderStateBase(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
+    //? if >=26.1 {
+        }
+    //?} else {
+    /*}
+    *///?}
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    //?} else {
+    /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         graphics.fill(0, 0, parentWidth, parentHeight, COLOR_DIM);
-    }
+    //? if >=26.1 {
+        }
+    //?} else {
+    /*}
+    *///?}
 }

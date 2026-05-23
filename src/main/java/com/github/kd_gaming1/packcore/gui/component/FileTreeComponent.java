@@ -5,14 +5,20 @@ import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
+//? if >=26.1 {
+import net.minecraft.client.gui.components.AbstractScrollArea;
+//?} else {
+
+ //?}
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
@@ -58,7 +64,18 @@ public class FileTreeComponent extends EmptyComponent {
 
         int nodeY = 0;
         for (VisibleNode visibleNode : visibleNodes) {
-            rows.addWidget(new FileTreeRowWidget(0, nodeY, rowWidth, ROW_HEIGHT, visibleNode.node, visibleNode.depth));
+            //? if >=26.1 {
+            rows.addWidget(new FileTreeRowWidget(0, nodeY, rowWidth, ROW_HEIGHT, visibleNode.node, visibleNode.depth,
+                    new AbstractScrollArea.ScrollbarSettings(
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller"),
+                            null,
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller_background"),
+                            0, 0, 0, false
+                    )
+            ));
+            //?} else {
+            /*rows.addWidget(new FileTreeRowWidget(0, nodeY, rowWidth, ROW_HEIGHT, visibleNode.node, visibleNode.depth));
+             *///?}
             nodeY += ROW_HEIGHT;
         }
 
@@ -96,14 +113,24 @@ public class FileTreeComponent extends EmptyComponent {
         private final FileTreeNode node;
         private final int depth;
 
-        FileTreeRowWidget(int x, int y, int width, int height, FileTreeNode node, int depth) {
+        //? if >=26.1 {
+        FileTreeRowWidget(int x, int y, int width, int height, FileTreeNode node, int depth, AbstractScrollArea.ScrollbarSettings scrollbarSettings) {
+            super(x, y, width, height, Component.empty(), scrollbarSettings);
+            //?} else {
+        /*FileTreeRowWidget(int x, int y, int width, int height, FileTreeNode node, int depth) {
             super(x, y, width, height, Component.empty());
+        *///?}
             this.node = node;
             this.depth = depth;
         }
 
+        //? if >=26.1 {
         @Override
-        protected void renderWidget(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            //?} else {
+        /*@Override
+        protected void renderWidget(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        *///?}
             var font = Minecraft.getInstance().font;
             int x = getX();
             int y = getY();
@@ -133,14 +160,22 @@ public class FileTreeComponent extends EmptyComponent {
                 }
 
                 String prefix = node.isExpanded() ? "v " : "> ";
-                graphics.drawString(font, prefix + node.name(), checkboxX + checkboxSize + 3, textY, COLOR_TEXT_DIR, false);
+                //? if >=26.1 {
+                graphics.text(font, prefix + node.name(), checkboxX + checkboxSize + 3, textY, COLOR_TEXT_DIR, false);
+                //?} else {
+                /*graphics.drawString(font, prefix + node.name(), checkboxX + checkboxSize + 3, textY, COLOR_TEXT_DIR, false);
+                 *///?}
             } else {
                 if (node.isSelected()) {
                     graphics.fill(checkboxX + 1, checkboxY + 1, checkboxX + checkboxSize - 1, checkboxY + checkboxSize - 1, COLOR_CHECKBOX_FILL);
                 }
 
                 int textColor = node.isSelected() ? COLOR_TEXT_FILE_SELECTED : COLOR_TEXT_FILE;
-                graphics.drawString(font, node.name(), checkboxX + checkboxSize + 3, textY, textColor, false);
+                //? if >=26.1 {
+                graphics.text(font, node.name(), checkboxX + checkboxSize + 3, textY, textColor, false);
+                //?} else {
+                /*graphics.drawString(font, node.name(), checkboxX + checkboxSize + 3, textY, textColor, false);
+                 *///?}
             }
         }
 

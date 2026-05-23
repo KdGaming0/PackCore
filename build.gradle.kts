@@ -47,7 +47,6 @@ dependencies {
 
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
     modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
-    modCompileOnly("maven.modrinth:scaleme:${property("deps.scaleme_version")}")
     modCompileOnly("maven.modrinth:moreculling:${property("deps.moreculling_version")}")
 
     modImplementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
@@ -85,12 +84,18 @@ java {
     }
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(requiredJava.majorVersion)
+    }
+}
+
 tasks {
     processResources {
         inputs.property("id", project.property("mod.id"))
         inputs.property("name", project.property("mod.name"))
         inputs.property("version", project.property("mod.version"))
-        inputs.property("minecraft", project.property("mod.mc_dep"))
+        inputs.property("minecraft", project.property("mod.mc_compat"))
         inputs.property("ui_lib", project.property("deps.uilib_version"))
         inputs.property("hm_api", project.property("deps.hm_api_version"))
         inputs.property("fabric_api", project.property("deps.fabric_api"))
@@ -104,7 +109,7 @@ tasks {
             "id" to project.property("mod.id"),
             "name" to project.property("mod.name"),
             "version" to project.property("mod.version"),
-            "minecraft" to project.property("mod.mc_dep"),
+            "minecraft" to project.property("mod.mc_compat"),
             "ui_lib" to project.property("deps.uilib_version"),
             "hm_api" to project.property("deps.hm_api_version"),
             "fabric_api" to project.property("deps.fabric_api"),

@@ -2,7 +2,7 @@ package com.github.kd_gaming1.packcore.gui.util;
 
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
@@ -18,7 +18,7 @@ public final class GuiHelper {
 
     private GuiHelper() {}
 
-    public static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {
+    public static void drawBorder(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
         graphics.fill(x, y, x + width, y + 1, color);
         graphics.fill(x, y + height - 1, x + width, y + height, color);
         graphics.fill(x, y, x + 1, y + height, color);

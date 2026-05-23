@@ -10,14 +10,20 @@ import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
+//? if >=26.1 {
+import net.minecraft.client.gui.components.AbstractScrollArea;
+//?} else {
+
+ //?}
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
@@ -85,7 +91,28 @@ public class OptionSelectList<T> extends EmptyComponent {
 
             int rowHeight = ROW_PADDING_Y + lineHeight + (descHeight > 0 ? 2 + descHeight : 0) + ROW_PADDING_Y;
 
+            //? if >=26.1 {
             SelectRow<T> row = new SelectRow<>(
+                    0, currentY,
+                    rowWidth, rowHeight,
+                    option,
+                    descriptor,
+                    isSelected,
+                    clicked -> {
+                        String clickedId = descriptor.id(clicked);
+                        selectedId = clickedId.equals(selectedId) ? null : clickedId;
+                        onSelect.accept(clicked);
+                        buildList();
+                    },
+                    new AbstractScrollArea.ScrollbarSettings(
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller"),
+                            null,
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller_background"),
+                            0, 0, 0, false
+                    )
+            );
+            //?} else {
+            /*SelectRow<T> row = new SelectRow<>(
                     0, currentY,
                     rowWidth, rowHeight,
                     option,
@@ -98,6 +125,7 @@ public class OptionSelectList<T> extends EmptyComponent {
                         buildList();
                     }
             );
+            *///?}
             rowContainer.addWidget(row);
             currentY += rowHeight + ROW_GAP;
         }
@@ -142,7 +170,19 @@ public class OptionSelectList<T> extends EmptyComponent {
         private final Consumer<T> onClick;
         private final List<IComponent> childComponents = new ArrayList<>();
 
+        //? if >=26.1 {
         SelectRow(
+                int x, int y,
+                int width, int height,
+                T option,
+                RowDescriptor<T> descriptor,
+                boolean isSelected,
+                Consumer<T> onClick,
+                AbstractScrollArea.ScrollbarSettings scrollbarSettings
+        ) {
+            super(x, y, width, height, Component.empty(), scrollbarSettings);
+            //?} else {
+        /*SelectRow(
                 int x, int y,
                 int width, int height,
                 T option,
@@ -151,6 +191,7 @@ public class OptionSelectList<T> extends EmptyComponent {
                 Consumer<T> onClick
         ) {
             super(x, y, width, height, Component.empty());
+        *///?}
             this.option = option;
             this.isSelected = isSelected;
             this.onClick = onClick;
@@ -185,8 +226,13 @@ public class OptionSelectList<T> extends EmptyComponent {
             }
         }
 
+        //? if >=26.1 {
         @Override
-        protected void renderWidget(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            //?} else {
+        /*@Override
+        protected void renderWidget(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        *///?}
             int rowLeft = getX();
             int rowTop = getY();
             int rowWidth = getWidth();
@@ -197,7 +243,11 @@ public class OptionSelectList<T> extends EmptyComponent {
 
             for (IComponent component : childComponents) {
                 component.updateParentPosition(rowLeft, rowTop, rowWidth, rowHeight);
-                component.renderBase(graphics, mouseX, mouseY, partialTick, rowWidth, rowHeight);
+                //? if >=26.1 {
+                component.extractRenderState(graphics, mouseX, mouseY, partialTick, rowWidth, rowHeight);
+                //?} else {
+                /*component.extractRenderState(graphics, mouseX, mouseY, partialTick, rowWidth, rowHeight);
+                 *///?}
             }
         }
 
@@ -210,7 +260,7 @@ public class OptionSelectList<T> extends EmptyComponent {
             return false;
         }
 
-        private static void drawBorder(GuiGraphics graphics, int x, int y, int width, int height, int color) {
+        private static void drawBorder(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
             GuiHelper.drawBorder(graphics, x, y, width, height, color);
         }
 

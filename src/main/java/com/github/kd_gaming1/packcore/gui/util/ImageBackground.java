@@ -1,7 +1,7 @@
 package com.github.kd_gaming1.packcore.gui.util;
 
 import com.daqem.uilib.gui.background.AbstractBackground;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
@@ -38,8 +38,13 @@ public class ImageBackground extends AbstractBackground {
         this.mode = mode;
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        //?} else {
+     /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    *///?}
         int screenWidth = graphics.guiWidth();
         int screenHeight = graphics.guiHeight();
 
@@ -64,7 +69,7 @@ public class ImageBackground extends AbstractBackground {
         cachedH = h;
     }
 
-    private void renderStretched(GuiGraphics graphics, int screenWidth, int screenHeight) {
+    private void renderStretched(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight) {
         graphics.blit(
                 RenderPipelines.GUI_TEXTURED,
                 texture,
@@ -76,7 +81,7 @@ public class ImageBackground extends AbstractBackground {
         );
     }
 
-    private void renderTiled(GuiGraphics graphics, int screenWidth, int screenHeight) {
+    private void renderTiled(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight) {
         for (int tx = 0; tx * textureWidth < screenWidth; tx++) {
             for (int ty = 0; ty * textureHeight < screenHeight; ty++) {
                 graphics.blit(
@@ -92,7 +97,7 @@ public class ImageBackground extends AbstractBackground {
         }
     }
 
-    private void renderCentered(GuiGraphics graphics, int screenWidth, int screenHeight) {
+    private void renderCentered(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight) {
         if (cacheIsStale(screenWidth, screenHeight)) {
             int x = (screenWidth - textureWidth) / 2;
             int y = (screenHeight - textureHeight) / 2;
@@ -110,7 +115,7 @@ public class ImageBackground extends AbstractBackground {
         );
     }
 
-    private void renderFit(GuiGraphics graphics, int screenWidth, int screenHeight) {
+    private void renderFit(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight) {
         if (cacheIsStale(screenWidth, screenHeight)) {
             float scale = Math.min(
                     (float) screenWidth / textureWidth,

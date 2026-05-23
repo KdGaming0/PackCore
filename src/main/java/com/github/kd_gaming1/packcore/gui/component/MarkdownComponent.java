@@ -7,7 +7,7 @@ import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -356,16 +356,13 @@ public class MarkdownComponent extends AbstractComponent {
 
     // ── Render ────────────────────────────────────────────────────────────────
 
+    //? if >=26.1 {
     @Override
-    public void render(
-            GuiGraphics graphics,
-            int mouseX,
-            int mouseY,
-            float partialTick,
-            int parentWidth,
-            int parentHeight) {
-        int bx = getTotalX();
-        int by = getTotalY();
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {int bx = getTotalX();int by = getTotalY();
+        //?} else {
+    /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {int bx = getTotalX();int by = getTotalY();
+     *///?}
 
         // Code block backgrounds (drawn first, behind everything)
         for (int[] bg : codeBlockBgs) {
@@ -413,7 +410,7 @@ public class MarkdownComponent extends AbstractComponent {
 
         // Child components
         for (IComponent child : getComponents()) {
-            child.render(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
+            child.extractRenderState(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
         }
     }
 
@@ -669,17 +666,20 @@ public class MarkdownComponent extends AbstractComponent {
             return scaledHeight;
         }
 
+        //? if >=26.1 {
         @Override
-        public void render(
-                GuiGraphics graphics, int mouseX, int mouseY, float pt, int parentW, int parentH) {
-            int dx = getTotalX(), dy = getTotalY();
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float pt, int parentW, int parentH) {int dx = getTotalX(), dy = getTotalY();
+            //?} else {
+        /*@Override
+            public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float pt, int parentW, int parentH) {int dx = getTotalX(), dy = getTotalY();
+         *///?}
             graphics.pose().pushMatrix();
             graphics.pose().translate((float) dx, (float) dy);
             graphics.pose().scale(scale, scale);
 
             int sw = (int) (parentW / scale), sh = (int) (parentH / scale);
             inner.updateParentPosition(0, 0, sw, sh);
-            inner.render(graphics, (int) (mouseX / scale), (int) (mouseY / scale), pt, sw, sh);
+            inner.extractRenderState(graphics, (int) (mouseX / scale), (int) (mouseY / scale), pt, sw, sh);
 
             graphics.pose().popMatrix();
         }
@@ -729,10 +729,18 @@ public class MarkdownComponent extends AbstractComponent {
             return mx >= ax && mx < ax + localWidth && my >= ay && my < ay + localHeight;
         }
 
+        //? if >=26.1 {
         @Override
-        protected void renderWidget(@NotNull GuiGraphics g, int mx, int my, float pt) {
+        protected void extractWidgetRenderState(@NotNull GuiGraphicsExtractor g, int mx, int my, float pt) {
             if (isMouseOver(mx, my)) g.requestCursor(CursorTypes.POINTING_HAND);
         }
+
+        //?} else {
+        /*@Override
+            protected void renderWidget(@NotNull GuiGraphicsExtractor g, int mx, int my, float pt) {
+                if (isMouseOver(mx, my)) g.requestCursor(CursorTypes.POINTING_HAND);
+            }
+         *///?}
 
         @Override
         protected void updateWidgetNarration(@NotNull NarrationElementOutput o) {}

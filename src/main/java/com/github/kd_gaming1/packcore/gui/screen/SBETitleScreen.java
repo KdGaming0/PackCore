@@ -257,12 +257,23 @@ public class SBETitleScreen extends AbstractScreen {
     }
 
     private ButtonWidget createOptionsButton(int x, int y) {
+        //? if >=26.1 {
         return new CustomButtonWidget(
                 x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("menu.options"),
                 MAIN_BUTTON_SPRITES,
-                btn -> Minecraft.getInstance().setScreen(new OptionsScreen(this, Minecraft.getInstance().options))
+                btn -> Minecraft.getInstance().setScreen(
+                        new OptionsScreen(this, Minecraft.getInstance().options, false))
         );
+        //?} else {
+        /*return new CustomButtonWidget(
+                x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
+                Component.translatable("menu.options"),
+                MAIN_BUTTON_SPRITES,
+                btn -> Minecraft.getInstance().setScreen(
+                        new OptionsScreen(this, Minecraft.getInstance().options))
+        );
+        *///?}
     }
 
     private ButtonWidget createQuitButton(int x, int y) {

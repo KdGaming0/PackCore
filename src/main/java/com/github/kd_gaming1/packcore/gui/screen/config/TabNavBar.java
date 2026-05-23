@@ -3,7 +3,7 @@ package com.github.kd_gaming1.packcore.gui.screen.config;
 import com.daqem.uilib.gui.component.AbstractComponent;
 import com.daqem.uilib.gui.widget.ButtonWidget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.jspecify.annotations.NonNull;
 
 import java.util.function.Consumer;
@@ -32,8 +32,13 @@ public class TabNavBar extends AbstractComponent {
 
         for (ConfigTab tab : tabs) {
             ButtonWidget btn = new ButtonWidget(tab.index() * tabWidth, 0, tabWidth, height, tab.label(), b -> onTabClick.accept(tab)) {
+                //? if >=26.1 {
                 @Override
-                public void renderContents(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {}
+                public void extractContents(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {}
+                //?} else {
+                /*@Override
+                protected void extractContents(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {}
+                *///?}
             };
             this.addWidget(btn);
         }
@@ -43,8 +48,13 @@ public class TabNavBar extends AbstractComponent {
         this.activeTab = tab;
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+    /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         int x = getTotalX();
         int y = getTotalY();
         int w = getWidth();
@@ -71,7 +81,11 @@ public class TabNavBar extends AbstractComponent {
             String label = tab.label().getString();
             int labelX = tabX + (tabWidth - font.width(label)) / 2;
             int labelY = y + (h - font.lineHeight) / 2;
-            graphics.drawString(font, label, labelX, labelY, active ? COLOR_TEXT_ACTIVE : COLOR_TEXT_INACTIVE, false);
+            //? if >=26.1 {
+            graphics.text(font, label, labelX, labelY, active ? COLOR_TEXT_ACTIVE : COLOR_TEXT_INACTIVE, false);
+            //?} else {
+            /*graphics.drawString(font, label, labelX, labelY, active ? COLOR_TEXT_ACTIVE : COLOR_TEXT_INACTIVE, false);
+             *///?}
         }
     }
 }

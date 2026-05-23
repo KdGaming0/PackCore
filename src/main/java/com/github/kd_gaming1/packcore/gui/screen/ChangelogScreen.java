@@ -2,7 +2,7 @@ package com.github.kd_gaming1.packcore.gui.screen;
 
 import com.github.kd_gaming1.packcore.update.UpdateStatus;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -68,18 +68,23 @@ public class ChangelogScreen extends Screen {
         ).bounds(closeX, closeY, CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT).build());
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        //?} else {
+     /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+    *///?}
         int boxX = PADDING;
         int boxY = PADDING;
         int boxWidth = this.width - PADDING * 2;
         int boxHeight = this.height - PADDING * 2;
 
         graphics.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, COLOR_BACKGROUND);
-        graphics.renderOutline(boxX, boxY, boxWidth, boxHeight, COLOR_BORDER);
+        graphics.outline(boxX, boxY, boxWidth, boxHeight, COLOR_BORDER);
 
         int titleY = boxY + BOX_PADDING;
-        graphics.drawCenteredString(this.font, this.getTitle(), this.width / 2, titleY, COLOR_TITLE);
+        graphics.centeredText(this.font, this.getTitle(), this.width / 2, titleY, COLOR_TITLE);
 
         int contentX = boxX + BOX_PADDING;
         int scrollbarTop = titleY + this.font.lineHeight + BOX_PADDING;
@@ -90,7 +95,11 @@ public class ChangelogScreen extends Screen {
         int drawY = scrollbarTop - scrollOffset;
         for (RenderedLine line : lines) {
             if (drawY + line.height >= scrollbarTop && drawY <= scrollbarBottom) {
-                graphics.drawString(this.font, line.text, contentX, drawY, line.color, false);
+                //? if >=26.1 {
+                graphics.text(this.font, line.text, contentX, drawY, line.color, false);
+                //?} else {
+                /*graphics.drawString(this.font, line.text, contentX, drawY, line.color, false);
+                 *///?}
             }
             drawY += line.height;
         }
@@ -111,7 +120,7 @@ public class ChangelogScreen extends Screen {
             graphics.fill(scrollbarX, thumbY, scrollbarX + 3, thumbY + thumbHeight, 0xCCFFD700);
         }
 
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
     }
 
     @Override

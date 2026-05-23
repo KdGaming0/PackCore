@@ -30,7 +30,6 @@
     "uilib": ">=${uilib_version}"
   },
   "suggests": {
-    "scamscreener": "*",
-    "scaleme": "*"
+    "scamscreener": "*"
   }
 }

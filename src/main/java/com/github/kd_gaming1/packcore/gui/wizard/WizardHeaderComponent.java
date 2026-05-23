@@ -3,7 +3,7 @@ package com.github.kd_gaming1.packcore.gui.wizard;
 import com.daqem.uilib.gui.component.AbstractComponent;
 import com.daqem.uilib.gui.component.sprite.SpriteComponent;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
@@ -32,8 +32,13 @@ public class WizardHeaderComponent extends AbstractComponent {
     /** Called by the navigator when the active page changes. */
     public void onPageChanged() { }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+     /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         var font = Minecraft.getInstance().font;
         int pageCount = navigator.getPages().size();
         int activeIndex = navigator.getCurrentIndex();
@@ -42,7 +47,7 @@ public class WizardHeaderComponent extends AbstractComponent {
         int originY = getTotalY();
 
         Component title = navigator.getPages().get(activeIndex).getTitle();
-        graphics.drawCenteredString(font, title, originX + getWidth() / 2, originY + 4, COLOR_TITLE);
+        graphics.centeredText(font, title, originX + getWidth() / 2, originY + 4, COLOR_TITLE);
 
         int nodeRowY = originY + getHeight() - 10;
         int available = getWidth() - PADDING * 2;
@@ -71,10 +76,10 @@ public class WizardHeaderComponent extends AbstractComponent {
 
             SpriteComponent node = new SpriteComponent(nodeCenterX - halfNode, nodeRowY - halfNode, nodeSize, nodeSize, sprite);
             node.updateParentPosition(originX, originY, getWidth(), getHeight());
-            node.render(graphics, mouseX, mouseY, partialTick, getWidth(), getHeight());
+            node.extractRenderState(graphics, mouseX, mouseY, partialTick, getWidth(), getHeight());
 
             if (isActive) {
-                graphics.drawCenteredString(
+                graphics.centeredText(
                         font,
                         Component.literal(String.valueOf(i + 1)),
                         nodeCenterX,

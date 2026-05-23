@@ -6,7 +6,7 @@ import com.daqem.uilib.gui.widget.CustomButtonWidget;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -55,8 +55,13 @@ public class ConfigScreenHeader extends AbstractComponent {
         ));
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+    /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    *///?}
         int x = getTotalX();
         int y = getTotalY();
         int w = getWidth();
@@ -75,11 +80,20 @@ public class ConfigScreenHeader extends AbstractComponent {
         int secondLineY = firstLineY + font.lineHeight + 2;
         int rightEdge = x + w - TEXT_PADDING_RIGHT;
 
-        graphics.drawString(font, labelText, rightEdge - font.width(labelText), firstLineY, COLOR_LABEL, false);
+        //? if >=26.1 {
+        graphics.text(font, labelText, rightEdge - font.width(labelText), firstLineY, COLOR_LABEL, false);
+        //?} else {
+        /*graphics.drawString(font, labelText, rightEdge - font.width(labelText), firstLineY, COLOR_LABEL, false);
+         *///?}
 
         int packNameX = rightEdge - font.width(packName + detailText);
-        graphics.drawString(font, packName, packNameX, secondLineY, COLOR_ACCENT, false);
+        //? if >=26.1 {
+        graphics.text(font, packName, packNameX, secondLineY, COLOR_ACCENT, false);
+        graphics.text(font, detailText, packNameX + font.width(packName), secondLineY, COLOR_VALUE, false);
+        //?} else {
+        /*graphics.drawString(font, packName, packNameX, secondLineY, COLOR_ACCENT, false);
         graphics.drawString(font, detailText, packNameX + font.width(packName), secondLineY, COLOR_VALUE, false);
+         *///?}
     }
 
     private static String resolvePackName() {

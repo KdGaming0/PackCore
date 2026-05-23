@@ -12,7 +12,7 @@ import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,8 +163,13 @@ public class BackupsPage extends BaseConfigPage {
             this.backup = backup;
         }
 
+        //? if >=26.1 {
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+            //?} else {
+        /*@Override
+        public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        *///?}
             int x = getTotalX();
             int y = getTotalY();
             int w = getWidth();
@@ -188,10 +193,17 @@ public class BackupsPage extends BaseConfigPage {
             int textX = x + 3 + CARD_PADDING; // offset past accent bar
             int dateX = x + w - RESTORE_BTN_WIDTH - CARD_PADDING - font.width(date) - 8;
 
-            graphics.drawString(font, label, textX, textY, GuiColors.NAME_DEFAULT, false);
+            //? if >=26.1 {
+            graphics.text(font, label, textX, textY, GuiColors.NAME_DEFAULT, false);
+            if (!date.isEmpty()) {
+                graphics.text(font, date, dateX, textY, GuiColors.TEXT_SECONDARY, false);
+            }
+            //?} else {
+            /*graphics.drawString(font, label, textX, textY, GuiColors.NAME_DEFAULT, false);
             if (!date.isEmpty()) {
                 graphics.drawString(font, date, dateX, textY, GuiColors.TEXT_SECONDARY, false);
             }
+            *///?}
         }
 
         private static int accentColor(BackupEntry.BackupType type) {

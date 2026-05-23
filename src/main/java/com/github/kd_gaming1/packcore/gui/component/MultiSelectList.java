@@ -9,14 +9,20 @@ import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.daqem.uilib.gui.widget.ScrollContainerWidget;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
+//? if >=26.1 {
+import net.minecraft.client.gui.components.AbstractScrollArea;
+//?} else {
+
+ //?}
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.ScreenDirection;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import com.github.kd_gaming1.packcore.gui.util.GuiColors;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
@@ -102,7 +108,33 @@ public class MultiSelectList<T> extends EmptyComponent {
 
             int rowHeight = ROW_PADDING_Y + lineHeight + (descHeight > 0 ? 2 + descHeight : 0) + ROW_PADDING_Y;
 
+            //? if >=26.1 {
             SelectRow<T> row = new SelectRow<>(
+                    0, currentY,
+                    rowWidth, rowHeight,
+                    option,
+                    descriptor,
+                    isSelected,
+                    clicked -> {
+                        String clickedId = descriptor.id(clicked);
+                        if (selectedIds.contains(clickedId)) {
+                            selectedIds.remove(clickedId);
+                            onDeselect.accept(clicked);
+                        } else {
+                            selectedIds.add(clickedId);
+                            onSelect.accept(clicked);
+                        }
+                        buildList();
+                    },
+                    new AbstractScrollArea.ScrollbarSettings(
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller"),
+                            null,
+                            Identifier.fromNamespaceAndPath("minecraft", "widget/scroller_background"),
+                            0, 0, 0, false
+                    )
+            );
+            //?} else {
+            /*SelectRow<T> row = new SelectRow<>(
                     0, currentY,
                     rowWidth, rowHeight,
                     option,
@@ -120,6 +152,7 @@ public class MultiSelectList<T> extends EmptyComponent {
                         buildList();
                     }
             );
+            *///?}
             rowContainer.addWidget(row);
             currentY += rowHeight + ROW_GAP;
         }
@@ -176,7 +209,19 @@ public class MultiSelectList<T> extends EmptyComponent {
         private final Consumer<T> onClick;
         private final List<IComponent> childComponents = new ArrayList<>();
 
+        //? if >=26.1 {
         SelectRow(
+                int x, int y,
+                int width, int height,
+                T option,
+                RowDescriptor<T> descriptor,
+                boolean isSelected,
+                Consumer<T> onClick,
+                AbstractScrollArea.ScrollbarSettings scrollbarSettings
+        ) {
+            super(x, y, width, height, Component.empty(), scrollbarSettings);
+            //?} else {
+        /*SelectRow(
                 int x, int y,
                 int width, int height,
                 T option,
@@ -185,6 +230,7 @@ public class MultiSelectList<T> extends EmptyComponent {
                 Consumer<T> onClick
         ) {
             super(x, y, width, height, Component.empty());
+        *///?}
             this.option = option;
             this.isSelected = isSelected;
             this.onClick = onClick;
@@ -219,8 +265,13 @@ public class MultiSelectList<T> extends EmptyComponent {
             }
         }
 
+        //? if >=26.1 {
         @Override
-        protected void renderWidget(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractWidgetRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            //?} else {
+          /*@Override
+            protected void renderWidget(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        *///?}
             int rowLeft = getX();
             int rowTop = getY();
             int rowWidth = getWidth();
@@ -228,12 +279,16 @@ public class MultiSelectList<T> extends EmptyComponent {
 
             int borderColor = isSelected ? GuiColors.BORDER_SELECTED
                     : isHovered() ? GuiColors.BORDER_HOVERED
-                    : GuiColors.BORDER_IDLE;
+                      : GuiColors.BORDER_IDLE;
             GuiHelper.drawBorder(graphics, rowLeft, rowTop, rowWidth, rowHeight, borderColor);
 
             for (IComponent component : childComponents) {
                 component.updateParentPosition(rowLeft, rowTop, rowWidth, rowHeight);
-                component.renderBase(graphics, mouseX, mouseY, partialTick, rowWidth, rowHeight);
+                //? if >=26.1 {
+                component.extractRenderState(graphics, mouseX, mouseY, partialTick, rowWidth, rowHeight);
+                //?} else {
+                /*component.extractRenderState(graphics, mouseX, mouseY, partialTick, rowWidth, rowHeight);
+                 *///?}
             }
 
             int checkboxX = rowLeft + rowWidth - CHECKMARK_SIZE - CHECKMARK_RIGHT_MARGIN;
@@ -250,12 +305,12 @@ public class MultiSelectList<T> extends EmptyComponent {
             return false;
         }
 
-        private static void drawCheckbox(GuiGraphics graphics, int x, int y, boolean checked) {
+        private static void drawCheckbox(GuiGraphicsExtractor graphics, int x, int y, boolean checked) {
             GuiHelper.drawBorder(graphics, x, y, CHECKMARK_SIZE, CHECKMARK_SIZE, GuiColors.BORDER_IDLE);
 
             if (checked) {
                 graphics.fill(x + 1, y + 1, x + CHECKMARK_SIZE - 1, y + CHECKMARK_SIZE - 1, GuiColors.CHECKMARK_BOX);
-                graphics.drawCenteredString(
+                graphics.centeredText(
                         Minecraft.getInstance().font,
                         "✓",
                         x + CHECKMARK_SIZE / 2,

@@ -9,7 +9,7 @@ import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.util.ScreenResolution;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -131,15 +131,25 @@ public class ConfigSwitchOverlay extends AbstractComponent {
                 || Math.abs(targetHeight - screenSize.height()) > RESOLUTION_TOLERANCE;
     }
 
+    //? if >=26.1 {
     @Override
-    public void renderBase(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderStateBase(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+    /*@Override
+    public void renderBase(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+     *///?}
         if (visible) {
-            super.renderBase(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
+            super.extractRenderStateBase(graphics, mouseX, mouseY, partialTick, parentWidth, parentHeight);
         }
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+        //?} else {
+    /*@Override
+    public void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int parentWidth, int parentHeight) {
+     *///?}
         if (!visible || newPack == null) return;
 
         var font = Minecraft.getInstance().font;
@@ -154,13 +164,13 @@ public class ConfigSwitchOverlay extends AbstractComponent {
 
         int currentY = panelY + PADDING;
 
-        graphics.drawCenteredString(font, "Switch Active Config?", panelX + PANEL_WIDTH / 2, currentY, COLOR_TEXT);
+        graphics.centeredText(font, "Switch Active Config?", panelX + PANEL_WIDTH / 2, currentY, COLOR_TEXT);
         currentY += lineHeight + 10;
 
         int columnWidth = (PANEL_WIDTH - PADDING * 2 - 20) / 2;
 
         drawPackInfo(graphics, font, currentPack, panelX + PADDING, currentY, columnWidth, "Current");
-        graphics.drawCenteredString(font, "→", panelX + PANEL_WIDTH / 2, currentY + lineHeight, COLOR_ACCENT);
+        graphics.centeredText(font, "→", panelX + PANEL_WIDTH / 2, currentY + lineHeight, COLOR_ACCENT);
         drawPackInfo(graphics, font, newPack, panelX + PANEL_WIDTH - PADDING - columnWidth, currentY, columnWidth, "New");
 
         currentY += lineHeight * 3 + 20;
@@ -171,27 +181,39 @@ public class ConfigSwitchOverlay extends AbstractComponent {
             String screenResolution = screenSize.width() + "×" + screenSize.height();
 
             graphics.fill(panelX + PADDING, currentY, panelX + PANEL_WIDTH - PADDING, currentY + warningHeight - 6, COLOR_WARNING_BACKGROUND);
-            graphics.drawString(font, "⚠ Resolution Mismatch", panelX + PADDING + 8, currentY + 5, COLOR_WARNING, false);
-            graphics.drawString(font, "Pack: " + packResolution + " | Screen: " + screenResolution,
-                    panelX + PADDING + 8, currentY + 5 + lineHeight + 2, COLOR_WARNING, false);
+            //? if >=26.1 {
+            graphics.text(font, "⚠ Resolution Mismatch", panelX + PADDING + 8, currentY + 5, COLOR_WARNING, false);
+            graphics.text(font, "Pack: " + packResolution + " | Screen: " + screenResolution,panelX + PADDING + 8, currentY + 5 + lineHeight + 2, COLOR_WARNING, false);
+                //?} else {
+              /*graphics.drawString(font, "⚠ Resolution Mismatch", panelX + PADDING + 8, currentY + 5, COLOR_WARNING, false);
+            graphics.drawString(font, "Pack: " + packResolution + " | Screen: " + screenResolution, panelX + PADDING + 8, currentY + 5 + lineHeight + 2, COLOR_WARNING, false);
+            *///?}
 
             currentY += warningHeight + 4;
         }
 
-        graphics.drawCenteredString(font,
+        graphics.centeredText(font,
                 "The game will close to apply the config.",
                 panelX + PANEL_WIDTH / 2,
                 currentY + BUTTON_HEIGHT + 8,
                 0xFF666666);
     }
 
-    private void drawPackInfo(GuiGraphics graphics, net.minecraft.client.gui.Font font, ConfigPackEntry pack, int x, int y, int width, String label) {
+    private void drawPackInfo(GuiGraphicsExtractor graphics, net.minecraft.client.gui.Font font, ConfigPackEntry pack, int x, int y, int width, String label) {
         int lineHeight = font.lineHeight;
 
-        graphics.drawString(font, label, x, y, 0xFF555555, false);
+        //? if >=26.1 {
+        graphics.text(font, label, x, y, 0xFF555555, false);
+        //?} else {
+        /*graphics.drawString(font, label, x, y, 0xFF555555, false);
+         *///?}
 
         if (pack == null) {
-            graphics.drawString(font, "None", x, y + lineHeight + 2, COLOR_SUBTEXT, false);
+            //? if >=26.1 {
+            graphics.text(font, "None", x, y + lineHeight + 2, COLOR_SUBTEXT, false);
+            //?} else {
+            /*graphics.drawString(font, "None", x, y + lineHeight + 2, COLOR_SUBTEXT, false);
+             *///?}
             return;
         }
 
@@ -200,12 +222,16 @@ public class ConfigSwitchOverlay extends AbstractComponent {
         String author = config.has("author") ? config.get("author").getAsString() : "Unknown";
         String version = config.has("version") ? config.get("version").getAsString() : "?";
 
-        graphics.drawString(font, font.plainSubstrByWidth(name, width), x, y + lineHeight + 2, COLOR_TEXT, false);
-        graphics.drawString(font, font.plainSubstrByWidth(author + " v" + version, width),
-                x, y + lineHeight * 2 + 3, COLOR_SUBTEXT, false);
+        //? if >=26.1 {
+        graphics.text(font, font.plainSubstrByWidth(name, width), x, y + lineHeight + 2, COLOR_TEXT, false);
+        graphics.text(font, font.plainSubstrByWidth(author + " v" + version, width), x, y + lineHeight * 2 + 3, COLOR_SUBTEXT, false);
+        //?} else {
+        /*graphics.drawString(font, font.plainSubstrByWidth(name, width), x, y + lineHeight + 2, COLOR_TEXT, false);
+        graphics.drawString(font, font.plainSubstrByWidth(author + " v" + version, width), x, y + lineHeight * 2 + 3, COLOR_SUBTEXT, false);
+         *///?}
     }
 
-    private void drawBorder(GuiGraphics graphics, int x, int y, int height) {
+    private void drawBorder(GuiGraphicsExtractor graphics, int x, int y, int height) {
         GuiHelper.drawBorder(graphics, x, y, PANEL_WIDTH, height, COLOR_BORDER);
     }
 }

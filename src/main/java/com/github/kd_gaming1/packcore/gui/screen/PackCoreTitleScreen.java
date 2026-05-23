@@ -9,7 +9,7 @@ import com.github.kd_gaming1.packcore.update.UpdateStatus;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
@@ -108,13 +108,13 @@ public class PackCoreTitleScreen extends TitleScreen {
 
     public static void decorateExisting(TitleScreen screen, int scaledWidth, int scaledHeight) {
         showUpdateToastIfNeeded();
-        Screens.getButtons(screen).removeIf(button ->
+        Screens.getWidgets(screen).removeIf(button ->
                 button instanceof PackCoreDecoratedWidget
                         || JOIN_HYPIXEL_LABEL.equals(button.getMessage().getString())
         );
 
         int hypixelY = scaledHeight / 4 + 48 - (BUTTON_STRIDE * 2);
-        Screens.getButtons(screen).add(Button.builder(
+        Screens.getWidgets(screen).add(Button.builder(
                 Component.translatable("gui.packcore.button.join_hypixel"),
                 btn -> connectToHypixel(screen)
         ).bounds(scaledWidth / 2 - 100, hypixelY, 200, BUTTON_HEIGHT).build());
@@ -128,19 +128,19 @@ public class PackCoreTitleScreen extends TitleScreen {
         int discordY  = modrinthY - ICON_SPACING - ICON_SIZE;
         int fluxerY   = discordY  - ICON_SPACING - ICON_SIZE;
 
-        Screens.getButtons(screen).add(createDecoratedIconButton(
+        Screens.getWidgets(screen).add(createDecoratedIconButton(
                 MARGIN, githubY, "menu/github_icon",
                 Component.translatable("gui.packcore.tooltip.github"),
                 btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getIssueTrackerUrl())
         ));
 
-        Screens.getButtons(screen).add(createDecoratedIconButton(
+        Screens.getWidgets(screen).add(createDecoratedIconButton(
                 MARGIN, modrinthY, "menu/modrinth_icon",
                 Component.translatable("gui.packcore.tooltip.modrinth"),
                 btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getWebsiteUrl())
         ));
 
-        Screens.getButtons(screen).add(createDecoratedIconButton(
+        Screens.getWidgets(screen).add(createDecoratedIconButton(
                 MARGIN, discordY, "menu/discord_icon",
                 Component.translatable("gui.packcore.tooltip.discord"),
                 btn -> Util.getPlatform().openUri(ModpackMetadata.getInstance().getDiscordUrl())
@@ -148,7 +148,7 @@ public class PackCoreTitleScreen extends TitleScreen {
 
         String fluxerUrl = ModpackMetadata.getInstance().getFluxerUrl();
         if (!fluxerUrl.isBlank()) {
-            Screens.getButtons(screen).add(createDecoratedIconButton(
+            Screens.getWidgets(screen).add(createDecoratedIconButton(
                     MARGIN, fluxerY, "menu/fluxericon",
                     Component.translatable("gui.packcore.tooltip.fluxer"),
                     btn -> Util.getPlatform().openUri(fluxerUrl)
@@ -156,7 +156,7 @@ public class PackCoreTitleScreen extends TitleScreen {
         }
 
         int settingsY = scaledHeight - ICON_SIZE - MARGIN - (Minecraft.getInstance().font.lineHeight * 2) - 4;
-        Screens.getButtons(screen).add(createDecoratedIconButton(
+        Screens.getWidgets(screen).add(createDecoratedIconButton(
                 scaledWidth - ICON_SIZE - MARGIN, settingsY, "menu/settings_icon",
                 Component.translatable("gui.packcore.tooltip.modpack_config"),
                 btn -> Minecraft.getInstance().setScreen(new ConfigScreen())
@@ -169,7 +169,7 @@ public class PackCoreTitleScreen extends TitleScreen {
                 ? Component.translatable("gui.packcore.tooltip.update_available", status.latestVersion())
                 : Component.translatable("gui.packcore.tooltip.changelog");
 
-        Screens.getButtons(screen).add(createDecoratedIconButton(
+        Screens.getWidgets(screen).add(createDecoratedIconButton(
                 scaledWidth - ICON_SIZE - MARGIN, MARGIN, updateIcon, updateTooltip,
                 btn -> Minecraft.getInstance().setScreen(new ChangelogScreen(screen, status))
         ));
@@ -177,12 +177,21 @@ public class PackCoreTitleScreen extends TitleScreen {
         registerVersionHook(screen);
     }
 
+    //? if >=26.1 {
     @Override
-    public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.render(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        //?} else {
+     /*@Override
+    public void render(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+    *///?}
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
 
         int yourVersionY = (this.height - MARGIN - ICON_SIZE) + (ICON_SIZE - this.font.lineHeight) / 2;
-        graphics.drawString(this.font, buildVersionText(UpdateChecker.getCachedStatus()),
+        //? if >=26.1 {
+        graphics.text(this.font, buildVersionText(UpdateChecker.getCachedStatus()),
+            //?} else {
+         /*graphics.drawString(this.font, buildVersionText(UpdateChecker.getCachedStatus()),
+        *///?}
                 MARGIN, yourVersionY, 0xFFFFFFFF, false);
     }
 
@@ -226,12 +235,19 @@ public class PackCoreTitleScreen extends TitleScreen {
     private static void registerVersionHook(TitleScreen screen) {
         if (!VERSION_HOOKED_SCREENS.add(screen)) return;
 
-        ScreenEvents.afterRender(screen).register((s, graphics, mouseX, mouseY, tickDelta) -> {
+            //? if >=26.1 {
+            ScreenEvents.afterExtract(screen).register((s, graphics, mouseX, mouseY, tickDelta) -> {
+            //?} else {
+                /*ScreenEvents.afterRender(screen).register((s, graphics, mouseX, mouseY, tickDelta) -> {
+            *///?}
             Minecraft client = Minecraft.getInstance();
             int height = client.getWindow().getGuiScaledHeight();
             int yourVersionY = (height - MARGIN - ICON_SIZE) + (ICON_SIZE - client.font.lineHeight) / 2;
-            graphics.drawString(client.font, buildVersionText(UpdateChecker.getCachedStatus()),
-                    MARGIN, yourVersionY, 0xFFFFFFFF, false);
+                //? if >=26.1 {
+                graphics.text(client.font, buildVersionText(UpdateChecker.getCachedStatus()), MARGIN, yourVersionY, 0xFFFFFFFF, false);
+                //?} else {
+                /*graphics.drawString(client.font, buildVersionText(UpdateChecker.getCachedStatus()), MARGIN, yourVersionY, 0xFFFFFFFF, false);
+                  *///?}
         });
     }
 
