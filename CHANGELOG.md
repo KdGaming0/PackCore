@@ -1,8 +1,7 @@
 # Changelog
 
-## v4.2.9
+## v4.2.10
 
 ### Changes
-- Update the performance profile to edit More Culling options too for better fps.
-- Added Secret Routes page to welcome wizard.
-- Added a mini wizard to welcome wizard to show the new features of the latest version so you can configure them.
+- Update dungeon routes descriptions to include command usage for switching route types.
+- 
