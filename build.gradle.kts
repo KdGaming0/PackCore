@@ -1,10 +1,23 @@
 plugins {
-    id("fabric-loom")
+    // This plugin applies the correct loom variant based on the Minecraft version
+    id("dev.kikugie.loom-back-compat")
+    `maven-publish`
     id("me.modmuss50.mod-publish-plugin")
 }
 
-version = "${property("mod.version")}+${stonecutter.current.version}"
+// DO NOT set group = ...!
+version = "${property("mod.version")}+${sc.current.version}"
 base.archivesName = property("mod.id") as String
+
+val requiredJava: JavaVersion = when {
+    sc.current.parsed >= "26.1" -> JavaVersion.VERSION_25
+    sc.current.parsed >= "1.20.5" -> JavaVersion.VERSION_21
+    else -> JavaVersion.VERSION_17
+}
+
+// This can be used for publishing on Modrinth and Curseforge
+val compatibleVersions: List<String> =
+    sc.properties.rawOrNull("mod", "mc_releases")?.asList().orEmpty().map { it.toString() }
 
 repositories {
     mavenCentral()
@@ -23,7 +36,7 @@ repositories {
 
 dependencies {
     minecraft("com.mojang:minecraft:${stonecutter.current.version}")
-    mappings(loom.officialMojangMappings())
+    loomx.applyMojangMappings()
     modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("deps.fabric_api")}")
 
@@ -33,7 +46,7 @@ dependencies {
     modImplementation("com.daqem.uilib:uilib-fabric:${property("deps.uilib_version")}")
 
     modImplementation("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
-    modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}+${stonecutter.current.version}")
+    modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
     modCompileOnly("maven.modrinth:scaleme:${property("deps.scaleme_version")}")
     modCompileOnly("maven.modrinth:moreculling:${property("deps.moreculling_version")}")
 
@@ -46,7 +59,7 @@ dependencies {
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
     modRuntimeOnly("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
 
-    modRuntimeOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}+${stonecutter.current.version}")
+    modRuntimeOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
 }
 
 loom {
@@ -63,9 +76,13 @@ loom {
 
 java {
     withSourcesJar()
-    val java = JavaVersion.VERSION_21
-    targetCompatibility = java
-    sourceCompatibility = java
+    targetCompatibility = requiredJava
+    sourceCompatibility = requiredJava
+
+    toolchain {
+        vendor = JvmVendorSpec.ADOPTIUM
+        languageVersion = JavaLanguageVersion.of(requiredJava.majorVersion)
+    }
 }
 
 tasks {
@@ -109,22 +126,20 @@ tasks {
         }
     }
 
-    // Builds the version into a shared folder in `build/libs/${mod version}/`
+    // Builds the version into a shared folder in `build/libs/${mod version}/
     register<Copy>("buildAndCollect") {
         group = "build"
-        from(
-            remapJar.map { it.archiveFile },
-            remapSourcesJar.map { it.archiveFile }
-        )
+        // loomx.mod(Sources)Jar returns the jar task for the applied loom variant
+        from(loomx.modJar.map { it.archiveFile }, loomx.modSourcesJar.map { it.archiveFile })
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
         dependsOn("build")
     }
 }
 
 publishMods {
-    file = tasks.remapJar.map { it.archiveFile.get() }
-    additionalFiles.from(tasks.remapSourcesJar.map { it.archiveFile.get() })
-    displayName = "${property("mod.name")} ${property("mod.version")} for ${stonecutter.current.version}"
+    file = loomx.modJar.flatMap { it.archiveFile }
+    additionalFiles.from(loomx.modSourcesJar.flatMap { it.archiveFile })
+    displayName = "${property("mod.name")} ${property("mod.version")} for ${sc.current.version}"
     version = property("mod.version") as String
     changelog = rootProject.file("CHANGELOG.md").readText()
     type = STABLE
@@ -136,7 +151,7 @@ publishMods {
     modrinth {
         projectId = property("publish.modrinth") as String
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
-        minecraftVersions.add(stonecutter.current.version)
+        compatibleVersions.forEach { minecraftVersions.add(it) }
         requires {
             slug = "P7dR8mSH" // Fabric API
         }
@@ -146,15 +161,12 @@ publishMods {
         optional {
             slug = "mOgUt4GM" // ModMenu
         }
-        optional {
-            slug = "scamscreener"
-        }
     }
 
     curseforge {
         projectId = property("publish.curseforge") as String
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
-        minecraftVersions.add(stonecutter.current.version)
+        compatibleVersions.forEach { minecraftVersions.add(it) }
         requires {
             slug = "fabric-api"
         }
