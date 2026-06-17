@@ -105,15 +105,6 @@
   "gui.packcore.wizard.tab_design.fancy.name": "Fancy",
   "gui.packcore.wizard.tab_design.fancy.desc": "A decorative styled tab list from Skyblocker.",
 
-  "gui.packcore.wizard.page.dungeon_routes.title": "Dungeon Routes",
-  "gui.packcore.wizard.page.dungeon_routes.explanation": "Choose which dungeon secret route system to use. Skyblocker Waypoints provides simple waypoints for each secrets. Secret Routes Mod offers full routes with rendered lines that you can follow, instead of waypoints.",
-
-  "gui.packcore.wizard.dungeon_routes.skyblocker_waypoints.name": "Skyblocker Waypoints",
-  "gui.packcore.wizard.dungeon_routes.skyblocker_waypoints.desc": "Use Skyblocker's dungeon secret waypoints. Displays waypoint markers for entrances, chests, items, bats, and more. \n Use /packcore dungeonroutes skyblocker/secretroutes to change back and forth.",
-
-  "gui.packcore.wizard.dungeon_routes.secret_routes_mod.name": "Secret Routes Mod",
-  "gui.packcore.wizard.dungeon_routes.secret_routes_mod.desc": "Use the Secret Routes Mod for full route rendering with lines that you can follow. Use /packcore dungeonroutes skyblocker/secretroutes to change back and forth.",
-
   "gui.packcore.wizard.page.item_background.title": "Item Background",
   "gui.packcore.wizard.page.item_background.explanation": "Choose how items appear in your inventory. All options come from Skyblocker. None keeps the default Minecraft look, while Circle and Square add a styled background behind each item slot that matches the item rarity color.",
 

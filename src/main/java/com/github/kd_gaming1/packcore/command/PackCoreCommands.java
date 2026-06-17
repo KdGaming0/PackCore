@@ -7,7 +7,6 @@ import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardSteps;
 import com.github.kd_gaming1.packcore.gui.wizard.page.CaxtonFontPage;
-import com.github.kd_gaming1.packcore.integration.DungeonRoutesManager;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
 import com.github.kd_gaming1.packcore.integration.PerformanceProfileService;
 import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
@@ -100,15 +99,6 @@ public class PackCoreCommands {
                         }))
                         .then(literal("vanilla").executes(ctx -> {
                             applyStorageDesign(ctx.getSource(), StorageDesignManager.StorageDesign.VANILLA);
-                            return 1;
-                        })))
-                .then(literal("dungeonroutes")
-                        .then(literal("skyblocker").executes(ctx -> {
-                            applyDungeonRoutes(ctx.getSource(), DungeonRoutesManager.DungeonRoutesMode.SKYBLOCKER_WAYPOINTS);
-                            return 1;
-                        }))
-                        .then(literal("secretroutesmod").executes(ctx -> {
-                            applyDungeonRoutes(ctx.getSource(), DungeonRoutesManager.DungeonRoutesMode.SECRET_ROUTES_MOD);
                             return 1;
                         })))
                 .then(literal("wizard")
@@ -261,7 +251,7 @@ public class PackCoreCommands {
             send(source, "Storage design applied: " + name + ".");
         } else {
             sendError(source, "Failed to apply storage design: " + name
-                    + ". Firmament may not be loaded -- check logs.");
+                    + ". Enhanced Storage may not be loaded -- check logs.");
         }
     }
 
@@ -285,18 +275,6 @@ public class PackCoreCommands {
             send(source, "Tab design applied: " + name);
         } else {
             sendError(source, "Failed to apply tab design: " + name + ". Check logs for details.");
-        }
-    }
-
-    private static void applyDungeonRoutes(
-            FabricClientCommandSource source, DungeonRoutesManager.DungeonRoutesMode mode) {
-        String name = mode.name().toLowerCase().replace("_", " ");
-        send(source, "Applying dungeon routes: " + name + "...");
-        if (DungeonRoutesManager.apply(mode)) {
-            send(source, "Dungeon routes applied: " + name);
-        } else {
-            sendError(source, "Failed to apply dungeon routes: " + name
-                    + ". Check that Skyblocker and/or Secret Routes Mod are loaded. See logs for details.");
         }
     }
 

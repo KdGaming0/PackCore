@@ -1,7 +1,6 @@
 package com.github.kd_gaming1.packcore.gui.wizard;
 
 import com.github.kd_gaming1.packcore.gui.wizard.page.CaxtonFontStep;
-import com.github.kd_gaming1.packcore.gui.wizard.page.DungeonRoutesStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ItemBackgroundStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.MainMenuDesignStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.PerformanceStep;
@@ -33,7 +32,6 @@ public final class WizardSteps {
             new TabDesignStep(),
             new ItemBackgroundStep(),
             new StorageDesignStep(),
-            new DungeonRoutesStep(),
             new SwordBlockStep(),
             new ScamScreenerStep(),
             new CaxtonFontStep(),

@@ -6,6 +6,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
 import com.github.kd_gaming1.packcore.integration.TabDesignManager;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.List;
 
@@ -14,6 +15,12 @@ public final class TabDesignStep implements WizardStep {
 
     @Override public String id() { return "tab_design"; }
     @Override public int version() { return 1; }
+
+    @Override
+    public boolean isAvailable() {
+        return FabricLoader.getInstance().isModLoaded("skyblocker")
+                || FabricLoader.getInstance().isModLoaded("skyhanni");
+    }
 
     @Override
     public BaseWizardPage createPage(WizardState state, WizardNavigator navigator, int width, int height) {

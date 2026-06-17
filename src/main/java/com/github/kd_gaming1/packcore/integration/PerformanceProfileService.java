@@ -38,7 +38,10 @@ public class PerformanceProfileService {
             sodium = SodiumConfigurator.applyProfile(profile);
         }
 
-        boolean moreculling = MoreCullingConfigurator.applyProfile(profile);
+        boolean moreculling = true;
+        if (FabricLoader.getInstance().isModLoaded("moreculling")) {
+            moreculling = MoreCullingConfigurator.applyProfile(profile);
+        }
 
         boolean iris = true;
         if (FabricLoader.getInstance().isModLoaded("iris")) {

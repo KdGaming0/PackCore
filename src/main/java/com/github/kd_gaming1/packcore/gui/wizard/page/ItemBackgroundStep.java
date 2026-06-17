@@ -6,6 +6,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.util.List;
 
@@ -14,6 +15,11 @@ public final class ItemBackgroundStep implements WizardStep {
 
     @Override public String id() { return "item_background"; }
     @Override public int version() { return 1; }
+
+    @Override
+    public boolean isAvailable() {
+        return FabricLoader.getInstance().isModLoaded("skyblocker");
+    }
 
     @Override
     public BaseWizardPage createPage(WizardState state, WizardNavigator navigator, int width, int height) {
