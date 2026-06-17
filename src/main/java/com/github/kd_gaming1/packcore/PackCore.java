@@ -5,6 +5,9 @@ import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.screen.PackCoreTitleScreen;
 import com.github.kd_gaming1.packcore.gui.screen.SBETitleScreen;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardSteps;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardVersionStore;
 import com.github.kd_gaming1.packcore.playtime.PlaytimeTracker;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.util.CaxtonFontDetector;
@@ -29,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.List;
 
 public class PackCore implements ClientModInitializer {
 
@@ -82,7 +86,8 @@ public class PackCore implements ClientModInitializer {
 
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!isVanillaTitleScreen(screen)) return;
-            if (!PackCoreConfig.successfulWelcomeWizard) return;
+            // Only decorate once the user has been through the wizard at least once.
+            if (!WizardVersionStore.fileExists()) return;
             if (PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) return;
             PackCoreTitleScreen.decorateExisting((TitleScreen) screen, scaledWidth, scaledHeight);
         });
@@ -104,7 +109,6 @@ public class PackCore implements ClientModInitializer {
             }
 
             CaxtonFontDetector.recompute();
-            PackCorePreLaunch.applyOneTimeSkyblockEnhancementsPriceTooltips();
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> PlaytimeTracker.onSessionEnd());
@@ -143,17 +147,15 @@ public class PackCore implements ClientModInitializer {
     }
 
     private static void applyConfiguredTitleScreen(Minecraft client, Screen screen) {
-        // Full welcome wizard for brand-new users
-        if (!PackCoreConfig.successfulWelcomeWizard) {
-            client.setScreen(new WelcomeWizardScreen(screen));
-            return;
-        }
-
-        // Mini-wizard: prompt existing users to choose dungeon routes on first launch after update
-        if (!PackCoreConfig.seenDungeonRoutesWizard
-                && FabricLoader.getInstance().isModLoaded("skyblocker")
-                && FabricLoader.getInstance().isModLoaded("secretroutesmod")) {
-            client.setScreen(WelcomeWizardScreen.forDungeonRoutes(screen));
+        // The wizard opens for any page the user has not yet applied at its current version. An empty
+        // store — a brand-new user, or anyone upgrading from before page tracking existed — shows the
+        // full wizard (with intro); otherwise only the new or changed pages are shown.
+        WizardVersionStore store = WizardVersionStore.load();
+        List<WizardStep> pending = WizardSteps.pending(store);
+        if (!pending.isEmpty()) {
+            client.setScreen(store.isEmpty()
+                    ? WelcomeWizardScreen.full(screen)
+                    : WelcomeWizardScreen.forSteps(screen, pending.stream().map(WizardStep::id).toList()));
             return;
         }
 

@@ -39,3 +39,12 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# ai
+AGENTS.md
+graphify-out
+.graphifyignore
+docs
+CLAUDE.md
+.claude
+IMPLEMENTATION_LOG.md

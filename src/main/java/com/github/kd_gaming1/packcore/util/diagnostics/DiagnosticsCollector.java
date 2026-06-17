@@ -1,6 +1,7 @@
 package com.github.kd_gaming1.packcore.util.diagnostics;
 
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardSteps;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.update.UpdateStatus;
@@ -51,7 +52,7 @@ public final class DiagnosticsCollector {
         })
                 + section("Settings", new String[][] {
                 {"Menu Style",          PackCoreConfig.menuStyle.name()},
-                {"Wizard Complete",     String.valueOf(PackCoreConfig.successfulWelcomeWizard)},
+                {"Wizard Complete",     String.valueOf(WizardSteps.pending().isEmpty())},
                 {"Auto Backup",         PackCoreConfig.autoBackupEnabled
                         ? "enabled (every " + PackCoreConfig.autoBackupIntervalDays + " days)"
                         : "disabled"},

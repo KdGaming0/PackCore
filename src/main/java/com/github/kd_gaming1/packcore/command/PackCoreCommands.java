@@ -4,6 +4,8 @@ import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.util.diagnostics.DiagnosticsCollector;
 import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardSteps;
 import com.github.kd_gaming1.packcore.gui.wizard.page.CaxtonFontPage;
 import com.github.kd_gaming1.packcore.integration.DungeonRoutesManager;
 import com.github.kd_gaming1.packcore.integration.ItemBackgroundManager;
@@ -17,6 +19,7 @@ import com.github.kd_gaming1.packcore.warning.CaxtonShaderConflictWarner;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import com.mojang.brigadier.context.CommandContext;
@@ -108,12 +111,20 @@ public class PackCoreCommands {
                             applyDungeonRoutes(ctx.getSource(), DungeonRoutesManager.DungeonRoutesMode.SECRET_ROUTES_MOD);
                             return 1;
                         })))
-                .then(literal("wizard").executes(ctx -> {
-                    Minecraft.getInstance().execute(() ->
-                            Minecraft.getInstance().setScreen(
-                                    new WelcomeWizardScreen(Minecraft.getInstance().screen)));
-                    return 1;
-                }))
+                .then(literal("wizard")
+                        .executes(ctx -> {
+                            openFullWizard();
+                            return 1;
+                        })
+                        .then(argument("page", StringArgumentType.word())
+                                .suggests((ctx, builder) -> {
+                                    WizardSteps.available().forEach(step -> builder.suggest(step.id()));
+                                    return builder.buildFuture();
+                                })
+                                .executes(ctx -> {
+                                    openWizardPage(ctx.getSource(), StringArgumentType.getString(ctx, "page"));
+                                    return 1;
+                                })))
                 .then(literal("modpack_config").executes(ctx -> {
                     Minecraft.getInstance().execute(() ->
                             Minecraft.getInstance().setScreen(new ConfigScreen()));
@@ -187,6 +198,29 @@ public class PackCoreCommands {
                         CrashReport.forThrowable(
                                 new Throwable("PackCore crash report test"),
                                 "PackCore crashtest command")));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Wizard
+    // ---------------------------------------------------------------------------
+
+    private static void openFullWizard() {
+        Minecraft client = Minecraft.getInstance();
+        client.execute(() -> client.setScreen(WelcomeWizardScreen.full(client.screen)));
+    }
+
+    private static void openWizardPage(FabricClientCommandSource source, String pageId) {
+        WizardStep step = WizardSteps.byId(pageId);
+        if (step == null || !step.isAvailable()) {
+            String valid = WizardSteps.available().stream()
+                    .map(WizardStep::id)
+                    .collect(java.util.stream.Collectors.joining(", "));
+            sendError(source, "Unknown or unavailable wizard page: \"" + pageId + "\". Available: " + valid);
+            return;
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        client.execute(() -> client.setScreen(WelcomeWizardScreen.forSteps(client.screen, List.of(pageId))));
     }
 
     // ---------------------------------------------------------------------------

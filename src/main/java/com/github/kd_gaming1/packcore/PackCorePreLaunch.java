@@ -8,8 +8,6 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.util.ScreenResolution;
-import com.github.kd_gaming1.packcore.integration.FirmamentPriceDataManager;
-import com.github.kd_gaming1.packcore.integration.SkyblockEnhancementsConfigManager;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -50,13 +48,11 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         if (!PackCoreConfig.pendingRestoreBackup.isBlank()) {
             applyPendingRestore(packcoreDir, gameDir);
-            applyOneTimePostConfigTweaks(gameDir);
             return;
         }
 
         if (!PackCoreConfig.pendingConfigPack.isBlank()) {
             applyPendingConfig(gameDir, packcoreDir);
-            applyOneTimePostConfigTweaks(gameDir);
             return;
         }
         ScreenResolution.ScreenSize screen = ScreenResolution.detect();
@@ -71,25 +67,21 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         if (scannedPacks.isEmpty()) {
             LOGGER.warn("No valid config packs found in: {}", configsDir);
-            applyOneTimePostConfigTweaks(gameDir);
             return;
         }
 
         ConfigPackEntry selectedPack = findBestMatch(scannedPacks, screen.width(), screen.height());
         if (selectedPack == null) {
             LOGGER.warn("No packs had valid resolution fields, aborting.");
-            applyOneTimePostConfigTweaks(gameDir);
             return;
         }
 
         if (isUpgradeFromV3()) {
             migrateFromV3(selectedPack, gameDir);
-            applyOneTimePostConfigTweaks(gameDir);
             return;
         }
 
         extractIfNeeded(selectedPack, gameDir);
-        applyOneTimePostConfigTweaks(gameDir);
     }
 
 
@@ -375,43 +367,4 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         return "0.0.0";
     }
 
-    private static void applyOneTimeFirmamentPriceDisable(Path gameDir) {
-        if (PackCoreConfig.firmamentPriceDisableApplied) return;
-
-        boolean updated = FirmamentPriceDataManager.disableAlways(gameDir);
-        PackCoreConfig.firmamentPriceDisableApplied = true;
-
-        if (updated) {
-            LOGGER.info("Firmament price-data: one-time update completed.");
-        } else {
-            LOGGER.info("Firmament price-data: one-time update skipped or failed; marking as done.");
-        }
-    }
-
-    public static void applyOneTimeSkyblockEnhancementsPriceTooltips() {
-        if (PackCoreConfig.skyblockEnhancementsPriceTooltipsApplied) return;
-
-        boolean updated = SkyblockEnhancementsConfigManager.enablePriceTooltips();
-        PackCoreConfig.skyblockEnhancementsPriceTooltipsApplied = true;
-        MidnightConfig.write(MOD_ID);
-
-        if (updated) {
-            LOGGER.info("SkyblockEnhancements: one-time price tooltips enable completed.");
-        } else {
-            LOGGER.info("SkyblockEnhancements: one-time price tooltips enable skipped or failed; marking as done.");
-        }
-    }
-
-    private static void applyOneTimePostConfigTweaks(Path gameDir) {
-        boolean wrote = false;
-
-        if (!PackCoreConfig.firmamentPriceDisableApplied) {
-            applyOneTimeFirmamentPriceDisable(gameDir);
-            wrote = true;
-        }
-
-        if (wrote) {
-            MidnightConfig.write(MOD_ID);
-        }
-    }
 }

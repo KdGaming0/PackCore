@@ -17,7 +17,7 @@ plugins {
 
 stonecutter {
     create(rootProject) {
-        versions("1.21.11")
+        // See https://stonecutter.kikugie.dev/wiki/start/#choosing-minecraft-versions
         version("26.1", "26.1.2")
         vcsVersion = "26.1"
     }

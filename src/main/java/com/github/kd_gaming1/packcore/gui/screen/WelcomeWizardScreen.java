@@ -3,14 +3,19 @@ package com.github.kd_gaming1.packcore.gui.screen;
 import com.daqem.uilib.gui.AbstractScreen;
 import com.daqem.uilib.gui.component.EmptyComponent;
 import com.github.kd_gaming1.packcore.PackCore;
-import com.github.kd_gaming1.packcore.gui.wizard.*;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
-import com.github.kd_gaming1.packcore.gui.wizard.page.*;
+import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardButtonBar;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardContentPanel;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardHeaderComponent;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardSteps;
+import com.github.kd_gaming1.packcore.gui.wizard.WizardVersionStore;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
-import com.github.kd_gaming1.packcore.gui.wizard.page.DungeonRoutesPage;
+import com.github.kd_gaming1.packcore.gui.wizard.page.WelcomePage;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
-import eu.midnightdust.lib.config.MidnightConfig;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -19,7 +24,11 @@ import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFW;
 
-import static com.github.kd_gaming1.packcore.PackCore.MOD_ID;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class WelcomeWizardScreen extends AbstractScreen {
 
@@ -35,25 +44,44 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private ConfirmApplyPage confirmApplyPage;
 
     private final Screen lastScreen;
-    private final boolean miniWizard;
+    private final List<WizardStep> runSteps;
+    private final boolean showWelcome;
 
-    /** Creates the full welcome wizard for new users. */
-    public WelcomeWizardScreen(Screen lastScreen) {
-        this(lastScreen, false);
-    }
-
-    /** Creates a mini-wizard that shows only a subset of pages. */
-    private WelcomeWizardScreen(Screen lastScreen, boolean miniWizard) {
-        super(miniWizard
-                ? Component.translatable("gui.packcore.wizard.title.dungeon_routes")
-                : Component.translatable("gui.packcore.wizard.title", ModpackMetadata.getInstance().getModpackName()));
+    private WelcomeWizardScreen(Screen lastScreen, List<WizardStep> runSteps, boolean showWelcome) {
+        super(Component.translatable("gui.packcore.wizard.title", ModpackMetadata.getInstance().getModpackName()));
         this.lastScreen = lastScreen;
-        this.miniWizard = miniWizard;
+        this.runSteps = runSteps;
+        this.showWelcome = showWelcome;
     }
 
-    /** Factory method: creates a mini-wizard showing only the Dungeon Routes page. */
-    public static WelcomeWizardScreen forDungeonRoutes(Screen lastScreen) {
-        return new WelcomeWizardScreen(lastScreen, true);
+    /** The full wizard for new users: intro + every available step + Confirm &amp; Apply. */
+    public static WelcomeWizardScreen full(Screen lastScreen) {
+        return new WelcomeWizardScreen(lastScreen, WizardSteps.available(), true);
+    }
+
+    /**
+     * A focused wizard showing only the given steps (plus Confirm &amp; Apply). Used by the
+     * post-update "new pages" flow and the {@code /packcore wizard <id>} command. Unknown or
+     * unavailable ids are dropped.
+     */
+    public static WelcomeWizardScreen forSteps(Screen lastScreen, List<String> stepIds) {
+        // Pull in coupled steps (declared via WizardStep#requires) so cross-step state — e.g. the
+        // Caxton font folded into the resource-pack selection — is always applied as a unit.
+        Set<String> wanted = new LinkedHashSet<>(stepIds);
+        Deque<String> pending = new ArrayDeque<>(stepIds);
+        while (!pending.isEmpty()) {
+            WizardStep step = WizardSteps.byId(pending.poll());
+            if (step == null) continue;
+            for (String required : step.requires()) {
+                if (wanted.add(required)) pending.add(required);
+            }
+        }
+
+        // Keep registry order (= apply order) and drop unavailable steps.
+        List<WizardStep> resolved = WizardSteps.available().stream()
+                .filter(step -> wanted.contains(step.id()))
+                .toList();
+        return new WelcomeWizardScreen(lastScreen, resolved, false);
     }
 
     @Override
@@ -81,38 +109,15 @@ public class WelcomeWizardScreen extends AbstractScreen {
         int contentWidth = width - PANEL_PADDING * 2;
         int contentHeight = height - HEADER_HEIGHT - FOOTER_HEIGHT;
 
-        if (miniWizard) {
-            // Mini-wizard: only Dungeon Routes + Confirm & Apply
-            navigator.addPage(new DungeonRoutesPage(wizardState, navigator, contentWidth, contentHeight));
-
-            confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
-            confirmApplyPage.setMiniWizardMode(true);
-            navigator.addPage(confirmApplyPage);
-            return;
+        if (showWelcome) {
+            navigator.addPage(new WelcomePage(wizardState, navigator, contentWidth, contentHeight));
         }
 
-        // Full wizard: all pages
-        navigator.addPage(new WelcomePage(wizardState, navigator, contentWidth, contentHeight));
-        navigator.addPage(new MainMenuDesignPage(wizardState, navigator, contentWidth, contentHeight));
-        navigator.addPage(new PerformancePage(wizardState, navigator, contentWidth, contentHeight));
-        navigator.addPage(new TabDesignPage(wizardState, navigator, contentWidth, contentHeight));
-        navigator.addPage(new ItemBackgroundPage(wizardState, navigator, contentWidth, contentHeight));
-        navigator.addPage(new StorageDesignPage(wizardState, navigator, contentWidth, contentHeight));
-        if (FabricLoader.getInstance().isModLoaded("secretroutesmod")) {
-            navigator.addPage(new DungeonRoutesPage(wizardState, navigator, contentWidth, contentHeight));
+        for (WizardStep step : runSteps) {
+            navigator.addPage(step.createPage(wizardState, navigator, contentWidth, contentHeight));
         }
-        if (FabricLoader.getInstance().isModLoaded("scaleme")) {
-            navigator.addPage(new SwordBlockPage(wizardState, navigator, contentWidth, contentHeight));
-        }
-        if (FabricLoader.getInstance().isModLoaded("scamscreener")) {
-            navigator.addPage(new ScamScreenerPage(wizardState, navigator, contentWidth, contentHeight));
-        }
-        if (FabricLoader.getInstance().isModLoaded("caxton")) {
-            navigator.addPage(new CaxtonFontPage(wizardState, navigator, contentWidth, contentHeight));
-        }
-        navigator.addPage(new ResourcePackPage(wizardState, navigator, contentWidth, contentHeight));
 
-        confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight);
+        confirmApplyPage = new ConfirmApplyPage(wizardState, navigator, contentWidth, contentHeight, runSteps);
         navigator.addPage(confirmApplyPage);
     }
 
@@ -178,11 +183,9 @@ public class WelcomeWizardScreen extends AbstractScreen {
         });
     }
 
-    /** Writes the wizard-complete flag(s) to the config and saves it. */
+    /** Records every shown step as applied at its current version, on Finish or Skip. */
     private void markWizardComplete() {
-        PackCoreConfig.successfulWelcomeWizard = true;
-        PackCoreConfig.seenDungeonRoutesWizard = true;
-        MidnightConfig.write(MOD_ID);
+        WizardVersionStore.load().markApplied(runSteps);
     }
 
     private Screen resolvePostWizardScreen() {
