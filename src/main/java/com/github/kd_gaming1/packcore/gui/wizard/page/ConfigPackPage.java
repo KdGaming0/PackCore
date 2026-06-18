@@ -110,7 +110,8 @@ public class ConfigPackPage extends BaseWizardPage {
         int lineHeight = font.lineHeight;
         int currentY = 0;
 
-        ConfigStatusCard statusCard = new ConfigStatusCard(0, currentY, columnWidth, activePack, state.migratedFromV3);
+        boolean preserved = "preserved".equals(PackCoreConfig.lastAppliedOverwriteMode);
+        ConfigStatusCard statusCard = new ConfigStatusCard(0, currentY, columnWidth, activePack, preserved);
         column.addComponent(statusCard);
         currentY += statusCard.getHeight() + DIVIDER_GAP;
 

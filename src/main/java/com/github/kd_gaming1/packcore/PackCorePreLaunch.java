@@ -14,6 +14,7 @@ import com.google.gson.JsonParser;
 import eu.midnightdust.lib.config.MidnightConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,18 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
     private static final String MOD_ID = "packcore";
     private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/PreLaunch");
     private static final String PACK_META_FILE = "pack.json";
+    @Nullable
+    private static volatile String previousModpackVersion;
+
+    /**
+     * Returns the modpack version from the previous launch.
+     * Captured during pre-launch before {@code lastSeenModpackVersion} is updated.
+     * May be null if called before {@link #onPreLaunch()} has run.
+     */
+    @Nullable
+    public static String getPreviousModpackVersion() {
+        return previousModpackVersion;
+    }
 
     @Override
     public void onPreLaunch() {
@@ -138,6 +151,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
         JsonObject config = configOptional.get();
         PackCoreConfig.lastAppliedVersion = config.has("version") ? config.get("version").getAsString() : "";
         PackCoreConfig.lastAppliedPackFile = pendingFileName;
+        PackCoreConfig.lastAppliedOverwriteMode = "full";
         clearPending();
         MidnightConfig.write(MOD_ID);
         LOGGER.info("Successfully applied pending config: {}", pendingFileName);
@@ -224,6 +238,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
                         gameDir,
                         ConfigPackExtractor.OverwriteMode.REPLACE_EXISTING
                 );
+                PackCoreConfig.lastAppliedOverwriteMode = "full";
             } else if (!installedPackFile.equals(selectedPackFile)) {
                 LOGGER.info(
                         "Selected pack '{}' differs from last applied '{}', skipping.",
@@ -242,6 +257,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
                         gameDir,
                         ConfigPackExtractor.OverwriteMode.SKIP_EXISTING
                 );
+                PackCoreConfig.lastAppliedOverwriteMode = "preserved";
             } else {
                 LOGGER.info("Config up to date (version: {}), skipping.", installedVersion);
                 return;
@@ -259,8 +275,6 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
     }
 
     private void migrateFromV3(ConfigPackEntry selectedPack, Path gameDir) {
-        PackCore.migratedFromV3 = true;
-
         JsonObject config = selectedPack.config();
         String selectedPackFile = selectedPack.zipPath().getFileName().toString();
         String packVersion = readPackVersionOrFallback(config);
@@ -284,6 +298,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         PackCoreConfig.lastAppliedVersion = packVersion;
         PackCoreConfig.lastAppliedPackFile = selectedPackFile;
+        PackCoreConfig.lastAppliedOverwriteMode = "preserved";
         PackCoreConfig.isFirstStartup = false;
         MidnightConfig.write(MOD_ID);
 
@@ -302,6 +317,8 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
     private static void maybeCreateUpdateBackup(Path gameDir) {
         String currentVersion = ModpackMetadata.getInstance().getModpackVersion();
         String lastSeen = PackCoreConfig.lastSeenModpackVersion;
+
+        previousModpackVersion = lastSeen;
 
         PackCoreConfig.lastSeenModpackVersion = currentVersion;
         MidnightConfig.write(MOD_ID);

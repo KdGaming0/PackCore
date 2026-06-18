@@ -86,4 +86,8 @@ public class PackCoreConfig extends MidnightConfig {
     @Hidden
     @Entry(category = META)
     public static boolean isFirstStartup = true;
+
+    @Hidden
+    @Entry(category = META)
+    public static String lastAppliedOverwriteMode = "";
 }

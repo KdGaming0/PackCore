@@ -60,6 +60,14 @@
 
   "gui.packcore.wizard.page.support_welcome.title": "Thanks for Installing SkyBlock Enhanced",
   "gui.packcore.wizard.page.config_packs.title": "Config Packs",
+  "gui.packcore.wizard.page.config_reapply.title": "Config Update",
+  "gui.packcore.wizard.page.config_reapply.line1": "PackCore has been updated to version 5.0.",
+  "gui.packcore.wizard.page.config_reapply.line2": "Your existing config settings were preserved, and only configs for new mods were applied.",
+  "gui.packcore.wizard.page.config_reapply.question": "Would you like to reapply all config files?",
+  "gui.packcore.wizard.page.config_reapply.recommendation": "This is optional and recommended only if you have not made major changes to your configs since installing the modpack.",
+  "gui.packcore.wizard.page.config_reapply.footer": "Reapplying will overwrite your current config files with the latest preset and restart the game.",
+  "gui.packcore.wizard.button.config_reapply.reapply": "Reapply All Configs",
+  "gui.packcore.wizard.button.config_reapply.keep": "Keep My Settings",
 
   "gui.packcore.wizard.button.ko_fi": "Donate on Ko-fi",
   "gui.packcore.wizard.button.ko_fi.tooltip": "Support the project with a one-time or recurring donation on Ko-fi.",
@@ -76,7 +84,8 @@
   "gui.packcore.toast.code_copied.message": "%s",
 
   "gui.packcore.wizard.card.config.applied": "✓ Applied: %s",
-  "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update.",
+  "gui.packcore.wizard.card.config.applied.full.hint": "All preset files were applied.",
+  "gui.packcore.wizard.card.config.applied.preserved.hint": "Existing settings were preserved during the update.",
   "gui.packcore.wizard.card.config.error": "No Config Applied",
   "gui.packcore.wizard.card.config.error.hint": "Restart the game to automatically try again, or manually apply a config from the list below.",
 

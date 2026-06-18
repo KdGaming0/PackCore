@@ -44,8 +44,6 @@ public class PackCore implements ClientModInitializer {
     private static final Identifier CAXTON_PROBE_RELOAD_ID =
             Identifier.fromNamespaceAndPath(MOD_ID, "caxton_probe");
 
-    public static boolean migratedFromV3 = false;
-
     private static boolean clientFullyStarted = false;
     private static boolean replacingTitleScreen = false;
 
