@@ -4,6 +4,33 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## Re-add Dungeon Routes page — Skyblocker vs Stella (v5.0.0)
+
+**Goal:** bring back the dungeon-routes wizard page, replacing Secret Routes Mod with Stella and marking Skyblocker as recommended.
+
+### Changes
+- `StellaConfigurator` (new) — reflection bridge to Stella's Kotlin DSL config (`ConfigKt.config`,
+  `Config.valueCache`, `Config.elementMap`, `Config.save()`).
+- `DungeonRoutesManager` — rewritten. Modes are now `SKYBLOCKER_WAYPOINTS` and `STELLA`.
+  - Skyblocker mode enables `SecretWaypoints` and disables Stella `secretRoutes`/`secretWaypoints`.
+  - Stella mode enables `secretRoutes`/`secretWaypoints` and disables Skyblocker `SecretWaypoints`.
+- `DungeonRoutesPage` / `DungeonRoutesStep` — recreated.
+  - Step requires both `skyblocker` and `stella` to be loaded.
+  - Page now marks `skyblocker_waypoints` as recommended via the new card badge.
+- `OptionCardGrid` — added optional `recommended` flag to `CardDescriptor` and a small "Recommended" badge.
+- `WizardSteps.ALL` — re-added `DungeonRoutesStep` after `StorageDesignStep`.
+- `PackCoreCommands` — re-added `/packcore dungeonroutes skyblocker|stella`.
+- `en_us.json` — added `gui.packcore.recommended` and all dungeon-routes strings.
+
+### Verification
+- `./gradlew 26.1:build` passes.
+
+### Notes
+- Preview textures for the two options do not exist yet; the page references the standard
+  `textures/gui/sprites/wizard/dungeon_routes_preview/<id>.png` paths.
+
+---
+
 ## Config pack reapply prompt + overwrite-mode hints (v5.0.0)
 
 **Goal:** add the pre-5.0 upgrade reapply prompt and clarify overwrite-mode hints in the config-pack status card.

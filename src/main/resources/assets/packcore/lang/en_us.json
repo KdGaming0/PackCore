@@ -1,6 +1,8 @@
 {
   "packcore.midnightconfig.title": "PackCore Settings",
 
+  "gui.packcore.recommended": "Recommended",
+
   "packcore.midnightconfig.category.toast": "Notifications",
   "packcore.midnightconfig.category.menu": "Main Menu",
   "packcore.midnightconfig.category.backup": "Automatic Backups",
@@ -149,6 +151,15 @@
 
   "gui.packcore.wizard.storage_design.vanilla.name": "Vanilla",
   "gui.packcore.wizard.storage_design.vanilla.desc": "Default chest appearance with tooltips that show each page's contents on hover.",
+
+  "gui.packcore.wizard.page.dungeon_routes.title": "Dungeon Routes",
+  "gui.packcore.wizard.page.dungeon_routes.explanation": "Choose which dungeon secret route system to use. Skyblocker Waypoints provides simple waypoints for each secret. Stella offers full routes with rendered lines that you can follow.",
+
+  "gui.packcore.wizard.dungeon_routes.skyblocker_waypoints.name": "Skyblocker Waypoints",
+  "gui.packcore.wizard.dungeon_routes.skyblocker_waypoints.desc": "Use Skyblocker's dungeon secret waypoints. Displays waypoint markers for entrances, chests, items, bats, and more.",
+
+  "gui.packcore.wizard.dungeon_routes.stella.name": "Stella",
+  "gui.packcore.wizard.dungeon_routes.stella.desc": "Use Stella for full route rendering with lines that you can follow.",
 
   "gui.packcore.wizard.page.caxton_font.title": "Font",
   "gui.packcore.wizard.caxton_font.label": "Choose a font — Caxton renders TrueType fonts in-game via a resource pack.",

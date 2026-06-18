@@ -160,6 +160,7 @@ public class OptionCardGrid<T> extends EmptyComponent {
         Identifier previewTexture(T option);
         int previewTextureWidth(T option);
         int previewTextureHeight(T option);
+        default boolean recommended(T option) { return false; }
 
         static <T> CardDescriptor<T> of(
                 Function<T, String> id,
@@ -169,6 +170,18 @@ public class OptionCardGrid<T> extends EmptyComponent {
                 ToIntFunction<T> previewTexWidth,
                 ToIntFunction<T> previewTexHeight
         ) {
+            return of(id, name, description, previewTexture, previewTexWidth, previewTexHeight, o -> false);
+        }
+
+        static <T> CardDescriptor<T> of(
+                Function<T, String> id,
+                Function<T, Component> name,
+                Function<T, Component> description,
+                Function<T, Identifier> previewTexture,
+                ToIntFunction<T> previewTexWidth,
+                ToIntFunction<T> previewTexHeight,
+                Function<T, Boolean> recommended
+        ) {
             return new CardDescriptor<>() {
                 @Override public String id(T o) { return id.apply(o); }
                 @Override public Component name(T o) { return name.apply(o); }
@@ -176,14 +189,18 @@ public class OptionCardGrid<T> extends EmptyComponent {
                 @Override public Identifier previewTexture(T o) { return previewTexture.apply(o); }
                 @Override public int previewTextureWidth(T o) { return previewTexWidth.applyAsInt(o); }
                 @Override public int previewTextureHeight(T o) { return previewTexHeight.applyAsInt(o); }
+                @Override public boolean recommended(T o) { return Boolean.TRUE.equals(recommended.apply(o)); }
             };
         }
     }
 
     private static class OptionCard<T> extends AbstractContainerWidget implements IWidget {
+        private static final int BADGE_PADDING = 3;
+
         private final T option;
         private final CardDescriptor<T> descriptor;
         private final boolean isSelected;
+        private final boolean isRecommended;
         private final int previewHeight;
         private final Consumer<T> onClick;
         private final List<IComponent> childComponents = new ArrayList<>();
@@ -199,6 +216,7 @@ public class OptionCardGrid<T> extends EmptyComponent {
             this.option = option;
             this.descriptor = descriptor;
             this.isSelected = isSelected;
+            this.isRecommended = descriptor.recommended(option);
             this.onClick = onClick;
 
             setupChildComponents(width, height);
@@ -265,6 +283,10 @@ public class OptionCardGrid<T> extends EmptyComponent {
                 drawCheckmarkBadge(graphics, cardLeft + cardWidth - BADGE_SIZE - 4, cardTop + 4);
             }
 
+            if (isRecommended) {
+                drawRecommendedBadge(graphics, cardLeft + BORDER_THICKNESS + 4, cardTop + BORDER_THICKNESS + 4);
+            }
+
             for (IComponent component : childComponents) {
                 component.updateParentPosition(cardLeft, cardTop, cardWidth, cardHeight);
                 //? if >=26.1 {
@@ -293,6 +315,18 @@ public class OptionCardGrid<T> extends EmptyComponent {
                     badgeY + 1,
                     GuiColors.CHECKMARK_TICK
             );
+        }
+
+        private void drawRecommendedBadge(GuiGraphicsExtractor graphics, int badgeX, int badgeY) {
+            var font = Minecraft.getInstance().font;
+            Component text = Component.translatable("gui.packcore.recommended");
+            int textWidth = font.width(text);
+            int badgeWidth = textWidth + (BADGE_PADDING * 2);
+            int badgeHeight = font.lineHeight + BADGE_PADDING;
+
+            graphics.fill(badgeX, badgeY, badgeX + badgeWidth, badgeY + badgeHeight, GuiColors.SUCCESS_BORDER);
+            graphics.fill(badgeX + 1, badgeY + 1, badgeX + badgeWidth - 1, badgeY + badgeHeight - 1, GuiColors.SUCCESS);
+            graphics.text(font, text, badgeX + BADGE_PADDING, badgeY + (BADGE_PADDING / 2), GuiColors.CHECKMARK_TICK, false);
         }
 
         private static void drawBorder(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int color) {
