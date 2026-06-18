@@ -14,7 +14,6 @@ import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardSteps;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardVersionStore;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ConfirmApplyPage;
-import com.github.kd_gaming1.packcore.gui.wizard.page.WelcomePage;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -45,18 +44,16 @@ public class WelcomeWizardScreen extends AbstractScreen {
 
     private final Screen lastScreen;
     private final List<WizardStep> runSteps;
-    private final boolean showWelcome;
 
-    private WelcomeWizardScreen(Screen lastScreen, List<WizardStep> runSteps, boolean showWelcome) {
+    private WelcomeWizardScreen(Screen lastScreen, List<WizardStep> runSteps) {
         super(Component.translatable("gui.packcore.wizard.title", ModpackMetadata.getInstance().getModpackName()));
         this.lastScreen = lastScreen;
         this.runSteps = runSteps;
-        this.showWelcome = showWelcome;
     }
 
-    /** The full wizard for new users: intro + every available step + Confirm &amp; Apply. */
+    /** The full wizard for new users: every available step + Confirm &amp; Apply. */
     public static WelcomeWizardScreen full(Screen lastScreen) {
-        return new WelcomeWizardScreen(lastScreen, WizardSteps.available(), true);
+        return new WelcomeWizardScreen(lastScreen, WizardSteps.available());
     }
 
     /**
@@ -81,7 +78,7 @@ public class WelcomeWizardScreen extends AbstractScreen {
         List<WizardStep> resolved = WizardSteps.available().stream()
                 .filter(step -> wanted.contains(step.id()))
                 .toList();
-        return new WelcomeWizardScreen(lastScreen, resolved, false);
+        return new WelcomeWizardScreen(lastScreen, resolved);
     }
 
     @Override
@@ -108,10 +105,6 @@ public class WelcomeWizardScreen extends AbstractScreen {
     private void registerPages() {
         int contentWidth = width - PANEL_PADDING * 2;
         int contentHeight = height - HEADER_HEIGHT - FOOTER_HEIGHT;
-
-        if (showWelcome) {
-            navigator.addPage(new WelcomePage(wizardState, navigator, contentWidth, contentHeight));
-        }
 
         for (WizardStep step : runSteps) {
             navigator.addPage(step.createPage(wizardState, navigator, contentWidth, contentHeight));

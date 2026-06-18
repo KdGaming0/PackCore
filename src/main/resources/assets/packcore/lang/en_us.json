@@ -58,7 +58,22 @@
   "gui.packcore.wizard.button.skip": "Skip",
   "gui.packcore.wizard.button.finish": "Finish ✓",
 
-  "gui.packcore.wizard.page.welcome.title": "Welcome",
+  "gui.packcore.wizard.page.support_welcome.title": "Thanks for Installing SkyBlock Enhanced",
+  "gui.packcore.wizard.page.config_packs.title": "Config Packs",
+
+  "gui.packcore.wizard.button.ko_fi": "Donate on Ko-fi",
+  "gui.packcore.wizard.button.ko_fi.tooltip": "Support the project with a one-time or recurring donation on Ko-fi.",
+  "gui.packcore.wizard.button.hytale": "Hytale Store — Use code KD1",
+  "gui.packcore.wizard.button.hytale.tooltip": "Support the project by using code KD1 on the Hytale store. No additional cost to you, and I get a small referral bonus that helps fund development.",
+  "gui.packcore.wizard.button.bisect_hosting": "Bisect Hosting — 25% off with SBE",
+  "gui.packcore.wizard.button.bisect_hosting.tooltip": "Get 25% off Minecraft server hosting with code SBE. You get a discount on any server, and I get a small referral bonus that helps fund development.",
+  "gui.packcore.wizard.button.proton_vpn": "Proton VPN — 2 weeks free",
+  "gui.packcore.wizard.button.proton_vpn.tooltip": "Get two weeks free Proton VPN and support the project through the referral link.",
+  "gui.packcore.wizard.button.get_help": "Visit Discord",
+  "gui.packcore.wizard.button.get_help.tooltip": "Join our Discord community to share feedback, say thanks, or get help and support.",
+
+  "gui.packcore.toast.code_copied.title": "Code copied",
+  "gui.packcore.toast.code_copied.message": "%s",
 
   "gui.packcore.wizard.card.config.applied": "✓ Applied: %s",
   "gui.packcore.wizard.card.config.applied.hint": "Your config changes were preserved during the update.",

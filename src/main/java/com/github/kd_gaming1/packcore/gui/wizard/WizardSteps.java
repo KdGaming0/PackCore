@@ -1,12 +1,14 @@
 package com.github.kd_gaming1.packcore.gui.wizard;
 
 import com.github.kd_gaming1.packcore.gui.wizard.page.CaxtonFontStep;
+import com.github.kd_gaming1.packcore.gui.wizard.page.ConfigPackStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ItemBackgroundStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.MainMenuDesignStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.PerformanceStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ResourcePackStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ScamScreenerStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.StorageDesignStep;
+import com.github.kd_gaming1.packcore.gui.wizard.page.SupportWelcomeStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.SwordBlockStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.TabDesignStep;
 
@@ -16,8 +18,7 @@ import java.util.List;
  * The single registration point for configurable wizard steps.
  *
  * <p>List order is both the page order shown to the user and the order {@link WizardStep#apply}
- * runs in. The intro {@code WelcomePage} and the {@code ConfirmApplyPage} are added by the screen
- * and are not listed here.
+ * runs in. The {@code ConfirmApplyPage} is added by the screen and is not listed here.
  *
  * <p>Add a page → add its {@code XxxStep} to {@link #ALL}. Remove a page → delete that line and the
  * step's two files.
@@ -27,6 +28,8 @@ public final class WizardSteps {
     private WizardSteps() {}
 
     private static final List<WizardStep> ALL = List.of(
+            new SupportWelcomeStep(),
+            new ConfigPackStep(),
             new MainMenuDesignStep(),
             new PerformanceStep(),
             new TabDesignStep(),

@@ -23,13 +23,13 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Step 0 — Welcome page.
+ * Config pack selection page.
  */
-public class WelcomePage extends BaseWizardPage {
+public class ConfigPackPage extends BaseWizardPage {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/WelcomePage");
+    private static final Logger LOGGER = LoggerFactory.getLogger("PackCore/ConfigPackPage");
 
-    private static final Component TITLE = Component.translatable("gui.packcore.wizard.page.welcome.title");
+    private static final Component TITLE = Component.translatable("gui.packcore.wizard.page.config_packs.title");
 
     private static final int PADDING = 16;
     private static final int COLUMN_GAP = 14;
@@ -43,8 +43,13 @@ public class WelcomePage extends BaseWizardPage {
     private static final int COLOR_HINT = 0xFF777777;
     private static final int COLOR_DIVIDER = 0x44FFFFFF;
 
-    private static final String FALLBACK_MARKDOWN = "*No welcome message found.*";
-    private static final Path MARKDOWN_PATH = PackCore.PACKCORE_DIR.resolve("markdown").resolve("welcome.md");
+    private static final String FALLBACK_MARKDOWN = "**Config Packs**\\n\\n"
+            + "SkyBlock Enhanced comes **pre-configured for your resolution.** Each resolution needs unique configs "
+            + "since overlays shift with screen size. Ready-made configs are included for **1080p, 1440p, and 4K.** "
+            + "The modpack checks your resolution on first launch and applies the closest one automatically.\\n\\n"
+            + "The currently active pack is shown on the right. A green checkmark means it applied successfully. "
+            + "Got the wrong one? Select one of the others from the list on the right.";
+    private static final Path MARKDOWN_PATH = PackCore.PACKCORE_DIR.resolve("markdown").resolve("config_packs.md");
 
     private ConfigPackEntry activePack;
     private ConfigSwitchOverlay overlay;
@@ -52,7 +57,7 @@ public class WelcomePage extends BaseWizardPage {
     private ScrollContainerWidget leftScroll;
     private ScrollContainerWidget rightScroll;
 
-    public WelcomePage(WizardState state, WizardNavigator navigator, int width, int height) {
+    public ConfigPackPage(WizardState state, WizardNavigator navigator, int width, int height) {
         super(state, navigator, width, height);
     }
 
