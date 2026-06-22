@@ -1,6 +1,6 @@
 # Changelog
 
-## v5.0.1
+## v5.0.2
 
 ### Changes
-- Added missing images to the welcome wizard
+- Removed the ThickerInter font option.
