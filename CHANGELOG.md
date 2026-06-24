@@ -1,6 +1,6 @@
 # Changelog
 
-## v5.0.2
+## v5.0.3
 
 ### Changes
-- Removed the ThickerInter font option.
+- Now hides the Shaders option from the performance page when Iris is not installed.

@@ -2,7 +2,7 @@
 mod.id = "packcore"
 mod.name = "Pack Core"
 mod.group = "com.github.kd_gaming1"
-mod.version = "5.0.2"
+mod.version = "5.0.3"
 
 deps.fabric_loader = "0.19.3"
 loomx.loom_version = "1.17-SNAPSHOT"

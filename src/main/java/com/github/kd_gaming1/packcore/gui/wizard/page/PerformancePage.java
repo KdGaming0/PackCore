@@ -8,11 +8,13 @@ import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -86,13 +88,16 @@ public class PerformancePage extends BaseWizardPage {
     public record PerformanceProfile(String id, Component name, Component description) {
 
         public static List<PerformanceProfile> all() {
-            return List.of(
+            List<PerformanceProfile> profiles = new ArrayList<>(List.of(
                     fromId("maxfps"),
                     fromId("balanced"),
-                    fromId("quality"),
-                    fromId("quality_performance_shaders"),
-                    fromId("quality_quality_shaders")
-            );
+                    fromId("quality")
+            ));
+            if (FabricLoader.getInstance().isModLoaded("iris")) {
+                profiles.add(fromId("quality_performance_shaders"));
+                profiles.add(fromId("quality_quality_shaders"));
+            }
+            return profiles;
         }
 
         private static PerformanceProfile fromId(String id) {
