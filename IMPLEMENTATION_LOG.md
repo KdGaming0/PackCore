@@ -4,6 +4,40 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## Fix Wayland fractional-scale cursor offset — pre-launch GLFW init (v5.0.4)
+
+**Goal:** stop PackCore from forcing the game onto native Wayland, which broke cursor↔framebuffer
+mapping (cursor offset growing toward the bottom-right) in other mods' GUIs (SkyHanni, Odin) under
+KDE fractional display scaling. Reported only with PackCore enabled, reproducible on a fresh install,
+and the user themselves traced it to the KDE display-scale slider.
+
+### Root cause
+`ScreenResolution.detect()` (called from `PackCorePreLaunch.onPreLaunch()`) called `GLFW.glfwInit()`
+during the `preLaunch` entrypoint — *before* Minecraft's `com.mojang.blaze3d.platform.GLX._initGlfw()`.
+GLFW init hints only take effect at the *next* `glfwInit()`, and a second `glfwInit()` on an
+already-initialized library is a silent no-op. MC's `GLX._initGlfw` does
+`glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11)` (constants `327683`/`393220`, confirmed via `javap`
+on `minecraft-merged-...-26.1.2`) right before its `glfwInit()` when X11 is supported and
+`SharedConstants.DEBUG_PREFER_WAYLAND` is false — deliberately forcing XWayland. PackCore's earlier
+init (no platform hint) let GLFW auto-select native Wayland, so MC's hint + init were no-ops and the
+game ran on native Wayland. Under fractional KDE scaling this desyncs cursor and framebuffer scale.
+Also explains the generic "W" Wayland app icon and broken see-through farming.
+
+### Changes
+- `util/ScreenResolution.detect()`: wrap the post-`glfwInit()` query in a `try/finally` that always
+  calls `GLFW.glfwTerminate()`, leaving GLFW uninitialized exactly as found so MC's `GLX._initGlfw`
+  runs its full platform-hint path. Video-mode width/height copied into locals before terminate frees
+  the native struct. Replaced the misleading "idempotent — safe" comment; expanded the class javadoc.
+- `stonecutter.properties.toml`: `mod.version` 5.0.3 → 5.0.4.
+- `CHANGELOG.md`: user-facing fix entry.
+
+### Verification
+- `./gradlew 26.1:build` passes.
+- Human validation zone (KDE Wayland + fractional scaling): cursor aligns with highlighted buttons in
+  SkyHanni/Odin, correct app icon returns, see-through farming works. Not reproducible without that setup.
+
+---
+
 ## Re-add Dungeon Routes page — Skyblocker vs Stella (v5.0.0)
 
 **Goal:** bring back the dungeon-routes wizard page, replacing Secret Routes Mod with Stella and marking Skyblocker as recommended.
