@@ -68,7 +68,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
             applyPendingConfig(gameDir, packcoreDir);
             return;
         }
-        ScreenResolution.ScreenSize screen = ScreenResolution.detect();
+        ScreenResolution.ScreenSize screen = ScreenResolution.detectAtPreLaunch();
 
         List<ConfigPackEntry> scannedPacks;
         try {

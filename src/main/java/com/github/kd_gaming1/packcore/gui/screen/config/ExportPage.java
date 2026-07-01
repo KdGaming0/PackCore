@@ -137,7 +137,7 @@ public class ExportPage extends BaseConfigPage {
                 "gui.packcore.export.field.description", "");
         currentY += fieldStride;
 
-        ScreenResolution.ScreenSize screenSize = ScreenResolution.detect();
+        ScreenResolution.ScreenSize screenSize = ScreenResolution.detectFromRunningGame();
         resolutionField = addValidatedField(container, fieldWidth, currentY,
                 "gui.packcore.export.field.resolution", screenSize.width() + "x" + screenSize.height(), input -> {
                     if (!input.matches("\\d+[x×]\\d+"))

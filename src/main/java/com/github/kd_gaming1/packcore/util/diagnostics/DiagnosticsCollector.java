@@ -92,7 +92,7 @@ public final class DiagnosticsCollector {
         Runtime rt = Runtime.getRuntime();
 
         // Detect screen resolution
-        var screen = ScreenResolution.detect();
+        var screen = ScreenResolution.detectFromRunningGame();
         String screenLine = screen.width() + "x" + screen.height();
 
         return String.join(

@@ -4,6 +4,41 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## Fix crash when clicking a wizard resolution — GLFW terminate at runtime (v5.0.5)
+
+**Goal:** stop a hard native crash (SIGSEGV in `libgallium`) that happened whenever the welcome
+wizard queried the screen resolution — e.g. opening/clicking a resolution in the config-switch
+overlay. Regression introduced by the v5.0.4 Wayland fix.
+
+### Root cause
+The v5.0.4 fix added an unconditional `GLFW.glfwTerminate()` in a `finally` block inside
+`ScreenResolution.detect()`. That is correct at the `preLaunch` entrypoint (we own GLFW there), but
+`detect()` is *also* called at runtime from `ConfigSwitchOverlay` (wizard), `ExportPage`, and
+`DiagnosticsCollector`. At runtime Minecraft owns GLFW with a live window and OpenGL context; the
+second `glfwInit()` is a no-op, but the `finally` still ran `glfwTerminate()`, destroying the live
+window/context out from under the running game. The next GL call dereferenced freed driver state →
+SIGSEGV in Mesa (`libgallium`). Log signature: `detect()` logged on the Render thread immediately
+before the crash.
+
+### Changes
+- `util/ScreenResolution`: split the single `detect()` into two context-specific methods sharing a
+  private `queryPrimaryMonitor()`:
+  - `detectAtPreLaunch()` — owns the GLFW lifecycle (`glfwInit()` + `glfwTerminate()`), preserving the
+    v5.0.4 Wayland/X11 hint fix.
+  - `detectFromRunningGame()` — queries only; never inits or terminates GLFW. Must run on the render
+    (main) thread.
+- Updated call sites: `PackCorePreLaunch` → `detectAtPreLaunch()`; `ConfigSwitchOverlay` (×2),
+  `ExportPage`, `DiagnosticsCollector` → `detectFromRunningGame()`.
+- `stonecutter.properties.toml`: `mod.version` 5.0.4 → 5.0.5.
+- `CHANGELOG.md`: user-facing fix entry.
+
+### Verification
+- `./gradlew compileJava` passes; no remaining references to the old `detect()`.
+- Human validation zone (runtime): open the welcome wizard and click a resolution in the config-switch
+  overlay — no crash; resolution still detected correctly. Pre-launch Wayland fix path unchanged.
+
+---
+
 ## Fix Wayland fractional-scale cursor offset — pre-launch GLFW init (v5.0.4)
 
 **Goal:** stop PackCore from forcing the game onto native Wayland, which broke cursor↔framebuffer

@@ -90,7 +90,7 @@ public class ConfigSwitchOverlay extends AbstractComponent {
     }
 
     private void layoutPanel() {
-        if (screenSize == null) screenSize = ScreenResolution.detect();
+        if (screenSize == null) screenSize = ScreenResolution.detectFromRunningGame();
 
         boolean hasMismatch = hasResolutionMismatch();
 
@@ -121,7 +121,7 @@ public class ConfigSwitchOverlay extends AbstractComponent {
     private boolean hasResolutionMismatch() {
         if (newPack == null || !newPack.config().has("targetWidth")) return false;
 
-        if (screenSize == null) screenSize = ScreenResolution.detect();
+        if (screenSize == null) screenSize = ScreenResolution.detectFromRunningGame();
 
         var config = newPack.config();
         int targetWidth = config.get("targetWidth").getAsInt();

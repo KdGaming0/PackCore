@@ -7,20 +7,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Detects the primary screen resolution using GLFW during pre-launch.
+ * Detects the primary screen resolution using GLFW.
  *
  * <p>AWT ({@code Toolkit.getDefaultToolkit()}) must NOT be used here — on macOS,
  * initializing AWT before GLFW claims the native AppKit event loop and causes a
  * deadlock during window creation on certain macOS versions (e.g. Sonoma 14.x).
  *
- * <p>This runs at the {@code preLaunch} entrypoint, before Minecraft initializes
- * GLFW. We must therefore {@code glfwTerminate()} again afterwards: GLFW init
- * hints (e.g. {@code GLFW_PLATFORM}, which Minecraft's {@code GLX._initGlfw}
- * sets to {@code GLFW_PLATFORM_X11} to force XWayland over native Wayland) only
- * apply at the next {@code glfwInit()}, and a second {@code glfwInit()} on an
- * already-initialized library is a silent no-op. Leaving GLFW initialized here
- * would make Minecraft's hints be ignored and run the game on native Wayland,
- * which breaks cursor/content-scale mapping under fractional display scaling.
+ * <p>There are two distinct calling contexts with opposite GLFW-lifecycle needs,
+ * so they have separate entry points:
+ *
+ * <ul>
+ *   <li>{@link #detectAtPreLaunch()} runs at the {@code preLaunch} entrypoint,
+ *       before Minecraft initializes GLFW. It owns the GLFW lifecycle and must
+ *       {@code glfwTerminate()} afterwards (see that method's javadoc).</li>
+ *   <li>{@link #detectFromRunningGame()} runs while the game is live and
+ *       Minecraft owns GLFW (its window and OpenGL context). It only queries and
+ *       must NEVER init or terminate GLFW — terminating would destroy the live
+ *       window/context and crash the graphics driver.</li>
+ * </ul>
  */
 public class ScreenResolution {
 
@@ -33,33 +37,18 @@ public class ScreenResolution {
 
     public record ScreenSize(int width, int height) {}
 
-    public static ScreenSize detect() {
+    /**
+     * Detects the resolution during pre-launch, before Minecraft initializes GLFW.
+     */
+    public static ScreenSize detectAtPreLaunch() {
         try {
             if (!GLFW.glfwInit()) {
                 LOGGER.warn("GLFW init failed, using fallback resolution");
                 return fallback();
             }
 
-            // We initialized GLFW; always terminate so Minecraft re-initializes it
-            // with its own platform init hints (see class javadoc).
             try {
-                long monitor = GLFW.glfwGetPrimaryMonitor();
-                if (monitor == MemoryUtil.NULL) {
-                    LOGGER.warn("No primary monitor found, using fallback resolution");
-                    return fallback();
-                }
-
-                GLFWVidMode mode = GLFW.glfwGetVideoMode(monitor);
-                if (mode == null || mode.width() <= 0 || mode.height() <= 0) {
-                    LOGGER.warn("GLFW returned invalid video mode, using fallback resolution");
-                    return fallback();
-                }
-
-                // Copy the native struct fields into locals before terminate frees them.
-                int width = mode.width();
-                int height = mode.height();
-                LOGGER.info("Detected screen resolution: {}x{}", width, height);
-                return new ScreenSize(width, height);
+                return queryPrimaryMonitor();
             } finally {
                 GLFW.glfwTerminate();
             }
@@ -67,6 +56,37 @@ public class ScreenResolution {
             LOGGER.warn("Failed to detect screen resolution: {}", e.getMessage());
             return fallback();
         }
+    }
+
+    /**
+     * Detects the resolution while the game is running and Minecraft owns GLFW.
+     */
+    public static ScreenSize detectFromRunningGame() {
+        try {
+            return queryPrimaryMonitor();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to detect screen resolution: {}", e.getMessage());
+            return fallback();
+        }
+    }
+
+    private static ScreenSize queryPrimaryMonitor() {
+        long monitor = GLFW.glfwGetPrimaryMonitor();
+        if (monitor == MemoryUtil.NULL) {
+            LOGGER.warn("No primary monitor found, using fallback resolution");
+            return fallback();
+        }
+
+        GLFWVidMode mode = GLFW.glfwGetVideoMode(monitor);
+        if (mode == null || mode.width() <= 0 || mode.height() <= 0) {
+            LOGGER.warn("GLFW returned invalid video mode, using fallback resolution");
+            return fallback();
+        }
+
+        int width = mode.width();
+        int height = mode.height();
+        LOGGER.info("Detected screen resolution: {}x{}", width, height);
+        return new ScreenSize(width, height);
     }
 
     private static ScreenSize fallback() {
