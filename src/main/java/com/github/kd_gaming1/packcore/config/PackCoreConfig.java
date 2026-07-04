@@ -75,6 +75,11 @@ public class PackCoreConfig extends MidnightConfig {
     @Entry(category = META)
     public static String lastSeenModpackVersion = "";
 
+    /** Comma-separated ids of one-shot config migrations already applied (see ConfigMigrationRunner). */
+    @Hidden
+    @Entry(category = META)
+    public static String appliedConfigMigrations = "";
+
     @Hidden
     @Entry(category = META)
     public static long lastBackupEpochMs = 0L;

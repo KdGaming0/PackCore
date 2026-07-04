@@ -8,6 +8,7 @@ import com.github.kd_gaming1.packcore.gui.screen.WelcomeWizardScreen;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardStep;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardSteps;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardVersionStore;
+import com.github.kd_gaming1.packcore.migration.ConfigMigrationRunner;
 import com.github.kd_gaming1.packcore.playtime.PlaytimeTracker;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.util.CaxtonFontDetector;
@@ -100,6 +101,9 @@ public class PackCore implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             PlaytimeTracker.onSessionStart();
             clientFullyStarted = true;
+
+            // All mods' configs are initialized by now — safe to force one-shot cross-mod config changes.
+            ConfigMigrationRunner.run();
 
             if (isVanillaTitleScreen(client.screen)
                     && PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) {

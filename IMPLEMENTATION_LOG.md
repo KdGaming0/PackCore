@@ -4,6 +4,57 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## One-shot forced config migrations — price tooltips: Skyblocker over SBE (v5.0.6)
+
+**Goal:** on a modpack update, force existing users' price tooltips to come from Skyblocker (enable
+its NPC/AvgBIN/LowestBIN/Bazaar lines) and disable Skyblock Enhancements' own `enablePriceTooltips`,
+so the two mods stop stacking duplicate price lines. Must apply **once per updating user** and **not**
+touch new installs (their shipped default configs already carry the intended values).
+
+### Design
+New lightweight one-shot migration framework in `migration/`, keyed by stable migration id:
+- `ConfigMigration` — `record(String id, Runnable action)`.
+- `ConfigMigrationRunner.run()` — run at `CLIENT_STARTED` (all mods' configs initialized):
+  - **New vs updating** decided by `PackCorePreLaunch.getPreviousModpackVersion()` (the
+    `lastSeenModpackVersion` captured at pre-launch before it's overwritten). Blank → first launch →
+    new user. This is a pre-existing field, so there is no bootstrap ambiguity when the feature first
+    ships: an updating user always has a prior non-blank value.
+  - New user → record the migration id as applied **without running it** (baseline).
+  - Updating user → run the action, then record the id.
+  - Applied ids persisted in new hidden field `PackCoreConfig.appliedConfigMigrations`
+    (comma-separated, `META` category). This set is the **sole "run once" guard** — a migration is
+    marked applied even if its target mod was absent or the action threw, because the point is to
+    never re-fight a player who later changes the setting back. Version magnitude is deliberately not
+    compared; blank-previous handles new users and the applied-set handles once-only, so comparing
+    versions would only reintroduce the "re-runs every update" problem.
+- `PriceTooltipMigration` — the single registered migration `prices-skyblocker-over-sbe`, best-effort
+  per mod (each half gated by `FabricLoader.isModLoaded` + try/catch):
+  - Skyblocker: `SkyblockerConfigManager.update(cfg -> cfg.general.itemTooltip.<field> = true)` via
+    reflection (mirrors `TabDesignManager`; `update()` persists on its own).
+  - SBE: set static `SkyblockEnhancementsConfig.enablePriceTooltips = false` +
+    `MidnightConfig.write("skyblock_enhancements")` (mirrors `StorageDesignManager`).
+
+### Verification
+- `./gradlew compileJava` passes.
+- Reflection paths verified against the shipped jars, not the dev pins:
+  - `skyblocker-6.5.3+26.1.2`: `SkyblockerConfig.general` → `GeneralConfig.itemTooltip` →
+    public booleans `enableNPCPrice/enableAvgBIN/enableLowestBIN/enableBazaarPrice`; and
+    `SkyblockerConfigManager.update(Consumer<SkyblockerConfig>)` is `public static`.
+  - `skyblock_enhancements-1.1.7+26.1.2`: `SkyblockEnhancementsConfig extends MidnightConfig`, static
+    `boolean enablePriceTooltips`.
+- Human validation zone (in-game): (1) existing profile with old values + a prior
+  `lastSeenModpackVersion` → the 4 Skyblocker fields become true and SBE's becomes false, once;
+  (2) toggle one back, relaunch → not re-forced; (3) fresh profile (blank `lastSeenModpackVersion`) →
+  configs untouched by the migration.
+
+### Files
+- `config/PackCoreConfig`: added hidden `appliedConfigMigrations`.
+- `migration/ConfigMigration`, `migration/ConfigMigrationRunner`, `migration/PriceTooltipMigration`: new.
+- `PackCore`: call `ConfigMigrationRunner.run()` at `CLIENT_STARTED`.
+- `stonecutter.properties.toml`: `mod.version` 5.0.5 → 5.0.6. `CHANGELOG.md`: user-facing entry.
+
+---
+
 ## Fix crash when clicking a wizard resolution — GLFW terminate at runtime (v5.0.5)
 
 **Goal:** stop a hard native crash (SIGSEGV in `libgallium`) that happened whenever the welcome
