@@ -7,6 +7,7 @@ public class PackCoreConfig extends MidnightConfig {
     public static final String MENU = "menu";
     public static final String BACKUP = "backup";
     public static final String TOAST = "toast";
+    public static final String RESOURCE_PACKS = "resource_packs";
     public static final String META = "meta";
 
     // ── Toast ─────────────────────────────────────────────────────────────────
@@ -44,6 +45,32 @@ public class PackCoreConfig extends MidnightConfig {
 
     @Entry(category = BACKUP, min = 1, max = 90)
     public static int autoBackupIntervalDays = 3;
+
+    // ── Resource packs ──────────────────────────────────────────────────────────
+
+    @Entry(category = RESOURCE_PACKS)
+    public static KeepAboveServerPack keepPacksAboveServerPack = KeepAboveServerPack.ALWAYS;
+
+    /**
+     * Controls when PackCore forces its applied packs above a server's own resource pack
+     * (see {@code PackRepositoryMixin}).
+     */
+    public enum KeepAboveServerPack {
+        /** Re-assert the order on every reload/join. Self-contained; survives rejoins on its own. */
+        ALWAYS,
+        /** Only reorder when applying from PackCore. */
+        ON_APPLY_ONLY,
+        /** Never reorder; behave like vanilla. */
+        OFF
+    }
+
+    /**
+     * Comma-separated ids of the packs PackCore last applied, in priority order (highest priority
+     * last). {@code PackRepositoryMixin} moves these above the server pack.
+     */
+    @Hidden
+    @Entry(category = RESOURCE_PACKS)
+    public static String packsAboveServer = "";
 
     // ── Meta (hidden) ─────────────────────────────────────────────────────────
 

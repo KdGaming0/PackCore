@@ -1,5 +1,5 @@
-## v5.0.7
+## v5.0.8
 
 ### Changes
-- The resource pack screen now remembers what you already have on. When you open it, the packs you've already enabled show up as ticked, so you can see your current setup and just add more. Unticking a pack now also turns it off. This screen reopens once after the update so you can review it.
-- You can now set the order of your resource packs. Ticked packs move to a "Selected" list at the top, and you can use the up/down arrows to choose which pack takes priority — the one at the top wins when two packs change the same thing.
+- Resource packs you apply through PackCore now automatically stay above the server's own resource pack (such as Hypixel's), so your packs win when two packs change the same thing. You no longer have to open the resource pack menu and move your pack to the top every time you join.
+- Added a "Keep My Packs Above Server Pack" setting (under Resource Packs) with three choices: Always keep them on top, only reorder when you apply from PackCore, or turn it off.

@@ -36,6 +36,13 @@
   "packcore.midnightconfig.autoBackupIntervalDays": "Backup Interval (days)",
   "packcore.midnightconfig.autoBackupIntervalDays.tooltip": "How many days must pass before a new automatic backup is triggered (1–90).",
 
+  "packcore.midnightconfig.category.resource_packs": "Resource Packs",
+  "packcore.midnightconfig.keepPacksAboveServerPack": "Keep My Packs Above Server Pack",
+  "packcore.midnightconfig.keepPacksAboveServerPack.tooltip": "Keeps resource packs you applied through PackCore above a server's own resource pack (such as Hypixel's), so they win texture conflicts.\nAlways: re-apply this order on every reload/join (works on its own).\nOnly When Applied: reorder only when you apply from PackCore, and leave normal reloads and the resource pack menu alone (relies on another mod to keep it after joining).\nOff: behave like vanilla.",
+  "packcore.midnightconfig.enum.KeepAboveServerPack.ALWAYS": "Always",
+  "packcore.midnightconfig.enum.KeepAboveServerPack.ON_APPLY_ONLY": "Only When Applied",
+  "packcore.midnightconfig.enum.KeepAboveServerPack.OFF": "Off",
+
   "gui.packcore.button.join_hypixel": "Join Hypixel",
   "gui.packcore.button.modmenu": "Mod Menu",
 

@@ -4,6 +4,67 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## Keep PackCore packs above a server resource pack (v5.0.8)
+
+**Goal:** let a user's applied pack (e.g. "Hypixel SkyBlock Legacy") override Hypixel's own server
+resource pack automatically, without manually dragging it to the top of the pack menu after every join.
+
+### Root cause (MC 26.1 source)
+A downloaded server pack is created by `DownloadedPackSource` with
+`PackSelectionConfig(required = true, defaultPosition = TOP, fixedPosition = true)`. In
+`PackRepository.rebuildSelected`, every `required` pack not already present is force-inserted via
+`Pack.Position.insert`, which for TOP inserts at the **end** of the list (= highest priority) and makes
+all other packs **skip over** any fixed-TOP pack. So no local pack can be ordered above it through the
+pack screen. Confirmed by `javap` on `minecraft-merged-…-26.1.2`. (Catharsis only strips the GUI lock,
+so the user still had to drag manually each join.)
+
+### Join path (why a `rebuildSelected` hook suffices)
+Accepting/loading the server pack runs
+`Minecraft.reloadResourcePacks() → Options.loadSelectedResourcePacks() → PackRepository.setSelected()
+→ rebuildSelected()`. Hooking `rebuildSelected`'s return re-asserts the desired order on **every**
+join/reload — no SkyBlock-join detection needed.
+
+### Changes
+- `PackCoreConfig` — new visible enum `keepPacksAboveServerPack: KeepAboveServerPack` (default `ALWAYS`)
+  with modes `ALWAYS` / `ON_APPLY_ONLY` / `OFF`, plus hidden `packsAboveServer` (comma-joined applied
+  pack ids, priority order, highest last), both under a new `RESOURCE_PACKS` category.
+- `ResourcePackManager` — records the packs it applied (available `packIds`, in order) into
+  `packsAboveServer` and `MidnightConfig.write`s, so the mixin has a persisted list. Also sets a
+  `volatile boolean applyingFromPackCore` around `setSelected` + `reloadResourcePacks()` (both run
+  `rebuildSelected` synchronously before the returned future completes, so the `finally` that clears it
+  covers both) — the signal the mixin uses to detect a PackCore-initiated reorder.
+- `mixin/PackRepositoryMixin` — `@Inject(method="rebuildSelected", at=RETURN, cancellable=true)`. Bails
+  on `OFF`; on `ON_APPLY_ONLY` bails unless `ResourcePackManager.applyingFromPackCore` (so ordinary
+  reloads and the vanilla pack menu are untouched — persistence across joins is left to another mod);
+  `ALWAYS` always proceeds. Then bails if the list is empty or no `PackSource.SERVER` pack is present;
+  otherwise pulls the forced packs out of the rebuilt list (server pack and everything else keep their
+  order) and re-appends them at the end in persisted priority order → highest priority = above the server
+  pack. Registered in `packcore.mixins.json` client list.
+- `en_us.json` — `category.resource_packs`, `keepPacksAboveServerPack` label + tooltip, and the three
+  `enum.KeepAboveServerPack.*` value labels.
+
+### Modes (why)
+`ALWAYS` is self-contained (re-lifts on every `reload()`/join, since MC re-pins the server pack on top
+each time — verified below). `ON_APPLY_ONLY` lifts only during a PackCore apply and never fights normal
+reloads or the vanilla menu; it therefore requires the user to apply *while the server pack is present*
+(else there is nothing to lift above) and relies on another mod to keep the order across joins/restarts.
+`OFF` = vanilla.
+
+### Verification
+- `./gradlew 26.1:build` green.
+- Mixin wiring verified against the **shipped jar** (`javap -v`): the project runs on a **named/Mojmap
+  runtime** — the whole jar references MC by Mojang names with zero `class_`/`method_` intermediary and
+  **no refmap**, exactly like the existing `PackRepository.setSelected`/`reload` calls; so
+  `method=["rebuildSelected"]` (kept named in the jar) resolves directly at runtime. `defaultRequire: 1`
+  would hard-fail at launch if the target were missing.
+- Reorder logic traced against decompiled ordering semantics (server pack ends up at list end = highest
+  priority; forced packs appended after it).
+- Human validation zone (owner: user): join Hypixel SkyBlock, accept Hypixel's pack → Legacy overrides it
+  **without opening the pack menu**, survives a relog; singleplayer / no-server-pack cases untouched;
+  toggling the setting off restores vanilla behaviour. Catharsis is no longer required (no conflict if kept).
+
+---
+
 ## Resource-pack page: priority ordering UX (two-section reorderable list) (v5.0.7)
 
 **Goal:** let users see and control which selected pack wins conflicts (priority order), which was

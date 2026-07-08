@@ -1,7 +1,9 @@
 package com.github.kd_gaming1.packcore.integration;
 
 import com.github.kd_gaming1.packcore.PackCore;
+import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.util.CaxtonFontDetector;
+import eu.midnightdust.lib.config.MidnightConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
@@ -22,6 +24,14 @@ import java.util.stream.Collectors;
  * appended at the end (last entry = highest priority).
  */
 public final class ResourcePackManager {
+
+    /**
+     * True while a PackCore-initiated pack reorder is in flight (set around {@code setSelected} +
+     * the synchronous reload it triggers). {@code PackRepositoryMixin} reads this in
+     * {@link PackCoreConfig.KeepAboveServerPack#ON_APPLY_ONLY} mode so it lifts packs above the
+     * server pack only during a PackCore apply, never on ordinary reloads or the vanilla menu.
+     */
+    public static volatile boolean applyingFromPackCore = false;
 
     private ResourcePackManager() {}
 
@@ -94,16 +104,38 @@ public final class ResourcePackManager {
         List<String> orderedList = new ArrayList<>(finalOrder);
         PackCore.LOGGER.info("ResourcePack: applying order: {}", orderedList);
 
-        repo.setSelected(orderedList);
-        client.options.resourcePacks.clear();
-        client.options.resourcePacks.addAll(orderedList);
-        client.options.save();
+        // Remember which packs PackCore applied, in priority order (highest last), so
+        // PackRepositoryMixin can keep them above a server's own pack on every reload.
+        List<String> appliedPacks = new ArrayList<>();
+        for (String id : packIds) {
+            if (availableIds.contains(id)) {
+                appliedPacks.add(id);
+            }
+        }
+        PackCoreConfig.packsAboveServer = String.join(",", appliedPacks);
+        MidnightConfig.write(PackCore.MOD_ID);
+
+        // Mark this as a PackCore-initiated reorder so PackRepositoryMixin lifts packs above the
+        // server pack even in ON_APPLY_ONLY mode. setSelected and the synchronous reload() inside
+        // reloadResourcePacks() both run rebuildSelected before the returned future completes, so
+        // clearing the flag once reloadResourcePacks() returns still covers both.
+        applyingFromPackCore = true;
+        java.util.concurrent.CompletableFuture<Void> reload;
+        try {
+            repo.setSelected(orderedList);
+            client.options.resourcePacks.clear();
+            client.options.resourcePacks.addAll(orderedList);
+            client.options.save();
+            reload = client.reloadResourcePacks();
+        } finally {
+            applyingFromPackCore = false;
+        }
 
         // Recompute Caxton state once, after the reload finishes — the
         // FontSet.setFonts mixin will also fire, but this is a safety net
         // for the case where no font set is rebuilt (e.g. the new packs
         // don't touch fonts at all).
-        client.reloadResourcePacks().whenComplete((res, ex) -> {
+        reload.whenComplete((res, ex) -> {
             if (ex != null) {
                 PackCore.LOGGER.error("ResourcePack: reload failed", ex);
                 return;
