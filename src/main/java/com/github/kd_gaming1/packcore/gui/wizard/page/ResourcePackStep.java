@@ -9,10 +9,11 @@ import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Step: resource packs — enables the user's chosen packs. Runs last so the Caxton font pack folded
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 public final class ResourcePackStep implements WizardStep {
 
     @Override public String id() { return "resource_packs"; }
-    @Override public int version() { return 1; }
+    @Override public int version() { return 2; }
 
     @Override
     public BaseWizardPage createPage(WizardState state, WizardNavigator navigator, int width, int height) {
@@ -37,23 +38,38 @@ public final class ResourcePackStep implements WizardStep {
 
     @Override
     public List<SummaryRow> summaryRows(WizardState state) {
-        Set<String> packs = state.getSelectedResourcePacks();
+        List<String> packs = state.getResourcePackOrder();
         List<SummaryRow> rows = new ArrayList<>();
         rows.add(SummaryRow.of(id(), "Resource Packs",
                 packs.isEmpty() ? Component.literal("None selected") : Component.literal(packs.size() + " selected"),
                 packs.isEmpty()));
-        for (String packId : packs) {
-            rows.add(SummaryRow.sub(id(), Component.literal(packId)));
+        // Numbered in priority order (1 = highest priority / top of the list).
+        for (int i = 0; i < packs.size(); i++) {
+            rows.add(SummaryRow.sub(id(), Component.literal((i + 1) + ". " + packs.get(i))));
         }
         return rows;
     }
 
     @Override
     public void apply(WizardState state) {
-        Set<String> caxtonPackIds = CaxtonFontPage.FontOption.all().stream()
+        // Strip every managed pack from the current selection so the append order below is fully
+        // authoritative: unchecked user-selectable packs stay gone (disabled), checked ones are
+        // re-added in the chosen order. Non-user-selectable packs (core mod/config packs) are never
+        // excluded, so they are preserved.
+        Set<String> excludes = new HashSet<>(ResourcePackManager.availableUserSelectablePackIds());
+
+        // Caxton font packs are removed too; the Caxton step re-adds the chosen one in the same pass.
+        CaxtonFontPage.FontOption.all().stream()
                 .map(CaxtonFontPage.FontOption::packId)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        ResourcePackManager.apply(state.getSelectedResourcePacks(), caxtonPackIds);
+                .forEach(excludes::add);
+
+        // apply() appends in order and the last entry wins, so reverse the priority-ordered selection
+        // (top = highest priority) to put the top pack last.
+        List<String> priorityOrder = state.getResourcePackOrder();
+        List<String> appendOrder = new ArrayList<>(priorityOrder);
+        Collections.reverse(appendOrder);
+
+        ResourcePackManager.apply(appendOrder, excludes);
     }
 }

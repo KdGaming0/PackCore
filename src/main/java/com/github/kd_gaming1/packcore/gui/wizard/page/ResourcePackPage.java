@@ -4,21 +4,25 @@ import com.daqem.uilib.gui.component.EmptyComponent;
 import com.daqem.uilib.gui.component.text.multiline.MultiLineTextComponent;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.gui.component.MultiSelectList;
+import com.github.kd_gaming1.packcore.gui.component.ReorderableSelectList;
 import com.github.kd_gaming1.packcore.gui.component.MarkdownComponent;
 import com.github.kd_gaming1.packcore.gui.util.GuiHelper;
 import com.github.kd_gaming1.packcore.gui.wizard.BaseWizardPage;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardNavigator;
 import com.github.kd_gaming1.packcore.gui.wizard.WizardState;
+import com.github.kd_gaming1.packcore.integration.ResourcePackManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.server.packs.repository.PackSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Step — Resource Pack chooser.
@@ -35,6 +39,13 @@ public class ResourcePackPage extends BaseWizardPage {
 
     private static final String FALLBACK_MARKDOWN = "*No resource pack guide found.*";
     private static final Path MARKDOWN_PATH = PackCore.PACKCORE_DIR.resolve("markdown").resolve("resource_packs.md");
+
+    /**
+     * Guards the one-time seeding of packs already enabled in-game into the wizard state. Seeding
+     * runs only on the first page entry so that unchecking a pack and navigating back does not
+     * re-add it.
+     */
+    private boolean seededEnabledPacks;
 
     public ResourcePackPage(WizardState state, WizardNavigator navigator, int width, int height) {
         super(state, navigator, width, height);
@@ -83,7 +94,9 @@ public class ResourcePackPage extends BaseWizardPage {
             return;
         }
 
-        MultiSelectList<ResourcePackEntry> list = new MultiSelectList<>(
+        seedEnabledPacks(packs);
+
+        ReorderableSelectList<ResourcePackEntry> list = new ReorderableSelectList<>(
                 0, 0, width, height,
                 packs,
                 MultiSelectList.RowDescriptor.of(
@@ -91,11 +104,37 @@ public class ResourcePackPage extends BaseWizardPage {
                         ResourcePackEntry::name,
                         ResourcePackEntry::description
                 ),
-                state.getSelectedResourcePacks(),
+                state.getResourcePackOrder(),
                 selected   -> state.addResourcePack(selected.id()),
-                deselected -> state.removeResourcePack(deselected.id())
+                deselected -> state.removeResourcePack(deselected.id()),
+                up   -> state.moveResourcePackUp(up.id()),
+                down -> state.moveResourcePackDown(down.id()),
+                Component.translatable("gui.packcore.wizard.resource_pack.selected_header"),
+                Component.translatable("gui.packcore.wizard.resource_pack.available_header"),
+                Component.translatable("gui.packcore.wizard.resource_pack.priority_hint")
         );
         column.addComponent(list);
+    }
+
+    /**
+     * On first entry, marks packs already enabled in-game as selected so reopening the page shows
+     * the current selection. Only packs that appear as rows are seeded, keeping every highlight
+     * mapped to a real entry.
+     */
+    private void seedEnabledPacks(List<ResourcePackEntry> packs) {
+        if (seededEnabledPacks) return;
+        seededEnabledPacks = true;
+
+        Set<String> rowIds = packs.stream().map(ResourcePackEntry::id).collect(Collectors.toSet());
+        // options.resourcePacks is ordered low→high priority (the last entry wins conflicts). Seed in
+        // reverse so the highest-priority enabled pack lands at the top of the wizard's order.
+        List<String> enabled = new ArrayList<>(Minecraft.getInstance().options.resourcePacks);
+        for (int i = enabled.size() - 1; i >= 0; i--) {
+            String enabledId = enabled.get(i);
+            if (rowIds.contains(enabledId)) {
+                state.addResourcePack(enabledId);
+            }
+        }
     }
 
     private List<ResourcePackEntry> discoverUserPacks() {
@@ -103,14 +142,10 @@ public class ResourcePackPage extends BaseWizardPage {
                 .getResourcePackRepository()
                 .getAvailablePacks()
                 .stream()
-                .filter(this::isUserSelectablePack)
+                .filter(ResourcePackManager::isUserSelectable)
                 .sorted(Comparator.comparing(pack -> pack.getTitle().getString()))
                 .map(ResourcePackEntry::fromPack)
                 .toList();
-    }
-
-    private boolean isUserSelectablePack(Pack pack) {
-        return pack.getPackSource() == PackSource.DEFAULT && !pack.getId().equals("vanilla");
     }
 
     public record ResourcePackEntry(String id, Component name, Component description) {

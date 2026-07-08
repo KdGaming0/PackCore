@@ -205,6 +205,9 @@
   "gui.packcore.wizard.page.resource_pack.title": "Resource Packs",
   "gui.packcore.wizard.resource_pack.none_found": "No resource packs were found in your resource packs folder. Add resource packs there and reopen the wizard.",
   "gui.packcore.wizard.resource_pack.no_description": "No description provided.",
+  "gui.packcore.wizard.resource_pack.selected_header": "Selected",
+  "gui.packcore.wizard.resource_pack.available_header": "Available",
+  "gui.packcore.wizard.resource_pack.priority_hint": "Top of the list wins — use ▲ ▼ to reorder.",
 
   "gui.packcore.wizard.page.confirm.title": "Confirm & Apply",
   "gui.packcore.wizard.page.confirm.subtitle": "Review your selections.",

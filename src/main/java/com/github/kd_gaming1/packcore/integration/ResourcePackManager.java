@@ -3,13 +3,16 @@ package com.github.kd_gaming1.packcore.integration;
 import com.github.kd_gaming1.packcore.PackCore;
 import com.github.kd_gaming1.packcore.util.CaxtonFontDetector;
 import net.minecraft.client.Minecraft;
+import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
+import net.minecraft.server.packs.repository.PackSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Applies a set of resource pack IDs on top of the user's current pack
@@ -22,15 +25,41 @@ public final class ResourcePackManager {
 
     private ResourcePackManager() {}
 
+    /**
+     * Whether {@code pack} is a pack the user picks in the wizard — a loose pack from the
+     * {@code resourcepacks/} folder ({@link PackSource#DEFAULT}), excluding vanilla. Mod-provided
+     * and built-in packs (e.g. Caxton fonts, which use a namespaced id) are handled elsewhere and
+     * must never be touched by the resource-pack selection.
+     */
+    public static boolean isUserSelectable(Pack pack) {
+        return pack.getPackSource() == PackSource.DEFAULT && !pack.getId().equals("vanilla");
+    }
+
+    /** Ids of every currently-available user-selectable pack (see {@link #isUserSelectable}). */
+    public static Set<String> availableUserSelectablePackIds() {
+        return Minecraft.getInstance()
+                .getResourcePackRepository()
+                .getAvailablePacks()
+                .stream()
+                .filter(ResourcePackManager::isUserSelectable)
+                .map(Pack::getId)
+                .collect(Collectors.toSet());
+    }
+
     public static void apply(Set<String> packIds) {
         apply(packIds, Set.of());
     }
 
     /**
-     * @param packIds    packs to ensure are enabled (added to the end of the order)
-     * @param excludeIds packs to remove from the existing selection (unless also in {@code packIds})
+     * @param packIds    packs to enable, in the order they should be appended — since the last entry
+     *                   wins conflicts, the highest-priority pack must come last. Excluded packs are
+     *                   stripped from their existing position first, so this order is authoritative
+     *                   for every pack it contains.
+     * @param excludeIds packs to remove from the existing selection entirely; any that also appear in
+     *                   {@code packIds} are re-added at their requested position, giving the caller
+     *                   full control over ordering rather than preserving the old position.
      */
-    public static void apply(Set<String> packIds, Set<String> excludeIds) {
+    public static void apply(Collection<String> packIds, Set<String> excludeIds) {
         Minecraft client = Minecraft.getInstance();
         PackRepository repo = client.getResourcePackRepository();
 
@@ -47,12 +76,13 @@ public final class ResourcePackManager {
             }
         }
 
-        // Build the final order: keep existing entries (minus excludes that
-        // weren't explicitly requested), then append the requested packs.
-        // LinkedHashSet preserves insertion order and dedupes in one pass.
+        // Build the final order: keep existing entries except every excluded id, then append the
+        // requested packs in the given order. Dropping excluded packs unconditionally (even ones
+        // also in packIds) lets the append order fully control their final priority, so reordering
+        // a re-selected pack takes effect. LinkedHashSet preserves order and dedupes in one pass.
         LinkedHashSet<String> finalOrder = new LinkedHashSet<>();
         for (String id : client.options.resourcePacks) {
-            if (excludeIds.contains(id) && !packIds.contains(id)) continue;
+            if (excludeIds.contains(id)) continue;
             finalOrder.add(id);
         }
         for (String id : packIds) {

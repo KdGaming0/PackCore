@@ -4,6 +4,80 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## Resource-pack page: priority ordering UX (two-section reorderable list) (v5.0.7)
+
+**Goal:** let users see and control which selected pack wins conflicts (priority order), which was
+previously invisible and arbitrary (selection was an unordered `HashSet`, and `apply` appended in
+hash order). Chosen UX: a **Selected** section on top (priority order, `n.` + ▲/▼) and an
+**Available** section below.
+
+### Root cause of "arbitrary order"
+Order was discarded at every layer: `WizardState.selectedResourcePacks` was a `HashSet`;
+`MultiSelectList` tracked a `HashSet`; `ResourcePackManager.apply` appended in set-iteration order.
+Additionally, the old `apply` *dedupe-preserved* an already-enabled pack in its existing position
+(`if (excludeIds.contains(id) && !packIds.contains(id)) continue;`), so re-selecting a pack kept its
+old priority — reordering could never take effect.
+
+### Changes
+- `WizardState` — `selectedResourcePacks` is now a `LinkedHashSet` (top-first priority order). Added
+  `getResourcePackOrder()` and `moveResourcePackUp/Down` (swap with neighbour); `addResourcePack`
+  appends (new pick = lowest priority).
+- `ResourcePackManager.apply` — signature takes `Collection<String> packIds` (ordered); the
+  keep-existing loop now drops **every** excluded id unconditionally, so the append order is
+  authoritative for reordering. Single-arg `apply(Set)` overload unchanged → other callers unaffected.
+- `ResourcePackStep.apply` — excludes **all** user-selectable packs (∪ Caxton) so order rebuilds from
+  scratch; appends the selection **reversed** (top-first display → highest-priority-last, since last
+  wins). Summary rows numbered in priority order. `version()` `2 → 3`.
+- New `ReorderableSelectList<T>` component (`gui/component/`) — two sections in one scroll container,
+  `PackRow` widgets with ▲/▼ sub-hitboxes (consumed even when disabled so they never fall through to a
+  toggle) + `HeaderRow` components. Reuses `MultiSelectList.RowDescriptor` and `GuiColors`/`GuiHelper`
+  styling; `MultiSelectList` (still used by `ScamScreenerPage`) untouched.
+- `ResourcePackPage` — uses the new component; seeds enabled packs by reading `options.resourcePacks`
+  **in reverse** (last = highest → top of the wizard order). Lang keys: `…resource_pack.selected_header`,
+  `.available_header`, `.priority_hint`.
+
+### Priority direction (validation zone)
+The whole feature hinges on `options.resourcePacks` being **last = highest priority** (existing
+`ResourcePackManager` comment + shipped append-at-end behaviour). Seed-in and apply-out both reverse,
+so no-change round-trips (idempotent). If in-game testing shows it inverted, flip the two reversals
+(`ResourcePackPage.seedEnabledPacks` loop + `ResourcePackStep.apply` `Collections.reverse`) — localized.
+
+### Verification
+- `./gradlew 26.1:build -x test` green.
+- In-game pending (owner: user): set pack A as #1 → Apply → confirm A wins in vanilla RP screen;
+  ▲/▼ reorder + end-disable; toggling moves rows between sections; reopening shows the same order.
+
+---
+
+## Resource-pack page: pre-select enabled packs + disable on uncheck (v5.0.7)
+
+**Goal:** when the resource-pack wizard page opens, pre-highlight packs already enabled in-game so a
+user reopening it to add more packs sees the current selection; and make unchecking a pack actually
+disable it. Bump the page version so it reopens once on update.
+
+### Changes
+- `ResourcePackManager` — extracted the selectability rule as `isUserSelectable(Pack)` (was the page's
+  private predicate) and added `availableUserSelectablePackIds()`. Single source of truth shared by the
+  page and the step. Caxton packs use a `caxton:` namespaced id and are **not** `PackSource.DEFAULT`,
+  so they are never user-selectable — the deselect logic and the Caxton exclude/re-add path stay
+  fully separate.
+- `ResourcePackPage` — `seedEnabledPacks(packs)` seeds `WizardState` with `options.resourcePacks ∩
+  displayed rows` on first entry only (guarded by `seededEnabledPacks`), so `MultiSelectList` (which
+  already highlights whatever ids it is given) shows them checked. Guard prevents re-adding a pack the
+  user unchecks then navigates away from and back.
+- `ResourcePackStep.apply` — `excludeIds = (availableUserSelectablePackIds − selected) ∪ caxtonPacks`,
+  so every unchecked user-selectable pack is removed from the enabled order via the existing
+  `ResourcePackManager.apply` exclude path. Non-user-selectable packs are never excluded → core
+  mod/config packs preserved. `version()` `1 → 2`.
+
+### Notes / verification
+- `./gradlew 26.1:compileJava` clean.
+- In-game validation pending (owner: user): enable 2 packs → reopen wizard → both pre-checked; uncheck
+  one → Apply → that pack disabled, the other stays; a non-selectable core pack is never disabled; page
+  reopens once after the version bump.
+
+---
+
 ## One-shot forced config migrations — price tooltips: Skyblocker over SBE (v5.0.6)
 
 **Goal:** on a modpack update, force existing users' price tooltips to come from Skyblocker (enable
