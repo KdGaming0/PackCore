@@ -38,7 +38,7 @@ public class PackRepositoryMixin {
     @Inject(method = "rebuildSelected", at = @At("RETURN"), cancellable = true)
     private void packcore$forcePacksAboveServer(Collection<String> ids,
                                                 CallbackInfoReturnable<List<Pack>> cir) {
-        KeepAboveServerPack mode = PackCoreConfig.keepPacksAboveServerPack;
+        KeepAboveServerPack mode = PackCoreConfig.keepPacksAboveServerPackv2;
         if (mode == KeepAboveServerPack.OFF) return;
         // ON_APPLY_ONLY: act only during a PackCore apply, so ordinary reloads and the vanilla
         // pack menu are left untouched (persistence across joins is handled by another mod).

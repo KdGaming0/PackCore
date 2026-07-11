@@ -49,7 +49,7 @@ public class PackCoreConfig extends MidnightConfig {
     // ── Resource packs ──────────────────────────────────────────────────────────
 
     @Entry(category = RESOURCE_PACKS)
-    public static KeepAboveServerPack keepPacksAboveServerPack = KeepAboveServerPack.ALWAYS;
+    public static KeepAboveServerPack keepPacksAboveServerPackv2 = KeepAboveServerPack.ON_APPLY_ONLY;
 
     /**
      * Controls when PackCore forces its applied packs above a server's own resource pack
