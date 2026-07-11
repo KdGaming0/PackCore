@@ -3,6 +3,7 @@ package com.github.kd_gaming1.packcore.gui.screen;
 import com.github.kd_gaming1.packcore.config.PackCoreConfig;
 import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.gui.util.ToastHelper;
+import com.github.kd_gaming1.packcore.integration.HypixelQuickJoin;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.update.UpdateStatus;
@@ -200,11 +201,7 @@ public class PackCoreTitleScreen extends TitleScreen {
     }
 
     private static void connectToHypixel(TitleScreen screen) {
-        ServerData serverData = new ServerData(
-                "Hypixel",
-                PackCoreConfig.serverAddressForQuickJoinButton,
-                ServerData.Type.OTHER
-        );
+        ServerData serverData = HypixelQuickJoin.resolveServerData();
         ConnectScreen.startConnecting(
                 screen,
                 Minecraft.getInstance(),

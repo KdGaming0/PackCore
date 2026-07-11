@@ -12,6 +12,7 @@ import com.github.kd_gaming1.packcore.gui.screen.config.ConfigScreen;
 import com.github.kd_gaming1.packcore.gui.util.ImageBackground;
 import com.github.kd_gaming1.packcore.gui.util.SpriteHelper;
 import com.github.kd_gaming1.packcore.gui.util.ToastHelper;
+import com.github.kd_gaming1.packcore.integration.HypixelQuickJoin;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.update.UpdateStatus;
@@ -212,11 +213,7 @@ public class SBETitleScreen extends AbstractScreen {
                 Component.translatable("gui.packcore.button.join_hypixel"),
                 MAIN_BUTTON_SPRITES,
                 btn -> {
-                    ServerData serverData = new ServerData(
-                            "Hypixel",
-                            PackCoreConfig.serverAddressForQuickJoinButton,
-                            ServerData.Type.OTHER
-                    );
+                    ServerData serverData = HypixelQuickJoin.resolveServerData();
                     ConnectScreen.startConnecting(
                             this,
                             Minecraft.getInstance(),
