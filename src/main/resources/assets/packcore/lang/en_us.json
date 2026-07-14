@@ -151,13 +151,13 @@
   "gui.packcore.wizard.item_background.square.desc": "Adds a square background behind each item.",
 
   "gui.packcore.wizard.page.storage_design.title": "Storage Design",
-  "gui.packcore.wizard.page.storage_design.explanation": "Choose how your SkyBlock storage is displayed. Overlay shows a full storage interface with all pages visible at once. Vanilla keeps the default chest look but adds tooltips that show what each page contains when you hover over it.",
+  "gui.packcore.wizard.page.storage_design.explanation": "Choose how your SkyBlock storage is displayed. Overlay shows a full storage interface with all pages visible at once. Vanilla keeps the default chest look but adds tooltips from skyblocker that show what each page contains when you hover over it.",
 
   "gui.packcore.wizard.storage_design.overlay.name": "Overlay",
   "gui.packcore.wizard.storage_design.overlay.desc": "A full storage interface with all pages and their contents visible at once.",
 
   "gui.packcore.wizard.storage_design.vanilla.name": "Vanilla",
-  "gui.packcore.wizard.storage_design.vanilla.desc": "Default chest appearance with tooltips that show each page's contents on hover.",
+  "gui.packcore.wizard.storage_design.vanilla.desc": "Default chest appearance with tooltips from skyblocker that show each page's contents on hover.",
 
   "gui.packcore.wizard.page.dungeon_routes.title": "Dungeon Routes",
   "gui.packcore.wizard.page.dungeon_routes.explanation": "Choose which dungeon secret route system to use. Skyblocker Waypoints provides simple waypoints for each secret. Stella offers full routes with rendered lines that you can follow.",

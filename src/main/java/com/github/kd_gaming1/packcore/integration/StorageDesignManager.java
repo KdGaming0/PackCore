@@ -10,7 +10,7 @@ public class StorageDesignManager {
 
     private static final String MOD_ID = "enhanced_storage";
     private static final String CONFIG_CLASS = "com.github.kdgaming0.enhancedstorage.config.EnhancedStorageConfig";
-    private static final String FIELD_NAME = "enableStorageOverlay";
+    private static final String FIELD_NAME = "enableOverlay";
 
     public enum StorageDesign {
         OVERLAY, VANILLA
