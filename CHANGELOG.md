@@ -1,4 +1,4 @@
-## v5.0.11
+## v5.0.12
 
 ### Changes
-- Fixed: wizard step for storage overlay not working to change between overlay and skyblocker.
+- Fixed: the game could crash on startup (mainly on macOS) when the screen resolution could not be detected. PackCore now falls back to a default resolution instead.

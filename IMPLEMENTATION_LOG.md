@@ -497,3 +497,12 @@ recompile. Fixed minimally, touching only `build.gradle.kts`:
 - `processResources` registered the UI Lib template key as `ui_lib`, but `fabric.mod.json` expects
   `${uilib_version}`; registered it under `uilib_version` to match (committed manifest left intact).
 After both, `./gradlew 26.1:build` is green (compile + processResources + jar + remap).
+
+## Fix: preLaunch crash when GLFW natives are unavailable (macOS)
+A macOS/Prism user crash log showed `UnsatisfiedLinkError: Failed to locate library: libglfw.dylib`
+thrown from `GLFW.<clinit>` via `ScreenResolution.detectAtPreLaunch()`, aborting the whole launch.
+`ScreenResolution` already had a fallback-resolution path, but both detection methods caught only
+`Exception` — `UnsatisfiedLinkError` is a `LinkageError` (an `Error`), so it escaped the entrypoint.
+Fix: both `detectAtPreLaunch()` and `detectFromRunningGame()` now catch `Exception | LinkageError`
+and fall back to 1920x1080. `LinkageError` also covers the follow-up `NoClassDefFoundError` on any
+later touch of the failed `GLFW` class. Verified with `./gradlew build` (green).

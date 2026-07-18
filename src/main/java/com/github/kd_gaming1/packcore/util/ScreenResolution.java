@@ -52,7 +52,9 @@ public class ScreenResolution {
             } finally {
                 GLFW.glfwTerminate();
             }
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
+            // LinkageError covers UnsatisfiedLinkError when the GLFW native
+            // library (e.g. libglfw.dylib) cannot be loaded this early.
             LOGGER.warn("Failed to detect screen resolution: {}", e.getMessage());
             return fallback();
         }
@@ -64,7 +66,7 @@ public class ScreenResolution {
     public static ScreenSize detectFromRunningGame() {
         try {
             return queryPrimaryMonitor();
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
             LOGGER.warn("Failed to detect screen resolution: {}", e.getMessage());
             return fallback();
         }
