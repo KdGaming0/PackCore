@@ -14,8 +14,8 @@
   "packcore.midnightconfig.showUpdateToast": "Update Notification",
   "packcore.midnightconfig.showUpdateToast.tooltip": "Show a toast when a modpack update is available.",
 
-  "config.packcore.showBetaUpdateNotifications": "Beta Update Notifications",
-  "config.packcore.showBetaUpdateNotifications.tooltip": "Show a notification when a beta pre-release is available. Only enable if you want to test less stable builds.",
+  "packcore.midnightconfig.showBetaUpdateNotifications": "Beta Update Notifications",
+  "packcore.midnightconfig.showBetaUpdateNotifications.tooltip": "Show a notification when a beta pre-release is available. Only enable if you want to test less stable builds.",
 
   "packcore.midnightconfig.showBackupToast": "Backup Notification",
   "packcore.midnightconfig.showBackupToast.tooltip": "Show a toast when an automatic backup is created.",
@@ -37,8 +37,8 @@
   "packcore.midnightconfig.autoBackupIntervalDays.tooltip": "How many days must pass before a new automatic backup is triggered (1–90).",
 
   "packcore.midnightconfig.category.resource_packs": "Resource Packs",
-  "packcore.midnightconfig.keepPacksAboveServerPack": "Keep My Packs Above Server Pack",
-  "packcore.midnightconfig.keepPacksAboveServerPack.tooltip": "Keeps resource packs you applied through PackCore above a server's own resource pack (such as Hypixel's), so they win texture conflicts.\nAlways: re-apply this order on every reload/join (works on its own).\nOnly When Applied: reorder only when you apply from PackCore, and leave normal reloads and the resource pack menu alone (relies on another mod to keep it after joining).\nOff: behave like vanilla.",
+  "packcore.midnightconfig.keepPacksAboveServerPackv2": "Keep My Packs Above Server Pack",
+  "packcore.midnightconfig.keepPacksAboveServerPack.tooltipv2": "Keeps resource packs you applied through PackCore above a server's own resource pack (such as Hypixel's), so they win texture conflicts.\nAlways: re-apply this order on every reload/join (works on its own).\nOnly When Applied: reorder only when you apply from PackCore, and leave normal reloads and the resource pack menu alone (relies on another mod to keep it after joining).\nOff: behave like vanilla.",
   "packcore.midnightconfig.enum.KeepAboveServerPack.ALWAYS": "Always",
   "packcore.midnightconfig.enum.KeepAboveServerPack.ON_APPLY_ONLY": "Only When Applied",
   "packcore.midnightconfig.enum.KeepAboveServerPack.OFF": "Off",
