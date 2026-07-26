@@ -1,6 +1,6 @@
 plugins {
     id("dev.kikugie.stonecutter")
-    id("me.modmuss50.mod-publish-plugin") version "1.0.+" apply false
+    id("me.modmuss50.mod-publish-plugin") version "2.1.+" apply false
 }
 
 stonecutter active "26.1"

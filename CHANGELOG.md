@@ -1,4 +1,4 @@
-## v5.0.12
+## v5.1.0
 
 ### Changes
-- Fixed: the game could crash on startup (mainly on macOS) when the screen resolution could not be detected. PackCore now falls back to a default resolution instead.
+- Your custom sound volumes carry over automatically when the modpack switches from Sound Controller to Enhanced Sound Control, so updating don't reset your sound setup. 

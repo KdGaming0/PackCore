@@ -506,3 +506,32 @@ thrown from `GLFW.<clinit>` via `ScreenResolution.detectAtPreLaunch()`, aborting
 Fix: both `detectAtPreLaunch()` and `detectFromRunningGame()` now catch `Exception | LinkageError`
 and fall back to 1920x1080. `LinkageError` also covers the follow-up `NoClassDefFoundError` on any
 later touch of the failed `GLFW` class. Verified with `./gradlew build` (green).
+
+## Sound Controller → Enhanced Sound Control config import
+The modpack replaces Sound Controller with Enhanced Sound Control. Both config packs and users carry
+`config/soundcontroller.json` (the shipped default tunes 18 sounds), so without an import an update
+would silently reset everyone's sound setup. New `migration/SoundControllerImport` converts it to
+`config/enhancedsoundcontrol.tweaks.json`: volume `0.0-1.0` float → integer percent via
+`round(v * 100)` clamped `0-200`, `frequency` left at 100, no island overrides. Default-valued and
+malformed entries are dropped; a malformed *file* aborts writing nothing. `subtitlesEnabled` has no
+counterpart and is ignored. The pre-v4 flat `{"ns:path": volume}` shape is also accepted.
+
+Notable decisions:
+- **Not a `ConfigMigration`.** `ConfigMigrationRunner` runs at `CLIENT_STARTED`, i.e. after Enhanced
+  Sound Control's initializer has already read its tweaks file. A file written then is loaded by
+  nothing and is later overwritten by that mod's empty in-memory store on its first flush — which
+  `SkyBlockIslands.setOnLearned(SoundTweaks::islandNamesChanged)` triggers as soon as the player
+  enters any island. Hence pre-launch, before that mod's client entrypoint.
+- **Run-once guard is the absence of the target file**, not `appliedConfigMigrations`. This also
+  makes a config pack that ships its own tweaks file win automatically, so no new/updating-user
+  distinction is needed.
+- Skipped while `soundcontroller` is still loaded — both mods attenuating one sound would stack.
+- `onPreLaunch()` body moved into `runConfigPackFlow(...)` (all six early returns intact) so the
+  import runs on every path, and *after* it so pack extraction is visible to the file-exists guard.
+- `soundcontroller.json` is left in place: nothing reads it, and it keeps the import re-runnable.
+- No `Files.createDirectories` before writing — the config dir necessarily exists, as the source file
+  was just read from it; the call only added an NPE surface on a parentless path.
+
+Verified: `./gradlew build` green, plus a reflective harness over the real modpack config — 18/18
+entries converted (`phantom.bite 0.2→20`, `enderman.stare 0.0→0`), output shape matching what
+`SoundTweaksIo` writes, and legacy-shape/clamping/default-dropping cases. In-game validation pending.

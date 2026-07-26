@@ -6,6 +6,7 @@ import com.github.kd_gaming1.packcore.configpack.ConfigPackEntry;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackExtractor;
 import com.github.kd_gaming1.packcore.configpack.ConfigPackScanner;
 import com.github.kd_gaming1.packcore.metadata.ModpackMetadata;
+import com.github.kd_gaming1.packcore.migration.SoundControllerImport;
 import com.github.kd_gaming1.packcore.update.UpdateChecker;
 import com.github.kd_gaming1.packcore.util.ScreenResolution;
 import com.google.gson.JsonObject;
@@ -57,6 +58,18 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         MidnightConfig.init("packcore", PackCoreConfig.class);
 
+        runConfigPackFlow(gameDir, packcoreDir, configsDir);
+
+        // After the pack flow, so a tweaks file shipped by a config pack wins over the import,
+        // but outside it, so the import still runs on the flow's early-return paths.
+        SoundControllerImport.runIfNeeded(gameDir);
+    }
+
+    /**
+     * Applies a pending restore or config switch if one is queued, otherwise extracts the config
+     * pack that best matches the current screen. Each of these is terminal for this launch.
+     */
+    private void runConfigPackFlow(Path gameDir, Path packcoreDir, Path configsDir) {
         maybeCreateUpdateBackup(gameDir);
 
         if (!PackCoreConfig.pendingRestoreBackup.isBlank()) {
