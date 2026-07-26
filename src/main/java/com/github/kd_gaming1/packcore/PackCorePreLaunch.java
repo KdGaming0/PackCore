@@ -60,7 +60,7 @@ public class PackCorePreLaunch implements PreLaunchEntrypoint {
 
         runConfigPackFlow(gameDir, packcoreDir, configsDir);
 
-        // After the pack flow, so a tweaks file shipped by a config pack wins over the import,
+        // After the pack flow, so the import merges on top of a tweaks file shipped by a config pack,
         // but outside it, so the import still runs on the flow's early-return paths.
         SoundControllerImport.runIfNeeded(gameDir);
     }

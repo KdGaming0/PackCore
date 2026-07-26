@@ -122,4 +122,9 @@ public class PackCoreConfig extends MidnightConfig {
     @Hidden
     @Entry(category = META)
     public static String lastAppliedOverwriteMode = "";
+
+    /** Run-once guard for the Sound Controller volume import (see SoundControllerImport). */
+    @Hidden
+    @Entry(category = META)
+    public static boolean soundControllerImported = false;
 }
