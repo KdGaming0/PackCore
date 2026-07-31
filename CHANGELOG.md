@@ -1,4 +1,4 @@
-## v5.1.0
+## v5.1.1
 
 ### Changes
-- Your custom sound volumes carry over automatically when the modpack switches from Sound Controller to Enhanced Sound Control, so updating don't reset your sound setup. 
+- Disabled Enhanced Chat from compacting duplicate chat messages on modpack update.

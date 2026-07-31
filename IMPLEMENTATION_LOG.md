@@ -4,6 +4,36 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## Config migration — Enhanced Chat compact chat off (v5.1.0)
+
+**Goal:** on a modpack update, force Enhanced Chat's duplicate-message compaction off for existing
+users. The mod's own default is `compactDuplicateMessages = true`, while the shipped modpack configs
+carry `false` — so only updating users were left out of step.
+
+### Changes
+- `migration/CompactChatMigration` (new) — gated on `FabricLoader.isModLoaded("enhanced_chat")`, then
+  reflection on `com.github.kdgaming0.enhancedchat.config.EnhancedChatConfig`: static field
+  `compactDuplicateMessages = false` + `MidnightConfig.write("enhanced_chat")`. Same shape as the SBE
+  half of `PriceTooltipMigration` (Enhanced Chat is a `MidnightConfig` subclass); best-effort, a
+  missing mod or a thrown exception is logged and swallowed.
+- `ConfigMigrationRunner.MIGRATIONS` — registered as `enhanced-chat-compact-off`.
+
+No new config field, no version bump: the existing `appliedConfigMigrations` set is the run-once
+guard, and this ships in the already-open v5.1.0.
+
+### Notes
+`MidnightConfig.write` rewrites Enhanced Chat's whole config file from its in-memory state rather
+than patching the one key. Safe here because the runner is at `CLIENT_STARTED`, by which point that
+mod has read its file in — the same reason the existing SBE write is safe, and the opposite of
+`SoundControllerImport`, which had to move to pre-launch for exactly this ordering reason.
+
+### Verification
+- `./gradlew build` green.
+- In-game (user): updating user → forced off once; toggled back on + relaunch → not re-forced; new
+  install → baselined without running; Enhanced Chat absent → skipped, still marked applied.
+
+---
+
 ## Keep PackCore packs above a server resource pack (v5.0.8)
 
 **Goal:** let a user's applied pack (e.g. "Hypixel SkyBlock Legacy") override Hypixel's own server

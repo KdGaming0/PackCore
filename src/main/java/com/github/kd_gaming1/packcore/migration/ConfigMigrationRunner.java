@@ -30,7 +30,8 @@ import java.util.stream.Collectors;
 public final class ConfigMigrationRunner {
 
     private static final List<ConfigMigration> MIGRATIONS = List.of(
-            new ConfigMigration("prices-skyblocker-over-sbe", PriceTooltipMigration::apply)
+            new ConfigMigration("prices-skyblocker-over-sbe", PriceTooltipMigration::apply),
+            new ConfigMigration("enhanced-chat-compact-off", CompactChatMigration::apply)
     );
 
     private ConfigMigrationRunner() {}
