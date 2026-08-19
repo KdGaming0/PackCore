@@ -1,4 +1,4 @@
-## v5.1.1
+## v5.1.2
 
 ### Changes
-- Disabled Enhanced Chat from compacting duplicate chat messages on modpack update.
+- Changed default render distances applied in the welcome wizard in the performance step, in preparation to add Voxy and for better performance

@@ -23,23 +23,23 @@ public class MinecraftIntegration {
             switch (profile) {
                 case PERFORMANCE -> {
                     options.graphicsPreset().set(GraphicsPreset.FAST);
-                    options.particles().set(ParticleStatus.DECREASED);
+                    options.particles().set(ParticleStatus.MINIMAL);
                     options.cloudStatus().set(CloudStatus.FAST);
                     options.renderDistance().set(10);
                     options.entityShadows().set(false);
                 }
                 case BALANCED, SHADERS_PERFORMANCE -> {
                     options.graphicsPreset().set(GraphicsPreset.FANCY);
-                    options.particles().set(ParticleStatus.ALL);
+                    options.particles().set(ParticleStatus.DECREASED);
                     options.cloudStatus().set(CloudStatus.FANCY);
-                    options.renderDistance().set(16);
-                    options.entityShadows().set(true);
+                    options.renderDistance().set(12);
+                    options.entityShadows().set(false);
                 }
                 case QUALITY, SHADERS_QUALITY -> {
                     options.graphicsPreset().set(GraphicsPreset.FABULOUS);
                     options.particles().set(ParticleStatus.ALL);
                     options.cloudStatus().set(CloudStatus.FANCY);
-                    options.renderDistance().set(20);
+                    options.renderDistance().set(14);
                     options.entityShadows().set(true);
                     options.entityDistanceScaling().set(1.25);
                 }

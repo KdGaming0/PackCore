@@ -29,10 +29,8 @@ public class MoreCullingConfigurator {
         try {
             // Updated mapping per your request
             LeavesCullingMode mode = switch (profile) {
-                case PERFORMANCE -> LeavesCullingMode.FAST;
-                case BALANCED, QUALITY -> LeavesCullingMode.CHECK;
-                case SHADERS_PERFORMANCE -> LeavesCullingMode.CHECK;
-                case SHADERS_QUALITY -> LeavesCullingMode.CHECK;
+                case PERFORMANCE, BALANCED, SHADERS_PERFORMANCE -> LeavesCullingMode.FAST;
+                case QUALITY, SHADERS_QUALITY -> LeavesCullingMode.CHECK;
             };
 
             MoreCulling.CONFIG.leavesCullingMode = mode;
