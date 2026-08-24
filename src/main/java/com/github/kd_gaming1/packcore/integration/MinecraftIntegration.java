@@ -32,14 +32,14 @@ public class MinecraftIntegration {
                     options.graphicsPreset().set(GraphicsPreset.FANCY);
                     options.particles().set(ParticleStatus.DECREASED);
                     options.cloudStatus().set(CloudStatus.FANCY);
-                    options.renderDistance().set(12);
+                    options.renderDistance().set(16);
                     options.entityShadows().set(false);
                 }
                 case QUALITY, SHADERS_QUALITY -> {
                     options.graphicsPreset().set(GraphicsPreset.FABULOUS);
                     options.particles().set(ParticleStatus.ALL);
                     options.cloudStatus().set(CloudStatus.FANCY);
-                    options.renderDistance().set(14);
+                    options.renderDistance().set(20);
                     options.entityShadows().set(true);
                     options.entityDistanceScaling().set(1.25);
                 }
