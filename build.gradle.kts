@@ -53,6 +53,10 @@ dependencies {
     modCompileOnly("maven.modrinth:moreculling:${property("deps.moreculling_version")}")
     modCompileOnly("maven.modrinth:scamscreener:${property("deps.scamscreener_version")}")
     modCompileOnly("maven.modrinth:modmenu:${property("deps.modmenu_version")}")
+    modCompileOnly("maven.modrinth:bobby:${property("deps.bobby_version")}")
+
+    // Bobby bundles Configurate inside its jar, so Modrinth Maven does not expose it transitively.
+    compileOnly("org.spongepowered:configurate-core:4.1.2")
 
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
     modRuntimeOnly("maven.modrinth:modmenu:${property("deps.modmenu_version")}")

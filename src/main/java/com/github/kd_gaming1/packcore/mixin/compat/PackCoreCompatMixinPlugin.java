@@ -19,6 +19,8 @@ import java.util.Set;
  *       {@code skyblocker} and {@code caxton}.</li>
  *   <li>Mixins under the {@code .caxton.*} subpackage require only
  *       {@code caxton}.</li>
+ *   <li>Mixins under the {@code .bobby.*} subpackage require the affected
+ *       Bobby {@code 5.2.13+mc26.1} release.</li>
  * </ul>
  *
  * <p>Any other mixin in the config is applied unconditionally — though at
@@ -33,18 +35,25 @@ public class PackCoreCompatMixinPlugin implements IMixinConfigPlugin {
             "com.github.kd_gaming1.packcore.mixin.compat.";
     private static final String SKYBLOCKER_PREFIX = BASE_PACKAGE + "skyblocker.";
     private static final String CAXTON_PREFIX = BASE_PACKAGE + "caxton.";
+    private static final String BOBBY_PREFIX = BASE_PACKAGE + "bobby.";
+    private static final String AFFECTED_BOBBY_VERSION = "5.2.13+mc26.1";
 
     private boolean skyblockerPresent;
     private boolean caxtonPresent;
+    private boolean bobbyCompatRequired;
 
     @Override
     public void onLoad(String mixinPackage) {
         FabricLoader loader = FabricLoader.getInstance();
         skyblockerPresent = loader.isModLoaded("skyblocker");
         caxtonPresent = loader.isModLoaded("caxton");
+        bobbyCompatRequired = loader.getModContainer("bobby")
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .filter(AFFECTED_BOBBY_VERSION::equals)
+                .isPresent();
 
-        LOGGER.info("Compat mixin gating: skyblocker={}, caxton={}",
-                skyblockerPresent, caxtonPresent);
+        LOGGER.info("Compat mixin gating: skyblocker={}, caxton={}, bobbyFixes={}",
+                skyblockerPresent, caxtonPresent, bobbyCompatRequired);
     }
 
     @Override
@@ -54,6 +63,9 @@ public class PackCoreCompatMixinPlugin implements IMixinConfigPlugin {
         }
         if (mixinClassName.startsWith(CAXTON_PREFIX)) {
             return caxtonPresent;
+        }
+        if (mixinClassName.startsWith(BOBBY_PREFIX)) {
+            return bobbyCompatRequired;
         }
         return true;
     }

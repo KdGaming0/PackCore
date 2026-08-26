@@ -565,3 +565,17 @@ Notable decisions:
 Verified: `./gradlew build` green, plus a reflective harness over the real modpack config — 18/18
 entries converted (`phantom.bite 0.2→20`, `enderman.stare 0.0→0`), output shape matching what
 `SoundTweaksIo` writes, and legacy-shape/clamping/default-dropping cases. In-game validation pending.
+
+## Bobby 5.2.13 config/cache corruption compatibility
+
+Backported the recovery behavior from Bobby PR #463 through optional PackCore mixins. The mixins are
+enabled only for Bobby `5.2.13+mc26.1`, preserve an unreadable config as `bobby.conf.corrupt`, fall
+back to Bobby's default configuration, discard malformed world metadata, and reject corrupt or
+length-mismatched region metadata so Bobby can rebuild it. Bobby and Configurate are compile-only;
+neither becomes a PackCore runtime dependency.
+
+Verified with `./gradlew build` and isolated Minecraft 26.1.2 launches using the released Bobby
+5.2.13 jar. Invalid config, truncated `worlds.meta`, mismatched region arrays, and truncated region
+NBT all recovered without a crash; the affected files were preserved or rebuilt as appropriate.
+An isolated launch with Bobby 5.2.12 also confirmed these mixins remain disabled outside the affected
+version.

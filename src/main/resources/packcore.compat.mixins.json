@@ -5,6 +5,9 @@
   "plugin": "com.github.kd_gaming1.packcore.mixin.compat.PackCoreCompatMixinPlugin",
   "mixins": [],
   "client": [
+    "bobby.BobbyMixin",
+    "bobby.RegionMixin",
+    "bobby.WorldsMixin",
     "skyblocker.CaxtonCompatibilityMixin",
     "skyblocker.TextPrimitiveRendererMixin"
   ],
