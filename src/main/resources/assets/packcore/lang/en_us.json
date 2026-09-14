@@ -180,6 +180,13 @@
   "gui.packcore.wizard.caxton_font.inter.name": "Inter",
   "gui.packcore.wizard.caxton_font.inter.desc": "A modern sans-serif designed for screen readability. Used in many apps and UI toolkits.",
 
+  "gui.packcore.wizard.page.ping_offset_miner.title": "Ping Offset Miner",
+  "gui.packcore.wizard.page.ping_offset_miner.explanation": "Ping Offset Miner shows an outline around blocks telling when the block will break server side, helping you judge when to move to the next block. This can be useful when high ping delays when the block appear to break on the client.",
+  "gui.packcore.wizard.ping_offset_miner.enabled.name": "Enabled",
+  "gui.packcore.wizard.ping_offset_miner.enabled.desc": "Show mining progress visuals to help you time moving to the next block.",
+  "gui.packcore.wizard.ping_offset_miner.disabled.name": "Disabled",
+  "gui.packcore.wizard.ping_offset_miner.disabled.desc": "Mine without Ping Offset Miner's progress visuals.",
+
   "gui.packcore.wizard.page.scamscreener.title": "ScamScreener",
   "gui.packcore.wizard.page.scamscreener.explanation": "Configure how aggressively ScamScreener should warn and whether warning messages should ping you in chat.",
   "gui.packcore.wizard.scamscreener.alerts.heading": "Minimum Alert Level",

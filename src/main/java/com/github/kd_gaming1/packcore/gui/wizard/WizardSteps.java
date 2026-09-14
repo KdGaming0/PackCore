@@ -6,6 +6,7 @@ import com.github.kd_gaming1.packcore.gui.wizard.page.DungeonRoutesStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ItemBackgroundStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.MainMenuDesignStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.PerformanceStep;
+import com.github.kd_gaming1.packcore.gui.wizard.page.PingOffsetMinerStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ResourcePackStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.ScamScreenerStep;
 import com.github.kd_gaming1.packcore.gui.wizard.page.StorageDesignStep;
@@ -38,6 +39,7 @@ public final class WizardSteps {
             new StorageDesignStep(),
             new DungeonRoutesStep(),
             new SwordBlockStep(),
+            new PingOffsetMinerStep(),
             new ScamScreenerStep(),
             new CaxtonFontStep(),
             // ResourcePackStep applies last: the Caxton step folds its chosen font pack into the

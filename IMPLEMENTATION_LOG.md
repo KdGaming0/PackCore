@@ -2,19 +2,21 @@
 
 Newest entries first. Keep under 500 lines; compact older entries when near the limit.
 
+## Ping Offset Miner wizard (2026-09-14)
+Added an optional page with current-setting preselection, summary and confirm-time apply/save.
+Uses the 26.2 mod's Feature API through reflection for pomEnabled.enabled; other settings stay intact.
+User confirmed toggle/persistence tests passed. Added explanatory mining-visuals copy afterward.
+Build passed; final wording/layout awaits user review. Graph retains existing parser/schema warnings.
+
 ---
 
 ## Minecraft 26.2 migration (2026-09-14)
 
-Made 26.2 the sole Stonecutter active, VCS, and publishing target. Updated Fabric and integration
-dependencies using sibling mods; moved screen/toast access to Minecraft.gui and removed two
-settings no longer exposed by Sodium 0.9.2. Kept Bobby recovery gated to its affected 26.1 release.
-UI Lib 21.1.2 resolves by Fabric release ID 9n4snDWk; its version-number coordinate returns NeoForge.
-Validation: full build passed (no test sources), required mixin signatures checked, Skyblocker
-6.9.1 Caxton targets checked, isolated client reached the wizard. User reported only menu links
-failing; logs confirm placeholder URLs in the fresh test directory's modpack.json, not an API
-regression. Real modpack metadata supplies those URLs. Other requested manual checks reported OK.
-Graph refreshed with missing JSON/Kotlin parser and existing schema warnings; coverage is limited.
+26.2 is the sole active/VCS/release target. Updated Fabric/integrations, moved screen/toast access
+to Minecraft.gui, removed obsolete Sodium settings; Bobby recovery remains gated to 26.1.
+UI Lib 21.1.2 uses Fabric release ID 9n4snDWk (semantic coordinate resolves to NeoForge).
+Build, mixin/Caxton signature checks and user tests passed. Isolated menu link failures came from
+placeholder modpack.json URLs. Graph refreshed with existing parser/schema coverage warnings.
 
 ---
 
