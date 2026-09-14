@@ -1,4 +1,4 @@
-## v5.1.4
+## v5.2.0
 
 ### Changes
-- Fixed Bobby from crashing when its configuration or cached world metadata is corrupt.
+- Updated to Minecraft 26.2

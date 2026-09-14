@@ -3,7 +3,7 @@ plugins {
     id("me.modmuss50.mod-publish-plugin") version "2.1.+" apply false
 }
 
-stonecutter active "26.1"
+stonecutter active "26.2"
 
 // See https://stonecutter.kikugie.dev/wiki/config/params
 stonecutter parameters {
@@ -14,7 +14,7 @@ stonecutter parameters {
 }
 
 val releaseVersions = listOf(
-    "26.1"
+    "26.2"
 )
 
 stonecutter tasks {

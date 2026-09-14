@@ -4,33 +4,28 @@ Newest entries first. Keep under 500 lines; compact older entries when near the 
 
 ---
 
+## Minecraft 26.2 migration (2026-09-14)
+
+Made 26.2 the sole Stonecutter active, VCS, and publishing target. Updated Fabric and integration
+dependencies using sibling mods; moved screen/toast access to Minecraft.gui and removed two
+settings no longer exposed by Sodium 0.9.2. Kept Bobby recovery gated to its affected 26.1 release.
+UI Lib 21.1.2 resolves by Fabric release ID 9n4snDWk; its version-number coordinate returns NeoForge.
+Validation: full build passed (no test sources), required mixin signatures checked, Skyblocker
+6.9.1 Caxton targets checked, isolated client reached the wizard. User reported only menu links
+failing; logs confirm placeholder URLs in the fresh test directory's modpack.json, not an API
+regression. Real modpack metadata supplies those URLs. Other requested manual checks reported OK.
+Graph refreshed with missing JSON/Kotlin parser and existing schema warnings; coverage is limited.
+
+---
+
 ## Config migration — Enhanced Chat compact chat off (v5.1.0)
 
-**Goal:** on a modpack update, force Enhanced Chat's duplicate-message compaction off for existing
-users. The mod's own default is `compactDuplicateMessages = true`, while the shipped modpack configs
-carry `false` — so only updating users were left out of step.
-
-### Changes
-- `migration/CompactChatMigration` (new) — gated on `FabricLoader.isModLoaded("enhanced_chat")`, then
-  reflection on `com.github.kdgaming0.enhancedchat.config.EnhancedChatConfig`: static field
-  `compactDuplicateMessages = false` + `MidnightConfig.write("enhanced_chat")`. Same shape as the SBE
-  half of `PriceTooltipMigration` (Enhanced Chat is a `MidnightConfig` subclass); best-effort, a
-  missing mod or a thrown exception is logged and swallowed.
-- `ConfigMigrationRunner.MIGRATIONS` — registered as `enhanced-chat-compact-off`.
-
-No new config field, no version bump: the existing `appliedConfigMigrations` set is the run-once
-guard, and this ships in the already-open v5.1.0.
-
-### Notes
-`MidnightConfig.write` rewrites Enhanced Chat's whole config file from its in-memory state rather
-than patching the one key. Safe here because the runner is at `CLIENT_STARTED`, by which point that
-mod has read its file in — the same reason the existing SBE write is safe, and the opposite of
-`SoundControllerImport`, which had to move to pre-launch for exactly this ordering reason.
-
-### Verification
-- `./gradlew build` green.
-- In-game (user): updating user → forced off once; toggled back on + relaunch → not re-forced; new
-  install → baselined without running; Enhanced Chat absent → skipped, still marked applied.
+`CompactChatMigration` forces `compactDuplicateMessages=false` once for updating users,
+matching shipped defaults. Gated on Enhanced Chat, it uses reflection and MidnightConfig.write
+at CLIENT_STARTED, after the target config loads. Failures are logged and swallowed.
+Registered as `enhanced-chat-compact-off`; existing migration tracking needs no new config/version.
+Build and user checks passed: applied once on update, re-toggles respected, new installs
+baselined, absent mod skipped. Unlike SoundControllerImport, this edits live initialized config.
 
 ---
 
@@ -436,97 +431,18 @@ Also explains the generic "W" Wayland app icon and broken see-through farming.
 
 ## Welcome Wizard — modular step/registry refactor (v5.0.0)
 
-**Goal:** make adding/removing wizard pages trivial (a couple of files + one registry line),
-co-locate each page's config-apply logic with the page, allow opening a single page by command,
-and automatically re-show only *new or changed* pages to existing users after an update.
-
-### New abstraction (`gui/wizard/`)
-- `WizardStep` — descriptor interface pairing a render page with its config. Methods: `id()`,
-  `version()`, `isAvailable()`, `requires()`, `createPage(...)`, `summaryRows(state)`, `apply(state)`.
-  `requires()` declares coupled steps that must run together in a partial run (see Caxton coupling).
-- `SummaryRow` — record for one Confirm & Apply row (`stepId`, `label`, `value`, `skipped`,
-  `subRow`) + `of`/`sub`/`single` factories. `single()` centralises the "Skipped" / translated-name
-  rendering used by single-select steps.
-- `WizardSteps` — the single ordered registry (`ALL`). List order = both page order and apply
-  order. Helpers: `all()`, `available()` (filters `isAvailable`), `byId(id)`, `outdated(store)`.
-- `WizardVersionStore` — persists `{stepId: seenVersion}` to `packcore/wizard.json` (Gson, matches
-  `ModpackMetadata` IO style). `isOutdated(step)` = stored version `<` `step.version()` (or absent);
-  `markSeen(steps)` writes; `fileExists()` gates the one-time migration.
-
-### Per-page steps (`gui/wizard/page/*Step.java`)
-One step per content page, co-located with its `*Page`. Each step's `apply()` is the logic that
-previously lived in `ConfirmApplyPage.applyXxx()`; each `summaryRows()` is its slice of the old
-`SUMMARY_ENTRIES` / special-case row building:
-- `MainMenuDesignStep`, `PerformanceStep`, `TabDesignStep`, `ItemBackgroundStep`,
-  `StorageDesignStep` — always available, single-select.
-- `DungeonRoutesStep` — available only when **both** `skyblocker` and `secretroutesmod` are loaded
-  (unifies the previously inconsistent page-vs-startup conditions; the choice only makes sense with
-  both providers present).
-- `SwordBlockStep` (`scaleme`), `ScamScreenerStep` (`scamscreener`, multi-row: alert level + ping
-  header + sub-rows), `CaxtonFontStep` (`caxton`).
-- `ResourcePackStep` — registered **last** so `CaxtonFontStep` (just before it) can fold the chosen
-  font pack into the resource-pack selection, applied together in one pass. Preserves the old
-  Caxton→ResourcePack ordering/coupling.
-
-**Caxton↔ResourcePack coupling in partial runs (bug found in review):** `CaxtonFontStep.apply` only
-mutates `WizardState`; the actual push to the game is `ResourcePackStep.apply`, which also *excludes*
-all Caxton pack ids (Caxton step re-adds the chosen one). So in a partial run (single-page command or
-new-page flow) one without the other is wrong: `caxton_font` alone never applies the font;
-`resource_packs` alone silently strips an active font. Fixed with `WizardStep.requires()` — both steps
-declare each other; `WelcomeWizardScreen.forSteps` BFS-expands the requested ids over `requires()` then
-re-orders by the registry, so they always run as a unit (and `isAvailable` still drops Caxton when the
-mod is absent). Full wizard already includes both, so it was never affected.
-
-### Rewrites
-- `ConfirmApplyPage` — now page-agnostic. Takes the run's `List<WizardStep>`; renders
-  `step.summaryRows(state)` for each and, on Apply, runs `step.apply(state)` per step, colouring
-  rows by step result (status keyed on `stepId`). Deleted `miniWizardMode`, `MINI_*`,
-  `SUMMARY_ENTRIES`, the `SummaryEntry` record, and all nine `applyXxx()` methods. Stonecutter
-  `else`-branches stripped (26.1-only).
-- `WelcomeWizardScreen` — `full(lastScreen)` (intro + all available steps + Confirm) and
-  `forSteps(lastScreen, ids)` (those steps + Confirm) replace `forDungeonRoutes`/`miniWizard`.
-  `registerPages()` loops the resolved steps. `forSteps` expands the requested ids over
-  `WizardStep.requires()` (see coupling note above). `markWizardComplete()` always records
-  `WizardVersionStore.markSeen(runSteps)` (on Finish and Skip) but only sets `successfulWelcomeWizard`
-  in the full wizard, so `/packcore wizard <page>` can't make a brand-new user skip first-launch setup.
-  Explicit imports (no wildcards).
-- `PackCore.applyConfiguredTitleScreen` — new user → `full`; existing user with no `wizard.json` →
-  one-time migration seeding all `available()` steps as seen (so only pages added/bumped *after*
-  this release prompt); otherwise → `forSteps(outdated)` if any, else the configured title screen.
-- `PackCoreCommands` — `/packcore wizard` (full) + `/packcore wizard <page>` with `available()` id
-  tab-completion and an "unknown/unavailable page" error.
-- `PackCoreConfig` — removed `seenDungeonRoutesWizard` (replaced by the per-page version store).
-
-### How to add a page later
-1. Create `XxxPage` (render) and `XxxStep` (id/version/condition/apply/summary) in
-   `gui/wizard/page/`.
-2. Add `new XxxStep()` to `WizardSteps.ALL` (position = page + apply order).
-3. Add translation keys/textures as usual. Bump an existing step's `version()` to re-show it.
-Remove a page = delete the two files + its `WizardSteps.ALL` line.
-
-### Notes / verification
-- No new translation keys: summary labels ("Main Menu Design", etc.) and "Skipped"/"None selected"
-  were already hardcoded literals in the old `ConfirmApplyPage`; preserved as-is.
-- Summary row order now follows registry order (page order). This intentionally differs cosmetically
-  from the old `SUMMARY_ENTRIES` order (e.g. Dungeon Routes now before Sword Block; ScamScreener
-  alert + pings grouped), making the summary consistent with the page sequence.
-- `javac` ran clean for all 15 new/changed wizard files. The full `./gradlew 26.1:compileJava` cannot
-  go green in the current tree because the in-progress 26.1 dependency migration removed the compile
-  deps for `sodium`/`iris`/`moreculling`/`scamscreener` and set `modmenu` to `modRuntimeOnly`; the 5
-  optional-mod integration files (untouched here) only build from Gradle's cache. Not a wizard issue.
-- In-game validation still pending (owner: user): full wizard for a new user; version bump → only
-  that page reopens; `/packcore wizard <id>`; Caxton→ResourcePack apply; summary status colours.
-
-### Build unblock (incomplete 26.1 migration — not wizard code)
-The game wouldn't launch because `:26.1:compileJava` then `:26.1:processResources` failed — both from
-gaps in the (uncommitted) `build.gradle.kts` migration, surfaced once the wizard edits forced a real
-recompile. Fixed minimally, touching only `build.gradle.kts`:
-- Re-added the optional-mod **compile** deps the integration files still import — `sodium`, `iris`,
-  `moreculling`, `scamscreener`, `modmenu` — as `modCompileOnly` (HEAD had them; the WIP rewrite
-  dropped them). They are compile-only; the mod already degrades gracefully at runtime when absent.
-- `processResources` registered the UI Lib template key as `ui_lib`, but `fabric.mod.json` expects
-  `${uilib_version}`; registered it under `uilib_version` to match (committed manifest left intact).
-After both, `./gradlew 26.1:build` is green (compile + processResources + jar + remap).
+Paired each render page with a WizardStep (id, version, availability, dependencies, summary,
+apply). WizardSteps.ALL controls page/apply order; SummaryRow centralizes confirmation rows.
+WizardVersionStore persists seen versions in packcore/wizard.json. New installs get the full
+wizard; existing users without the store are baselined; later changes show only outdated steps.
+WelcomeWizardScreen.full/forSteps and `/packcore wizard [page]` use this registry.
+ConfirmApplyPage is page-agnostic; Finish/Skip marks run steps seen, while only full runs set
+successfulWelcomeWizard. Summary order now matches page order; existing labels are preserved.
+Caxton and ResourcePack steps require each other: partial runs expand dependencies and restore
+registry order, filtering unavailable steps. ResourcePack runs last to apply Caxton state.
+Adding/removing a page requires its Page/Step files and one registry line; bump version to re-show.
+Initially javac passed for wizard files; restoring optional compile dependencies and correcting
+processResources' uilib_version key then unblocked the full 26.1 build. Manual checks were pending.
 
 ## Fix: preLaunch crash when GLFW natives are unavailable (macOS)
 A macOS/Prism user crash log showed `UnsatisfiedLinkError: Failed to locate library: libglfw.dylib`

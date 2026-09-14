@@ -45,7 +45,7 @@ dependencies {
     implementation("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
 
     include("net.azureaaron:hm-api:${property("deps.hm_api_version")}")
-    implementation("maven.modrinth:ui-lib:${property("deps.uilib_version")}")
+    implementation("maven.modrinth:ui-lib:${property("deps.uilib_artifact")}")
 
     // Optional integrations: needed at compile time; the mod degrades gracefully when they are absent.
     modCompileOnly("maven.modrinth:sodium:${property("deps.sodium_version")}")

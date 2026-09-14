@@ -231,7 +231,7 @@ public class SBETitleScreen extends AbstractScreen {
                 x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("menu.singleplayer"),
                 MAIN_BUTTON_SPRITES,
-                btn -> Minecraft.getInstance().setScreen(new SelectWorldScreen(this))
+                btn -> Minecraft.getInstance().gui.setScreen(new SelectWorldScreen(this))
         );
     }
 
@@ -240,7 +240,7 @@ public class SBETitleScreen extends AbstractScreen {
                 x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("menu.multiplayer"),
                 MAIN_BUTTON_SPRITES,
-                btn -> Minecraft.getInstance().setScreen(new JoinMultiplayerScreen(this))
+                btn -> Minecraft.getInstance().gui.setScreen(new JoinMultiplayerScreen(this))
         );
     }
 
@@ -249,7 +249,7 @@ public class SBETitleScreen extends AbstractScreen {
                 x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("gui.packcore.button.modmenu"),
                 MAIN_BUTTON_SPRITES,
-                btn -> Minecraft.getInstance().setScreen(ModMenuApi.createModsScreen(this))
+                btn -> Minecraft.getInstance().gui.setScreen(ModMenuApi.createModsScreen(this))
         );
     }
 
@@ -259,7 +259,7 @@ public class SBETitleScreen extends AbstractScreen {
                 x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("menu.options"),
                 MAIN_BUTTON_SPRITES,
-                btn -> Minecraft.getInstance().setScreen(
+                btn -> Minecraft.getInstance().gui.setScreen(
                         new OptionsScreen(this, Minecraft.getInstance().options, false))
         );
         //?} else {
@@ -267,7 +267,7 @@ public class SBETitleScreen extends AbstractScreen {
                 x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
                 Component.translatable("menu.options"),
                 MAIN_BUTTON_SPRITES,
-                btn -> Minecraft.getInstance().setScreen(
+                btn -> Minecraft.getInstance().gui.setScreen(
                         new OptionsScreen(this, Minecraft.getInstance().options))
         );
         *///?}
@@ -316,7 +316,7 @@ public class SBETitleScreen extends AbstractScreen {
                 ICON_BUTTON_SIZE,
                 Component.empty(),
                 createIconSprites("menu/settings_icon"),
-                btn -> Minecraft.getInstance().setScreen(new ConfigScreen())
+                btn -> Minecraft.getInstance().gui.setScreen(new ConfigScreen())
         );
         button.setTooltip(Tooltip.create(Component.translatable("gui.packcore.tooltip.modpack_config")));
         return button;

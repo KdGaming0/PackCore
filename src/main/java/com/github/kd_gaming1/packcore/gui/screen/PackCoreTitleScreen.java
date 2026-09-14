@@ -94,7 +94,7 @@ public class PackCoreTitleScreen extends TitleScreen {
         int settingsY = this.height - ICON_SIZE - MARGIN - (this.font.lineHeight * 2) - 4;
         addIconButton(this.width - ICON_SIZE - MARGIN, settingsY, "menu/settings_icon",
                 Component.translatable("gui.packcore.tooltip.modpack_config"),
-                btn -> Minecraft.getInstance().setScreen(new ConfigScreen()));
+                btn -> Minecraft.getInstance().gui.setScreen(new ConfigScreen()));
 
         // Changelog/update — top-right
         boolean hasUpdate = status.isUpdateAvailable();
@@ -104,7 +104,7 @@ public class PackCoreTitleScreen extends TitleScreen {
                 : Component.translatable("gui.packcore.tooltip.changelog");
 
         addIconButton(this.width - ICON_SIZE - MARGIN, MARGIN, updateIcon, updateTooltip,
-                btn -> Minecraft.getInstance().setScreen(new ChangelogScreen(this, status)));
+                btn -> Minecraft.getInstance().gui.setScreen(new ChangelogScreen(this, status)));
     }
 
     public static void decorateExisting(TitleScreen screen, int scaledWidth, int scaledHeight) {
@@ -160,7 +160,7 @@ public class PackCoreTitleScreen extends TitleScreen {
         Screens.getWidgets(screen).add(createDecoratedIconButton(
                 scaledWidth - ICON_SIZE - MARGIN, settingsY, "menu/settings_icon",
                 Component.translatable("gui.packcore.tooltip.modpack_config"),
-                btn -> Minecraft.getInstance().setScreen(new ConfigScreen())
+                btn -> Minecraft.getInstance().gui.setScreen(new ConfigScreen())
         ));
 
         UpdateStatus status = UpdateChecker.getCachedStatus();
@@ -172,7 +172,7 @@ public class PackCoreTitleScreen extends TitleScreen {
 
         Screens.getWidgets(screen).add(createDecoratedIconButton(
                 scaledWidth - ICON_SIZE - MARGIN, MARGIN, updateIcon, updateTooltip,
-                btn -> Minecraft.getInstance().setScreen(new ChangelogScreen(screen, status))
+                btn -> Minecraft.getInstance().gui.setScreen(new ChangelogScreen(screen, status))
         ));
 
         registerVersionHook(screen);

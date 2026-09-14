@@ -105,9 +105,9 @@ public class PackCore implements ClientModInitializer {
             // All mods' configs are initialized by now — safe to force one-shot cross-mod config changes.
             ConfigMigrationRunner.run();
 
-            if (isVanillaTitleScreen(client.screen)
+            if (isVanillaTitleScreen(client.gui.screen())
                     && PackCoreConfig.menuStyle != PackCoreConfig.MenuStyle.MINIMAL) {
-                applyConfiguredTitleScreen(client, client.screen);
+                applyConfiguredTitleScreen(client, client.gui.screen());
             }
 
             CaxtonFontDetector.recompute();
@@ -143,7 +143,7 @@ public class PackCore implements ClientModInitializer {
             replacingTitleScreen = false;
             // Bail if the user has already navigated elsewhere by the time
             // the deferred runnable executes.
-            if (client.screen != screen) return;
+            if (client.gui.screen() != screen) return;
             applyConfiguredTitleScreen(client, screen);
         });
     }
@@ -155,16 +155,16 @@ public class PackCore implements ClientModInitializer {
         WizardVersionStore store = WizardVersionStore.load();
         List<WizardStep> pending = WizardSteps.pending(store);
         if (!pending.isEmpty()) {
-            client.setScreen(store.isEmpty()
+            client.gui.setScreen(store.isEmpty()
                     ? WelcomeWizardScreen.full(screen)
                     : WelcomeWizardScreen.forSteps(screen, pending.stream().map(WizardStep::id).toList()));
             return;
         }
 
         switch (PackCoreConfig.menuStyle) {
-            case MODERN -> client.setScreen(new SBETitleScreen());
-            case MODERN_MINIMAL -> client.setScreen(new SBETitleScreen(false));
-            case MINIMAL -> client.setScreen(new PackCoreTitleScreen());
+            case MODERN -> client.gui.setScreen(new SBETitleScreen());
+            case MODERN_MINIMAL -> client.gui.setScreen(new SBETitleScreen(false));
+            case MINIMAL -> client.gui.setScreen(new PackCoreTitleScreen());
         }
     }
 }

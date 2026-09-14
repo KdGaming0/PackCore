@@ -31,9 +31,6 @@ public class SodiumConfigurator {
     }
 
     private static void applyCommonSettings(SodiumOptions options) {
-        options.advanced.useAdvancedStagingBuffers = true;
-        options.advanced.cpuRenderAheadLimit = 3;
-
         options.performance.chunkBuilderThreads = 0;
         options.performance.chunkBuildDeferMode = DeferMode.ALWAYS;
         options.performance.animateOnlyVisibleTextures = true;

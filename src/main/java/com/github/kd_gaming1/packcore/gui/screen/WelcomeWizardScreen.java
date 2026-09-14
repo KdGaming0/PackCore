@@ -156,16 +156,16 @@ public class WelcomeWizardScreen extends AbstractScreen {
             markWizardComplete();
             boolean openedFromTitle = lastScreen instanceof TitleScreen;
             if (openedFromTitle) {
-                Minecraft.getInstance().setScreen(resolvePostWizardScreen());
+                Minecraft.getInstance().gui.setScreen(resolvePostWizardScreen());
             } else {
-                Minecraft.getInstance().setScreen(lastScreen);
+                Minecraft.getInstance().gui.setScreen(lastScreen);
             }
         });
 
         // Skip on the last page — close without applying; still marks complete
         buttonBar.setOnSkipFinish(() -> {
             markWizardComplete();
-            Minecraft.getInstance().setScreen(lastScreen);
+            Minecraft.getInstance().gui.setScreen(lastScreen);
         });
 
         navigator.setOnPageChange(event -> {
@@ -204,6 +204,6 @@ public class WelcomeWizardScreen extends AbstractScreen {
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().setScreen(lastScreen);
+        Minecraft.getInstance().gui.setScreen(lastScreen);
     }
 }

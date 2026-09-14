@@ -14,6 +14,8 @@ It helps you get the right settings quickly, keeps your configs organized, and m
 
 ---
 
+**Current target:** Minecraft 26.2 with Fabric and Java 25. Minecraft 26.1 is no longer supported.
+
 ## What PackCore Does (v4)
 
 - **First-launch setup wizard** with visual previews

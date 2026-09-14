@@ -127,7 +127,7 @@ public class PackCoreCommands {
                                 })))
                 .then(literal("modpack_config").executes(ctx -> {
                     Minecraft.getInstance().execute(() ->
-                            Minecraft.getInstance().setScreen(new ConfigScreen()));
+                            Minecraft.getInstance().gui.setScreen(new ConfigScreen()));
                     return 1;
                 }))
                 .then(literal("font")
@@ -206,7 +206,7 @@ public class PackCoreCommands {
 
     private static void openFullWizard() {
         Minecraft client = Minecraft.getInstance();
-        client.execute(() -> client.setScreen(WelcomeWizardScreen.full(client.screen)));
+        client.execute(() -> client.gui.setScreen(WelcomeWizardScreen.full(client.gui.screen())));
     }
 
     private static void openWizardPage(FabricClientCommandSource source, String pageId) {
@@ -220,7 +220,7 @@ public class PackCoreCommands {
         }
 
         Minecraft client = Minecraft.getInstance();
-        client.execute(() -> client.setScreen(WelcomeWizardScreen.forSteps(client.screen, List.of(pageId))));
+        client.execute(() -> client.gui.setScreen(WelcomeWizardScreen.forSteps(client.gui.screen(), List.of(pageId))));
     }
 
     // ---------------------------------------------------------------------------
@@ -365,7 +365,7 @@ public class PackCoreCommands {
 
         client.schedule(() -> {
             try {
-                client.setScreen(MidnightConfig.getScreen(client.screen, PackCore.MOD_ID));
+                client.gui.setScreen(MidnightConfig.getScreen(client.gui.screen(), PackCore.MOD_ID));
             } catch (Exception e) {
                 PackCore.LOGGER.error("Failed to open config menu", e);
             }

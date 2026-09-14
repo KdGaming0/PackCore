@@ -55,7 +55,7 @@ public class ConfigScreen extends AbstractScreen {
             resizePages(contentWidth, contentHeight);
         }
 
-        addComponent(new ConfigScreenHeader(0, 0, width, HEADER_HEIGHT, () -> Minecraft.getInstance().setScreen(null)));
+        addComponent(new ConfigScreenHeader(0, 0, width, HEADER_HEIGHT, () -> Minecraft.getInstance().gui.setScreen(null)));
 
         contentPanel = new ConfigContentPanel(
                 PANEL_PADDING, HEADER_HEIGHT,

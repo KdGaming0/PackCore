@@ -39,6 +39,6 @@ public final class ToastHelper {
     }
 
     public static void show(Component title, Component message) {
-        Minecraft.getInstance().getToastManager().addToast(new PackCoreToast(title, message));
+        Minecraft.getInstance().gui.toastManager().addToast(new PackCoreToast(title, message));
     }
 }
